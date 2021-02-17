@@ -17,26 +17,13 @@
 from sqlalchemy import Integer, String, Boolean,\
     Column, DateTime, ForeignKey, create_engine, MetaData, Table
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from idc_sqlalchemy.config import sql_uri
 
 Base = declarative_base()
-sql_engine = create_engine(sql_uri, echo=True)
+# sql_engine = create_engine(sql_uri, echo=True)
+sql_engine = create_engine(sql_uri)
 
-# class Foo(Base):
-#     __tablename__ = 'foo'
-#     id = Column(Integer, primary_key=True)
-#     x = Column(Integer, nullable=False, unique=True)
-#
-#     bars = relationship("Bar", back_populates="foo")
-#
-# class bar(Base):
-#     __tablename__ = 'bar'
-#     id = Column(Integer, primary_key=True)
-#     foo_id = Column(ForeignKey('foo.id'))
-#     y = Column(Integer)
-#
-#     foo = relationship("Foo", back_populates="bars")
 
 class Version(Base):
     __tablename__ = 'version'
@@ -48,7 +35,7 @@ class Version(Base):
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
 
-    collections = relationship("Collection", back_populates='version')
+    collections = relationship("Collection", back_populates='version', order_by="Collection.id", cascade="all, delete")
 
 class Collection(Base):
     __tablename__ = 'collection'
@@ -63,7 +50,7 @@ class Collection(Base):
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
 
     version = relationship("Version", back_populates="collections")
-    patients = relationship("Patient", back_populates="collection")
+    patients = relationship("Patient", back_populates="collection", order_by="Patient.id", cascade="all, delete")
 
 class Patient(Base):
     __tablename__ = 'patient'
@@ -79,7 +66,7 @@ class Patient(Base):
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
 
     collection = relationship("Collection", back_populates="patients")
-    studies = relationship("Study", back_populates="patient")
+    studies = relationship("Study", back_populates="patient", order_by="Study.id", cascade="all, delete")
 
 class Study(Base):
     __tablename__ = 'study'
@@ -96,7 +83,7 @@ class Study(Base):
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
 
     patient = relationship("Patient", back_populates="studies")
-    seriess = relationship("Series", back_populates="study")
+    seriess = relationship("Series", back_populates="study", order_by="Series.id", cascade="all, delete")
 
 class Series(Base):
     __tablename__ = 'series'
@@ -114,7 +101,7 @@ class Series(Base):
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
 
     study = relationship("Study", back_populates="seriess")
-    instances = relationship("Instance", back_populates="series")
+    instances = relationship("Instance", back_populates="series", order_by="Instance.id", cascade="all, delete")
 
 class Instance(Base):
     __tablename__ = 'instance'
@@ -133,8 +120,6 @@ class Instance(Base):
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
 
     series = relationship("Series", back_populates="instances")
-
-
 
 class Auxilliary_Metadata(Base):
     __tablename__ = 'auxilliary_metadata'
@@ -160,33 +145,6 @@ class Auxilliary_Metadata(Base):
     gcs_url = Column(String, nullable=False, comment="The URL of the GCS object containing this instance")
     instance_hash = Column(String, nullable=False, comment="The hex format md5 hash of this instance")
     instance_size = Column(Integer, nullable=False, comment="The size, in bytes, of this instance")
-#
-# from sqlalchemy.orm import relationship
-#
-# class User(Base):
-#     __tablename__ = 'users'
-#     id = Column(Integer, primary_key=True)
-#     name = Column(String)
-#     ssn = Column(Integer, nullable=False, unique=True )
-#     fullname = Column(String)
-#     nickname = Column(String)
-#
-#     addresses = relationship("Address", back_populates="user")
-#     def __repr__(self):
-#        return "<User(name='%s', fullname='%s', nickname='%s')>" % (
-#                             self.name, self.fullname, self.nickname)
-#
-# class Address(Base):
-#     __tablename__ = 'addresses'
-#     id = Column(Integer, primary_key=True)
-#     email_address = Column(String, nullable=False)
-#     user_id = Column(Integer, ForeignKey('users.id'))
-#     user = relationship("User", back_populates="addresses")
-#     def __repr__(self):
-#         return "<Address(email_address='%s')>" % self.email_address
-#
-
-
 
 Base.metadata.create_all(sql_engine)
 

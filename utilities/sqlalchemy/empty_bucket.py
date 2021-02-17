@@ -14,12 +14,23 @@
 # limitations under the License.
 #
 
-from peewee import *
-from python_settings import settings
+from google.cloud import storage
+import argparse
+import sys
 
-db = PostgresqlDatabase(
-    settings.DATABASE_NAME,
-    user=settings.DATABASE_USERNAME,
-    password=settings.DATABASE_PASSWORD,
-    host=settings.DATABASE_HOST,
-    port=settings.DATABASE_PORT)
+def empty_bucket(args):
+    storage_client = storage.Client()
+
+    bucket = storage_client.bucket(args.bucket)
+    bucket.delete_blobs(bucket.list_blobs())
+
+if __name__ == '__main__':
+    parser =argparse.ArgumentParser()
+
+    parser.add_argument('--bucket', default='idc_dev', help='Bucket to empty')
+    parser.add_argument('--project', default='idc-dev-etl')
+
+    args = parser.parse_args()
+    print("{}".format(args), file=sys.stdout)
+
+    empty_bucket(args)

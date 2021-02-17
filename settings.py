@@ -15,6 +15,7 @@
 #
 
 import os
+import json
 from os.path import join, dirname, exists
 from dotenv import load_dotenv
 
@@ -46,5 +47,6 @@ DATABASE_HOST =         os.environ.get('DATABASE_HOST', '')
 DATABASE_PORT =         os.environ.get('DATABASE_PORT', '')
 
 LOGGER_NAME =           os.environ.get('ETL_LOGGER_NAME', 'main_logger')
+
 
 

@@ -23,6 +23,7 @@ from subprocess import run, PIPE
 import time, datetime
 import random
 from io import BytesIO, StringIO
+from google.cloud import storage
 import requests
 import backoff
 import logging
@@ -37,71 +38,89 @@ def get_url(url):  # , headers):
     return requests.get(url)  # , headers=headers)
 
 
-MAX_RETRIES=3
-
-def TCIA_API_request(endpoint, parameters=""):  
-    retry = 0
-    buffer = BytesIO()
-    c = pycurl.Curl()
-    url = 'https://services.cancerimagingarchive.net/services/v3/TCIA/query/{}?{}'.format(endpoint,parameters)
-    while retry < MAX_RETRIES:
-        try:
-            c.setopt(c.URL, url)
-            c.setopt(c.WRITEDATA,buffer)
-            c.perform()
-            data = buffer.getvalue().decode('iso-8859-1')
-#            print('Raw TCIA data: {}'.format(data),file=sys.stderr)
-            results = json.loads(data)
-            c.close()
-            if retry > 1:
-                print("TCIA_API_request successful on retry {}".format(retry))
-            return results
-
-        except:
-            # print("Error {}; {} in TCIA_API_request".format(e[0],e[1]), file=sys.stderr, flush=True)
-            logging.error("Error in TCIA_API_request")
-            rand = random.randint(1,10)
-            logging.info("Retrying in TCIA_API_request from %s",inspect.stack()[1])
-            # print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr, flush=True)
-            logging.info("Retrying in TCIA_API_request from %s",inspect.stack()[1])
-            logging.info("Retry %s, sleeping %s seconds", retry, rand)
-            time.sleep(rand)
-            retry += 1
-            
-    c.close()
-    # print("TCIA_API_request failed in call from {}".format(inspect.stack()[1]), file=sys.stderr, flush=True)
-    logging.warning("TCIA_API_request failed in call from %s", inspect.stack()[1])
-    raise RuntimeError (inspect.stack()[0:2])
+def TCIA_API_request(endpoint, parameters=""):
+    url = f'{TCIA_URL}/{endpoint}?{parameters}'
+    results = get_url(url)
+    results.raise_for_status()
+    return results.json()
 
 
 def TCIA_API_request_to_file(filename, endpoint, parameters=""):
-    retry = 0
-    c = pycurl.Curl()
-    url = 'https://services.cancerimagingarchive.net/services/v3/TCIA/query/{}?{}'.format(endpoint,parameters)
-    while retry < MAX_RETRIES:
-        try:
-            with open(filename, 'wb') as f:
-                c.setopt(c.URL, url)
-                c.setopt(c.WRITEDATA, f)
-                c.perform()
-                c.close()
-            if retry > 1:
-                print("TCIA_API_request_to_file successful on retry {}".format(retry))
-            return 0
+    url = f'{TCIA_URL}/{endpoint}?{parameters}'
+    begin = time.time()
+    results = get_url(url)
+    results.raise_for_status()
+    with open(filename, 'wb') as f:
+        f.write(results.content)
+    duration = str(datetime.timedelta(seconds=(time.time() - begin)))
+    logging.debug('File %s downloaded in %s',filename, duration)
+    return 0
 
-        except:
-            # print("Error {}; {} in TCIA_API_request_to_file".format(e[0],e[1]), file=sys.stderr, flush=True)
-            logging.info("Error in TCIA_API_request_to_file: %s,%s,%s",sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2])
-            rand = random.randint(1,10)
-            logging.info("Retrying in TCIA_API_request_to_file from %s",inspect.stack()[1])
-            logging.info("Retry %s, sleeping %s seconds", retry, rand)
-            time.sleep(rand)
-            retry += 1
-            
-    c.close()
-    logging.error("TCIA_API_request_to_file failed in call from %s", inspect.stack()[1])
-    # return -1
-    raise RuntimeError (inspect.stack()[0:2])
+
+# MAX_RETRIES=3
+# def TCIA_API_request(endpoint, parameters=""):
+#     retry = 0
+#     buffer = BytesIO()
+#     c = pycurl.Curl()
+#     url = 'https://services.cancerimagingarchive.net/services/v3/TCIA/query/{}?{}'.format(endpoint,parameters)
+#     while retry < MAX_RETRIES:
+#         try:
+#             c.setopt(c.URL, url)
+#             c.setopt(c.WRITEDATA,buffer)
+#             c.perform()
+#             data = buffer.getvalue().decode('iso-8859-1')
+# #            print('Raw TCIA data: {}'.format(data),file=sys.stderr)
+#             results = json.loads(data)
+#             c.close()
+#             if retry > 1:
+#                 print("TCIA_API_request successful on retry {}".format(retry))
+#             return results
+#
+#         except:
+#             # print("Error {}; {} in TCIA_API_request".format(e[0],e[1]), file=sys.stderr, flush=True)
+#             logging.error("Error in TCIA_API_request")
+#             rand = random.randint(1,10)
+#             logging.info("Retrying in TCIA_API_request from %s",inspect.stack()[1])
+#             # print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr, flush=True)
+#             logging.info("Retrying in TCIA_API_request from %s",inspect.stack()[1])
+#             logging.info("Retry %s, sleeping %s seconds", retry, rand)
+#             time.sleep(rand)
+#             retry += 1
+#
+#     c.close()
+#     # print("TCIA_API_request failed in call from {}".format(inspect.stack()[1]), file=sys.stderr, flush=True)
+#     logging.warning("TCIA_API_request failed in call from %s", inspect.stack()[1])
+#     raise RuntimeError (inspect.stack()[0:2])
+#
+#
+# def TCIA_API_request_to_file(filename, endpoint, parameters=""):
+#     retry = 0
+#     c = pycurl.Curl()
+#     url = 'https://services.cancerimagingarchive.net/services/v3/TCIA/query/{}?{}'.format(endpoint,parameters)
+#     while retry < MAX_RETRIES:
+#         try:
+#             with open(filename, 'wb') as f:
+#                 c.setopt(c.URL, url)
+#                 c.setopt(c.WRITEDATA, f)
+#                 c.perform()
+#                 c.close()
+#             if retry > 1:
+#                 print("TCIA_API_request_to_file successful on retry {}".format(retry))
+#             return 0
+#
+#         except:
+#             # print("Error {}; {} in TCIA_API_request_to_file".format(e[0],e[1]), file=sys.stderr, flush=True)
+#             logging.info("Error in TCIA_API_request_to_file: %s,%s,%s",sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2])
+#             rand = random.randint(1,10)
+#             logging.info("Retrying in TCIA_API_request_to_file from %s",inspect.stack()[1])
+#             logging.info("Retry %s, sleeping %s seconds", retry, rand)
+#             time.sleep(rand)
+#             retry += 1
+#
+#     c.close()
+#     logging.error("TCIA_API_request_to_file failed in call from %s", inspect.stack()[1])
+#     # return -1
+#     raise RuntimeError (inspect.stack()[0:2])
 
 
 def get_TCIA_collections():
@@ -263,7 +282,16 @@ def get_collection_descriptions():
 
     return collection_descriptions
 
+
+def get_series_info(storage_client, project, bucket_name):
+    series_info = {}
+    blobs = storage_client.bucket(bucket_name, user_project=project).list_blobs()
+    series_info = {blob.name.rsplit('.dcm',1)[0]: {"md5_hash":blob.md5_hash, "size":blob.size} for blob in blobs}
+    return series_info
+
+
 if __name__ == "__main__":
+    patients = get_TCIA_patients_per_collection('RIDER Breast MRI')
     collections = get_TCIA_collections()
     for collection in collections:
         patients = get_TCIA_patients_per_collection(collection)
