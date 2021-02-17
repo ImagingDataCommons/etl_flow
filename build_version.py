@@ -30,33 +30,13 @@ from base64 import b64decode
 from pydicom.errors import InvalidDicomError
 from uuid import uuid4
 from google.cloud import storage
-from idc_sqlalchemy.sqlalchemy_orm_models import Version, Collection, Patient, Study, Series, Instance, sql_engine
+from idc.models import Version, Collection, Patient, Study, Series, Instance, sql_engine
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from utilities.tcia_helpers import  get_TCIA_collections, get_TCIA_patients_per_collection, get_TCIA_studies_per_patient, \
     get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_TCIA_instances_per_series, get_series_info
 from utilities.identify_third_party_series import get_data_collection_doi, get_analysis_collection_dois
 
-
-
-METADATA_URL = 'http://metadata.google.internal/computeMetadata/v1/'
-METADATA_HEADERS = {'Metadata-Flavor': 'Google'}
-SERVICE_ACCOUNT = 'default'
-def get_access_token():
-    url = '{}instance/service-accounts/{}/token'.format(
-        METADATA_URL, SERVICE_ACCOUNT)
-    try:
-        # Request an access token from the metadata server.
-        r = requests.get(url, headers=METADATA_HEADERS)
-        r.raise_for_status()
-
-        # Extract the access token from the response.
-        access_token = r.json()['access_token']
-    except:
-        logging.error('Failed to get GCS access token')
-        raise
-
-    return access_token
 
 BUF_SIZE = 65536
 def md5_hasher(file_path):
@@ -97,12 +77,13 @@ def validate_series_in_gcs(storage_client, args, collection, patient, study, ser
             collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_uid, instance.sop_instance_uid)
         raise exc
 
+
 # Copy the series instances downloaded from TCIA/NBIA from disk to the prestaging bucket
 def copy_disk_to_prestaging_bucket(args, series):
     # Do the copy as a subprocess in order to use the gsutil -m option
     try:
         # Copy the series to GCS
-        src = "{}/{}/*".format("dicom", series.series_instance_uid)
+        src = "{}/{}/*".format(args.dicom, series.series_instance_uid)
         dst = "gs://{}/".format(args.prestaging_bucket)
         result = run(["gsutil", "-m", "-q", "cp", src, dst])
         if result.returncode < 0:
@@ -112,6 +93,7 @@ def copy_disk_to_prestaging_bucket(args, series):
     except Exception as exc:
         logging.error("\tCopy to prestage bucket failed for series %s", series.series_instance_uid)
         raise RuntimeError("Copy to prestage bucketfailed for series %s", series.series_instance_uid) from exc
+
 
 # Copy a completed collection from the prestaging bucket to the staging bucket
 def copy_prestaging_to_staging_bucket(args, collection):
@@ -158,13 +140,13 @@ def copy_to_gcs(args, collection, patient, study, series):
     storage_client = storage.Client()
 
     # Delete the zip file before we copy to GCS so that it is not copied
-    os.remove("{}/{}.zip".format("dicom", series.series_instance_uid))
+    os.remove("{}/{}.zip".format(args.dicom, series.series_instance_uid))
 
     # Copy the instances to the staging bucket
     copy_disk_to_prestaging_bucket(args, series)
 
     # Delete the series from disk
-    shutil.rmtree("{}/{}".format("dicom", series.series_instance_uid), ignore_errors=True)
+    shutil.rmtree("{}/{}".format(args.dicom, series.series_instance_uid), ignore_errors=True)
 
     # validate_series_in_gcs(storage_client, args, collection, patient, study, series)
 
@@ -187,7 +169,7 @@ def build_instances(sess, args, version, collection, patient, study, series):
 
     # Delete the series from disk in case it is there from a previous run
     try:
-        shutil.rmtree("{}/{}".format("dicom", series.series_instance_uid), ignore_errors=True)
+        shutil.rmtree("{}/{}".format(args.dicom, series.series_instance_uid), ignore_errors=True)
     except:
         # It wasn't there
         pass
@@ -195,7 +177,7 @@ def build_instances(sess, args, version, collection, patient, study, series):
     get_TCIA_instances_per_series(series.series_instance_uid)
 
     # Get a list of the files from the download
-    dcms = [dcm for dcm in os.listdir("{}/{}".format("dicom", series.series_instance_uid))]
+    dcms = [dcm for dcm in os.listdir("{}/{}".format(args.dicom, series.series_instance_uid))]
 
     # Ensure that the zip has the expected number of instances
     if not len(dcms) == len(series.instances):
@@ -212,14 +194,14 @@ def build_instances(sess, args, version, collection, patient, study, series):
     # Also compute the md5 hash and length in bytes of each
     for dcm in dcms:
         try:
-            SOPInstanceUID = pydicom.read_file("{}/{}/{}".format("dicom", series.series_instance_uid, dcm)).SOPInstanceUID
+            SOPInstanceUID = pydicom.read_file("{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm)).SOPInstanceUID
         except InvalidDicomError:
             logging.error("\tInvalid DICOM file for %s", series.series_instance_uid)
             raise RuntimeError("\tInvalid DICOM file for %s", series.series_instance_uid)
         instance = next(instance for instance in series.instances if instance.sop_instance_uid == SOPInstanceUID)
         instance_uuid = instance.instance_uuid
-        file_name = "./{}/{}/{}".format("dicom", series.series_instance_uid, dcm)
-        blob_name = "./{}/{}/{}.dcm".format("dicom", series.series_instance_uid, instance_uuid)
+        file_name = "./{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm)
+        blob_name = "./{}/{}/{}.dcm".format(args.dicom, series.series_instance_uid, instance_uuid)
         os.renames(file_name, blob_name)
 
         with open(blob_name,'rb') as f:
@@ -230,7 +212,6 @@ def build_instances(sess, args, version, collection, patient, study, series):
 
     copy_to_gcs(args, collection, patient, study, series)
 
-    sess.commit()
 
 def expand_series(sess, series):
     instances = get_TCIA_instance_uids_per_series(series.series_instance_uid)
@@ -273,8 +254,6 @@ def build_series(sess, args, version, collection, patient, study, series, data_c
         logging.info("      Series %s completed in %s", series.series_instance_uid, duration)
     else:
         logging.info("      Series %s previously built", series.series_instance_uid)
-
-    pass
 
 
 def expand_study(sess, collection, patient, study, data_collection_doi, analysis_collection_dois):
@@ -321,10 +300,6 @@ def build_study(sess, args, version, collection, patient, study, data_collection
         logging.info("    Study %s previously built", study.study_instance_uid)
 
 
-
-    pass
-
-
 def expand_patient(sess, collection, patient):
     studies = get_TCIA_studies_per_patient(collection.tcia_api_collection_id, patient.submitter_case_id)
     # If the patient is new, then all the studies are new
@@ -366,9 +341,6 @@ def build_patient(sess, args, version, collection, patient, data_collection_doi,
         logging.info("  Patient %s previously built", patient.submitter_case_id)
 
 
-    pass
-
-
 def expand_collection(sess, collection):
     # If we are here, we are beginning work on this collection.
     # GCS data for the collection being built is accumulated in the prestaging bucket,
@@ -397,10 +369,9 @@ def expand_collection(sess, collection):
         logging.error("Add code to hanndle not-new case in expand_collection")
 
 
-
 def build_collection(sess, args, version, collection):
     # if not collection.done:
-    if collection.tcia_api_collection_id == 'RIDER Breast MRI':
+    if collection.tcia_api_collection_id == 'RIDER Breast MRI': # Temporary code for development
         begin = time.time()
         if not collection.expanded:
             expand_collection(sess, collection)
@@ -413,17 +384,16 @@ def build_collection(sess, args, version, collection):
         collection.collection_timestamp = min([patient.patient_timestamp for patient in collection.patients])
         copy_prestaging_to_staging_bucket(args, collection)
         collection.done = True
+        # ************ Temporary code during development********************
         duration = str(timedelta(seconds=(time.time() - begin))) # ***********
         logging.info("Collection %s completed in %s", collection.tcia_api_collection_id, duration) # *********
         raise #**********
+        # ************ End temporary code ********************
         sess.commit()
         duration = str(timedelta(seconds=(time.time() - begin)))
         logging.info("Collection %s completed in %s", collection.tcia_api_collection_id, duration)
     else:
         logging.info("Collection %s previously built", collection.tcia_api_collection_id)
-
-
-    pass
 
 
 def expand_version(sess, args, version):
@@ -483,6 +453,11 @@ def build_version(sess, args, version):
 
 
 def prebuild(args):
+    # Create a local working directory
+    if os.path.isdir('{}'.format(args.dicom)):
+        shutil.rmtree('{}'.format(args.dicom))
+    os.mkdir('{}'.format(args.dicom))
+
     # Basically add a new Version with idc_version_number args.vnext, if it does not already exist
     with Session(sql_engine) as sess:
         stmt = select(Version).distinct()
@@ -523,6 +498,9 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='idc-dev-etl')
 
     args = parser.parse_args()
+
+    # Directory to which to download files from TCIA/NBIA
+    args.dicom = 'dicom'
     print("{}".format(args), file=sys.stdout)
 
     prebuild(args)

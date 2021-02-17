@@ -18,7 +18,7 @@ from sqlalchemy import Integer, String, Boolean,\
     Column, DateTime, ForeignKey, create_engine, MetaData, Table
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
-from idc_sqlalchemy.config import sql_uri
+from idc.config import sql_uri
 
 Base = declarative_base()
 # sql_engine = create_engine(sql_uri, echo=True)

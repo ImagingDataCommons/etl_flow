@@ -21,9 +21,9 @@ import datetime
 from google.cloud import bigquery
 from python_settings import settings
 # from utilities.bq_helpers import query_BQ
-from idc_sqlalchemy.config import bigquery_uri, sql_uri
-from idc_sqlalchemy.sqlalchemy_orm_models import Auxilliary_Metadata, Version, Collection, Patient, Study, Series, Instance
-# from idc_sqlalchemy.sqlalchemy_orm_models import Version, Collection
+from idc.config import bigquery_uri, sql_uri
+from idc.models import Auxilliary_Metadata, Version, Collection, Patient, Study, Series, Instance
+# from idc.sqlalchemy_orm_models import Version, Collection
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 

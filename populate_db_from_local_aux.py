@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-from idc_sqlalchemy.sqlalchemy_orm_models import Version, Collection, Patient, Study, Series, Instance, Auxilliary_Metadata, \
+from idc.models import Version, Collection, Patient, Study, Series, Instance, Auxilliary_Metadata, \
     sql_engine
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker

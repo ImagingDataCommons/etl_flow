@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from idc_sqlalchemy.sqlalchemy_orm_models import Version, Collection, Patient, Study, Series, Instance, sql_engine
+from idc.models import Version, Collection, Patient, Study, Series, Instance, sql_engine
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
