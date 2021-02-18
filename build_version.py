@@ -98,6 +98,7 @@ def copy_disk_to_prestaging_bucket(args, series):
 
 # Copy a completed collection from the prestaging bucket to the staging bucket
 def copy_prestaging_to_staging_bucket(args, collection):
+    logging.info("Copying prestaging bucket to staging bucket")
     try:
         # Copy the series to GCS
         src = "gs://{}/*".format(args.prestaging_bucket)
@@ -337,6 +338,7 @@ def expand_collection(sess, collection):
     # GCS data for the collection being built is accumulated in the prestaging bucket,
     # args.prestaging bucket.
      # Since we are starting, delete everything from the prestaging bucket.
+    logging.info("Emptying prestaging bucket")
     empty_bucket(args.prestaging_bucket)
     patients = get_TCIA_patients_per_collection(collection.tcia_api_collection_id)
     if collection.is_new:
@@ -388,11 +390,9 @@ def build_collection(sess, args, version, collection):
 
         if args.num_processes==0:
             # for series in sorted_seriess:
-
             for patient in collection.patients:
                 args.id = 0
                 build_patient(sess, args, data_collection_doi, analysis_collection_dois, version, collection, patient)
-
         else:
             processes = []
             # Create queues
@@ -408,7 +408,6 @@ def build_collection(sess, args, version, collection):
                 processes.append(
                     Process(target=worker, args=(task_queue, done_queue, args, data_collection_doi, analysis_collection_dois )))
                 processes[-1].start()
-
 
             # Enqueue each patient in the the task queue
             for patient in collection.patients:
@@ -536,7 +535,7 @@ def prebuild(args):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='{}/logs/build_rider_breast_mri_nbia.log'.format(os.environ['PWD']), filemode='w', level=logging.INFO)
+    logging.basicConfig(filename='{}/logs/build_{}.log'.format(os.environ['PWD'], datetime.now().isoformat()), filemode='w', level=logging.INFO)
 
     parser =argparse.ArgumentParser()
 
