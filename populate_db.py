@@ -20,36 +20,17 @@ import time
 import datetime
 from google.cloud import bigquery
 from python_settings import settings
-# from utilities.bq_helpers import query_BQ
 from idc.config import bigquery_uri, sql_uri
 from idc.models import Auxilliary_Metadata, Version, Collection, Patient, Study, Series, Instance
-# from idc.sqlalchemy_orm_models import Version, Collection
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
-from sqlalchemy.orm import relationship
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql import select
-
 # from sqlalchemy.ext.declarative import declarative_base
 
-def populate_auxilliary_metadata_from_BQ(bq_engine, sql_engine, table):
-    # if replace:
-    #     sql_engine.execute(f'TRUNCATE TABLE {table}')
-    query = f'SELECT DISTINCT tcia_api_collection_id from `{settings.GCP_PROJECT}.{settings.BIGQUERY_DATASET}.{settings.BIGQUERY_AUXILLIARY_METADATA}`'
-    collections = bq_engine.execute(query).fetchall()
-
-    for collection in collections:
-        print(f'Collection: {collection["tcia_api_collection_id"]}')
-        query = f"""
-            SELECT * from `{settings.GCP_PROJECT}.{settings.BIGQUERY_DATASET}.{settings.BIGQUERY_AUXILLIARY_METADATA}`
-            WHERE tcia_api_collection_id = \"{collection['tcia_api_collection_id']}\""""
-        collection_rows= bq_engine.execute(query).fetchall()
-
-        # table_name = table
-        rows = [dict(c.items()) for c in collection_rows]
-        with sql_engine.connect() as conn:
-            conn.execute(table.__table__.insert(), rows)
+# Duplicate version, collection, patient, study, series and instance metadata tables in BQ. These are
+# essentially a normalization of an auxilliary_metadata table.
+# The BQ dataset containing the tables to be duplicated is specified in the .env file (maybe not the best place).
+# The bigquery_uri engine is configured to access that dataset.
 
 def populate_version(bq_engine, sql_engine):
     print('Populating versions')

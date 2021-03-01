@@ -30,13 +30,17 @@ import logging
 
 # TCIA_URL = 'https://services.cancerimagingarchive.net/services/v4/TCIA/query'
 TCIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v1'
+# TCIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v2'
 
-@backoff.on_exception(backoff.expo,
-                      requests.exceptions.RequestException,
-                      max_tries=3)
+
+# @backoff.on_exception(backoff.expo,
+#                       requests.exceptions.RequestException,
+#                       max_tries=3)
 def get_url(url):  # , headers):
-    return requests.get(url)  # , headers=headers)
-
+    result =  requests.get(url)  # , headers=headers)
+    if result.status_code != 200:
+        raise RuntimeError('In get_url(): status_code=%s; url: %s', result.status_code, url)
+    return result
 
 def TCIA_API_request(endpoint, parameters=""):
     url = f'{TCIA_URL}/{endpoint}?{parameters}'
@@ -57,74 +61,8 @@ def TCIA_API_request_to_file(filename, endpoint, parameters=""):
     return 0
 
 
-# MAX_RETRIES=3
-# def TCIA_API_request(endpoint, parameters=""):
-#     retry = 0
-#     buffer = BytesIO()
-#     c = pycurl.Curl()
-#     url = 'https://services.cancerimagingarchive.net/services/v3/TCIA/query/{}?{}'.format(endpoint,parameters)
-#     while retry < MAX_RETRIES:
-#         try:
-#             c.setopt(c.URL, url)
-#             c.setopt(c.WRITEDATA,buffer)
-#             c.perform()
-#             data = buffer.getvalue().decode('iso-8859-1')
-# #            print('Raw TCIA data: {}'.format(data),file=sys.stderr)
-#             results = json.loads(data)
-#             c.close()
-#             if retry > 1:
-#                 print("TCIA_API_request successful on retry {}".format(retry))
-#             return results
-#
-#         except:
-#             # print("Error {}; {} in TCIA_API_request".format(e[0],e[1]), file=sys.stderr, flush=True)
-#             logging.error("Error in TCIA_API_request")
-#             rand = random.randint(1,10)
-#             logging.info("Retrying in TCIA_API_request from %s",inspect.stack()[1])
-#             # print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr, flush=True)
-#             logging.info("Retrying in TCIA_API_request from %s",inspect.stack()[1])
-#             logging.info("Retry %s, sleeping %s seconds", retry, rand)
-#             time.sleep(rand)
-#             retry += 1
-#
-#     c.close()
-#     # print("TCIA_API_request failed in call from {}".format(inspect.stack()[1]), file=sys.stderr, flush=True)
-#     logging.warning("TCIA_API_request failed in call from %s", inspect.stack()[1])
-#     raise RuntimeError (inspect.stack()[0:2])
-#
-#
-# def TCIA_API_request_to_file(filename, endpoint, parameters=""):
-#     retry = 0
-#     c = pycurl.Curl()
-#     url = 'https://services.cancerimagingarchive.net/services/v3/TCIA/query/{}?{}'.format(endpoint,parameters)
-#     while retry < MAX_RETRIES:
-#         try:
-#             with open(filename, 'wb') as f:
-#                 c.setopt(c.URL, url)
-#                 c.setopt(c.WRITEDATA, f)
-#                 c.perform()
-#                 c.close()
-#             if retry > 1:
-#                 print("TCIA_API_request_to_file successful on retry {}".format(retry))
-#             return 0
-#
-#         except:
-#             # print("Error {}; {} in TCIA_API_request_to_file".format(e[0],e[1]), file=sys.stderr, flush=True)
-#             logging.info("Error in TCIA_API_request_to_file: %s,%s,%s",sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2])
-#             rand = random.randint(1,10)
-#             logging.info("Retrying in TCIA_API_request_to_file from %s",inspect.stack()[1])
-#             logging.info("Retry %s, sleeping %s seconds", retry, rand)
-#             time.sleep(rand)
-#             retry += 1
-#
-#     c.close()
-#     logging.error("TCIA_API_request_to_file failed in call from %s", inspect.stack()[1])
-#     # return -1
-#     raise RuntimeError (inspect.stack()[0:2])
-
-
 def get_TCIA_collections():
-    results = TCIA_API_request('getCollectionValues')
+    # results = TCIA_API_request('getCollectionValues')
     url = f'{TCIA_URL}/getCollectionValues'
     results = get_url(url)
     collections = results.json()
@@ -200,26 +138,6 @@ def get_TCIA_instances_per_series(series_instance_uid):
         raise
 
 
-    # try:
-    #     with zipfile.ZipFile("{}/{}.zip".format(DICOM, series)) as zip_ref:
-    #         zip_ref.extractall("{}/{}".format(DICOM, series))
-    #     if retry > 0:
-    #         logging.info("\tGot valid zipfile for %s/%s on retry %s", study, series, retry)
-    #     validation['downloaded'] = 1
-    #     return {'returncode': 0, 'compressed': compressed, 'validation': validation}
-    # except zipfile.BadZipFile:
-    #     logging.error("\tZip extract failed for %s/%s with error BadZipFile on retry %s", study, series, retry)
-    #     retry += 1
-    # except zipfile.LargeZipFile:
-    #     logging.error("\tZip extract failed for %s/%s with error LargeZipFile on retry %s", study, series, retry)
-    #     retry += 1
-    # except:
-    #     logging.error(
-    #         "\tZip extract failed for %s/%s with error %s,%s,%s on retry %s", study, series, sys.exc_info()[0],
-    #                                                                               sys.exc_info()[1],
-    #                                                                               sys.exc_info()[2], retry)
-
-
 def create_jsonlines_from_list(original):
     in_json = StringIO(json.dumps(original)) 
     result = [json.dumps(record) for record in json.load(in_json)]
@@ -257,11 +175,35 @@ def get_collection_sizes():
     sorted_counts = [(k, v) for k, v in sorted(counts.items(), key=lambda item: item[1])]
     return sorted_counts
 
+def get_access_token():
+    # data = "username=nbia_guest&password=&client_id=nbiaRestAPIClient&client_secret=ItsBetweenUAndMe&grant_type=password"
+    data = dict(
+        username="nbia_guest",
+        password="",
+        client_id="nbiaRestAPIClient",
+        client_secret="ItsBetweenUAndMe",
+        grant_type="password")
+    url = "https://public.cancerimagingarchive.net/nbia-api/oauth/token"
+    result = requests.post(url, data = data)
+    access_token = result.json()
+    return access_token
+
+def get_collection_values_and_counts():
+    access_token = get_access_token()['access_token']
+    headers = dict(
+        Authorization = f'Bearer {access_token}'
+    )
+    url = 'https://services.cancerimagingarchive.net/nbia-api/services/getCollectionValuesAndCounts'
+    result = requests.get(url, headers=headers)
+    collections = [collection['criteria'] for collection in result.json()]
+    return collections
+
 
 def get_collection_descriptions():
     # Get access token for the guest account
     result = run([
         'curl',
+        '-v',
         '-d',
         "username=nbia_guest&password=&client_id=nbiaRestAPIClient&client_secret=ItsBetweenUAndMe&grant_type=password",
         '-X',
@@ -291,14 +233,16 @@ def get_series_info(storage_client, project, bucket_name):
 
 
 if __name__ == "__main__":
-    patients = get_TCIA_patients_per_collection('RIDER Breast MRI')
+    # patients = get_TCIA_patients_per_collection('ACRIN-FLT-Breast')
+    # get_collection_descriptions()
+    collection = get_collection_values_and_counts()
     collections = get_TCIA_collections()
     for collection in collections:
-        patients = get_TCIA_patients_per_collection(collection)
+        patients = get_TCIA_patients_per_collection(collection['Collection'])
         for patient in patients:
-            studies = get_TCIA_studies_per_patient(collection, patient['PatientID'])
+            studies = get_TCIA_studies_per_patient(collection['Collection'], patient['PatientId'])
             for study in studies:
-                seriess = get_TCIA_series_per_study(study['StudyInstanceUID'])
+                seriess = get_TCIA_series_per_study(collection['Collection'], patient['PatientId'], study['StudyInstanceUID'])
                 for series in seriess:
                     instanceUIDs = get_TCIA_instance_uids_per_series(series['SeriesInstanceUID'])
                     for instanceUID in instanceUIDs:

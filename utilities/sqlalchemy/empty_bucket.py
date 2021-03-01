@@ -18,11 +18,28 @@ from google.cloud import storage
 import argparse
 import sys
 
+#Get info on each blob in a collection
+def get_collection_iterator(storage_client, bucket_name, prefix):
+    pages = storage_client.list_blobs(bucket_name, prefix=prefix)
+    # pages = storage_client.list_blobs(bucket_name, prefix="dicom/")
+    return pages
+
+
+def get_bucket_metadata(storage_client, bucket_name, prefix):
+    pages = get_collection_iterator(storage_client, bucket_name, prefix)
+    blobs = []
+
+    for page in pages.pages:
+        blobs.extend(list(page))
+    metadata = {blob.name:blob for blob in blobs}
+    return metadata
+
 def empty_bucket(args):
     storage_client = storage.Client()
 
     bucket = storage_client.bucket(args.bucket)
-    bucket.delete_blobs(bucket.list_blobs())
+    blobs = bucket.list_blobs()
+    bucket.delete_blobs(blobs)
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()

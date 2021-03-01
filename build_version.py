@@ -21,6 +21,7 @@ from pathlib import Path
 import time
 from datetime import datetime, timezone, timedelta
 import logging
+from logging import INFO
 import pydicom
 import hashlib
 from subprocess import run, PIPE
@@ -35,8 +36,11 @@ from idc.models import Version, Collection, Patient, Study, Series, Instance, sq
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from utilities.tcia_helpers import  get_TCIA_collections, get_TCIA_patients_per_collection, get_TCIA_studies_per_patient, \
-    get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_TCIA_instances_per_series, get_series_info
+    get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_TCIA_instances_per_series, get_collection_values_and_counts
 from utilities.identify_third_party_series import get_data_collection_doi, get_analysis_collection_dois
+from google.api_core.exceptions import Conflict
+
+PATIENT_TRIES=3
 
 
 BUF_SIZE = 65536
@@ -51,14 +55,14 @@ def md5_hasher(file_path):
     return md5.hexdigest()
 
 
-def rollback_copy_to_bucket(args, series):
+def rollback_copy_to_prestaging_bucket(args, series):
     client = storage.Client()
     bucket = client.bucket(args.prestaging_bucket)
     for instance in series.instances:
         try:
             results = bucket.blob(f'{instance.instance_uuid}.dcm').delete()
         except:
-            logging.error('p%s: Failed to delete blob %s.dcm during validation rollback',args.id, instance.instance_uuid)
+            errlogger.error('p%s: Failed to delete blob %s.dcm during validation rollback',args.id, instance.instance_uuid)
             raise
 
 
@@ -73,8 +77,8 @@ def validate_series_in_gcs(storage_client, args, collection, patient, study, ser
             assert instance.instance_size == blob.size
 
     except Exception as exc:
-        rollback_copy_to_bucket(args, series)
-        logging.error('p%s: GCS validation failed for %s/%s/%s/%s/%s',
+        rollback_copy_to_prestaging_bucket(args, series)
+        errlogger.error('p%s: GCS validation failed for %s/%s/%s/%s/%s',
             args.id, collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_uid, instance.sop_instance_uid)
         raise exc
 
@@ -88,28 +92,28 @@ def copy_disk_to_prestaging_bucket(args, series):
         dst = "gs://{}/".format(args.prestaging_bucket)
         result = run(["gsutil", "-m", "-q", "cp", src, dst])
         if result.returncode < 0:
-            logging.error('p%s: \tcopy_disk_to_prestaging_bucket failed for series %s', args.id, series.series_instance_uid)
+            errlogger.error('p%s: \tcopy_disk_to_prestaging_bucket failed for series %s', args.id, series.series_instance_uid)
             raise RuntimeError('p%s: copy_disk_to_prestaging_bucket failed for series %s', args.id, series.series_instance_uid)
-        logging.debug(("p%s: Uploaded instances to GCS", args.id))
+        rootlogger.debug(("p%s: Uploaded instances to GCS", args.id))
     except Exception as exc:
-        logging.error("\tp%s: Copy to prestage bucket failed for series %s", args.id, series.series_instance_uid)
+        errlogger.error("\tp%s: Copy to prestage bucket failed for series %s", args.id, series.series_instance_uid)
         raise RuntimeError("p%s: Copy to prestage bucketfailed for series %s", args.id, series.series_instance_uid) from exc
 
 
 # Copy a completed collection from the prestaging bucket to the staging bucket
 def copy_prestaging_to_staging_bucket(args, collection):
-    logging.info("Copying prestaging bucket to staging bucket")
+    rootlogger.info("Copying prestaging bucket to staging bucket")
     try:
         # Copy the series to GCS
         src = "gs://{}/*".format(args.prestaging_bucket)
         dst = "gs://{}/".format(args.staging_bucket)
         result = run(["gsutil", "-m", "-q", "cp", src, dst])
         if result.returncode < 0:
-            logging.error('\tp%s: copy_prestaging_to_staging_bucket failed for collection %s', args.id, collection.tcia_api_collection_id)
+            errlogger.error('\tp%s: copy_prestaging_to_staging_bucket failed for collection %s', args.id, collection.tcia_api_collection_id)
             raise RuntimeError('p%s: copy_prestaging_to_staging_bucket failed for collection %s', args.id, collection.tcia_api_collection_id)
-        logging.debug(("p%s: Uploaded instances to GCS", args.id))
+        rootlogger.debug(("p%s: Uploaded instances to GCS", args.id))
     except Exception as exc:
-        logging.error("\tp%s: Copy from prestaging to staging bucket for collection %s failed", args.id, collection.tcia_api_collection_id)
+        errlogger.error("\tp%s: Copy from prestaging to staging bucket for collection %s failed", args.id, collection.tcia_api_collection_id)
         raise RuntimeError("p%s: Copy from prestaging to staging bucket for collection %s failed", args.id, collection.tcia_api_collection_id) from exc
 
 
@@ -120,11 +124,11 @@ def copy_staging_bucket_to_final_bucket(args, version):
         dst = "gs://{}/".format(args.bucket)
         result = run(["gsutil", "-m", "-q", "cp", src, dst])
         if result.returncode < 0:
-            logging.error('\tp%s: copy_staging_bucket_to_final_bucket failed for version %s', args.id, version.idc_version_number)
+            errlogger.error('\tp%s: copy_staging_bucket_to_final_bucket failed for version %s', args.id, version.idc_version_number)
             raise RuntimeError('p%s: copy_staging_bucket_to_final_bucket failed for version %s', args.id, version.idc_version_number)
-        logging.debug(("p%s: Uploaded instances to GCS"))
+        rootlogger.debug(("p%s: Uploaded instances to GCS"))
     except Exception as exc:
-        logging.error("\tp%s: Copy from prestaging to staging bucket for collection %s failed", args.id, version.idc_version_number)
+        errlogger.error("\tp%s: Copy from prestaging to staging bucket for collection %s failed", args.id, version.idc_version_number)
         raise RuntimeError("p%s: Copy from prestaging to staging bucket for collection %s failed", args.id, version.idc_version_number) from exc
 
 
@@ -132,10 +136,28 @@ def empty_bucket(bucket):
     try:
         src = "gs://{}/*".format(bucket)
         run(["gsutil", "-m", "-q", "rm", src])
-        logging.debug(("Emptied bucket %s", bucket))
+        rootlogger.debug(("Emptied bucket %s", bucket))
     except Exception as exc:
-        logging.error("Failed to empty bucket %s", bucket)
+        errlogger.error("Failed to empty bucket %s", bucket)
         raise RuntimeError("Failed to empty bucket %s", bucket) from exc
+
+def create_prestaging_bucket(args):
+    client = storage.Client(project=args.project)
+
+    # Try to create the destination bucket
+    new_bucket = client.bucket(args.prestaging_bucket)
+    new_bucket.iam_configuration.uniform_bucket_level_access_enabled = True
+    new_bucket.versioning_enabled = False
+    try:
+        result = client.create_bucket(new_bucket, location='US-CENTRAL1')
+        # return(0)
+    except Conflict:
+        # Bucket exists
+        pass
+    except Exception as e:
+        # Bucket creation failed somehow
+        errlogger.error("Error creating bucket %s: %s",args.prestaging_bucket, e)
+        return(-1)
 
 
 def copy_to_gcs(args, collection, patient, study, series):
@@ -173,9 +195,11 @@ def build_instances(sess, args, version, collection, patient, study, series):
 
     # Ensure that the zip has the expected number of instances
     if not len(dcms) == len(series.instances):
-        logging.error("\tp%s: Invalid zip file for %s/%s", args.id, series.series_instance_uid)
-        raise RuntimeError("\p%s: Invalid zip file for %s/%s", args.id, series.series_instance_uid)
-    logging.debug(("p%s: Series %s download successful", args.id, series.series_instance_uid))
+        errlogger.error("\tp%s: Invalid zip file for %s/%s/%s/%s", args.id,
+            collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_id, series.series_instance_uid)
+        raise RuntimeError("\p%s: Invalid zip file for %s/%s/%s/%s", args.id,
+            collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_id, series.series_instance_uid)
+    rootlogger.debug(("p%s: Series %s download successful", args.id, series.series_instance_uid))
 
     # TCIA file names are based on the position of the image in a scan. We need to extract the SOPInstanceUID
     # so that we can know the instance.
@@ -188,8 +212,10 @@ def build_instances(sess, args, version, collection, patient, study, series):
         try:
             SOPInstanceUID = pydicom.read_file("{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm)).SOPInstanceUID
         except InvalidDicomError:
-            logging.error("\tp%s: Invalid DICOM file for %s", args.id, series.series_instance_uid)
-            raise RuntimeError("p%s: Invalid DICOM file for %s", args.id, series.series_instance_uid)
+            errlogger.error("\tp%s: Invalid DICOM file for %s/%s/%s/%s", args.id,
+                collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_id, series.series_instance_uid)
+            raise RuntimeError("p%s: Invalid DICOM file for %s/%s/%s/%s", args.id,
+                collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_id, series.series_instance_uid)
         instance = next(instance for instance in series.instances if instance.sop_instance_uid == SOPInstanceUID)
         instance_uuid = instance.instance_uuid
         file_name = "./{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm)
@@ -200,7 +226,7 @@ def build_instances(sess, args, version, collection, patient, study, series):
             instance.instance_hash = md5_hasher(blob_name)
             instance.instance_size = Path(blob_name).stat().st_size
             instance.instance_timestamp = datetime.utcnow()
-    logging.debug("%s: Renamed all files for series %s", args.id, series.series_instance_uid)
+    rootlogger.debug("%s: Renamed all files for series %s", args.id, series.series_instance_uid)
 
     copy_to_gcs(args, collection, patient, study, series)
 
@@ -228,24 +254,24 @@ def expand_series(sess, series):
     else:
         # Need to add code for the case that the object is not new
         # Do that when we create version 3
-        logging.error("p%s: Add code to hanndle not-new case in expand_series", args.id)
+        errlogger.error("p%s: Add code to hanndle not-new case in expand_series", args.id)
 
 
-def build_series(sess, args, version, collection, patient, study, series, data_collection_doi, analysis_collection_dois):
+def build_series(sess, args, series_index, version, collection, patient, study, series, data_collection_doi, analysis_collection_dois):
     if not series.done:
         begin = time.time()
         if not series.expanded:
             expand_series(sess, series)
-        logging.info("      p%s: Series %s; %s instances", args.id, series.series_instance_uid, len(series.instances))
+        rootlogger.info("      p%s: Series %s; %s; %s instances", args.id, series.series_instance_uid, series_index, len(series.instances))
         build_instances(sess, args, version, collection, patient, study, series)
         series.series_instances = len(series.instances)
         series.series_timestamp = min(instance.instance_timestamp for instance in series.instances)
         series.done = True
         sess.commit()
         duration = str(timedelta(seconds=(time.time() - begin)))
-        logging.info("      p%s: Series %s completed in %s", args.id, series.series_instance_uid, duration)
+        rootlogger.info("      p%s: Series %s, %s, completed in %s", args.id, series.series_instance_uid, series_index, duration)
     else:
-        logging.info("      p%s: Series %s previously built", args.id, series.series_instance_uid)
+        rootlogger.info("      p%s: Series %s, %s, previously built", args.id, series.series_instance_uid, series_index)
 
 
 def expand_study(sess, collection, patient, study, data_collection_doi, analysis_collection_dois):
@@ -271,25 +297,26 @@ def expand_study(sess, collection, patient, study, data_collection_doi, analysis
     else:
         # Need to add code for the case that the object is not new
         # Do that when we create version 3
-        logging.error("p%s: Add code to hanndle not-new case in expand_study, args.id")
+        errlogger.error("p%s: Add code to hanndle not-new case in expand_study, args.id")
 
 
-def build_study(sess, args, version, collection, patient, study, data_collection_doi, analysis_collection_dois):
+def build_study(sess, args, study_index, version, collection, patient, study, data_collection_doi, analysis_collection_dois):
     if not study.done:
         begin = time.time()
         if not study.expanded:
             expand_study(sess, collection, patient, study, data_collection_doi, analysis_collection_dois)
-        logging.info("    p%s: Study %s; %s series", args.id, study.study_instance_uid, len(study.seriess))
+        rootlogger.info("    p%s: Study %s, %s, %s series", args.id, study.study_instance_uid, study_index, len(study.seriess))
         for series in study.seriess:
-            build_series(sess, args, version, collection, patient, study, series, data_collection_doi, analysis_collection_dois)
+            series_index = f'{study.seriess.index(series)+1} of {len(study.seriess)}'
+            build_series(sess, args, series_index, version, collection, patient, study, series, data_collection_doi, analysis_collection_dois)
         study.study_instances = sum([series.series_instances for series in study.seriess])
         study.study_timestamp = min([series.series_timestamp for series in study.seriess])
         study.done = True
         sess.commit()
         duration = str(timedelta(seconds=(time.time() - begin)))
-        logging.info("    p%s: Study %s completed in %s", args.id, study.study_instance_uid, duration)
+        rootlogger.info("    p%s: Study %s, %s,  completed in %s", args.id, study.study_instance_uid, study_index, duration)
     else:
-        logging.info("    p%s: Study %s previously built", args.id, study.study_instance_uid)
+        rootlogger.info("    p%s: Study %s, %s, previously built", args.id, study.study_instance_uid, study_index)
 
 
 def expand_patient(sess, collection, patient):
@@ -312,34 +339,44 @@ def expand_patient(sess, collection, patient):
     else:
         # Need to add code for the case that the object is not new
         # Do that when we create version 3
-        logging.error("p%s: Add code to hanndle not-new case in expand_patient", args.id)
+        errlogger.error("p%s: Add code to hanndle not-new case in expand_patient", args.id)
 
 
-def build_patient(sess, args, data_collection_doi, analysis_collection_dois, version, collection, patient):
+def build_patient(sess, args, patient_index, data_collection_doi, analysis_collection_dois, version, collection, patient):
     if not patient.done:
         begin = time.time()
         if not patient.expanded:
             expand_patient(sess, collection, patient)
-        logging.info("  p%s: Patient %s; %s studies", args.id, patient.submitter_case_id, len(patient.studies))
+        rootlogger.info("  p%s: Patient %s, %s, %s studies", args.id, patient.submitter_case_id, patient_index, len(patient.studies))
         for study in patient.studies:
-            build_study(sess, args, version, collection, patient, study, data_collection_doi, analysis_collection_dois)
+            study_index = f'{patient.studies.index(study) + 1} of {len(patient.studies)}'
+            build_study(sess, args, study_index, version, collection, patient, study, data_collection_doi, analysis_collection_dois)
         patient.patient_timestamp = min([study.study_timestamp for study in patient.studies])
 
         patient.done = True
         sess.commit()
+        # if patient.patient_timestamp == datetime(1970, 1, 1, 0, 0):
+        #     pass
         duration = str(timedelta(seconds=(time.time() - begin)))
-        logging.info("  p%s: Patient %s completed in %s", args.id, patient.submitter_case_id, duration)
+        rootlogger.info("  p%s: Patient %s, %s, completed in %s", args.id, patient.submitter_case_id, patient_index, duration)
     else:
-        logging.info("  p%s: Patient %s previously built", args.id, patient.submitter_case_id)
+        rootlogger.info("  p%s: Patient %s, %s, previously built", args.id, patient.submitter_case_id, patient_index)
 
 
-def expand_collection(sess, collection):
+def expand_collection(sess, args, collection):
     # If we are here, we are beginning work on this collection.
     # GCS data for the collection being built is accumulated in the prestaging bucket,
     # args.prestaging bucket.
-     # Since we are starting, delete everything from the prestaging bucket.
-    logging.info("Emptying prestaging bucket")
+
+    # Since we are starting, delete everything from the prestaging bucket.
+    rootlogger.info("Emptying prestaging bucket")
+    begin = time.time()
+    create_prestaging_bucket(args)
     empty_bucket(args.prestaging_bucket)
+     # Since we are starting, delete everything from the prestaging bucket.
+    duration = str(timedelta(seconds=(time.time() - begin)))
+    rootlogger.info("Emptying prestaging bucket completed in %s", duration)
+
     patients = get_TCIA_patients_per_collection(collection.tcia_api_collection_id)
     if collection.is_new:
         # If the collection is new, then all the patients are new
@@ -359,40 +396,54 @@ def expand_collection(sess, collection):
     else:
         # Need to add code for the case that the object is not new
         # Do that when we create version 3
-        logging.error("p%s: Add code to hanndle not-new case in expand_collection", args.id)
+        errlogger.error("p%s: Add code to hanndle not-new case in expand_collection", args.id)
+
 
 def worker(input, output, args, data_collection_doi, analysis_collection_dois):
-    logging.debug('p%s: Worker starting: args: %s', args.id, args)
+    rootlogger.debug('p%s: Worker starting: args: %s', args.id, args)
     for more_args in iter(input.get, 'STOP'):
         with Session(sql_engine) as sess:
-            try:
-                idc_version_number, tcia_api_collection_id, submitter_case_id = more_args
-                version = sess.query(Version).filter_by(idc_version_number=idc_version_number).one()
-                collection = next(collection for collection in version.collections if collection.tcia_api_collection_id==tcia_api_collection_id)
-                patient = next(patient for patient in collection.patients if patient.submitter_case_id==submitter_case_id)
-                logging.debug("p%s: In worker, sess: %s, submitter_case_id: %s", args.id, sess, submitter_case_id)
-                build_patient(sess, args, data_collection_doi, analysis_collection_dois, version, collection, patient)
-                output.put(submitter_case_id)
-            except Exception as exc:
-                logging.error(("p%s, Exception in worker(): %s", args.id, exc))
+            for attempt in range(PATIENT_TRIES):
+                try:
+                    index, idc_version_number, tcia_api_collection_id, submitter_case_id = more_args
+                    version = sess.query(Version).filter_by(idc_version_number=idc_version_number).one()
+                    collection = next(collection for collection in version.collections if collection.tcia_api_collection_id==tcia_api_collection_id)
+                    patient = next(patient for patient in collection.patients if patient.submitter_case_id==submitter_case_id)
+                    rootlogger.debug("p%s: In worker, sess: %s, submitter_case_id: %s", args.id, sess, submitter_case_id)
+                    build_patient(sess, args, index, data_collection_doi, analysis_collection_dois, version, collection, patient)
+                    break
+                except Exception as exc:
+                    errlogger.error("Worker p%s, exception %s; reattempt %s on patient %s/%s", args.id, exc, attempt, tcia_api_collection_id, submitter_case_id)
+                    sess.rollback()
+
+            if attempt == PATIENT_TRIES:
+                errlogger.error("p%s, Failed to process patient: %s", args.id, submitter_case_id)
+                sess.rollback()
+            output.put(submitter_case_id)
 
 
-def build_collection(sess, args, version, collection):
+def build_collection(sess, args, collection_index, version, collection):
     if not collection.done:
     # if collection.tcia_api_collection_id == 'RIDER Breast MRI': # Temporary code for development
         begin = time.time()
+        args.prestaging_bucket = f"{args.prestaging_bucket_prefix}{collection.tcia_api_collection_id.lower().replace(' ','_').replace('-','_')}"
         if not collection.expanded:
-            expand_collection(sess, collection)
-        logging.info("Collection %s; %s patients", collection.tcia_api_collection_id, len(collection.patients))
+            expand_collection(sess, args, collection)
+        rootlogger.info("Collection %s, %s, %s patients", collection.tcia_api_collection_id, collection_index, len(collection.patients))
         # Get the lists of data and analyis series in this patient
-        data_collection_doi = get_data_collection_doi(collection.tcia_api_collection_id)
+        if not collection.tcia_api_collection_id == 'PDMR-833975-119-R':
+            data_collection_doi = get_data_collection_doi(collection.tcia_api_collection_id)
+        else:
+            # Temporary fix.
+            data_collection_doi = '10.7937/TCIA.0ECK-C338'
         analysis_collection_dois = get_analysis_collection_dois(collection.tcia_api_collection_id)
 
         if args.num_processes==0:
             # for series in sorted_seriess:
             for patient in collection.patients:
                 args.id = 0
-                build_patient(sess, args, data_collection_doi, analysis_collection_dois, version, collection, patient)
+                patient_index = f'{collection.patients.index(patient)+1} of {len(collection.patients)}'
+                build_patient(sess, args, patient_index, data_collection_doi, analysis_collection_dois, version, collection, patient)
         else:
             processes = []
             # Create queues
@@ -411,41 +462,46 @@ def build_collection(sess, args, version, collection):
 
             # Enqueue each patient in the the task queue
             for patient in collection.patients:
-                task_queue.put((version.idc_version_number, collection.tcia_api_collection_id, patient.submitter_case_id))
+                patient_index = f'{collection.patients.index(patient)+1} of {len(collection.patients)}'
+                task_queue.put((patient_index, version.idc_version_number, collection.tcia_api_collection_id, patient.submitter_case_id))
                 enqueued_patients.append(patient.submitter_case_id)
 
             # Collect the results for each patient
             try:
                 while not enqueued_patients == []:
                     # Timeout if waiting too long
-                    results = done_queue.get(10*60)
+                    results = done_queue.get(True)
                     enqueued_patients.remove(results)
 
                 # Tell child processes to stop
                 for process in processes:
                     task_queue.put('STOP')
 
+                collection.collection_timestamp = min([patient.patient_timestamp for patient in collection.patients])
+                # copy_prestaging_to_staging_bucket(args, collection)
+                collection.done = True
+                # ************ Temporary code during development********************
+                # duration = str(timedelta(seconds=(time.time() - begin)))
+                # rootlogger.info("Collection %s, %s, completed in %s", collection.tcia_api_collection_id, collection_index, duration)
+                # raise
+                # ************ End temporary code ********************
+                sess.commit()
+                duration = str(timedelta(seconds=(time.time() - begin)))
+                rootlogger.info("Collection %s, %s, completed in %s", collection.tcia_api_collection_id, collection_index,
+                                duration)
+
             except Empty as e:
-                logging.error("Timeout in build_collection %s", collection.tcia_api_collection_id)
+                errlogger.error("Timeout in build_collection %s", collection.tcia_api_collection_id)
                 for process in processes:
                     process.terminate()
                     process.join()
-                raise
+                sess.rollback()
+                duration = str(timedelta(seconds=(time.time() - begin)))
+                rootlogger.info("Collection %s, %s, NOT completed in %s", collection.tcia_api_collection_id, collection_index,
+                                duration)
 
-
-        collection.collection_timestamp = min([patient.patient_timestamp for patient in collection.patients])
-        copy_prestaging_to_staging_bucket(args, collection)
-        collection.done = True
-        # ************ Temporary code during development********************
-        # duration = str(timedelta(seconds=(time.time() - begin))) # ***********
-        # logging.info("Collection %s completed in %s", collection.tcia_api_collection_id, duration) # *********
-        # raise #**********
-        # ************ End temporary code ********************
-        sess.commit()
-        duration = str(timedelta(seconds=(time.time() - begin)))
-        logging.info("Collection %s completed in %s", collection.tcia_api_collection_id, duration)
     else:
-        logging.info("Collection %s previously built", collection.tcia_api_collection_id)
+        rootlogger.info("Collection %s, %s, previously built", collection.tcia_api_collection_id, collection_index)
 
 
 def expand_version(sess, args, version):
@@ -457,12 +513,12 @@ def expand_version(sess, args, version):
     # If we are here, we are beginning work on this version.
     # GCS data for the collection being built is accumulated in the staging bucket,
     # args.staging bucket.
-    # Since we are starting, delete everything from the staging bucket.
 
-    empty_bucket(args.staging_bucket)
-
+    ## Since we are starting, delete everything from the staging bucket.
+    ## empty_bucket(args.staging_bucket)
     if version.idc_version_number == 2:
-        tcia_collection_ids = [collection['Collection'] for collection in get_TCIA_collections()]
+        # tcia_collection_ids = [collection['Collection'] for collection in get_TCIA_collections()]
+        tcia_collection_ids = get_collection_values_and_counts()
         idc_collection_ids = [collection.tcia_api_collection_id for collection in version.collections]
         new_collections = []
         for tcia_collection_id in tcia_collection_ids:
@@ -478,10 +534,10 @@ def expand_version(sess, args, version):
         sess.add_all(new_collections)
         version.expanded = True
         sess.commit()
-        logging.info("Expanded version %s", version.idc_version_number)
+        rootlogger.info("Expanded version %s", version.idc_version_number)
     else:
         # Need to add code to handle the normal case
-        logging.error("extend_version code needs extension")
+        errlogger.error("extend_version code needs extension")
 
 
 def build_version(sess, args, version):
@@ -491,17 +547,22 @@ def build_version(sess, args, version):
         begin = time.time()
         if not version.expanded:
             expand_version(sess, args, version)
-        logging.info("Version %s; %s collections", version.idc_version_number, len(version.collections))
+        rootlogger.info("Version %s; %s collections", version.idc_version_number, len(version.collections))
+        skips = open(args.skips).read().splitlines()
         for collection in version.collections:
-            build_collection(sess, args, version, collection)
+            if not collection.tcia_api_collection_id in skips:
+                collection_index = f'{version.collections.index(collection)+1} of {len(version.collections)}'
+                build_collection(sess, args, collection_index, version, collection)
         version.idc_version_timestamp = min([collection.collection_timestamp for collection in version.collections])
-        copy_staging_bucket_to_final_bucket(args,version)
-        version.done = True
-        sess.commit()
-        duration = str(timedelta(seconds=(time.time() - begin)))
-        logging.info("Built version %s in %s", version.idc_version_number, version)
+        # copy_staging_bucket_to_final_bucket(args,version)
+        if all([collection.done for collection in version.collections]):
+            version.done = True
+            duration = str(timedelta(seconds=(time.time() - begin)))
+            rootlogger.info("Built version %s in %s", version.idc_version_number, duration)
+        else:
+            rootlogger.info("Not all collections are done. Rerun.")
     else:
-        logging.info("    version %s previously built", version.idc_version_number)
+        rootlogger.info("    version %s previously built", version.idc_version_number)
 
 
 def prebuild(args):
@@ -535,21 +596,29 @@ def prebuild(args):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='{}/logs/build_{}.log'.format(os.environ['PWD'], datetime.now().isoformat()), filemode='w', level=logging.INFO)
+    rootlogger = logging.getLogger('root')
+    root_fh = logging.FileHandler('{}/logs/log.log'.format(os.environ['PWD']))
+    rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
+    rootlogger.addHandler(root_fh)
+    root_fh.setFormatter(rootformatter)
+    rootlogger.setLevel(INFO)
 
-    parser =argparse.ArgumentParser()
+    errlogger = logging.getLogger('root.err')
+    err_fh = logging.FileHandler('{}/logs/err.log'.format(os.environ['PWD']))
+    errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
+    errlogger.addHandler(err_fh)
+    err_fh.setFormatter(errformatter)
 
+    parser = argparse.ArgumentParser()
     parser.add_argument('--vnext', default=2, help='Next version to generate')
     parser.add_argument('--bucket', default='idc_dev', help='Bucket in which to save instances')
     parser.add_argument('--staging_bucket', default='idc_dev_staging', help='Copy instances here before forwarding to --bucket')
-    parser.add_argument('--prestaging_bucket', default='idc_dev_prestaging', help='Copy instances here before forwarding to --staging_bucket')
-    parser.add_argument('--num_processes', default=4, help="Number of concurrent processes")
-    parser.add_argument('--gch_dataset', default='idc_dev', help='GCH dataset')
-    parser.add_argument('--gch_dicom_store', default='idc_dev', help='GCH DICOM store')
+    parser.add_argument('--prestaging_bucket_prefix', default=f'idc_v2_', help='Copy instances here before forwarding to --staging_bucket')
+    parser.add_argument('--num_processes', default=8, help="Number of concurrent processes")
+    parser.add_argument('--skips', default='{}/idc/skips.txt'.format(os.environ['PWD']) )
     parser.add_argument('--bq_dataset', default='mvp_wave2', help='BQ dataset')
     parser.add_argument('--bq_aux_name', default='auxilliary_metadata', help='Auxilliary metadata table name')
     parser.add_argument('--project', default='idc-dev-etl')
-
     args = parser.parse_args()
 
     # Directory to which to download files from TCIA/NBIA

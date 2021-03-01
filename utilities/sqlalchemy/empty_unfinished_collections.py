@@ -28,9 +28,9 @@ def main(args):
         collections = version.collections
         for collection in collections:
             if not collection.done:
-                sess.delete(collection)
-        version.expanded = False
-        version.done = False
+                for patient in collection.patients:
+                    sess.delete(patient)
+                collection.expanded = False
         sess.commit()
 
 if __name__ == '__main__':
