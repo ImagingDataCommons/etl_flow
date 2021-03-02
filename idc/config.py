@@ -24,9 +24,6 @@ assert settings.configured
 
 logger = logging.getLogger(settings.LOGGER_NAME)
 
-from sqlalchemy.engine import create_engine
-from sqlalchemy import MetaData, Table
-
 
 # Google BigQuery config
 # gcp_credentials = environ.get('GCP_CREDENTIALS')

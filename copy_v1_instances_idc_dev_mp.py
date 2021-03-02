@@ -201,7 +201,7 @@ def copy_instances_alt(args):
                         # ************ End temporary code ********************
                         sess.commit()
                         duration = str(timedelta(seconds=(time() - begin)))
-                        rootlogger.info("Collection %s, %s, completed in %s", collection.tcia_api_collection_id,
+                        rootlogger.info("Collection %s, completed in %s", collection.tcia_api_collection_id,
                                         duration)
                         donelogger.info('%s', collection.tcia_api_collection_id)
 

@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+# Populate the DB with data for the next IDC version
+
 import sys
 import os
 import argparse
