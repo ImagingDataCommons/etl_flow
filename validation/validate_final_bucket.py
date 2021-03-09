@@ -35,10 +35,14 @@ from google.cloud import storage
 from idc.models import Version, Collection, Patient, Study, Series, Instance, sql_engine
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from utilities.tcia_helpers import  get_TCIA_collections, get_TCIA_patients_per_collection, get_TCIA_studies_per_patient, \
+from utilities.tcia_helpers import  get_collections, get_TCIA_patients_per_collection, get_TCIA_studies_per_patient, \
     get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_TCIA_instances_per_series, get_collection_values_and_counts
-from utilities.identify_third_party_series import get_data_collection_doi, get_analysis_collection_dois
+from utilities.get_collection_dois import get_data_collection_doi, get_analysis_collection_dois
 from google.api_core.exceptions import Conflict
+
+# Validate that the final bucket has a blob for each row in some specified version.
+# Note that the final bucket can have blobs that are not in some version.
+# This is a placeholder. Not yet working.
 
 PATIENT_TRIES=3
 

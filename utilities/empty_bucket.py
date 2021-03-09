@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+# Empty some specified GCS bucket
+
 from google.cloud import storage
 import argparse
 import sys

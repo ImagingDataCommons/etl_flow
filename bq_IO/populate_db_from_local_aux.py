@@ -14,6 +14,12 @@
 # limitations under the License.
 #
 
+# This routine populates PSQL version, collection, patient, study, series, and instance from
+# a PSQL auxilliary_metadata table. Presumbaly that PSQL aux table was downloaded from a BQ
+# aux table.
+# This routine is not currently being used.
+
+
 from idc.models import Version, Collection, Patient, Study, Series, Instance, Auxilliary_Metadata, \
     sql_engine
 from sqlalchemy import select

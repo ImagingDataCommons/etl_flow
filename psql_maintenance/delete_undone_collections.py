@@ -13,6 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# Delete every collection from PSQL that is not done.
+# Not normally used.
+
+
 from idc.models import Version, Collection, Patient, Study, Series, Instance, sql_engine
 from sqlalchemy import select
 from sqlalchemy.orm import Session

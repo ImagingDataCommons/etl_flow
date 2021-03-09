@@ -17,7 +17,6 @@
 
 loguru
 pyarrow
-pybigquery
 psycopg2-binary
 python-dotenv
 python_settings

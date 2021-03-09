@@ -19,7 +19,8 @@
 # Copy these to the idc_dev bucket as:
 #       idc_dev/<instance_uuid>.dcm
 # For this purpose we traverse Version.idc_version_number==1 hierarchy because it only has IDC V1 instances
-
+# This is intended as a one-time operation. Note that V1 collections are unchanged for V2, so this covers V2 for
+# those collections
 
 import sys
 import os

@@ -121,7 +121,6 @@ def get_data_collection_doi(collection):
     return uri
 
 
-
 def get_analysis_collection_dois(collection, patient= "", third_party="yes"):
     third_party_series = []
     internal_ids = get_internal_series_ids(collection, patient)
@@ -139,54 +138,11 @@ def get_analysis_collection_dois(collection, patient= "", third_party="yes"):
                 seriesUID = series["seriesUID"]
                 third_party_series.append({"SeriesInstanceUID": seriesUID, "SourceDOI": uri})
     return third_party_series
-#
-#
-# def id_3rd_party_series(args):
-#     if args.dones_file != "":
-#         try:
-#             with open(args.dones_file) as f:
-#                 all_third_party_series_ids = json.load(f)
-#         except:
-#             os.mknod(args.dones_file)
-#             all_third_party_series_ids = {}
-#     else:
-#         all_third_party_series_ids = {}
-#     dones = all_third_party_series_ids.keys()
-#     dois = []
-#     count = 0
-#
-#     # Get a table that maps from NBIA collection names to IDC collection names.
-#     collection_id_map = build_collections_id_table(args)
-#     for collection in collection_id_map:
-#         print(collection)
-#         if not collection["IDC_Webapp_CollectionID"] in dones:
-#             (third_party_series, collection_dois, collection_count) = get_3rd_party_series_ids(collection["NBIA_CollectionID"])
-#             all_third_party_series_ids[collection["IDC_Webapp_CollectionID"]] = third_party_series
-#             dois.extend(collection_dois)
-#             count += collection_count
-#             if args.dones_file != "":
-#                 with open(args.dones_file,'w') as f:
-#                     json.dump(all_third_party_series_ids,f)
-#
-#     return (all_third_party_series_ids, dois, count)
-#
-# if __name__ == '__main__':
-#     parser =argparse.ArgumentParser()
-#     # parser.add_argument('--dones_file', default='{}/lists/third_party_series.json'.format(os.environ['PWD']),
-#     #                     help="File in which to accumulate results")
-#     parser.add_argument('--dones_file', default='',
-#                         help="File in which to accumulate results")
-#     parser.add_argument('--collections', default='{}/../../lists/idc_mvp_wave_0.txt'.format(os.environ['PWD']),
-#                         help="File containing list of IDC collection IDs or 'all' for all collections")
-#     args = parser.parse_args()
-#     print("{}".format(args), file=sys.stdout)
-#     results, dois, count = id_3rd_party_series(args)
-#     print("All DOIs: {}".format(dois))
-#     print("Total series: {}".format(count))
+
 
 if __name__ == "__main__":
     # access_token = get_access_token()
-    result = get_data_collection_doi('TCGA-GBM')
+    result = get_data_collection_doi('PDMR-833975-119-R')
     result = get_analysis_collection_dois('TCGA-GBM')
     pass
     # yes=get_internal_collection_series_ids('TCGA-GBM',"yes")

@@ -28,8 +28,8 @@ import requests
 import backoff
 import logging
 
-# TCIA_URL = 'https://services.cancerimagingarchive.net/services/v4/TCIA/query'
-TCIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v1'
+TCIA_URL = 'https://services.cancerimagingarchive.net/services/v4/TCIA/query'
+NBIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v1'
 # TCIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v2'
 
 
@@ -42,15 +42,17 @@ def get_url(url):  # , headers):
         raise RuntimeError('In get_url(): status_code=%s; url: %s', result.status_code, url)
     return result
 
-def TCIA_API_request(endpoint, parameters=""):
-    url = f'{TCIA_URL}/{endpoint}?{parameters}'
+def TCIA_API_request(endpoint, parameters="", nbia_server=True):
+    server_url = NBIA_URL if nbia_server else TCIA_URL
+    url = f'{server_url}/{endpoint}?{parameters}'
     results = get_url(url)
     results.raise_for_status()
     return results.json()
 
 
-def TCIA_API_request_to_file(filename, endpoint, parameters=""):
-    url = f'{TCIA_URL}/{endpoint}?{parameters}'
+def TCIA_API_request_to_file(filename, endpoint, parameters="", nbia_server=True):
+    server_url = NBIA_URL if nbia_server else TCIA_URL
+    url = f'{server_url}/{endpoint}?{parameters}'
     begin = time.time()
     results = get_url(url)
     results.raise_for_status()
@@ -61,55 +63,74 @@ def TCIA_API_request_to_file(filename, endpoint, parameters=""):
     return 0
 
 
-def get_TCIA_collections():
-    # results = TCIA_API_request('getCollectionValues')
-    url = f'{TCIA_URL}/getCollectionValues'
+def get_collections(nbia_server=True):
+    server_url = NBIA_URL if nbia_server else TCIA_URL
+    url = f'{server_url}/getCollectionValues'
     results = get_url(url)
     collections = results.json()
     # collections = [collection['Collection'].replace(' ', '_') for collection in results.json()]
     return collections
 
 
-def get_TCIA_patients_per_collection(collection_id):
-
-    url = f'{TCIA_URL}/getPatient?Collection={collection_id}'
+def get_TCIA_patients_per_collection(collection_id, nbia_server=True):
+    server_url = NBIA_URL if nbia_server else TCIA_URL
+    url = f'{server_url}/getPatient?Collection={collection_id}'
     results = get_url(url)
     patients = results.json()
     return patients
 
 
-def get_TCIA_studies_per_patient(collection, patientID):
-    url = f'{TCIA_URL}/getPatientStudy?Collection={collection}&PatientID={patientID}'
+def get_TCIA_studies_per_patient(collection, patientID, nbia_server=True):
+    server_url = NBIA_URL if nbia_server else TCIA_URL
+    url = f'{server_url}/getPatientStudy?Collection={collection}&PatientID={patientID}'
     results = get_url(url)
     studies = results.json()
     return studies
 
 
-def get_TCIA_series_per_study(collection, patientID, studyInstanceUID):
-    url = f'{TCIA_URL}/getSeries?Collection ={collection}&PatientID={patientID}&StudyInstanceUID={studyInstanceUID}'
+def get_TCIA_studies_per_collection(collection, nbia_server=True):
+    server_url = NBIA_URL if nbia_server else TCIA_URL
+    url = f'{server_url}/getPatientStudy?Collection={collection}'
+    results = get_url(url)
+    studies = results.json()
+    return studies
+
+
+def get_TCIA_series_per_study(collection, patientID, studyInstanceUID, nbia_server=True):
+    server_url = NBIA_URL if nbia_server else TCIA_URL
+    url = f'{server_url}/getSeries?Collection ={collection}&PatientID={patientID}&StudyInstanceUID={studyInstanceUID}'
     results = get_url(url)
     series = results.json()
     return series
 
-def get_TCIA_instance_uids_per_series(seriesInstanceUID):
-    url = f'{TCIA_URL}/getSOPInstanceUIDs?SeriesInstanceUID={seriesInstanceUID}'
+def get_TCIA_instance_uids_per_series(seriesInstanceUID, nbia_server=True):
+    server_url = NBIA_URL if nbia_server else TCIA_URL
+    url = f'{server_url}/getSOPInstanceUIDs?SeriesInstanceUID={seriesInstanceUID}'
     results = get_url(url)
     instance_uids = results.json()
     return instance_uids
 
-def get_TCIA_instance(seriesInstanceUID, sopInstanceUID):
-    url = f'{TCIA_URL}/getSingleImage?SeriesInstanceUID={seriesInstanceUID}&SOPInstanceUID={sopInstanceUID}'
+def get_TCIA_instance(seriesInstanceUID, sopInstanceUID, nbia_server=True):
+    server_url = NBIA_URL if nbia_server else TCIA_URL
+    url = f'{server_url}/getSingleImage?SeriesInstanceUID={seriesInstanceUID}&SOPInstanceUID={sopInstanceUID}'
     results = get_url(url)
     instances = results.json()
     return instances
 
-def get_TCIA_series_per_collection(collection):
-    results = TCIA_API_request('getSeries')
-    SeriesInstanceUIDs = [SeriesInstanceUID['SeriesInstanceUID'] for SeriesInstanceUID in results]
-    return SeriesInstanceUIDs
+# def get_TCIA_series_per_collection(collection):
+#     results = TCIA_API_request('getSeries')
+#     SeriesInstanceUIDs = [SeriesInstanceUID['SeriesInstanceUID'] for SeriesInstanceUID in results]
+#     return SeriesInstanceUIDs
 
-def get_TCIA_series():
-    results = TCIA_API_request('getSeries')
+def get_TCIA_series_per_collection(collection, nbia_server=True):
+    server_url = NBIA_URL if nbia_server else TCIA_URL
+    url = f'{server_url}/getSeries?Collection={collection}'
+    results = get_url(url)
+    series = results.json()
+    return series
+
+def get_TCIA_series(nbia_server=True):
+    results = TCIA_API_request('getSeries', nbia_server)
     # We only need a few values
     # We create a revision date field, filled with today's date (UTC +0), until TCIA returns a revision date 
     # in the response to getSeries
@@ -122,10 +143,11 @@ def get_TCIA_series():
     
     return data
 
-def get_TCIA_instances_per_series(series_instance_uid):
+def get_TCIA_instances_per_series(series_instance_uid, nbia_server=True):
     # Get a zip of the instances in this series to a file and unzip it
     result = TCIA_API_request_to_file("{}/{}.zip".format("dicom", series_instance_uid),
-                "getImage", parameters="SeriesInstanceUID={}".format(series_instance_uid))
+                "getImage", parameters="SeriesInstanceUID={}".format(series_instance_uid),
+                nbia_server=nbia_server)
 
     # Now try to extract the instances to a directory DICOM/<series_instance_uid>
     try:
@@ -145,31 +167,33 @@ def create_jsonlines_from_list(original):
     return result
 
 
-def get_collection_size(collection):
+def get_collection_size(collection, nbia_server=True):
     size = 0
-    serieses=TCIA_API_request('getSeries', parameters="Collection={}".format(collection.replace(' ','_')))
+    serieses=TCIA_API_request('getSeries', parameters="Collection={}".format(collection.replace(' ','_')),
+                              nbia_server=nbia_server)
     print("{} series in {}".format(len(serieses), collection), flush=True)
     for aseries in serieses:
-        seriesSize=TCIA_API_request('getSeriesSize', parameters="SeriesInstanceUID={}".format(aseries['SeriesInstanceUID']))
+        seriesSize=TCIA_API_request('getSeriesSize', parameters="SeriesInstanceUID={}".format(aseries['SeriesInstanceUID']),
+                            nbia_server=nbia_server)
 #             print(seriesSize)
         size += int(float(seriesSize[0]['TotalSizeInBytes']))
         print("{} {}\r".format(aseries['SeriesInstanceUID'], size),end="")
     return size
 
 
-def get_collection_sizes_in_bytes():
+def get_collection_sizes_in_bytes(nbia_server=True):
     sizes = {}
-    collections = get_TCIA_collections()
+    collections = get_collections(nbia_server)
     collections.sort(reverse=True)
     for collection in collections:
         sizes[collection] = get_collection_size(collection)
     return sizes
 
 
-def get_collection_sizes():
-    collections = get_TCIA_collections()
+def get_collection_sizes(nbia_server=True):
+    collections = get_collections(nbia_server)
     counts = {collection:0 for collection in collections}
-    serieses=TCIA_API_request('getSeries')
+    serieses=TCIA_API_request('getSeries', nbia_server)
     for aseries in serieses:
         counts[aseries['Collection']] += int(aseries['ImageCount'])
     sorted_counts = [(k, v) for k, v in sorted(counts.items(), key=lambda item: item[1])]
@@ -235,8 +259,12 @@ def get_series_info(storage_client, project, bucket_name):
 if __name__ == "__main__":
     # patients = get_TCIA_patients_per_collection('ACRIN-FLT-Breast')
     # get_collection_descriptions()
+    # series = get_TCIA_series_per_collection('TCGA-BRCA')
+    print(time.asctime());studies = get_TCIA_studies_per_collection('BREAST-DIAGNOSIS', nbia_server=False);print(time.asctime())
+    # studies = get_TCIA_studies_per_patient(collection.tcia_api_collection_id, patient.submitter_case_id)
+    patients=get_TCIA_patients_per_collection('QIN Breast DCE-MRI')
     collection = get_collection_values_and_counts()
-    collections = get_TCIA_collections()
+    collections = get_collections()
     for collection in collections:
         patients = get_TCIA_patients_per_collection(collection['Collection'])
         for patient in patients:

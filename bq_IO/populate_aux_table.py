@@ -21,9 +21,10 @@ from sqlalchemy import create_engine, text
 
 # from sqlalchemy.ext.declarative import declarative_base
 
-# Duplicate an auxilliary metadata table in BQ
+# Duplicate a BQ auxilliary metadata table in psql
 # The BQ dataset containing the table to duplicate is specified in the .env file (maybe not the best place).
 # The bigquery_uri engine is configured to access that dataset.
+# Not currently using this routine
 
 def populate_auxilliary_metadata_from_BQ(bq_engine, sql_engine, table):
     # if replace:

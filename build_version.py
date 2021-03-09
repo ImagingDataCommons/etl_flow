@@ -37,9 +37,9 @@ from google.cloud import storage
 from idc.models import Version, Collection, Patient, Study, Series, Instance, sql_engine
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from utilities.tcia_helpers import  get_TCIA_collections, get_TCIA_patients_per_collection, get_TCIA_studies_per_patient, \
+from utilities.tcia_helpers import  get_collections, get_TCIA_patients_per_collection, get_TCIA_studies_per_patient, \
     get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_TCIA_instances_per_series, get_collection_values_and_counts
-from utilities.identify_third_party_series import get_data_collection_doi, get_analysis_collection_dois
+from utilities.get_collection_dois import get_data_collection_doi, get_analysis_collection_dois
 from google.api_core.exceptions import Conflict
 
 PATIENT_TRIES=3
@@ -380,10 +380,17 @@ def expand_collection(sess, args, collection):
     rootlogger.info("Emptying prestaging bucket completed in %s", duration)
 
     patients = get_TCIA_patients_per_collection(collection.tcia_api_collection_id)
+    patient_ids = [patient['PatientId'] for patient in patients]
+    if len(patient_ids) != len(set(patient_ids)):
+        errlogger.error("\tp%s: Duplicate patient in expansion of collection %s", args.id,
+                        collection.tcia_api_collection_id)
+        raise RuntimeError("p%s: Duplicate patient in expansion of collection %s", args.id,
+                        collection.tcia_api_collection_id)
+    # If the collection is new, then all the patients are new
     if collection.is_new:
-        # If the collection is new, then all the patients are new
-        if collection.is_new:
-            for patient in patients:
+        our_patient_ids = [patient.submitter_case_id for patient in collection.patients]
+        for patient in patients:
+            if not patient['PatientId'] in our_patient_ids:
                 collection.patients.append(Patient(collection_id = collection.id,
                                               idc_version_number = collection.idc_version_number,
                                               patient_timestamp = datetime(1970,1,1,0,0,0),
@@ -433,11 +440,7 @@ def build_collection(sess, args, collection_index, version, collection):
             expand_collection(sess, args, collection)
         rootlogger.info("Collection %s, %s, %s patients", collection.tcia_api_collection_id, collection_index, len(collection.patients))
         # Get the lists of data and analyis series in this patient
-        if not collection.tcia_api_collection_id == 'PDMR-833975-119-R':
-            data_collection_doi = get_data_collection_doi(collection.tcia_api_collection_id)
-        else:
-            # Temporary fix.
-            data_collection_doi = '10.7937/TCIA.0ECK-C338'
+        data_collection_doi = get_data_collection_doi(collection.tcia_api_collection_id)
         analysis_collection_dois = get_analysis_collection_dois(collection.tcia_api_collection_id)
 
         if args.num_processes==0:
@@ -478,6 +481,10 @@ def build_collection(sess, args, collection_index, version, collection):
                 # Tell child processes to stop
                 for process in processes:
                     task_queue.put('STOP')
+
+                # Wait for them to stop
+                for process in processes:
+                    process.join()
 
                 collection.collection_timestamp = min([patient.patient_timestamp for patient in collection.patients])
                 # copy_prestaging_to_staging_bucket(args, collection)
@@ -557,8 +564,10 @@ def build_version(sess, args, version):
                 build_collection(sess, args, collection_index, version, collection)
         version.idc_version_timestamp = min([collection.collection_timestamp for collection in version.collections])
         # copy_staging_bucket_to_final_bucket(args,version)
-        if all([collection.done for collection in version.collections]):
+        if all([collection.done for collection in version.collections if not collection.tcia_api_collection_id in skips]):
+
             version.done = True
+            sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
             rootlogger.info("Built version %s in %s", version.idc_version_number, duration)
         else:

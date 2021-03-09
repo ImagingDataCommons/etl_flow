@@ -27,8 +27,8 @@ from sqlalchemy.orm import Session
 
 # from sqlalchemy.ext.declarative import declarative_base
 
-# Duplicate version, collection, patient, study, series and instance metadata tables in BQ. These are
-# essentially a normalization of an auxilliary_metadata table.
+# Duplicate BQ version, collection, patient, study, series and instance metadata tables in psql. These are
+# essentially a normalization of an auxilliary_metadata table
 # The BQ dataset containing the tables to be duplicated is specified in the .env file (maybe not the best place).
 # The bigquery_uri engine is configured to access that dataset.
 

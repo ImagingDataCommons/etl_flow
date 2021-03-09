@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# Delete all the patients belonging to a collection from PSQL.
+# The collection is not deleted but is marked as unexpanded and undone.
+
 from idc.models import Version, Collection, Patient, Study, Series, Instance, sql_engine
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -37,14 +41,15 @@ def main(args):
                     sess.delete(patient)
                     sess.commit()
                     index += 1
-                sess.delete(collection)
+                collection.expanded=False
+                collection.done=False
                 sess.commit()
                 break
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
     parser.add_argument('--version', default=2)
-    parser.add_argument('--collection', default='4D-Lung', help='Delete a collection from PSQL DB')
+    parser.add_argument('--collection', default='HNSCC', help='Delete a collection from PSQL DB')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
 
