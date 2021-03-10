@@ -322,9 +322,9 @@ if __name__ == '__main__':
     parser.add_argument('--vnext', default=2, help='Next version to generate')
     parser.add_argument('--prestaging_bucket_prefix', default=f'idc_v2_', help='Copy instances here before forwarding to --staging_bucket')
     parser.add_argument('--num_processes', default=8, help="Number of concurrent processes")
-    parser.add_argument('--skips', default='./logs/gcs_staging_skips')
-    parser.add_argument('--dones', default='./logs/gcs_staging_done_collections.txt')
-    parser.add_argument('--validations', default='{}/logs/gcsvalidationslog.log'.format(os.environ['PWD']))
+    parser.add_argument('--skips', default='./logs/gcs_staging_skips', help="Collections to be skipped")
+    parser.add_argument('--dones', default='./logs/gcs_staging_done_collections.txt', help="Completed collections")
+    parser.add_argument('--validations', default='{}/logs/gcsvalidationslog.log'.format(os.environ['PWD']), help="Completed patients, studies, series" )
     parser.add_argument('--project', default='idc-dev-etl')
     args = parser.parse_args()
 

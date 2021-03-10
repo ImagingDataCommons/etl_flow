@@ -21,6 +21,9 @@ import os
 import json
 from subprocess import run, PIPE
 import requests
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # from BQ.collection_ids_file.gen_collection_id_table import build_collections_id_table
@@ -123,7 +126,12 @@ def get_data_collection_doi(collection):
 
 def get_analysis_collection_dois(collection, patient= "", third_party="yes"):
     third_party_series = []
-    internal_ids = get_internal_series_ids(collection, patient)
+    try:
+        internal_ids = get_internal_series_ids(collection, patient)
+    except Exception as exc:
+        print(f'Exception in get_analysis_collection_dois {exc}')
+        logger.error('Exception in get_analysis_collection_dois %s', exc)
+        raise exc
     for subject in internal_ids["resultSet"]:
         seriesIDs = []
         for study in subject["studyIdentifiers"]:
@@ -142,8 +150,8 @@ def get_analysis_collection_dois(collection, patient= "", third_party="yes"):
 
 if __name__ == "__main__":
     # access_token = get_access_token()
-    result = get_data_collection_doi('PDMR-833975-119-R')
-    result = get_analysis_collection_dois('TCGA-GBM')
+    result = get_data_collection_doi('NSCLC-Radiomics')
+    result = get_analysis_collection_dois('QIN-PROSTATE-Repeatability')
     pass
     # yes=get_internal_collection_series_ids('TCGA-GBM',"yes")
     # result = get_internal_patient_series_ids('TCGA-GBM', 'TCGA-76-6664', "yes")
