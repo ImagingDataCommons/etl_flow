@@ -230,7 +230,11 @@ def build_instances(sess, args, version, collection, patient, study, series):
             instance.instance_timestamp = datetime.utcnow()
     rootlogger.debug("%s: Renamed all files for series %s", args.id, series.series_instance_uid)
 
+
     copy_to_gcs(args, collection, patient, study, series)
+
+    for instance in series.instances:
+        instance.done = True
 
 
 def expand_series(sess, series):
