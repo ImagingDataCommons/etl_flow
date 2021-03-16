@@ -255,14 +255,26 @@ def get_series_info(storage_client, project, bucket_name):
     series_info = {blob.name.rsplit('.dcm',1)[0]: {"md5_hash":blob.md5_hash, "size":blob.size} for blob in blobs}
     return series_info
 
+def get_updated_series(date):
+    access_token = get_access_token()['access_token']
+    headers = dict(
+        Authorization = f'Bearer {access_token}'
+    )
+    url = f'https://services.cancerimagingarchive.net/nbia-api/services/v2/getUpdatedSeries?fromDate={date}'
+    result = requests.get(url, headers=headers)
+    series = result.json()
+    return series
+
+
 
 if __name__ == "__main__":
     # patients = get_TCIA_patients_per_collection('ACRIN-FLT-Breast')
     # get_collection_descriptions()
     # series = get_TCIA_series_per_collection('TCGA-BRCA')
-    print(time.asctime());studies = get_TCIA_studies_per_collection('BREAST-DIAGNOSIS', nbia_server=False);print(time.asctime())
+    # series = get_updated_series('06/06/2020')
+    # print(time.asctime());studies = get_TCIA_studies_per_collection('BREAST-DIAGNOSIS', nbia_server=False);print(time.asctime())
     # studies = get_TCIA_studies_per_patient(collection.tcia_api_collection_id, patient.submitter_case_id)
-    patients=get_TCIA_patients_per_collection('QIN Breast DCE-MRI')
+    patients=get_TCIA_patients_per_collection('CBIS-DDSM')
     collection = get_collection_values_and_counts()
     collections = get_collections()
     for collection in collections:
