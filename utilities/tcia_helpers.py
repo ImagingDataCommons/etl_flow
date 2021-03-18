@@ -262,9 +262,11 @@ def get_updated_series(date):
     )
     url = f'https://services.cancerimagingarchive.net/nbia-api/services/v2/getUpdatedSeries?fromDate={date}'
     result = requests.get(url, headers=headers)
-    series = result.json()
+    if result.status_code == 500 and result.text == 'No data found.':
+        series = []
+    else:
+        series = result.json()
     return series
-
 
 
 if __name__ == "__main__":
@@ -274,6 +276,7 @@ if __name__ == "__main__":
     # series = get_updated_series('06/06/2020')
     # print(time.asctime());studies = get_TCIA_studies_per_collection('BREAST-DIAGNOSIS', nbia_server=False);print(time.asctime())
     # studies = get_TCIA_studies_per_patient(collection.tcia_api_collection_id, patient.submitter_case_id)
+    series = get_updated_series('20/02/2021')
     patients=get_TCIA_patients_per_collection('CBIS-DDSM')
 
     collection = get_collection_values_and_counts()
