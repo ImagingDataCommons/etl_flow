@@ -382,8 +382,8 @@ def upload_to_bq():
             # upload_collection(cur, args)
             # upload_patient(cur, args)
             # upload_study(cur, args)
-            # upload_series(cur, args)
-            upload_instance(cur, args)
+            upload_series(cur, args)
+            # upload_instance(cur, args)
             pass
 
 if __name__ == '__main__':
