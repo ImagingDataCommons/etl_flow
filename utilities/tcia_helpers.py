@@ -275,6 +275,7 @@ if __name__ == "__main__":
     # print(time.asctime());studies = get_TCIA_studies_per_collection('BREAST-DIAGNOSIS', nbia_server=False);print(time.asctime())
     # studies = get_TCIA_studies_per_patient(collection.tcia_api_collection_id, patient.submitter_case_id)
     patients=get_TCIA_patients_per_collection('CBIS-DDSM')
+
     collection = get_collection_values_and_counts()
     collections = get_collections()
     for collection in collections:

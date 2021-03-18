@@ -182,7 +182,7 @@ def query_BQ(client, dst_dataset, dst_table, sql, write_disposition='WRITE_APPEN
     return result
 
 
-# BQ to BQ copy. src_table and dst table are fully qualifies `project.dataset.table`
+# BQ to BQ copy. src_table and dst table are fully qualified `project.dataset.table`
 def copy_BQ_table(client, src_table, dst_table, create_disposition='CREATE_IF_NEEDED',
                   write_disposition='WRITE_APPEND'):
     config = bigquery.CopyJobConfig()
@@ -215,3 +215,9 @@ def export_BQ_to_GCS(client, src_dataset, src_table, dst_uri, field_delimiter="\
         job_config=job_config)
     results = extract_job.result()  # Waits for job to complete
     return results
+
+if __name__ == "__main__":
+    client = bigquery.Client(project="idc-dev-etl")
+    src_table = "idc-dev-etl.idc_tcia_mvp_wave1.idc_tcia_dicom_metadata"
+    dst_table = "idc-dev-etl.idc_v1.dicom_metadata"
+    result = copy_BQ_table(client, src_table, dst_table)
