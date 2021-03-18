@@ -445,7 +445,8 @@ def build_collection(sess, args, collection_index, version, collection):
         rootlogger.info("Collection %s, %s, %s patients", collection.tcia_api_collection_id, collection_index, len(collection.patients))
         # Get the lists of data and analyis series in this patient
         data_collection_doi = get_data_collection_doi(collection.tcia_api_collection_id)
-        analysis_collection_dois = get_analysis_collection_dois(collection.tcia_api_collection_id)
+        pre_analysis_collection_dois = get_analysis_collection_dois(collection.tcia_api_collection_id)
+        analysis_collection_dois = {x['SeriesInstanceUID']: x['SourceDOI'] for x in pre_analysis_collection_dois}
 
         if args.num_processes==0:
             # for series in sorted_seriess:
