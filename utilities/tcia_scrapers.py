@@ -28,7 +28,10 @@ def get_url(url):  # , headers):
 
 # Get the collection ID that TCIA/NBIA APIs accept
 def get_collection_id(doi):
-    URL = f'https://doi.org/{doi}'
+    if doi.startswith('http'):
+        URL = doi
+    else:
+        URL = f'https://doi.org/{doi}'
     page = get_url(URL)
 
     soup = BeautifulSoup(page.content, "html.parser")
@@ -37,7 +40,7 @@ def get_collection_id(doi):
     collection_id = ""
     for link in links:
         if 'CollectionCriteria' in link.get('href'):
-            collection_id = link.get('href').rsplit('CollectionCriteria=')[-1]
+            collection_id = link.get('href').rsplit('CollectionCriteria=')[-1].replace('%20',' ').split('&')[0]
             break
     return collection_id
 
@@ -112,18 +115,23 @@ def scrape_tcia_data_collections_page():
         if len(trow):
             # Strip off the http server prefix
             try:
-                trow['DOI'] = trow['DOI'].split('doi.org/')[1]
-                # collection = trow.pop('Collection')
-                trow.pop('Collection')
-                collection = get_collection_id(trow['DOI'])
-                table[collection] = trow
+                trow['DOI'] = trow['DOI'].split('doi.org/doi:')[1].strip()
             except:
-                # Some collections do not have doi.org DOIs
-                collection = trow.pop('Collection')
-                table[collection] = trow
+                try:
+                    trow['DOI'] = trow['DOI'].split('doi.org/')[1].strip()
+                except:
+                    # Probably an http: URL not a DOI.
+                    trow['DOI'] = trow['DOI'].replace('http', 'https').strip()
+                    pass
+            collection = get_collection_id(trow['DOI'])
+            if collection == "":
+                collection = trow['Collection']
+            trow.pop('Collection')
+            table[collection] = trow
 
     return table
 
 
 if __name__ == "__main__":
-    s = get_collection_id('10.7937/Q1EE-J082')
+    m =scrape_tcia_data_collections_page()
+    s = get_collection_id('https://wiki.cancerimagingarchive.net/x/N4NyAQ')
