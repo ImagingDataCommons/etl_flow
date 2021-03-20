@@ -108,7 +108,7 @@ def get_data_collection_doi(collection):
 
     dois = []
     count = 0
-    # This will get us a data for a single study
+    # This will get us doi's for a one or all patients in a collection
     internal_ids = get_internal_series_ids(collection, patient="", third_party="no", size=1)
     subject = internal_ids["resultSet"][0]
     study = subject["studyIdentifiers"][0]
