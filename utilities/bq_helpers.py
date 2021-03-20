@@ -177,6 +177,7 @@ def query_BQ(client, dst_dataset, dst_table, sql, write_disposition='WRITE_APPEN
     except:
         print("Error loading table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
               file=sys.stdout, flush=True)
+        raise
 
     result = job.result()
     return result
