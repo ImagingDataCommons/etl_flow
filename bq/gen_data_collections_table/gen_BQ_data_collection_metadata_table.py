@@ -24,7 +24,7 @@ from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json, query_BQ
 from bq.gen_data_collections_table.schema import data_collections_metadata_schema
 from utilities.tcia_helpers import get_collection_descriptions
-from utilities.tcia_scrapers import scrape_tcia_data_collections_page, get_collection_id
+from utilities.tcia_scrapers import scrape_tcia_data_collections_page
 
 def get_collections_in_version(client, args):
     query = f"""
@@ -47,13 +47,24 @@ def build_metadata(args, collection_ids):
     collection_metadata = scrape_tcia_data_collections_page()
 
     rows = []
+    found_ids = []
+    lowered_collection_ids = {collection_id.lower():collection_id for collection_id in collection_ids}
     for collection_id, collection_data in collection_metadata.items():
-        if collection_id in collection_ids:
-            collection_data['tcia_api_collection_id'] = collection_id
+        if collection_id.lower() in lowered_collection_ids:
+            found_ids.append(lowered_collection_ids[collection_id.lower()])
+            collection_data['tcia_api_collection_id'] = lowered_collection_ids[collection_id.lower()]
             collection_data['idc_webapp_collection_id'] = collection_id.lower().replace(' ','_').replace('-','_')
             if collection_id in collection_descriptions:
                 collection_data['Description'] = collection_descriptions[collection_id]
             rows.append(json.dumps(collection_data))
+        else:
+            print(f'{collection_id} not in IDC collections')
+
+    # Make sure we found metadata for all out collections
+    for collection in collection_ids:
+        if not collection in found_ids:
+            print(f'****No metadata for {collection}')
+
     metadata = '\n'.join(rows)
     return metadata
 
