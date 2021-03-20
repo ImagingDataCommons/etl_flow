@@ -41,8 +41,8 @@ from utilities.tcia_scrapers import scrape_tcia_analysis_collections_page
 #                     DOIs.append(DOI)
 #     return DOIs
 
-# Return a list of the source_dois of analysis results wikis in some version
-def get_analysis_results_dois(client, args):
+# Return a list of the source_dois in IDC collections
+def get_all_idc_dois(client, args):
     # Get all the source DOIs in this version
     query = f"""
         SELECT distinct se.source_doi as source_doi
@@ -61,15 +61,16 @@ def get_analysis_results_dois(client, args):
     result = client.query(query).result()
     all_source_dois = [series['source_doi'] for series in result]
 
-    # Get the source DOIs of the original data collections
-    query = f"""
-        SELECT DOI
-        FROM `{args.project}.{args.bqdataset_name}.{args.bq_original_collections_metadata_table}`
-        """
-    result = client.query(query).result()
-    original_source_dois = [collection['DOI'] for collection in result]
-    analysis_results_dois = set(all_source_dois) - set(original_source_dois)
-    return analysis_results_dois
+    # # Get the source DOIs of the original data collections
+    # query = f"""
+    #     SELECT DOI
+    #     FROM `{args.project}.{args.bqdataset_name}.{args.bq_original_collections_metadata_table}`
+    #     """
+    # result = client.query(query).result()
+    # original_source_dois = [collection['DOI'] for collection in result]
+    # analysis_results_dois = set(all_source_dois) - set(original_source_dois)
+    # return analysis_results_dois
+    return all_source_dois
 
 def build_metadata(args, source_dois):
     # Scrape the TCIA Data Collections page for collection metadata
@@ -91,7 +92,7 @@ def build_metadata(args, source_dois):
 
 def gen_collections_table(args):
     BQ_client = bigquery.Client()
-    source_dois = get_analysis_results_dois(BQ_client, args)
+    source_dois = get_all_idc_dois(BQ_client, args)
 
     metadata = build_metadata(args, source_dois)
     job = load_BQ_from_json(BQ_client, args.project, args.bqdataset_name, args.bqtable_name, metadata, analysis_results_metadata_schema)
