@@ -30,7 +30,6 @@ import logging
 
 TCIA_URL = 'https://services.cancerimagingarchive.net/services/v4/TCIA/query'
 NBIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v1'
-# TCIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v2'
 
 
 # @backoff.on_exception(backoff.expo,
