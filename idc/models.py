@@ -34,6 +34,7 @@ class Version(Base):
     done = Column(Boolean, default=True, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
+    version_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of this version")
 
     collections = relationship("Collection", back_populates='version', order_by="Collection.id", cascade="all, delete")
 
@@ -48,6 +49,7 @@ class Collection(Base):
     done = Column(Boolean, default=True, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
+    collection_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of this collection")
 
     version = relationship("Version", back_populates="collections")
     patients = relationship("Patient", back_populates="collection", order_by="Patient.id", cascade="all, delete")
@@ -64,6 +66,7 @@ class Patient(Base):
     done = Column(Boolean, default=True, comment="True if this object has been processed")
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
+    patient_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of this patient")
 
     collection = relationship("Collection", back_populates="patients")
     studies = relationship("Study", back_populates="patient", order_by="Study.id", cascade="all, delete")
@@ -81,6 +84,7 @@ class Study(Base):
     done = Column(Boolean, default=True, comment="True if this object has been processed")
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
+    study_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of this study")
 
     patient = relationship("Patient", back_populates="studies")
     seriess = relationship("Series", back_populates="study", order_by="Series.id", cascade="all, delete")
@@ -99,6 +103,7 @@ class Series(Base):
     done = Column(Boolean, default=True, comment="True if this object has been processed")
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
+    series_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of this series")
 
     study = relationship("Study", back_populates="seriess")
     instances = relationship("Instance", back_populates="series", order_by="Instance.id", cascade="all, delete")
