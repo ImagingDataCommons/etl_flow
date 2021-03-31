@@ -32,7 +32,6 @@ from googleapiclient import discovery
 _BASE_URL = "https://healthcare.googleapis.com/v1"
 
 
-# [START healthcare_get_client]
 def get_gch_client():
     """Returns an authorized API client by discovering the Healthcare API and
     creating a service object using the service account credentials in the
@@ -41,7 +40,7 @@ def get_gch_client():
     service_name = "healthcare"
 
     return discovery.build(service_name, api_version)
-# [END healthcare_get_client]
+
 
 
 def get_dataset_operation(
@@ -153,14 +152,14 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
 
     rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/dicomstore_import_log.log'.format(os.environ['PWD']))
+    root_fh = logging.FileHandler('{}/logs/dicomstore_import_log_2020_3_25.log'.format(os.environ['PWD']))
     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
     rootlogger.addHandler(root_fh)
     root_fh.setFormatter(rootformatter)
     rootlogger.setLevel(INFO)
 
     errlogger = logging.getLogger('root.err')
-    err_fh = logging.FileHandler('{}/logs/dicomstore_import_err.log'.format(os.environ['PWD']))
+    err_fh = logging.FileHandler('{}/logs/dicomstore_import_err_2020_3_25.log'.format(os.environ['PWD']))
     errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
