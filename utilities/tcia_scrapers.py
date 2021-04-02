@@ -98,7 +98,7 @@ def scrape_tcia_data_collections_page():
     rows = table.find_all("tr")
 
     table = {}
-    header = "Collection,DOI,CancerType,Location,Species,Subjects,ImageTypes,SupportingData,Access,Status,Updated".split(
+    header = "tcia_wiki_collection_id,DOI,CancerType,Location,Species,Subjects,ImageTypes,SupportingData,Access,Status,Updated".split(
         ",")
 
     for row in rows:
@@ -125,8 +125,8 @@ def scrape_tcia_data_collections_page():
                     pass
             collection = get_collection_id(trow['DOI'])
             if collection == "":
-                collection = trow['Collection']
-            trow.pop('Collection')
+                collection = trow['tcia_wiki_collection_id']
+            # trow.pop('Collection')
             table[collection] = trow
 
     return table

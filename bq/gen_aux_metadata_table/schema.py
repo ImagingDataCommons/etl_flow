@@ -22,28 +22,33 @@ auxilliary_metadata_schema = """
     SELECT
       v.idc_version_number AS idc_version_number,
       v.idc_version_timestamp AS idc_version_timestamp,
+      v.version_hash AS version_hash,
       c.tcia_api_collection_id AS tcia_api_collection_id,
       REPLACE(REPLACE(LOWER(c.tcia_api_collection_id),'-','_'), ' ','_') AS idc_webapp_collection_id,
       se.source_doi AS source_doi,
       c.collection_timestamp AS collection_timestamp,
+      c.collection_hash AS collection_hash,
       p.submitter_case_id AS submitter_case_id,
       p.crdc_case_id AS crdc_case_id,
       p.patient_timestamp AS patient_timestamp,
+      p.patient_hash AS patient_hash,
       st.study_instance_uid AS StudyInstanceUID,
       st.study_uuid AS study_uuid,
       st.study_instances AS study_instances,
       st.study_timestamp AS study_timestamp,
+      st.study_hash AS study_hash,
       se.series_instance_uid AS SeriesInstanceUID,
       se.series_uuid AS series_uuid,
       se.series_instances AS series_instances,
       se.series_timestamp AS series_timestamp,
+      se.series_hash AS series_hash,
       i.sop_instance_uid AS SOPInstanceUID,
       i.instance_uuid AS instance_uuid,
       CONCAT(i.gcs_url,'.dcm') AS gcs_url,
       SPLIT(i.gcs_url,'/')[OFFSET(2)] AS gcs_bucket,
-      i.instance_hash AS md5_hash,
       i.instance_size AS instance_size,
-      i.instance_timestamp AS instance_timestamp
+      i.instance_timestamp AS instance_timestamp,
+      i.instance_hash AS instance_hash
     FROM
       `{project}.{dataset}.version` AS v
     JOIN
