@@ -97,7 +97,7 @@ def load_BQ_from_json(client, project, dataset, table, json_rows, aschema, write
 
     job_config = bigquery.LoadJobConfig()
     job_config.source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
-    job_config.write_disposition
+    job_config.write_disposition = write_disposition
     job_config.schema = aschema
 
     # Convert to
