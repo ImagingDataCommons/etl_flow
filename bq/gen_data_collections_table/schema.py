@@ -19,6 +19,7 @@ from google.cloud import bigquery
 
 data_collections_metadata_schema = [
     bigquery.SchemaField('tcia_api_collection_id', 'STRING', mode='NULLABLE'),
+    bigquery.SchemaField('tcia_wiki_collection_id', 'STRING', mode='NULLABLE'),
     bigquery.SchemaField('idc_webapp_collection_id', 'STRING', mode='NULLABLE'),
     bigquery.SchemaField('Status', 'STRING', mode='NULLABLE'),
     bigquery.SchemaField('Updated', 'DATE', mode='NULLABLE'),

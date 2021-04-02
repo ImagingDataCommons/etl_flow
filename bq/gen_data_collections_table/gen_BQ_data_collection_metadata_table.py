@@ -56,6 +56,8 @@ def build_metadata(args, collection_ids):
             collection_data['idc_webapp_collection_id'] = collection_id.lower().replace(' ','_').replace('-','_')
             if collection_id in collection_descriptions:
                 collection_data['Description'] = collection_descriptions[collection_id]
+            elif collection_data['tcia_api_collection_id'] in collection_descriptions:
+                collection_data['Description'] = collection_descriptions[collection_data['tcia_api_collection_id']]
             rows.append(json.dumps(collection_data))
         else:
             print(f'{collection_id} not in IDC collections')
@@ -73,7 +75,8 @@ def gen_collections_table(args):
     collection_ids = get_collections_in_version(BQ_client, args)
 
     metadata = build_metadata(args, collection_ids)
-    job = load_BQ_from_json(BQ_client, args.project, args.bqdataset_name, args.bqtable_name, metadata, data_collections_metadata_schema)
+    job = load_BQ_from_json(BQ_client, args.project, args.bqdataset_name, args.bqtable_name, metadata,
+                            data_collections_metadata_schema, write_disposition='WRITE_TRUNCATE')
     while not job.state == 'DONE':
         print('Status: {}'.format(job.state))
         time.sleep(args.period * 60)
