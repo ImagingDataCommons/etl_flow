@@ -61,7 +61,7 @@ class Patient(Base):
     idc_version_number = Column(Integer, nullable=False, comment="Containing object")
     patient_timestamp = Column(DateTime, nullable=True, comment="Time when this object was last updated by TCIA/NBIA")
     submitter_case_id = Column(String, nullable=False, comment="Submitter's patient ID")
-    crdc_case_id = Column(String, nullable=True, comment="CRDC patient ID")
+    idc_case_id = Column(String, nullable=True, comment="IDC assigned patient ID")
     revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=True, comment="True if this object has been processed")
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
