@@ -92,12 +92,12 @@ def delete_BQ_Table(client, project, dataset, table):
     client.delete_table(table_id, not_found_ok=True)  # Make an API request.
 
 
-def load_BQ_from_json(client, project, dataset, table, json_rows, aschema):
+def load_BQ_from_json(client, project, dataset, table, json_rows, aschema, write_disposition='WRITE_APPEND'):
     table_id = "{}.{}.{}".format(project, dataset, table)
 
     job_config = bigquery.LoadJobConfig()
     job_config.source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
-    job_config.write_disposition = 'WRITE_APPEND'
+    job_config.write_disposition = write_disposition
     job_config.schema = aschema
 
     # Convert to
@@ -118,12 +118,12 @@ def load_BQ_from_json(client, project, dataset, table, json_rows, aschema):
 
 
 # csv_rows is newline delimited csv data
-def load_BQ_from_CSV(client, dataset, table, csv_rows, aschema):
+def load_BQ_from_CSV(client, dataset, table, csv_rows, aschema, write_disposition='WRITE_APPEND'):
     table_id = "{}.{}.{}".format(client.project, dataset, table)
 
     job_config = bigquery.LoadJobConfig()
     job_config.source_format = bigquery.SourceFormat.CSV
-    job_config.write_disposition = 'WRITE_APPEND'
+    job_config.write_disposition = write_disposition
     job_config.schema = aschema
 
     # Convert to

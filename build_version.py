@@ -57,6 +57,15 @@ def md5_hasher(file_path):
     return md5.hexdigest()
 
 
+# Hash a sorted list of hashes
+def get_merkle_hash(hashes):
+    md5 = hashlib.md5()
+    hashes.sort()
+    for hash in hashes:
+        md5.update(hash)
+    return md5.hexdigest
+
+
 def rollback_copy_to_prestaging_bucket(args, series):
     client = storage.Client()
     bucket = client.bucket(args.prestaging_bucket)
@@ -272,6 +281,7 @@ def build_series(sess, args, series_index, version, collection, patient, study, 
         build_instances(sess, args, version, collection, patient, study, series)
         series.series_instances = len(series.instances)
         series.series_timestamp = min(instance.instance_timestamp for instance in series.instances)
+        series.series_hash = get_merkle_hash([instance.instance_hash for instance in series.instances])
         series.done = True
         sess.commit()
         duration = str(timedelta(seconds=(time.time() - begin)))
@@ -317,6 +327,7 @@ def build_study(sess, args, study_index, version, collection, patient, study, da
             build_series(sess, args, series_index, version, collection, patient, study, series, data_collection_doi, analysis_collection_dois)
         study.study_instances = sum([series.series_instances for series in study.seriess])
         study.study_timestamp = min([series.series_timestamp for series in study.seriess])
+        study.study_hash = get_merkle_hash([series.series_hash for series in study.seriess])
         study.done = True
         sess.commit()
         duration = str(timedelta(seconds=(time.time() - begin)))
@@ -358,6 +369,7 @@ def build_patient(sess, args, patient_index, data_collection_doi, analysis_colle
             study_index = f'{patient.studies.index(study) + 1} of {len(patient.studies)}'
             build_study(sess, args, study_index, version, collection, patient, study, data_collection_doi, analysis_collection_dois)
         patient.patient_timestamp = min([study.study_timestamp for study in patient.studies])
+        patient.patient_hash = get_merkle_hash([study.study_hash for study in patient.studies])
 
         patient.done = True
         sess.commit()
@@ -399,7 +411,7 @@ def expand_collection(sess, args, collection):
                                               idc_version_number = collection.idc_version_number,
                                               patient_timestamp = datetime(1970,1,1,0,0,0),
                                               submitter_case_id = patient['PatientId'],
-                                              crdc_case_id = "",
+                                              crdc_case_id = uuid4().hex,
                                               revised = True,
                                               done = False,
                                               is_new = True,
@@ -454,6 +466,19 @@ def build_collection(sess, args, collection_index, version, collection):
                 args.id = 0
                 patient_index = f'{collection.patients.index(patient)+1} of {len(collection.patients)}'
                 build_patient(sess, args, patient_index, data_collection_doi, analysis_collection_dois, version, collection, patient)
+                collection.collection_timestamp = min([patient.patient_timestamp for patient in collection.patients])
+                collection.collection_hash = get_merkle_hash([patient.patient_hash for patient in collection.patients])
+                # copy_prestaging_to_staging_bucket(args, collection)
+                collection.done = True
+                # ************ Temporary code during development********************
+                # duration = str(timedelta(seconds=(time.time() - begin)))
+                # rootlogger.info("Collection %s, %s, completed in %s", collection.tcia_api_collection_id, collection_index, duration)
+                # raise
+                # ************ End temporary code ********************
+                sess.commit()
+                duration = str(timedelta(seconds=(time.time() - begin)))
+                rootlogger.info("Collection %s, %s, completed in %s", collection.tcia_api_collection_id, collection_index,
+                                duration)
         else:
             processes = []
             # Create queues
@@ -492,6 +517,7 @@ def build_collection(sess, args, collection_index, version, collection):
                     process.join()
 
                 collection.collection_timestamp = min([patient.patient_timestamp for patient in collection.patients])
+                collection.collection_hash = get_merkle_hash([patient.patient_hash for patient in collection.patients])
                 # copy_prestaging_to_staging_bucket(args, collection)
                 collection.done = True
                 # ************ Temporary code during development********************
@@ -568,6 +594,7 @@ def build_version(sess, args, version):
                 collection_index = f'{version.collections.index(collection)+1} of {len(version.collections)}'
                 build_collection(sess, args, collection_index, version, collection)
         version.idc_version_timestamp = min([collection.collection_timestamp for collection in version.collections])
+        version.version_hash = get_merkle_hash([collection.collection_hash for collection in version.collections])
         # copy_staging_bucket_to_final_bucket(args,version)
         if all([collection.done for collection in version.collections if not collection.tcia_api_collection_id in skips]):
 

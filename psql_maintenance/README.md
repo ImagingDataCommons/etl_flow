@@ -1,0 +1,1 @@
+This is a collection of scripts created mostly to fixup some details in the PSQL tables that were needed after the initial download completed.

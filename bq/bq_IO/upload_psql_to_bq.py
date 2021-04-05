@@ -28,7 +28,7 @@ import logging
 from logging import INFO
 import argparse
 from google.cloud import bigquery
-from utilities.bq_helpers import BQ_table_exists, create_BQ_table, load_BQ_from_json, load_BQ_from_CSV
+from utilities.bq_helpers import BQ_table_exists, create_BQ_table, delete_BQ_Table, load_BQ_from_CSV
 # from python_settings import settings
 # from idc.config import bigquery_uri, sql_uri
 # from idc.models import Auxilliary_Metadata, Version, Collection, Patient, Study, Series, Instance
@@ -105,8 +105,9 @@ def upload_version(cur, args):
     schema = get_schema(cur, args, table)
     client = bigquery.Client(project=args.project)
 
-    if not BQ_table_exists(client, args.project, args.bqdataset_name, table):
-        result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
+    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
+        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
+    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
 
     cur.execute("""
         SELECT * from version
@@ -124,7 +125,7 @@ def upload_version(cur, args):
             raise
     data = "\n".join([",".join(map(str, row)) for row in rows])
 
-    load_BQ_from_CSV(client, args.bqdataset_name, table, data, schema)
+    load_BQ_from_CSV(client, args.bqdataset_name, table, data, schema),
 
 
 def upload_collection(cur, args):
@@ -133,8 +134,9 @@ def upload_collection(cur, args):
     schema = get_schema(cur, args, table)
     client = bigquery.Client(project=args.project)
 
-    if not BQ_table_exists(client, args.project, args.bqdataset_name, table):
-        result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
+    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
+        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
+    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
 
     cur.execute("""
         SELECT collection.* FROM version
@@ -163,8 +165,9 @@ def upload_patient(cur, args):
     schema = get_schema(cur, args, table)
     client = bigquery.Client(project=args.project)
 
-    if not BQ_table_exists(client, args.project, args.bqdataset_name, table):
-        result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
+    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
+        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
+    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
 
     cur.execute("""
         SELECT patient.* FROM version
@@ -195,8 +198,9 @@ def upload_study(cur, args):
     schema = get_schema(cur, args, table)
     client = bigquery.Client(project=args.project)
 
-    if not BQ_table_exists(client, args.project, args.bqdataset_name, table):
-        result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
+    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
+        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
+    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
 
     cur.execute("""
         SELECT study.* FROM version
@@ -229,8 +233,9 @@ def upload_series(cur, args):
     schema = get_schema(cur, args, table)
     client = bigquery.Client(project=args.project)
 
-    if not BQ_table_exists(client, args.project, args.bqdataset_name, table):
-        result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
+    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
+        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
+    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
 
     # Upload series data per collection
 
@@ -277,70 +282,10 @@ def upload_instance(cur, args):
     schema = get_schema(cur, args, table)
     client = bigquery.Client(project=args.project)
 
-    if not BQ_table_exists(client, args.project, args.bqdataset_name, table):
-        result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
+    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
+        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
+    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
 
-    # cur.execute(""" CREATE VIEW instances AS
-    #     SELECT instance.*, patient.submitter_case_id as patient_id, collection.tcia_api_collection_id as collection_id FROM version
-    #     JOIN collection
-    #     ON version.id = collection.version_id
-    #     JOIN patient
-    #     ON collection.id = patient.collection_id
-    #     join study
-    #     ON patient.id = study.patient_id
-    #     join series
-    #     ON study.id = series.study_id
-    #     join instance
-    #     ON series.id = instance.series_id
-    #     """)
-
-    # Upload series data per collection
-
-    # # Get the ids of all collections
-    # cur.execute("""
-    #     SELECT collection.tcia_api_collection_id FROM version
-    #     JOIN collection
-    #     ON version.id = collection.version_id
-    #     WHERE version.id = (%s)
-    #     """, (args.version,))
-    # collection_ids = cur.fetchall()
-    #
-    # for collection_id in collection_ids:
-    #     print(f"For collection {collection_id[0]}")
-    #
-    #     cur.execute("""
-    #         SELECT patient.submitter_case_id FROM version
-    #         JOIN collection
-    #         ON version.id = collection.version_id
-    #         JOIN patient
-    #         ON collection.id = patient.collection_id
-    #         WHERE version.id = (%s) AND collection.tcia_api_collection_id = (%s)
-    #         """, (args.version, collection_id[0], ))
-    #     patient_ids = cur.fetchall()
-    #
-    #     for patient_id in patient_ids:
-    #         print(f"  For patient {patient_id[0]}")
-    #
-    #         # cur.execute("""
-    #         #     SELECT instance.* FROM version
-    #         #     JOIN collection
-    #         #     ON version.id = collection.version_id
-    #         #     JOIN patient
-    #         #     ON collection.id = patient.collection_id
-    #         #     join study
-    #         #     ON patient.id = study.patient_id
-    #         #     join series
-    #         #     ON study.id = series.study_id
-    #         #     join instance
-    #         #     ON series.id = instance.series_id
-    #         #     WHERE version.id = (%s) AND collection.tcia_api_collection_id = (%s) AND patient.submitter_case_id = (%s)
-    #         #     """, (args.version, collection_id[0], patient_id[0]))
-    #         cur.execute("""
-    #         SELECT *
-    #         FROM instances
-    #         """)
-    #         # WHERE tcia_api_collection_id = (%s) AND submitter_case_id = (%s)""", (collection_id, patient_id))
-    #         rows = cur.fetchall()
     count =0
     increment = 10000
 
@@ -371,24 +316,22 @@ def upload_instance(cur, args):
         print(f'Uploaded {count} instances')
 
 
-
-
-def upload_to_bq():
+def upload_to_bq(args):
     conn = psycopg2.connect(dbname=settings.DATABASE_NAME, user=settings.DATABASE_USERNAME,
                             password=settings.DATABASE_PASSWORD, host=settings.DATABASE_HOST)
     with conn:
         with conn.cursor(cursor_factory=DictCursor) as cur:
-            # upload_version(cur, args)
-            # upload_collection(cur, args)
-            # upload_patient(cur, args)
-            # upload_study(cur, args)
+            upload_version(cur, args)
+            upload_collection(cur, args)
+            upload_patient(cur, args)
+            upload_study(cur, args)
             upload_series(cur, args)
-            # upload_instance(cur, args)
+            upload_instance(cur, args)
             pass
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=2, help='Version to upload')
+    parser.add_argument('--version', default=1, help='Version to upload')
     parser.add_argument('--project', default='idc-dev-etl')
     args = parser.parse_args()
     parser.add_argument('--bqdataset_name', default=f"idc_v{args.version}", help="BQ dataset of table")
@@ -402,22 +345,13 @@ if __name__ == '__main__':
     root_fh.setFormatter(rootformatter)
     rootlogger.setLevel(INFO)
 
-    # donelogger = logging.getLogger('done')
-    # done_fh = logging.FileHandler(args.dones)
-    # doneformatter = logging.Formatter('%(message)s')
-    # donelogger.addHandler(done_fh)
-    # done_fh.setFormatter(doneformatter)
-    # donelogger.setLevel(INFO)
-    #
     errlogger = logging.getLogger('root.err')
     err_fh = logging.FileHandler('{}/logs/copy_staging_err.log'.format(os.environ['PWD']))
     errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
 
-
-
-    upload_to_bq()
+    upload_to_bq(args)
 
 
 

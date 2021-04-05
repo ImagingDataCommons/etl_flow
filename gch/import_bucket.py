@@ -32,7 +32,6 @@ from googleapiclient import discovery
 _BASE_URL = "https://healthcare.googleapis.com/v1"
 
 
-# [START healthcare_get_client]
 def get_gch_client():
     """Returns an authorized API client by discovering the Healthcare API and
     creating a service object using the service account credentials in the
@@ -41,7 +40,7 @@ def get_gch_client():
     service_name = "healthcare"
 
     return discovery.build(service_name, api_version)
-# [END healthcare_get_client]
+
 
 
 def get_dataset_operation(
@@ -69,7 +68,7 @@ def wait_done(response, args, sleep_time):
     return result
 
 
-def import_dicom_instance(project_id, cloud_region, dataset_id, dicom_store_id, content_uri):
+def import_dicom_instances(project_id, cloud_region, dataset_id, dicom_store_id, content_uri):
     """Import data into the DICOM store by copying it from the specified
     source.
     """
@@ -95,11 +94,42 @@ def import_dicom_instance(project_id, cloud_region, dataset_id, dicom_store_id, 
     return response
 
 
-def import_collection(args):
+# def import_collection(args):
+#     try:
+#         print('Importing {}'.format(args.src_bucket))
+#         content_uri = '{}/*'.format(args.src_bucket)
+#         response = import_dicom_instance(args.project, args.region, args.gch_dataset_name,
+#                         args.gch_dicomstore_name, content_uri)
+#         result = wait_done(response, args, args.period)
+#         return result
+#     except HttpError as e:
+#         err = json.loads(e.content)
+#         print('Error loading {}; code: {}, message: {}'.format(args.src_bucket, err['error']['code'], err['error']['message']))
+#         if 'resolves to zero GCS objects' in err['error']['message']:
+#             # An empty collection bucket throws an error
+#             return
+
+
+def import_bucket(args):
+    # client = storage.Client()
+    try:
+        dataset = get_dataset(args.project, args.region, args.gch_dataset_name)
+    except HttpError:
+        # Dataset doesn't exist. Create it.
+        response = create_dataset(args.project, args.region, args.gch_dataset_name)
+
+    try:
+        datastore = get_dicom_store(args.project, args.region, args.gch_dataset_name, args.gch_dicomstore_name)
+    except HttpError:
+        # Datastore doesn't exist. Create it
+        datastore = create_dicom_store(args.project, args.region, args.gch_dataset_name, args.gch_dicomstore_name)
+    pass
+
+    # result = import_collection(args)
     try:
         print('Importing {}'.format(args.src_bucket))
         content_uri = '{}/*'.format(args.src_bucket)
-        response = import_dicom_instance(args.project, args.region, args.gch_dataset_name,
+        response = import_dicom_instances(args.project, args.region, args.gch_dataset_name,
                         args.gch_dicomstore_name, content_uri)
         result = wait_done(response, args, args.period)
         return result
@@ -110,27 +140,10 @@ def import_collection(args):
             # An empty collection bucket throws an error
             return
 
-
-def import_bucket(args):
-    # client = storage.Client()
-    try:
-        dataset = get_dataset(args.project, args.region, args.gch_dataset_name)
-    except HttpError:
-        response = create_dataset(args.project, args.region, args.gch_dataset_name)
-
-    try:
-        datastore = get_dicom_store(args.project, args.region, args.gch_dataset_name, args.gch_dicomstore_name)
-    except HttpError:
-        # Datastore doesn't exist. Create it
-        datastore = create_dicom_store(args.project, args.region, args.gch_dataset_name, args.gch_dicomstore_name)
-    pass
-
-    result = import_collection(args)
-
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
     parser.add_argument('--src_bucket', default='idc_dev')
-    parser.add_argument('--project', default='idc-dev-etl')
+    parser.add_argument('--project', default='canceridc-data')
     parser.add_argument('--region', default='us-central1', help='Dataset region')
     parser.add_argument('--gch_dataset_name', default='idc', help='Dataset name')
     parser.add_argument('--gch_dicomstore_name', default='v2', help='Datastore name')
@@ -139,14 +152,14 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
 
     rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/dicomstore_import_log.log'.format(os.environ['PWD']))
+    root_fh = logging.FileHandler('{}/logs/dicomstore_import_log_2020_3_25.log'.format(os.environ['PWD']))
     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
     rootlogger.addHandler(root_fh)
     root_fh.setFormatter(rootformatter)
     rootlogger.setLevel(INFO)
 
     errlogger = logging.getLogger('root.err')
-    err_fh = logging.FileHandler('{}/logs/dicomstore_import_err.log'.format(os.environ['PWD']))
+    err_fh = logging.FileHandler('{}/logs/dicomstore_import_err_2020_3_25.log'.format(os.environ['PWD']))
     errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
