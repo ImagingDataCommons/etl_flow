@@ -18,7 +18,7 @@
 from google.cloud import bigquery
 
 
-auxilliary_metadata_schema = """
+auxiliary_metadata_schema = """
     SELECT
       v.idc_version_number AS idc_version_number,
       v.idc_version_timestamp AS idc_version_timestamp,
@@ -29,7 +29,7 @@ auxilliary_metadata_schema = """
       c.collection_timestamp AS collection_timestamp,
       c.collection_hash AS collection_hash,
       p.submitter_case_id AS submitter_case_id,
-      p.crdc_case_id AS crdc_case_id,
+      p.idc_case_id AS idc_case_id,
       p.patient_timestamp AS patient_timestamp,
       p.patient_hash AS patient_hash,
       st.study_instance_uid AS StudyInstanceUID,
