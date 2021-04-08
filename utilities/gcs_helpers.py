@@ -42,7 +42,16 @@ def get_series(storage_client, bucket_name):
             series.extend(page.prefixes)
     return series
 
+def list_buckets(project):
+    """Lists all buckets."""
+    storage_client = storage.Client(project=project)
+    buckets = storage_client.list_buckets()
+    return buckets
+
 if __name__ == "__main__":
+    buckets = list_buckets('idc-dev-etl')
+    for bucket in buckets:
+        print(bucket)
     client = storage.Client()
     result = get_series(client, "idc-tcia-1-tcga-read")
     pass
