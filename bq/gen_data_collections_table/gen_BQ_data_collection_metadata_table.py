@@ -32,7 +32,10 @@ def get_collections_in_version(client, args):
     FROM `{args.project}.{args.bqdataset_name}.{args.bq_version_table}` as v
     JOIN `{args.project}.{args.bqdataset_name}.{args.bq_collection_table}` as c
     ON v.id = c.version_id
-    WHERE v.id = {args.version}
+    LEFT JOIN `{args.project}.{args.bqdataset_name}.{args.bq_excluded_collections}` as ex
+    ON LOWER(c.tcia_api_collection_id) = LOWER(ex.collection)
+    WHERE v.id = {args.version} AND ex.collection IS NULL
+    ORDER BY c.tcia_api_collection_id
     """
     result = client.query(query).result()
     collection_ids = [collection['tcia_api_collection_id'] for collection in result]
@@ -91,6 +94,7 @@ if __name__ == '__main__':
     parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
     parser.add_argument('--bq_version_table', default='version', help='BQ table from which to get versions')
     parser.add_argument('--bq_collection_table', default='collection', help='BQ table from which to get collections in version')
+    parser.add_argument('--bq_excluded_collections', default='excluded_collections', help='BQ table from which to get collections to exclude')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
