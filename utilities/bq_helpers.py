@@ -219,6 +219,6 @@ def export_BQ_to_GCS(client, src_dataset, src_table, dst_uri, field_delimiter="\
 
 if __name__ == "__main__":
     client = bigquery.Client(project="idc-dev-etl")
-    src_table = "idc-dev-etl.idc_tcia_mvp_wave1.idc_tcia_dicom_metadata"
-    dst_table = "idc-dev-etl.idc_v1.dicom_metadata"
+    src_table = ""
+    dst_table = ""
     result = copy_BQ_table(client, src_table, dst_table)
