@@ -70,4 +70,9 @@ auxiliary_metadata_schema = """
     JOIN
       `{project}.{dataset}.instance` AS i
     ON
-      se.id = i.series_id"""
+      se.id = i.series_id
+    LEFT JOIN 
+      `{project}.{dataset}.excluded_collections` as ex
+    ON 
+      LOWER(c.tcia_api_collection_id) = LOWER(ex.collection)
+    WHERE ex.collection IS NULL"""
