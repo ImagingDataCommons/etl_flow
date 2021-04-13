@@ -49,7 +49,7 @@ def main(args):
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
     parser.add_argument('--version', default=2)
-    parser.add_argument('--collection', default='HNSCC', help='Delete a collection from PSQL DB')
+    parser.add_argument('--collection', default='LDCT-and-Projection-data', help='Delete a collection from PSQL DB')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
 

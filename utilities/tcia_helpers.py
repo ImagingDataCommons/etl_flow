@@ -25,8 +25,12 @@ import random
 from io import BytesIO, StringIO
 from google.cloud import storage
 import requests
+from requests import session
 import backoff
 import logging
+
+TIMEOUT=3600
+CHUNK_SIZE=1024*1024
 
 TCIA_URL = 'https://services.cancerimagingarchive.net/services/v4/TCIA/query'
 NBIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v1'
@@ -142,16 +146,60 @@ def get_TCIA_series(nbia_server=True):
     
     return data
 
-def get_TCIA_instances_per_series(series_instance_uid, nbia_server=True):
-    # Get a zip of the instances in this series to a file and unzip it
-    result = TCIA_API_request_to_file("{}/{}.zip".format("dicom", series_instance_uid),
-                "getImage", parameters="SeriesInstanceUID={}".format(series_instance_uid),
-                nbia_server=nbia_server)
+# def get_TCIA_instances_per_series(dicom, series_instance_uid, nbia_server=True):
+#     # Get a zip of the instances in this series to a file and unzip it
+#     # result = TCIA_API_request_to_file("{}/{}.zip".format(dicom, series_instance_uid),
+#     #             "getImage", parameters="SeriesInstanceUID={}".format(series_instance_uid),
+#     #             nbia_server=nbia_server)
+#     server_url = NBIA_URL if nbia_server else TCIA_URL
+#     url = f'{server_url}/{"getImage"}?SeriesInstanceUID={series_instance_uid}'
+#
+#     # _bytes=0
+#     begin = time.time()
+#     with open("{}/{}.zip".format(dicom, series_instance_uid), 'wb') as f:
+#         r = session().get(url, stream=True, timeout=TIMEOUT)
+#         for chunk in r.iter_content(chunk_size=None):
+#             if chunk:
+#                 f.write(chunk)
+#                 f.flush()
+#                 # _bytes += len(chunk)
+#     # elapsed = time.time() - begin
+#     # print(f'{_bytes} in {elapsed}s: {_bytes/elapsed}B/s; CHUNK_SIZE: {CHUNK_SIZE}')
+#     # Now try to extract the instances to a directory DICOM/<series_instance_uid>
+#     try:
+#         with zipfile.ZipFile("{}/{}.zip".format(dicom, series_instance_uid)) as zip_ref:
+#             zip_ref.extractall("{}/{}".format(dicom, series_instance_uid))
+#         return
+#     except :
+#         logging.error("\tZip extract failed for series %s with error %s,%s,%s ", series_instance_uid,
+#                       sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2])
+#         raise
+
+
+def get_TCIA_instances_per_series(dicom, series_instance_uid, nbia_server=True):
+    server_url = NBIA_URL if nbia_server else TCIA_URL
+    url = f'{server_url}/{"getImage"}?SeriesInstanceUID={series_instance_uid}'
+    f = "{}/{}.zip".format(dicom, series_instance_uid)
+
+    result = run([
+        'curl',
+        '-o',
+        f,
+        url
+    ], stdout=PIPE, stderr=PIPE)
+    # result = json.loads(result.stdout.decode())['access_token']
 
     # Now try to extract the instances to a directory DICOM/<series_instance_uid>
     try:
-        with zipfile.ZipFile("{}/{}.zip".format("dicom", series_instance_uid)) as zip_ref:
-            zip_ref.extractall("{}/{}".format("dicom", series_instance_uid))
+        # with zipfile.ZipFile("{}/{}.zip".format(dicom, series_instance_uid)) as zip_ref:
+        #     zip_ref.extractall("{}/{}".format(dicom, series_instance_uid))
+        result = run([
+            'unzip',
+            "{}/{}.zip".format(dicom, series_instance_uid),
+            '-d',
+            "{}/{}".format(dicom, series_instance_uid)
+        ], stdout=PIPE, stderr=PIPE)
+
         return
     except :
         logging.error("\tZip extract failed for series %s with error %s,%s,%s ", series_instance_uid,
@@ -269,26 +317,28 @@ def get_updated_series(date):
 
 
 if __name__ == "__main__":
+    instances = get_TCIA_instances_per_series('/mnt/disks/idc-etl/temp', '1.2.840.113713.4.2.165042455211102753703326913551133262099', nbia_server=True)
+    print(instances)
     # patients = get_TCIA_patients_per_collection('ACRIN-FLT-Breast')
     # get_collection_descriptions()
     # series = get_TCIA_series_per_collection('TCGA-BRCA')
     # series = get_updated_series('06/06/2020')
     # print(time.asctime());studies = get_TCIA_studies_per_collection('BREAST-DIAGNOSIS', nbia_server=False);print(time.asctime())
     # studies = get_TCIA_studies_per_patient(collection.tcia_api_collection_id, patient.submitter_case_id)
-    series = get_updated_series('20/02/2021')
-    patients=get_TCIA_patients_per_collection('CBIS-DDSM')
-
-    collection = get_collection_values_and_counts()
-    collections = get_collections()
-    for collection in collections:
-        patients = get_TCIA_patients_per_collection(collection['Collection'])
-        for patient in patients:
-            studies = get_TCIA_studies_per_patient(collection['Collection'], patient['PatientId'])
-            for study in studies:
-                seriess = get_TCIA_series_per_study(collection['Collection'], patient['PatientId'], study['StudyInstanceUID'])
-                for series in seriess:
-                    instanceUIDs = get_TCIA_instance_uids_per_series(series['SeriesInstanceUID'])
-                    for instanceUID in instanceUIDs:
-                        instance = get_TCIA_instance(series['SeriesInstanceUID'], instanceUID['SOPInstanceUID'])
+    # series = get_updated_series('20/02/2021')
+    # patients=get_TCIA_patients_per_collection('CBIS-DDSM')
+    #
+    # collection = get_collection_values_and_counts()
+    # collections = get_collections()
+    # for collection in collections:
+    #     patients = get_TCIA_patients_per_collection(collection['Collection'])
+    #     for patient in patients:
+    #         studies = get_TCIA_studies_per_patient(collection['Collection'], patient['PatientId'])
+    #         for study in studies:
+    #             seriess = get_TCIA_series_per_study(collection['Collection'], patient['PatientId'], study['StudyInstanceUID'])
+    #             for series in seriess:
+    #                 instanceUIDs = get_TCIA_instance_uids_per_series(series['SeriesInstanceUID'])
+    #                 for instanceUID in instanceUIDs:
+    #                     instance = get_TCIA_instance(series['SeriesInstanceUID'], instanceUID['SOPInstanceUID'])
 
 

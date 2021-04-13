@@ -22,25 +22,13 @@ TRIES=3
 import sys
 import os
 import argparse
-from pathlib import Path
 import time
 from datetime import datetime, timezone, timedelta
 import logging
 from logging import INFO
-import pydicom
-import hashlib
-from subprocess import run, PIPE
-import shutil
 from multiprocessing import Process, Queue
 from queue import Empty
-from base64 import b64decode
-from pydicom.errors import InvalidDicomError
-from uuid import uuid4
 from google.cloud import storage
-from utilities.tcia_helpers import  get_collections, get_TCIA_patients_per_collection, get_TCIA_studies_per_patient, \
-    get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_TCIA_instances_per_series, get_collection_values_and_counts
-from utilities.get_collection_dois import get_data_collection_doi, get_analysis_collection_dois
-from google.api_core.exceptions import Conflict
 
 from python_settings import settings
 import settings as etl_settings

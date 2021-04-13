@@ -33,12 +33,12 @@
 from google.cloud import bigquery
 
 analysis_results_metadata_schema = [
-    bigquery.SchemaField('Collection', 'STRING', mode='NULLABLE'),
-    bigquery.SchemaField('DOI','STRING', mode='NULLABLE'),
-    bigquery.SchemaField('CancerType','STRING', mode='NULLABLE'),
-    bigquery.SchemaField('Location', 'STRING', mode='NULLABLE'),
-    bigquery.SchemaField('Subjects', 'INTEGER', mode='NULLABLE'),
-    bigquery.SchemaField('Collections', 'STRING', mode='NULLABLE'),
-    bigquery.SchemaField('AnalysisArtifactsonTCIA', 'STRING', mode='NULLABLE'),
-    bigquery.SchemaField('Updated', 'DATE', mode='NULLABLE'),
+    bigquery.SchemaField('Collection', 'STRING', mode='NULLABLE', description='Collection description'),
+    bigquery.SchemaField('DOI','STRING', mode='NULLABLE', description='DOI that can be resolved at doi.org to a wiki page'),
+    bigquery.SchemaField('CancerType','STRING', mode='NULLABLE', description='Type(s) of cancer analyzed'),
+    bigquery.SchemaField('Location', 'STRING', mode='NULLABLE', description='Body location that was analyzed'),
+    bigquery.SchemaField('Subjects', 'INTEGER', mode='NULLABLE', description='Number of subjects whose data was analyzed'),
+    bigquery.SchemaField('Collections', 'STRING', mode='NULLABLE', description='Original data collections analyzed'),
+    bigquery.SchemaField('AnalysisArtifactsonTCIA', 'STRING', mode='NULLABLE', description='Types of analysis artifacts produced'),
+    bigquery.SchemaField('Updated', 'DATE', mode='NULLABLE', description='Most recent update reported by TCIA'),
 ]
