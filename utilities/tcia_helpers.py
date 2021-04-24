@@ -246,7 +246,7 @@ def get_collection_sizes(nbia_server=True):
     sorted_counts = [(k, v) for k, v in sorted(counts.items(), key=lambda item: item[1])]
     return sorted_counts
 
-def get_access_token():
+def get_access_token(url="https://public.cancerimagingarchive.net/nbia-api/oauth/token"):
     # data = "username=nbia_guest&password=&client_id=nbiaRestAPIClient&client_secret=ItsBetweenUAndMe&grant_type=password"
     data = dict(
         username="nbia_guest",
@@ -254,7 +254,7 @@ def get_access_token():
         client_id="nbiaRestAPIClient",
         client_secret="ItsBetweenUAndMe",
         grant_type="password")
-    url = "https://public.cancerimagingarchive.net/nbia-api/oauth/token"
+    # url = "https://public.cancerimagingarchive.net/nbia-api/oauth/token"
     result = requests.post(url, data = data)
     access_token = result.json()
     return access_token
@@ -316,20 +316,56 @@ def get_updated_series(date):
     return series
 
 
+def get_hash(request_data, access_token=None):
+    # data = dict(
+    #     username="nbia_guest",
+    #     password="",
+    #     client_id="nbiaRestAPIClient",
+    #     client_secret="ItsBetweenUAndMe",
+    #     grant_type="password")
+    # url = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token"
+    # result = requests.post(url, data = data)
+    # access_token = result.json()
+    #
+    # access_token = access_token['access_token']
+    if not access_token:
+        access_token = get_access_token(url = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")['access_token']
+    headers = dict(
+        Authorization = f'Bearer {access_token}'
+    )
+    url = "https://public-dev.cancerimagingarchive.net/nbia-api/services/getMD5Hierarchy"
+    result = requests.post(url, headers=headers, data=request_data)
+
+    return result
+
+
+
 if __name__ == "__main__":
-    instances = get_TCIA_instances_per_series('/mnt/disks/idc-etl/temp', '1.2.840.113713.4.2.165042455211102753703326913551133262099', nbia_server=True)
-    print(instances)
-    # patients = get_TCIA_patients_per_collection('ACRIN-FLT-Breast')
+    # series = get_updated_series('20/02/2021')
+    hash = get_hash({"Collection":'TCGA-ESCA'})
+    hash = get_hash({"SOPInstanceUID":'1.3.6.1.4.1.14519.5.2.1.7695.1700.102531463248020333099866857255'})
+    hash = get_hash({"SeriesInstanceUID":'1.3.46.670589.11.17169.5.0.2584.2015071308420203679'},
+                    access_token='7520a4ca-4fba-4846-9edf-fb510633d870')
+    hash = get_series_hash('1.3.46.670589.11.17169.5.0.2584.2015071308420203679')
+    pass
+    # instances = get_TCIA_instances_per_series('/mnt/disks/idc-etl/temp', '1.2.840.113713.4.2.165042455211102753703326913551133262099', nbia_server=True)
+    # print(instances)
+    # patients = get_TCIA_patients_per_collection('LDCT-and-Projection-data')
     # get_collection_descriptions()
     # series = get_TCIA_series_per_collection('TCGA-BRCA')
     # series = get_updated_series('06/06/2020')
     # print(time.asctime());studies = get_TCIA_studies_per_collection('BREAST-DIAGNOSIS', nbia_server=False);print(time.asctime())
     # studies = get_TCIA_studies_per_patient(collection.tcia_api_collection_id, patient.submitter_case_id)
-    # series = get_updated_series('20/02/2021')
     # patients=get_TCIA_patients_per_collection('CBIS-DDSM')
     #
     # collection = get_collection_values_and_counts()
-    # collections = get_collections()
+    nbia_collections = [c['Collection'] for c in get_collections(nbia_server=True)]
+    nbia_collections.sort()
+    nbia_collections = [c['Collection'] for c in get_collections(nbia_server=True)]
+    nbia_collections.sort()
+    tcia_collections = [c['Collection'] for c in get_collections(nbia_server=False)]
+    tcia_collections.sort()
+    pass
     # for collection in collections:
     #     patients = get_TCIA_patients_per_collection(collection['Collection'])
     #     for patient in patients:
