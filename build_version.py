@@ -23,7 +23,7 @@ from pathlib import Path
 import time
 from datetime import datetime, timezone, timedelta
 import logging
-from logging import INFO
+from logging import INFO, DEBUG
 import pydicom
 import hashlib
 from subprocess import run, PIPE
@@ -62,36 +62,36 @@ def get_merkle_hash(hashes):
     md5 = hashlib.md5()
     hashes.sort()
     for hash in hashes:
-        md5.update(hash)
-    return md5.hexdigest
+        md5.update(hash.encode())
+    return md5.hexdigest()
 
 
-def rollback_copy_to_prestaging_bucket(args, series):
-    client = storage.Client()
-    bucket = client.bucket(args.prestaging_bucket)
-    for instance in series.instances:
-        try:
-            results = bucket.blob(f'{instance.instance_uuid}.dcm').delete()
-        except:
-            errlogger.error('p%s: Failed to delete blob %s.dcm during validation rollback',args.id, instance.instance_uuid)
-            raise
+# def rollback_copy_to_prestaging_bucket(args, series):
+#     client = storage.Client()
+#     bucket = client.bucket(args.prestaging_bucket)
+#     for instance in series.instances:
+#         try:
+#             results = bucket.blob(f'{instance.instance_uuid}.dcm').delete()
+#         except:
+#             errlogger.error('p%s: Failed to delete blob %s.dcm during validation rollback',args.id, instance.instance_uuid)
+#             raise
 
 
-def validate_series_in_gcs(storage_client, args, collection, patient, study, series):
-    # blobs_info = get_series_info(storage_client, args.project, args.staging_bucket)
-    bucket = storage_client.get_bucket(args.prestaging_bucket)
-    try:
-        for instance in series.instances:
-            blob = bucket.blob(f'{instance.instance_uuid}.dcm')
-            blob.reload()
-            assert instance.instance_hash == b64decode(blob.md5_hash).hex()
-            assert instance.instance_size == blob.size
-
-    except Exception as exc:
-        rollback_copy_to_prestaging_bucket(args, series)
-        errlogger.error('p%s: GCS validation failed for %s/%s/%s/%s/%s',
-            args.id, collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_uid, instance.sop_instance_uid)
-        raise exc
+# def validate_series_in_gcs(storage_client, args, collection, patient, study, series):
+#     # blobs_info = get_series_info(storage_client, args.project, args.staging_bucket)
+#     bucket = storage_client.get_bucket(args.prestaging_bucket)
+#     try:
+#         for instance in series.instances:
+#             blob = bucket.blob(f'{instance.instance_uuid}.dcm')
+#             blob.reload()
+#             assert instance.instance_hash == b64decode(blob.md5_hash).hex()
+#             assert instance.instance_size == blob.size
+#
+#     except Exception as exc:
+#         rollback_copy_to_prestaging_bucket(args, series)
+#         errlogger.error('p%s: GCS validation failed for %s/%s/%s/%s/%s',
+#             args.id, collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_uid, instance.sop_instance_uid)
+#         raise exc
 
 
 # Copy the series instances downloaded from TCIA/NBIA from disk to the prestaging bucket
@@ -105,42 +105,42 @@ def copy_disk_to_prestaging_bucket(args, series):
         if result.returncode < 0:
             errlogger.error('p%s: \tcopy_disk_to_prestaging_bucket failed for series %s', args.id, series.series_instance_uid)
             raise RuntimeError('p%s: copy_disk_to_prestaging_bucket failed for series %s', args.id, series.series_instance_uid)
-        rootlogger.debug(("p%s: Uploaded instances to GCS", args.id))
+        rootlogger.debug("p%s: Uploaded instances to GCS", args.id)
     except Exception as exc:
         errlogger.error("\tp%s: Copy to prestage bucket failed for series %s", args.id, series.series_instance_uid)
         raise RuntimeError("p%s: Copy to prestage bucketfailed for series %s", args.id, series.series_instance_uid) from exc
 
 
-# Copy a completed collection from the prestaging bucket to the staging bucket
-def copy_prestaging_to_staging_bucket(args, collection):
-    rootlogger.info("Copying prestaging bucket to staging bucket")
-    try:
-        # Copy the series to GCS
-        src = "gs://{}/*".format(args.prestaging_bucket)
-        dst = "gs://{}/".format(args.staging_bucket)
-        result = run(["gsutil", "-m", "-q", "cp", src, dst])
-        if result.returncode < 0:
-            errlogger.error('\tp%s: copy_prestaging_to_staging_bucket failed for collection %s', args.id, collection.tcia_api_collection_id)
-            raise RuntimeError('p%s: copy_prestaging_to_staging_bucket failed for collection %s', args.id, collection.tcia_api_collection_id)
-        rootlogger.debug(("p%s: Uploaded instances to GCS", args.id))
-    except Exception as exc:
-        errlogger.error("\tp%s: Copy from prestaging to staging bucket for collection %s failed", args.id, collection.tcia_api_collection_id)
-        raise RuntimeError("p%s: Copy from prestaging to staging bucket for collection %s failed", args.id, collection.tcia_api_collection_id) from exc
+# # Copy a completed collection from the prestaging bucket to the staging bucket
+# def copy_prestaging_to_staging_bucket(args, collection):
+#     rootlogger.info("Copying prestaging bucket to staging bucket")
+#     try:
+#         # Copy the series to GCS
+#         src = "gs://{}/*".format(args.prestaging_bucket)
+#         dst = "gs://{}/".format(args.staging_bucket)
+#         result = run(["gsutil", "-m", "-q", "cp", src, dst])
+#         if result.returncode < 0:
+#             errlogger.error('\tp%s: copy_prestaging_to_staging_bucket failed for collection %s', args.id, collection.tcia_api_collection_id)
+#             raise RuntimeError('p%s: copy_prestaging_to_staging_bucket failed for collection %s', args.id, collection.tcia_api_collection_id)
+#         rootlogger.debug(("p%s: Uploaded instances to GCS", args.id))
+#     except Exception as exc:
+#         errlogger.error("\tp%s: Copy from prestaging to staging bucket for collection %s failed", args.id, collection.tcia_api_collection_id)
+#         raise RuntimeError("p%s: Copy from prestaging to staging bucket for collection %s failed", args.id, collection.tcia_api_collection_id) from exc
 
 
-def copy_staging_bucket_to_final_bucket(args, version):
-    try:
-        # Copy the series to GCS
-        src = "gs://{}/*".format(args.staging_bucket)
-        dst = "gs://{}/".format(args.bucket)
-        result = run(["gsutil", "-m", "-q", "cp", src, dst])
-        if result.returncode < 0:
-            errlogger.error('\tp%s: copy_staging_bucket_to_final_bucket failed for version %s', args.id, version.idc_version_number)
-            raise RuntimeError('p%s: copy_staging_bucket_to_final_bucket failed for version %s', args.id, version.idc_version_number)
-        rootlogger.debug(("p%s: Uploaded instances to GCS"))
-    except Exception as exc:
-        errlogger.error("\tp%s: Copy from prestaging to staging bucket for collection %s failed", args.id, version.idc_version_number)
-        raise RuntimeError("p%s: Copy from prestaging to staging bucket for collection %s failed", args.id, version.idc_version_number) from exc
+# def copy_staging_bucket_to_final_bucket(args, version):
+#     try:
+#         # Copy the series to GCS
+#         src = "gs://{}/*".format(args.staging_bucket)
+#         dst = "gs://{}/".format(args.bucket)
+#         result = run(["gsutil", "-m", "-q", "cp", src, dst])
+#         if result.returncode < 0:
+#             errlogger.error('\tp%s: copy_staging_bucket_to_final_bucket failed for version %s', args.id, version.idc_version_number)
+#             raise RuntimeError('p%s: copy_staging_bucket_to_final_bucket failed for version %s', args.id, version.idc_version_number)
+#         rootlogger.debug(("p%s: Uploaded instances to GCS"))
+#     except Exception as exc:
+#         errlogger.error("\tp%s: Copy from prestaging to staging bucket for collection %s failed", args.id, version.idc_version_number)
+#         raise RuntimeError("p%s: Copy from prestaging to staging bucket for collection %s failed", args.id, version.idc_version_number) from exc
 
 
 def empty_bucket(bucket):
@@ -192,6 +192,8 @@ def build_instances(sess, args, version, collection, patient, study, series):
     # When TCIA provided series timestamps, we'll us that for instance_timestamp.
     now = datetime.now(timezone.utc)
 
+    rootlogger.debug("      p%s: Series %s, building instances; %s", args.id, series.series_instance_uid, time.asctime())
+
     # Delete the series from disk in case it is there from a previous run
     try:
         shutil.rmtree("{}/{}".format(args.dicom, series.series_instance_uid), ignore_errors=True)
@@ -199,18 +201,21 @@ def build_instances(sess, args, version, collection, patient, study, series):
         # It wasn't there
         pass
 
-    get_TCIA_instances_per_series(series.series_instance_uid)
+    rootlogger.debug("      p%s: Series %s, downloading instance data; %s", args.id, series.series_instance_uid, time.asctime())
+    get_TCIA_instances_per_series(args.dicom, series.series_instance_uid)
 
     # Get a list of the files from the download
     dcms = [dcm for dcm in os.listdir("{}/{}".format(args.dicom, series.series_instance_uid))]
 
     # Ensure that the zip has the expected number of instances
+    rootlogger.debug("      p%s: Series %s, check series length; %s", args.id, series.series_instance_uid, time.asctime())
+
     if not len(dcms) == len(series.instances):
-        errlogger.error("\tp%s: Invalid zip file for %s/%s/%s/%s", args.id,
-            collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_id, series.series_instance_uid)
-        raise RuntimeError("\p%s: Invalid zip file for %s/%s/%s/%s", args.id,
-            collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_id, series.series_instance_uid)
-    rootlogger.debug(("p%s: Series %s download successful", args.id, series.series_instance_uid))
+        errlogger.error("      p%s: Invalid zip file for %s/%s/%s/%s", args.id,
+            collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
+        raise RuntimeError("      \p%s: Invalid zip file for %s/%s/%s/%s", args.id,
+            collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
+    rootlogger.debug("      p%s: Series %s download successful", args.id, series.series_instance_uid)
 
     # TCIA file names are based on the position of the image in a scan. We need to extract the SOPInstanceUID
     # so that we can know the instance.
@@ -219,31 +224,59 @@ def build_instances(sess, args, version, collection, patient, study, series):
 
     # Replace the TCIA assigned file name
     # Also compute the md5 hash and length in bytes of each
+    rootlogger.debug("      p%s: Series %s, changing instance filename; %s", args.id, series.series_instance_uid, time.asctime())
+    pydicom_times=[]
+    psql_times=[]
+    rename_times=[]
+    metadata_times=[]
+    begin = time.time_ns()
+    instances = {instance.sop_instance_uid:instance for instance in series.instances}
+    instances_time = time.time_ns() - begin
+
     for dcm in dcms:
         try:
+            pydicom_times.append(time.time_ns())
             SOPInstanceUID = pydicom.read_file("{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm)).SOPInstanceUID
+            pydicom_times.append(time.time_ns())
         except InvalidDicomError:
-            errlogger.error("\tp%s: Invalid DICOM file for %s/%s/%s/%s", args.id,
-                collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_id, series.series_instance_uid)
-            raise RuntimeError("p%s: Invalid DICOM file for %s/%s/%s/%s", args.id,
-                collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_id, series.series_instance_uid)
-        instance = next(instance for instance in series.instances if instance.sop_instance_uid == SOPInstanceUID)
+            errlogger.error("       p%s: Invalid DICOM file for %s/%s/%s/%s", args.id,
+                collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
+            raise RuntimeError("      p%s: Invalid DICOM file for %s/%s/%s/%s", args.id,
+                collection.tcia_api_collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
+
+        psql_times.append(time.time_ns())
+        # instance = next(instance for instance in series.instances if instance.sop_instance_uid == SOPInstanceUID)
+        instance = instances[SOPInstanceUID]
+        psql_times.append(time.time_ns())
+
+        rename_times.append(time.time_ns())
         instance_uuid = instance.instance_uuid
-        file_name = "./{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm)
-        blob_name = "./{}/{}/{}.dcm".format(args.dicom, series.series_instance_uid, instance_uuid)
-        os.renames(file_name, blob_name)
+        file_name = "{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm)
+        blob_name = "{}/{}/{}.dcm".format(args.dicom, series.series_instance_uid, instance_uuid)
+        os.rename(file_name, blob_name)
+        rename_times.append(time.time_ns())
 
-        with open(blob_name,'rb') as f:
-            instance.instance_hash = md5_hasher(blob_name)
-            instance.instance_size = Path(blob_name).stat().st_size
-            instance.instance_timestamp = datetime.utcnow()
-    rootlogger.debug("%s: Renamed all files for series %s", args.id, series.series_instance_uid)
+        metadata_times.append(time.time_ns())
+        instance.instance_hash = md5_hasher(blob_name)
+        instance.instance_size = Path(blob_name).stat().st_size
+        instance.instance_timestamp = datetime.utcnow()
+        metadata_times.append(time.time_ns())
+
+    rootlogger.debug("      p%s: Renamed all files for series %s; %s", args.id, series.series_instance_uid, time.asctime())
+    rootlogger.debug("      p%s: instances time: %s", args.id, instances_time/10**9)
+    rootlogger.debug("      p%s: pydicom time: %s", args.id, (sum(pydicom_times[1::2]) - sum(pydicom_times[0::2]))/10**9)
+    rootlogger.debug("      p%s: psql time: %s", args.id, (sum(psql_times[1::2]) - sum(psql_times[0::2]))/10**9)
+    rootlogger.debug("      p%s: rename time: %s", args.id, (sum(rename_times[1::2]) - sum(rename_times[0::2]))/10**9)
+    rootlogger.debug("      p%s: metadata time: %s", args.id, (sum(metadata_times[1::2]) - sum(metadata_times[0::2]))/10**9)
 
 
+
+    rootlogger.debug("      p%s: Series %s, copying instances to GCS; %s", args.id, series.series_instance_uid, time.asctime())
     copy_to_gcs(args, collection, patient, study, series)
 
     for instance in series.instances:
         instance.done = True
+    rootlogger.debug("      p%s: Series %s, completed build_instances; %s", args.id, series.series_instance_uid, time.asctime())
 
 
 def expand_series(sess, series):
@@ -411,7 +444,7 @@ def expand_collection(sess, args, collection):
                                               idc_version_number = collection.idc_version_number,
                                               patient_timestamp = datetime(1970,1,1,0,0,0),
                                               submitter_case_id = patient['PatientId'],
-                                              crdc_case_id = uuid4().hex,
+                                              idc_case_id = uuid4().hex,
                                               revised = True,
                                               done = False,
                                               is_new = True,
@@ -466,19 +499,19 @@ def build_collection(sess, args, collection_index, version, collection):
                 args.id = 0
                 patient_index = f'{collection.patients.index(patient)+1} of {len(collection.patients)}'
                 build_patient(sess, args, patient_index, data_collection_doi, analysis_collection_dois, version, collection, patient)
-                collection.collection_timestamp = min([patient.patient_timestamp for patient in collection.patients])
-                collection.collection_hash = get_merkle_hash([patient.patient_hash for patient in collection.patients])
-                # copy_prestaging_to_staging_bucket(args, collection)
-                collection.done = True
-                # ************ Temporary code during development********************
-                # duration = str(timedelta(seconds=(time.time() - begin)))
-                # rootlogger.info("Collection %s, %s, completed in %s", collection.tcia_api_collection_id, collection_index, duration)
-                # raise
-                # ************ End temporary code ********************
-                sess.commit()
-                duration = str(timedelta(seconds=(time.time() - begin)))
-                rootlogger.info("Collection %s, %s, completed in %s", collection.tcia_api_collection_id, collection_index,
-                                duration)
+            collection.collection_timestamp = min([patient.patient_timestamp for patient in collection.patients])
+            collection.collection_hash = get_merkle_hash([patient.patient_hash for patient in collection.patients])
+            # copy_prestaging_to_staging_bucket(args, collection)
+            collection.done = True
+            # ************ Temporary code during development********************
+            # duration = str(timedelta(seconds=(time.time() - begin)))
+            # rootlogger.info("Collection %s, %s, completed in %s", collection.tcia_api_collection_id, collection_index, duration)
+            # raise
+            # ************ End temporary code ********************
+            sess.commit()
+            duration = str(timedelta(seconds=(time.time() - begin)))
+            rootlogger.info("Collection %s, %s, completed in %s", collection.tcia_api_collection_id, collection_index,
+                            duration)
         else:
             processes = []
             # Create queues
@@ -554,23 +587,24 @@ def expand_version(sess, args, version):
     # GCS data for the collection being built is accumulated in the staging bucket,
     # args.staging bucket.
 
-    ## Since we are starting, delete everything from the staging bucket.
-    ## empty_bucket(args.staging_bucket)
+    skips = open(args.skips).read().splitlines()
+
     if version.idc_version_number == 2:
         # tcia_collection_ids = [collection['Collection'] for collection in get_TCIA_collections()]
         tcia_collection_ids = get_collection_values_and_counts()
         idc_collection_ids = [collection.tcia_api_collection_id for collection in version.collections]
         new_collections = []
         for tcia_collection_id in tcia_collection_ids:
-            if not tcia_collection_id in idc_collection_ids:
-                new_collections.append(Collection(version_id = version.id,
-                                              idc_version_number = version.idc_version_number,
-                                              collection_timestamp = datetime(1970,1,1,0,0,0),
-                                              tcia_api_collection_id = tcia_collection_id,
-                                              revised = True,
-                                              done = False,
-                                              is_new = True,
-                                              expanded = False))
+            if not tcia_collection_id in skips:
+                if not tcia_collection_id in idc_collection_ids:
+                    new_collections.append(Collection(version_id = version.id,
+                                                  idc_version_number = version.idc_version_number,
+                                                  collection_timestamp = datetime(1970,1,1,0,0,0),
+                                                  tcia_api_collection_id = tcia_collection_id,
+                                                  revised = True,
+                                                  done = False,
+                                                  is_new = True,
+                                                  expanded = False))
         sess.add_all(new_collections)
         version.expanded = True
         sess.commit()
@@ -582,7 +616,7 @@ def expand_version(sess, args, version):
 
 def build_version(sess, args, version):
     # Session = sessionmaker(bind= sql_engine)
-    # version = version_is_done(sess, args.vnext)
+    # version = version_is_done(sess, args.version)
     if not version.done:
         begin = time.time()
         if not version.expanded:
@@ -614,20 +648,20 @@ def prebuild(args):
         shutil.rmtree('{}'.format(args.dicom))
     os.mkdir('{}'.format(args.dicom))
 
-    # Basically add a new Version with idc_version_number args.vnext, if it does not already exist
+    # Basically add a new Version with idc_version_number args.version, if it does not already exist
     with Session(sql_engine) as sess:
         stmt = select(Version).distinct()
         result = sess.execute(stmt)
         version = []
         for row in result:
-            if row[0].idc_version_number == args.vnext:
-                # We've at least started working on vnext
+            if row[0].idc_version_number == args.version:
+                # We've at least started working on version
                 version = row[0]
                 break
 
         if not version:
-        # If we get here, we have not started work on vnext, so add it to Version
-            version = Version(idc_version_number=args.vnext,
+        # If we get here, we have not started work on version, so add it to Version
+            version = Version(idc_version_number=args.version,
                               idc_version_timestamp=datetime.datetime.utcnow(),
                               revised=False,
                               done=False,
@@ -644,7 +678,7 @@ if __name__ == '__main__':
     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
     rootlogger.addHandler(root_fh)
     root_fh.setFormatter(rootformatter)
-    rootlogger.setLevel(INFO)
+    rootlogger.setLevel(DEBUG)
 
     errlogger = logging.getLogger('root.err')
     err_fh = logging.FileHandler('{}/logs/err.log'.format(os.environ['PWD']))
@@ -653,19 +687,17 @@ if __name__ == '__main__':
     err_fh.setFormatter(errformatter)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--vnext', default=2, help='Next version to generate')
+    parser.add_argument('--version', default=2, help='Version to work on')
+    parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--bucket', default='idc_dev', help='Bucket in which to save instances')
     parser.add_argument('--staging_bucket', default='idc_dev_staging', help='Copy instances here before forwarding to --bucket')
     parser.add_argument('--prestaging_bucket_prefix', default=f'idc_v2_', help='Copy instances here before forwarding to --staging_bucket')
-    parser.add_argument('--num_processes', default=8, help="Number of concurrent processes")
+    parser.add_argument('--num_processes', default=2, help="Number of concurrent processes")
     parser.add_argument('--skips', default='{}/idc/skips.txt'.format(os.environ['PWD']) )
-    parser.add_argument('--bq_dataset', default='mvp_wave2', help='BQ dataset')
-    parser.add_argument('--bq_aux_name', default='auxilliary_metadata', help='Auxilliary metadata table name')
-    parser.add_argument('--project', default='idc-dev-etl')
+    parser.add_argument('--dicom', default='/mnt/disks/idc-etl/dicom', help='Directory in which to expand downloaded zip files')
     args = parser.parse_args()
 
     # Directory to which to download files from TCIA/NBIA
-    args.dicom = 'dicom'
     print("{}".format(args), file=sys.stdout)
 
     prebuild(args)

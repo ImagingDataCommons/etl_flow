@@ -14,31 +14,22 @@
 # limitations under the License.
 #
 
-import sys
-import os
 import argparse
-from pathlib import Path
-import time
-from datetime import datetime, timezone, timedelta
-import logging
-from logging import INFO
-import pydicom
 import hashlib
-from subprocess import run, PIPE
+import logging
+import os
 import shutil
-from multiprocessing import Process, Queue
-from queue import Empty
+import sys
 from base64 import b64decode
-from pydicom.errors import InvalidDicomError
-from uuid import uuid4
+from logging import INFO
+from subprocess import run
+
+from google.api_core.exceptions import Conflict
 from google.cloud import storage
-from idc.models import Version, Collection, Patient, Study, Series, Instance, sql_engine
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from utilities.tcia_helpers import  get_collections, get_TCIA_patients_per_collection, get_TCIA_studies_per_patient, \
-    get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_TCIA_instances_per_series, get_collection_values_and_counts
-from utilities.get_collection_dois import get_data_collection_doi, get_analysis_collection_dois
-from google.api_core.exceptions import Conflict
+
+from idc.models import Version, sql_engine
 
 # Validate that the final bucket has a blob for each row in some specified version.
 # Note that the final bucket can have blobs that are not in some version.
@@ -98,7 +89,7 @@ def copy_disk_to_prestaging_bucket(args, series):
         if result.returncode < 0:
             errlogger.error('p%s: \tcopy_disk_to_prestaging_bucket failed for series %s', args.id, series.series_instance_uid)
             raise RuntimeError('p%s: copy_disk_to_prestaging_bucket failed for series %s', args.id, series.series_instance_uid)
-        rootlogger.debug(("p%s: Uploaded instances to GCS", args.id))
+        rootlogger.debug("p%s: Uploaded instances to GCS", args.id)
     except Exception as exc:
         errlogger.error("\tp%s: Copy to prestage bucket failed for series %s", args.id, series.series_instance_uid)
         raise RuntimeError("p%s: Copy to prestage bucketfailed for series %s", args.id, series.series_instance_uid) from exc
@@ -115,7 +106,7 @@ def copy_prestaging_to_staging_bucket(args, collection):
         if result.returncode < 0:
             errlogger.error('\tp%s: copy_prestaging_to_staging_bucket failed for collection %s', args.id, collection.tcia_api_collection_id)
             raise RuntimeError('p%s: copy_prestaging_to_staging_bucket failed for collection %s', args.id, collection.tcia_api_collection_id)
-        rootlogger.debug(("p%s: Uploaded instances to GCS", args.id))
+        rootlogger.debug("p%s: Uploaded instances to GCS", args.id)
     except Exception as exc:
         errlogger.error("\tp%s: Copy from prestaging to staging bucket for collection %s failed", args.id, collection.tcia_api_collection_id)
         raise RuntimeError("p%s: Copy from prestaging to staging bucket for collection %s failed", args.id, collection.tcia_api_collection_id) from exc
@@ -130,7 +121,7 @@ def copy_staging_bucket_to_final_bucket(args, version):
         if result.returncode < 0:
             errlogger.error('\tp%s: copy_staging_bucket_to_final_bucket failed for version %s', args.id, version.idc_version_number)
             raise RuntimeError('p%s: copy_staging_bucket_to_final_bucket failed for version %s', args.id, version.idc_version_number)
-        rootlogger.debug(("p%s: Uploaded instances to GCS"))
+        rootlogger.debug("p%s: Uploaded instances to GCS")
     except Exception as exc:
         errlogger.error("\tp%s: Copy from prestaging to staging bucket for collection %s failed", args.id, version.idc_version_number)
         raise RuntimeError("p%s: Copy from prestaging to staging bucket for collection %s failed", args.id, version.idc_version_number) from exc
@@ -140,7 +131,7 @@ def empty_bucket(bucket):
     try:
         src = "gs://{}/*".format(bucket)
         run(["gsutil", "-m", "-q", "rm", src])
-        rootlogger.debug(("Emptied bucket %s", bucket))
+        rootlogger.debug("Emptied bucket %s", bucket)
     except Exception as exc:
         errlogger.error("Failed to empty bucket %s", bucket)
         raise RuntimeError("Failed to empty bucket %s", bucket) from exc
