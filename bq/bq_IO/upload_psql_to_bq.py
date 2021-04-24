@@ -287,7 +287,7 @@ def upload_instance(cur, args):
     result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
 
     count =0
-    increment = 10000
+    increment = 50000
 
     cur.execute("""
         SELECT * 
@@ -331,7 +331,7 @@ def upload_to_bq(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=1, help='Version to upload')
+    parser.add_argument('--version', default=2, help='Version to upload')
     parser.add_argument('--project', default='idc-dev-etl')
     args = parser.parse_args()
     parser.add_argument('--bqdataset_name', default=f"idc_v{args.version}", help="BQ dataset of table")
