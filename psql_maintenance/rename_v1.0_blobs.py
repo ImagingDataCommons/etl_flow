@@ -14,7 +14,12 @@
 # limitations under the License.
 #
 
-# One time use script to gen Merkle (hierarchical) hash for series, studies, patients, collections and versions.
+# One time use script to rename V1 instance blobs whose UUIDs were incorrectly
+# copied from the V1 aux table. This script actually copies these blobs with
+# correct names.
+# This script does not actually repair the UUIDs in the instance, study and
+# series table, nor does it delete the incorrectly named blobs.
+# That is done separately.
 
 import sys
 import os
