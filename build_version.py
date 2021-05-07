@@ -284,7 +284,7 @@ def expand_series(sess, series):
     # If the study is new, then all the studies are new
     if series.is_new:
         for instance in instances:
-            instance_uuid = uuid4().hex
+            instance_uuid = uuid4()
             series.instances.append(Instance(series_id=series.id,
                                          idc_version_number=series.idc_version_number,
                                          instance_timestamp=datetime(1970,1,1,0,0,0),
@@ -332,7 +332,7 @@ def expand_study(sess, collection, patient, study, data_collection_doi, analysis
                                          idc_version_number=study.idc_version_number,
                                          series_timestamp=datetime(1970,1,1,0,0,0),
                                          series_instance_uid=row['SeriesInstanceUID'],
-                                         series_uuid=uuid4().hex,
+                                         series_uuid=uuid4(),
                                          series_instances=0,
                                          source_doi=analysis_collection_dois[row['SeriesInstanceUID']] \
                                              if row['SeriesInstanceUID'] in analysis_collection_dois
@@ -378,7 +378,7 @@ def expand_patient(sess, collection, patient):
                                          idc_version_number=patient.idc_version_number,
                                          study_timestamp = datetime(1970,1,1,0,0,0),
                                          study_instance_uid=study['StudyInstanceUID'],
-                                         study_uuid=uuid4().hex,
+                                         study_uuid=uuid4(),
                                          study_instances = 0,
                                          revised=True,
                                          done=False,
@@ -444,7 +444,7 @@ def expand_collection(sess, args, collection):
                                               idc_version_number = collection.idc_version_number,
                                               patient_timestamp = datetime(1970,1,1,0,0,0),
                                               submitter_case_id = patient['PatientId'],
-                                              idc_case_id = uuid4().hex,
+                                              idc_case_id = uuid4(),
                                               revised = True,
                                               done = False,
                                               is_new = True,
