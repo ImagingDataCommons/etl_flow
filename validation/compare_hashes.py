@@ -34,9 +34,9 @@ from psycopg2.extras import DictCursor
 
 
 
-def compare_series_hashes(cur, args, study_instance_uid):
+def compare_series_hashes(access_token, cur, args, study_instance_uid):
     query = f"""
-        SELECT series_instance_uid, series_hash
+        SELECT series_instance_uid, series_hash, series_instances
         FROM study{args.suffix} as st
         JOIN series{args.suffix} as se
         ON st.id = se.study_id
@@ -45,20 +45,25 @@ def compare_series_hashes(cur, args, study_instance_uid):
 
     cur.execute(query)
     series = cur.fetchall()
-    access_token = get_access_token(url = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")['access_token']
+    # access_token = get_access_token(url = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")['access_token']
 
     for row in series:
-        result = get_hash({'Series': row[0]}, access_token=access_token)
-        if not result.status_code == 200:
-            print('\t\t\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
-            rootlogger.info('\t\t\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
-        else:
-            nbia_hash = result.text
-            print('\t\t\t{:32} IDC: {}, NBIA: {}; {}'.format(row[0], row[1], nbia_hash, row[1]==nbia_hash))
-            rootlogger.info('\t\t\t%-32s IDC: %s, NBIA: %s; %s', row[0], row[1], nbia_hash, row[1]==nbia_hash)
+        try:
+            result = get_hash({'SeriesInstanceUID': row[0]}, access_token=access_token)
+            if not result.status_code == 200:
+                print('\t\t\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
+                rootlogger.info('\t\t\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
+            else:
+                nbia_hash = result.text
+                if 'series' in args.log_level:
+                    print('{}{:32} IDC: {}, NBIA: {}; {}; {} instances'.format(args.series_indent, row[0], row[1], nbia_hash, row[1]==nbia_hash, row[2]))
+                    rootlogger.info('%s%-32s IDC: %s, NBIA: %s; %s, %s instances', args.series_indent, row[0], row[1], nbia_hash, row[1]==nbia_hash, row[2])
+        except TimeoutError as esc:
+            print('{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
+            rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
 
 
-def compare_study_hashes(cur, args, tcia_api_collection_id, submitter_case_id):
+def compare_study_hashes(access_token, cur, args, tcia_api_collection_id, submitter_case_id):
     query = f"""
         SELECT study_instance_uid, study_hash
         FROM collection{args.suffix} as c 
@@ -71,27 +76,32 @@ def compare_study_hashes(cur, args, tcia_api_collection_id, submitter_case_id):
 
     cur.execute(query)
     studies = cur.fetchall()
-    access_token = get_access_token(url = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")['access_token']
+    # access_token = get_access_token(url = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")['access_token']
 
     for row in studies:
-        result = get_hash({'Study': row[0]}, access_token=access_token)
-        if not result.status_code == 200:
-            print('\t\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
-            rootlogger.info('\t\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
-        else:
-            nbia_hash = result.text
-            print('\t\t{:32} IDC: {}, NBIA: {}; {}'.format(row[0], row[1], nbia_hash, row[1]==nbia_hash))
-            rootlogger.info('\t\t%-32s IDC: %s, NBIA: %s; %s', row[0], row[1], nbia_hash, row[1]==nbia_hash)
-            if not args.stop_expansion == 'study':
-                if not row[1]==nbia_hash:
-                    if nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == "":
-                        print('\t\t{:32} Skip expansion'.format(""))
-                        rootlogger.info('\t\t%-32s Skip expansion', "")
-                    else:
-                        compare_series_hashes(cur, args, row[0])
+        try:
+            result = get_hash({'StudyInstanceUID': row[0]}, access_token=access_token)
+            if not result.status_code == 200:
+                print('\t\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
+                rootlogger.info('\t\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
+            else:
+                nbia_hash = result.text
+                if 'study' in args.log_level:
+                    print('\t\t{:32} IDC: {}, NBIA: {}; {}'.format(row[0], row[1], nbia_hash, row[1]==nbia_hash))
+                    rootlogger.info('\t\t%-32s IDC: %s, NBIA: %s; %s', row[0], row[1], nbia_hash, row[1]==nbia_hash)
+                if not args.stop_expansion == 'study':
+                    if not row[1]==nbia_hash or args.expand_all:
+                        if nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == "":
+                            if 'study' in args.log_level:
+                                print('\t\t{:32} Skip expansion'.format(""))
+                                rootlogger.info('\t\t%-32s Skip expansion', "")
+                        else:
+                            compare_series_hashes(access_token, cur, args, row[0])
+        except TimeoutError as esc:
+            print('{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
+            rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
 
-
-def compare_patient_hashes(cur, args, tcia_api_collection_id):
+def compare_patient_hashes(access_token, cur, args, tcia_api_collection_id):
     query = f"""
         SELECT submitter_case_id, patient_hash
         FROM collection{args.suffix} as c 
@@ -102,24 +112,30 @@ def compare_patient_hashes(cur, args, tcia_api_collection_id):
 
     cur.execute(query)
     patients = cur.fetchall()
-    access_token = get_access_token(url = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")['access_token']
+    # access_token = get_access_token(url = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")['access_token']
 
     for row in patients:
-        result = get_hash({'Collection': tcia_api_collection_id, 'PatientID': row[0]}, access_token=access_token)
-        if not result.status_code == 200:
-            print('\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
-            rootlogger.info('\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
-        else:
-            nbia_hash = result.text
-            print('\t{:32} IDC: {}, NBIA: {}; {}'.format(row[0], row[1], nbia_hash, row[1]==nbia_hash))
-            rootlogger.info('\t%-32s IDC: %s, NBIA: %s; %s', row[0], row[1], nbia_hash, row[1]==nbia_hash)
-            if not args.stop_expansion == 'patient':
-                if not row[1] == nbia_hash:
-                    if nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == "":
-                        print('\t{:32} Skip expansion'.format(""))
-                        rootlogger.info('\t%-32s Skip expansion', "")
-                    else:
-                        compare_study_hashes(cur, args, tcia_api_collection_id, row[0])
+        try:
+            result = get_hash({'Collection': tcia_api_collection_id, 'PatientID': row[0]}, access_token=access_token)
+            if not result.status_code == 200:
+                print('\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
+                rootlogger.info('\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
+            else:
+                nbia_hash = result.text
+                if 'patient' in args.log_level:
+                    print('\t{:32} IDC: {}, NBIA: {}; {}'.format(row[0], row[1], nbia_hash, row[1]==nbia_hash))
+                    rootlogger.info('\t%-32s IDC: %s, NBIA: %s; %s', row[0], row[1], nbia_hash, row[1]==nbia_hash)
+                if not args.stop_expansion == 'patient':
+                    if not row[1] == nbia_hash or args.expand_all:
+                        if nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == "":
+                            if 'patient' in args.log_level:
+                                print('\t{:32} Skip expansion'.format(""))
+                                rootlogger.info('\t%-32s Skip expansion', "")
+                        else:
+                            compare_study_hashes(access_token, cur, args, tcia_api_collection_id, row[0])
+        except TimeoutError as esc:
+            print('{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
+            rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
 
 
 def compare_collection_hashes(cur, args):
@@ -133,22 +149,31 @@ def compare_collection_hashes(cur, args):
     collections = cur.fetchall()
     access_token = get_access_token(url = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")['access_token']
 
+    skips = open(args.skips).read().splitlines()
+
     for row in collections:
-        result = get_hash({'Collection': row[0]}, access_token=access_token)
-        if not result.status_code == 200:
-            print('{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
-            rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
-        else:
-            nbia_hash = result.text
-            print('{:32} IDC: {}, NBIA: {}; {}'.format(row[0], row[1], nbia_hash, row[1]==nbia_hash))
-            rootlogger.info('%-32s IDC: %s, NBIA: %s; %s', row[0], row[1], nbia_hash, row[1]==nbia_hash)
-            if not args.stop_expansion == 'collection':
-                if not row[1]==nbia_hash:
-                    if nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == "":
-                        print('{:32} Skip expansion'.format(""))
-                        rootlogger.info('%-32s Skip expansion', "")
-                    else:
-                        compare_patient_hashes(cur, args, row[0])
+        if row[0] not in skips:
+            try:
+                result = get_hash({'Collection': row[0]}, access_token=access_token)
+                if not result.status_code == 200:
+                    print('{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
+                    rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
+                else:
+                    nbia_hash = result.text
+                    if 'collection' in args.log_level:
+                        print('{:32} IDC: {}, NBIA: {}; {}'.format(row[0], row[1], nbia_hash, row[1]==nbia_hash))
+                        rootlogger.info('%-32s IDC: %s, NBIA: %s; %s', row[0], row[1], nbia_hash, row[1]==nbia_hash)
+                    if not args.stop_expansion == 'collection':
+                        if row[1] != nbia_hash or args.expand_all:
+                            if nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == "":
+                                if 'collection' in args.log_level:
+                                    print('{:32} Skip expansion'.format(""))
+                                    rootlogger.info('%-32s Skip expansion', "")
+                            else:
+                                compare_patient_hashes(access_token, cur, args, row[0])
+            except TimeoutError as esc:
+                print('{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
+                rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
 
 
 def compare_hashes(args):
@@ -167,7 +192,8 @@ def compare_hashes(args):
 if __name__ == '__main__':
     rootlogger = logging.getLogger('root')
     root_fh = logging.FileHandler('{}/logs/compare_hashes_log.log'.format(os.environ['PWD']))
-    rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
+    # rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
+    rootformatter = logging.Formatter('%(message)s')
     rootlogger.addHandler(root_fh)
     root_fh.setFormatter(rootformatter)
     rootlogger.setLevel(INFO)
@@ -180,7 +206,11 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--suffix', default="")
-    parser.add_argument('--stop_expansion', default="collection", help="Level at which to stop expansion")
+    parser.add_argument('--stop_expansion', default="", help="Level at which to stop expansion")
+    parser.add_argument('--expand_all', default=True)
+    parser.add_argument('--log_level', default=("series"))
+    parser.add_argument('--series_indent', default="")
+    parser.add_argument('--skips', default='./logs/compare_hashes_skips')
     args = parser.parse_args()
 
     print("{}".format(args), file=sys.stdout)

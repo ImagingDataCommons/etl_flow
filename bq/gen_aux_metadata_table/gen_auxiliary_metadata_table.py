@@ -36,7 +36,8 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=2, help='IDC version for which to build the table')
     args = parser.parse_args()
     parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
-    parser.add_argument('--bqtable_name', default='auxiliary_metadata', help='BQ table name')
+    # parser.add_argument('--bqdataset_name', default=f'whc_dev', help='BQ dataset name')
+    parser.add_argument('--bqtable_name', default='auxiliary_metadata_dev', help='BQ table name')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

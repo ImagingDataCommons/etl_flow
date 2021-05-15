@@ -74,5 +74,5 @@ auxiliary_metadata_schema = """
     LEFT JOIN 
       `{project}.{dataset}.excluded_collections` as ex
     ON 
-      LOWER(c.tcia_api_collection_id) = LOWER(ex.collection)
-    WHERE ex.collection IS NULL"""
+      LOWER(c.tcia_api_collection_id) = LOWER(ex.tcia_api_collection_id)
+    WHERE ex.tcia_api_collection_id IS NULL"""

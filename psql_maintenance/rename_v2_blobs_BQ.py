@@ -212,7 +212,7 @@ def rename_blobs(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--version', default=2)
+    parser.add_argument('--version', default=1)
     parser.add_argument('--bqdataset', default='idc_v2')
     parser.add_argument('--table', default='auxiliary_metadata')
     parser.add_argument('--bucket', default='idc_dev')

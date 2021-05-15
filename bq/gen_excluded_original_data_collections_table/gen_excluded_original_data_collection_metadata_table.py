@@ -88,7 +88,7 @@ def gen_collections_table(args):
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
     parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--version', default=2, help='IDC version for which to build the table')
+    parser.add_argument('--version', default=1, help='IDC version for which to build the table')
     args = parser.parse_args()
     parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default='excluded_original_collections_metadata', help='BQ table name')
