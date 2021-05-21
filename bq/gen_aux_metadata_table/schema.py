@@ -44,8 +44,8 @@ auxiliary_metadata_schema = """
       se.series_hash AS series_hash,
       i.sop_instance_uid AS SOPInstanceUID,
       i.instance_uuid AS instance_uuid,
-      CONCAT(i.gcs_url,'.dcm') AS gcs_url,
-      SPLIT(i.gcs_url,'/')[OFFSET(2)] AS gcs_bucket,
+      CONCAT('gs://','{gcs_bucket}','/', i.instance_uuid,'.dcm') AS gcs_url,
+      '{gcs_bucket}' AS gcs_bucket,
       i.instance_size AS instance_size,
       i.instance_timestamp AS instance_timestamp,
       i.instance_hash AS instance_hash

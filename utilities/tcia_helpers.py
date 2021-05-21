@@ -338,7 +338,7 @@ def get_hash(request_data, access_token=None):
 
     return result
 
-def get_images_dev(SeriesInstanceUID, access_token=None):
+def get_images_with_md5_hash(SeriesInstanceUID, access_token=None):
     if not access_token:
         access_token = get_access_token(url = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")['access_token']
     headers = dict(
@@ -354,8 +354,8 @@ def get_images_dev(SeriesInstanceUID, access_token=None):
 
 if __name__ == "__main__":
     # hash = get_hash({"SeriesInstanceUID":'1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353'})
-    result = get_images_dev('1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353')
-    with open('foo.zip', 'wb') as f:
+    result = get_images_with_md5_hash('1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353')
+    with open('/home/bcliffor/temp/1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353.zip', 'wb') as f:
         f.write(result.content)
 
     # series = get_updated_series('20/02/2021')

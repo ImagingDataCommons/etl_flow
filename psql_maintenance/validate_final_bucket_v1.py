@@ -14,8 +14,7 @@
 # limitations under the License.
 #
 
-# Staging buckets are per-collection and contain new/revised instances in
-# in a new version. These all need to be copied to the final bucket.
+# One time use routine to "rename" improperly named v1 blobs.
 
 import argparse
 import os
@@ -47,7 +46,7 @@ def val_collection(cur, args, dones, collection_index, tcia_api_collection_id):
         n = 1
 
         try:
-            done_instances = open(f'./logs/vfb_{tcia_api_collection_id}_success.log').read().splitlines()
+            done_instances = open(f'./logs/vfb__v1_{tcia_api_collection_id}_success.log').read().splitlines()
         except:
             done_instances = []
 
@@ -60,8 +59,8 @@ def val_collection(cur, args, dones, collection_index, tcia_api_collection_id):
         """
         cur.execute(query)
         rowcount=cur.rowcount
-        successes = open(f'./logs/vfb_{tcia_api_collection_id}_success.log', 'a')
-        failures = open(f'./logs/vfb_{tcia_api_collection_id}_failures.log', 'a')
+        successes = open(f'./logs/vfb__v1_{tcia_api_collection_id}_success.log', 'a')
+        failures = open(f'./logs/vfb_v1_{tcia_api_collection_id}_failures.log', 'a')
         failure_count=0
         while True:
             rows = cur.fetchmany(increment)
@@ -76,12 +75,22 @@ def val_collection(cur, args, dones, collection_index, tcia_api_collection_id):
                 # else:
                 #     errlogger.error('%s: %s original blob not found', n, blob_name)
                 index = f'{n}/{rowcount}'
-                uuid = row["gcs_url"].rsplit('/')[-1]
-                blob_rename = f"{uuid[0:8]}-{uuid[8:12]}-{uuid[12:16]}-{uuid[16:20]}-{uuid[20:32]}.dcm"
+                blob_name = f'{row["gcs_url"].rsplit("/")[-1]}.dcm'
+                blob_rename = f"{row['instance_uuid']}.dcm"
                 if not blob_rename in done_instances:
                     if storage.Blob(bucket=bucket, name=blob_rename).exists(client):
                         rootlogger.info('%s %s: %s: renamed blob exists %s', args.id, index, tcia_api_collection_id, blob_rename)
                         successes.write(f'{blob_rename}\n')
+                    elif blob_name == blob_rename:
+                        errlogger.error('%s %s: %s: name == rename but blob does not exist %s', args.id, index,
+                                        tcia_api_collection_id, blob_name)
+                        failures.write(f'{blob_rename}\n')
+                        failure_count += 1
+                    elif blob_name[-28:] != blob_rename[-28:]:
+                        errlogger.error('%s %s: %s: name and rename not similar %s %s', args.id, index,
+                                        tcia_api_collection_id, blob_name, blob_rename)
+                        failures.write(f'{blob_rename}\n')
+                        failure_count += 1
                     else:
                         # Didn't find renamed blob, so copy original blob to renamed blob
                         blob_name = f'{row["gcs_url"].rsplit("/")[-1]}.dcm'
@@ -116,48 +125,6 @@ def val_collection(cur, args, dones, collection_index, tcia_api_collection_id):
         rootlogger.info("p%s: Collection %s, %s, previously built", args.id, tcia_api_collection_id, collection_index)
 
 
-def copy_collection(args, dones, collection_index, tcia_api_collection_id):
-    if not tcia_api_collection_id in dones:
-    # if collection['tcia_api_collection_id'] == 'RIDER Breast MRI': # Temporary code for development
-        begin = time.time()
-        rootlogger.info("p%s: Validating %s, %s", args.id, tcia_api_collection_id, collection_index)
-
-        try:
-            try:
-                os.remove(f'gsutil_result_{args.id}.log')
-            except:
-                pass
-
-            result = run(['gsutil', '-m', '-q', 'cp', '-L', f'gsutil_result_{args.id}.log', f'gs://{src_bucket}/*', f'gs://{args.dst_bucket}'])
-                         # stdout=PIPE, stderr=PIPE)
-            end = time.time()
-            duration = end - begin
-
-            results = open(f'gsutil_result_{args.id}.log').read().splitlines()
-            bytes_transferred = 0
-            src = results[0].split(',').index('Source')
-            res = results[0].split(',').index('Result')
-            transferred = results[0].split(',').index('Bytes Transferred')
-            for transfer in results[1:]:
-                data = transfer.split(',')
-                if data[res] != 'OK':
-                    errlogger.error('Error transferring %s', data[src])
-                    raise RuntimeError('Error transferring %s', data[src])
-                else:
-                    bytes_transferred += int(data[transferred])
-
-            rootlogger.info("p%s: Copied %s, %s; %.2f GB in %.2fs, %.2f GB/s", args.id, tcia_api_collection_id, collection_index,
-                bytes_transferred/2**30, duration, (bytes_transferred/2**30)/duration)
-
-
-            with open(args.dones, 'a') as f:
-                f.write(f"{tcia_api_collection_id}\n")
-        except Exception as exc:
-            errlogger.error('p%s: Copying %s failed',args.id, tcia_api_collection_id)
-            raise exc
-    else:
-        rootlogger.info("p%s: Collection %s, %s, previously built", args.id, tcia_api_collection_id, collection_index)
-
 def worker(input, output, args, dones):
     rootlogger.debug('p%s: Worker starting: args: %s', args.id, args)
     conn = psycopg2.connect(dbname=settings.DATABASE_NAME, user=settings.DATABASE_USERNAME,
@@ -183,27 +150,29 @@ def worker(input, output, args, dones):
                 output.put((tcia_api_collection_id))
 
 def copy_collections(cur, args, version):
-    # Session = sessionmaker(bind= sql_engine)
-    # version = version_is_done(sess, args.version)
     try:
-        skips = open(args.skips).read().splitlines()
+        todos = open(args.todos).read().splitlines()
     except:
-        skips = []
+        errlogger.error('No todos file')
+        raise
+
     try:
         dones = open(args.dones).read().splitlines()
     except:
         dones = []
     begin = time.time()
+    # cur.execute("""
+    #     SELECT * FROM all_v2_20210514_1526""")
     cur.execute("""
         SELECT * FROM collection
-        WHERE version_id = (%s)""", (version['id'],))
+        WHERE idc_version_number = 1""")
     collections = cur.fetchall()
 
     rootlogger.info("Version %s; %s collections", version['idc_version_number'], len(collections))
     if args.processes == 0:
         args.id=0
         for collection in collections:
-            if not collection['tcia_api_collection_id'] in skips:
+            if collection['tcia_api_collection_id'] in todos:
                 collection_index = f'{collections.index(collection)+1} of {len(collections)}'
                 val_collection(cur, args, dones, collection_index,  collection['tcia_api_collection_id'])
 
@@ -225,7 +194,7 @@ def copy_collections(cur, args, version):
 
         # Enqueue each patient in the the task queue
         for collection in collections:
-            if not collection['tcia_api_collection_id'] in skips:
+            if collection['tcia_api_collection_id'] in todos:
                 collection_index = f'{collections.index(collection) + 1} of {len(collections)}'
                 task_queue.put((collection_index, collection['tcia_api_collection_id']))
                 enqueued_collections.append(collection['tcia_api_collection_id'])
@@ -277,14 +246,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=2, help='Next version to generate')
     parser.add_argument('--final_bucket', default='idc_dev', help='Bucket to validate')
-    parser.add_argument('--processes', default=16, help="Number of concurrent processes")
+    parser.add_argument('--processes', default=8, help="Number of concurrent processes")
     parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--skips', default='./logs/validate_final_bucket_skips.log' )
-    parser.add_argument('--dones', default='./logs/validate_final_bucket_dones.log' )
+    parser.add_argument('--todos', default='./logs/validate_v1_final_bucket_todos.log' )
+    parser.add_argument('--dones', default='./logs/validate_v1_final_bucket_dones.log' )
     args = parser.parse_args()
 
     rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/validate_final_bucket_log.log'.format(os.environ['PWD']))
+    root_fh = logging.FileHandler('{}/logs/validate_v1_final_bucket_log.log'.format(os.environ['PWD']))
     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
     rootlogger.addHandler(root_fh)
     root_fh.setFormatter(rootformatter)
@@ -298,7 +267,7 @@ if __name__ == '__main__':
     donelogger.setLevel(INFO)
 
     errlogger = logging.getLogger('root.err')
-    err_fh = logging.FileHandler('{}/logs/validate_final_bucket_err.log'.format(os.environ['PWD']))
+    err_fh = logging.FileHandler('{}/logs/validate_v1_final_bucket_err.log'.format(os.environ['PWD']))
     errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
