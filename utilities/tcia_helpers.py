@@ -16,18 +16,14 @@
 
 import json
 import sys
-import pycurl
-import inspect
-import zipfile
 from subprocess import run, PIPE
 import time, datetime
-import random
-from io import BytesIO, StringIO
-from google.cloud import storage
+from io import StringIO
 import requests
-from requests import session
-import backoff
 import logging
+
+from python_settings import settings
+
 
 TIMEOUT=3600
 CHUNK_SIZE=1024*1024
@@ -246,13 +242,13 @@ def get_collection_sizes(nbia_server=True):
     sorted_counts = [(k, v) for k, v in sorted(counts.items(), key=lambda item: item[1])]
     return sorted_counts
 
+
 def get_access_token(url="https://public.cancerimagingarchive.net/nbia-api/oauth/token"):
-    # data = "username=nbia_guest&password=&client_id=nbiaRestAPIClient&client_secret=ItsBetweenUAndMe&grant_type=password"
     data = dict(
         username="nbia_guest",
         password="",
-        client_id="nbiaRestAPIClient",
-        client_secret="ItsBetweenUAndMe",
+        client_id=settings.TCIA_CLIENT_ID,
+        client_secret=settings.TCIA_CLIENT_SECRET,
         grant_type="password")
     # url = "https://public.cancerimagingarchive.net/nbia-api/oauth/token"
     result = requests.post(url, data = data)
@@ -272,17 +268,7 @@ def get_collection_values_and_counts():
 
 def get_collection_descriptions():
     # Get access token for the guest account
-    result = run([
-        'curl',
-        '-v',
-        '-d',
-        "username=nbia_guest&password=&client_id=nbiaRestAPIClient&client_secret=ItsBetweenUAndMe&grant_type=password",
-        '-X',
-        'POST',
-        '-k',
-        "https://public.cancerimagingarchive.net/nbia-api/oauth/token"
-        ], stdout=PIPE, stderr=PIPE)
-    access_token = json.loads(result.stdout.decode())['access_token']
+    access_token = get_access_token()
     result = run([
         'curl',
         '-H',
@@ -317,17 +303,6 @@ def get_updated_series(date):
 
 
 def get_hash(request_data, access_token=None):
-    # data = dict(
-    #     username="nbia_guest",
-    #     password="",
-    #     client_id="nbiaRestAPIClient",
-    #     client_secret="ItsBetweenUAndMe",
-    #     grant_type="password")
-    # url = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token"
-    # result = requests.post(url, data = data)
-    # access_token = result.json()
-    #
-    # access_token = access_token['access_token']
     if not access_token:
         access_token = get_access_token(url = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")['access_token']
     headers = dict(
@@ -352,32 +327,110 @@ def get_images_with_md5_hash(SeriesInstanceUID, access_token=None):
     return result
 
 
+def get_access_token_dev(url="https://public.cancerimagingarchive.net/nbia-api/oauth/token"):
+    data = dict(
+        username=settings.TCIA_ID,
+        password=settings.TCIA_PASSWORD,
+        client_id=settings.TCIA_CLIENT_ID,
+        client_secret=settings.TCIA_CLIENT_SECRET,
+        grant_type="password")
+    # url = "https://public.cancerimagingarchive.net/nbia-api/oauth/token"
+    result = requests.post(url, data = data)
+    access_token = result.json()
+    return access_token
+
+
+def get_patients_per_collection_dev(collection_id):
+    access_token = get_access_token_dev(url = "https://nlst.cancerimagingarchive.net/nbia-api/oauth/token")['access_token']
+    headers = dict(
+        Authorization = f'Bearer {access_token}'
+    )
+
+    server_url = 'https://nlst.cancerimagingarchive.net/nbia-api/services/v2'
+    url = f'{server_url}/getPatient?Collection={collection_id}'
+    results = requests.get(url, headers=headers)
+    collections = results.json()
+    # collections = [collection['Collection'].replace(' ', '_') for collection in results.json()]
+    return collections
+
+def get_collections_dev():
+    access_token = get_access_token_dev(url = "https://nlst.cancerimagingarchive.net/nbia-api/oauth/token")['access_token']
+    headers = dict(
+        Authorization = f'Bearer {access_token}'
+    )
+
+    server_url = 'https://nlst.cancerimagingarchive.net/nbia-api/services/v2'
+    url = f'{server_url}/getCollectionValues'
+    results = requests.get(url, headers=headers)
+    collections = results.json()
+    # collections = [collection['Collection'].replace(' ', '_') for collection in results.json()]
+    return collections
+
+def get_collection_values_and_counts_dev():
+    access_token = get_access_token(url = "https://nlst.cancerimagingarchive.net/nbia-api/oauth/token")['access_token']
+    headers = dict(
+        Authorization = f'Bearer {access_token}'
+    )
+    url = 'https://nlst.cancerimagingarchive.net/nbia-api/services/v2/getSimpleSearchCriteriaValues'
+    result = requests.get(url, headers=headers)
+    collections = [collection['criteria'] for collection in result.json()]
+    return collections
+
+def v2_api(endpoint, data):
+    access_token = get_access_token(url = "https://services.cancerimagingarchive.net/nbia-api/oauth/token")['access_token']
+    headers = dict(
+        Authorization = f'Bearer {access_token}'
+    )
+    url = f'https://services.cancerimagingarchive.net/nbia-api/services/{endpoint}'
+    result = requests.get(url, headers=headers, data=data)
+    # collections = [collection['criteria'] for collection in result.json()]
+    return result
+
+
+
+
+
+
 if __name__ == "__main__":
+    if not settings.configured:
+        from python_settings import settings
+        import settings as etl_settings
+
+        settings.configure(etl_settings)
+        assert settings.configured
+
+    # results = get_collection_values_and_counts()
+    # results = v2_api('getCollectionValuesAndCounts', data="")
+    # results = v2_api('getSimpleSearchCriteriaValues', data="")
+    # results = get_collection_values_and_counts()
+    # results = get_collection_values_and_counts_dev()
+    results = get_patients_per_collection_dev('NLST')
+    results = get_collections_dev()
     # hash = get_hash({"SeriesInstanceUID":'1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353'})
-    result = get_images_with_md5_hash('1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353')
-    with open('/home/bcliffor/temp/1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353.zip', 'wb') as f:
-        f.write(result.content)
+    # result = get_images_with_md5_hash('1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353')
+    # with open('/home/bcliffor/temp/1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353.zip', 'wb') as f:
+    #     f.write(result.content)
 
     # series = get_updated_series('20/02/2021')
     # hash = get_hash({"Collection":'TCGA-ESCA'})
     # instances = get_TCIA_instances_per_series('/mnt/disks/idc-etl/temp', '1.2.840.113713.4.2.165042455211102753703326913551133262099', nbia_server=True)
     # print(instances)
     # patients = get_TCIA_patients_per_collection('LDCT-and-Projection-data')
-    # get_collection_descriptions()
+    get_collection_descriptions()
     # series = get_TCIA_series_per_collection('TCGA-BRCA')
-    series = get_updated_series('23/03/2021')
+    # series = get_updated_series('23/03/2021')
     # print(time.asctime());studies = get_TCIA_studies_per_collection('BREAST-DIAGNOSIS', nbia_server=False);print(time.asctime())
     # studies = get_TCIA_studies_per_patient(collection.tcia_api_collection_id, patient.submitter_case_id)
     # patients=get_TCIA_patients_per_collection('CBIS-DDSM')
     #
-    # collection = get_collection_values_and_counts()
-    nbia_collections = [c['Collection'] for c in get_collections(nbia_server=True)]
-    nbia_collections.sort()
-    nbia_collections = [c['Collection'] for c in get_collections(nbia_server=True)]
-    nbia_collections.sort()
-    tcia_collections = [c['Collection'] for c in get_collections(nbia_server=False)]
-    tcia_collections.sort()
-    pass
+    # # collection = get_collection_values_and_counts()
+    # nbia_collections = [c['Collection'] for c in get_collections(nbia_server=True)]
+    # nbia_collections.sort()
+    # nbia_collections = [c['Collection'] for c in get_collections(nbia_server=True)]
+    # nbia_collections.sort()
+    # tcia_collections = [c['Collection'] for c in get_collections(nbia_server=False)]
+    # tcia_collections.sort()
+    # pass
     # for collection in collections:
     #     patients = get_TCIA_patients_per_collection(collection['Collection'])
     #     for patient in patients:

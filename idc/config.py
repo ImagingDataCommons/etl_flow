@@ -42,3 +42,7 @@ sql_uri = f'postgresql+psycopg2://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{s
 
 # Locally stored queries
 local_sql_folder = 'sql'
+
+# TCIA credentials
+tcia_id = environ.get('TCIA_ID')
+tcia_password = environ.get('TCIA_PASSWORD')
