@@ -48,5 +48,10 @@ DATABASE_PORT =         os.environ.get('DATABASE_PORT', '')
 
 LOGGER_NAME =           os.environ.get('ETL_LOGGER_NAME', 'main_logger')
 
+TCIA_ID =                os.environ.get('TCIA_ID')
+TCIA_PASSWORD =          os.environ.get('TCIA_PASSWORD')
+TCIA_CLIENT_ID =         os.environ.get('TCIA_CLIENT_ID')
+TCIA_CLIENT_SECRET=     os.environ.get('TCIA_CLIENT_SECRET')
+
 
 

@@ -24,25 +24,12 @@ import requests
 import logging
 
 logger = logging.getLogger(__name__)
+from utilities.tcia_helpers import get_access_token
+
+from python_settings import settings
 
 
 # from BQ.collection_ids_file.gen_collection_id_table import build_collections_id_table
-
-# For a specified collection, generate a list of series that came from some third party analysis
-def get_access_token():
-    data = dict(
-        username="nbia_guest",
-        password="",
-        client_id="nbiaRestAPIClient",
-        client_secret="ItsBetweenUAndMe",
-        grant_type="password"
-    )
-    result = requests.post(
-        "https://public.cancerimagingarchive.net/nbia-api/oauth/token",
-        data = data
-    )
-    return result.json()['access_token']
-
 
 # Get NBIAs internal ID for all the series in a collection/patient
 def get_internal_series_ids(collection, patient, third_party="yes", size=100000):
