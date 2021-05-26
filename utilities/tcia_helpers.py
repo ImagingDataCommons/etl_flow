@@ -268,7 +268,7 @@ def get_collection_values_and_counts():
 
 def get_collection_descriptions():
     # Get access token for the guest account
-    access_token = get_access_token()
+    access_token = get_access_token()['access_token']
     result = run([
         'curl',
         '-H',
