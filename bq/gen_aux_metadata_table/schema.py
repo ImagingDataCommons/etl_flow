@@ -28,27 +28,32 @@ auxiliary_metadata_schema = """
       se.source_doi AS source_doi,
       c.collection_timestamp AS collection_timestamp,
       c.collection_hash AS collection_hash,
+      c.collection_initial_idc_version AS collection_init_idc_version,
       p.submitter_case_id AS submitter_case_id,
       p.idc_case_id AS idc_case_id,
       p.patient_timestamp AS patient_timestamp,
       p.patient_hash AS patient_hash,
+      p.patient_initial_idc_version AS patient_init_idc_version,
       st.study_instance_uid AS StudyInstanceUID,
       st.study_uuid AS study_uuid,
       st.study_instances AS study_instances,
       st.study_timestamp AS study_timestamp,
       st.study_hash AS study_hash,
+      st.study_initial_idc_version AS study_init_idc_version,
       se.series_instance_uid AS SeriesInstanceUID,
       se.series_uuid AS series_uuid,
       se.series_instances AS series_instances,
       se.series_timestamp AS series_timestamp,
       se.series_hash AS series_hash,
+      se.series_initial_idc_version AS series_init_idc_version,
       i.sop_instance_uid AS SOPInstanceUID,
       i.instance_uuid AS instance_uuid,
       CONCAT('gs://','{gcs_bucket}','/', i.instance_uuid,'.dcm') AS gcs_url,
       '{gcs_bucket}' AS gcs_bucket,
       i.instance_size AS instance_size,
       i.instance_timestamp AS instance_timestamp,
-      i.instance_hash AS instance_hash
+      i.instance_hash AS instance_hash,
+      i.instance_initial_idc_version AS instance_init_idc_version
     FROM
       `{project}.{dataset}.version` AS v
     JOIN
