@@ -38,8 +38,8 @@ from utilities.bq_helpers import BQ_table_exists, create_BQ_table, delete_BQ_Tab
 from python_settings import settings
 import settings as etl_settings
 
-settings.configure(etl_settings)
-assert settings.configured
+# settings.configure(etl_settings)
+# assert settings.configured
 import psycopg2
 from psycopg2.extras import DictCursor
 
@@ -336,6 +336,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     parser.add_argument('--bqdataset_name', default=f"idc_v{args.version}", help="BQ dataset of table")
     args = parser.parse_args()
+
+    print('args: {}'.format(args))
 
 
     rootlogger = logging.getLogger('root')

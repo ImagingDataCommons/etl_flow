@@ -50,6 +50,7 @@ class Collection(Base):
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
     collection_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of this collection")
+    collection_initial_idc_version = Column(Integer, nullable=False, comment="IDC version of this version of a collection")
 
     version = relationship("Version", back_populates="collections")
     patients = relationship("Patient", back_populates="collection", order_by="Patient.id", cascade="all, delete")
@@ -67,6 +68,7 @@ class Patient(Base):
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
     patient_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of this patient")
+    patient_initial_idc_version = Column(Integer, nullable=False, comment="IDC version of this version of a patient")
 
     collection = relationship("Collection", back_populates="patients")
     studies = relationship("Study", back_populates="patient", order_by="Study.id", cascade="all, delete")
@@ -85,6 +87,7 @@ class Study(Base):
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
     study_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of this study")
+    study_initial_idc_version = Column(Integer, nullable=False, comment="IDC version of this version of a study")
 
     patient = relationship("Patient", back_populates="studies")
     seriess = relationship("Series", back_populates="study", order_by="Series.id", cascade="all, delete")
@@ -104,6 +107,7 @@ class Series(Base):
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
     series_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of this series")
+    series_initial_idc_version = Column(Integer, nullable=False, comment="IDC version of this version of a series")
 
     study = relationship("Study", back_populates="seriess")
     instances = relationship("Instance", back_populates="series", order_by="Instance.id", cascade="all, delete")
@@ -123,6 +127,7 @@ class Instance(Base):
     done = Column(Boolean, default=True, comment="True if this object has been processed")
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
+    instance_initial_idc_version = Column(Integer, nullable=False, comment="IDC version of this version of an instance")
 
     series = relationship("Series", back_populates="instances")
 

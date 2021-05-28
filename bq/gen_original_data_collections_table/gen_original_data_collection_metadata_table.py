@@ -34,7 +34,7 @@ def get_collections_in_version(client, args):
     ON v.id = c.version_id
     LEFT JOIN `{args.project}.{args.bqdataset_name}.{args.bq_excluded_collections}` as ex
     ON LOWER(c.tcia_api_collection_id) = LOWER(ex.tcia_api_collection_id)
-    WHERE v.id = {args.version} AND ex.collection IS NULL
+    WHERE v.id = {args.version} AND ex.tcia_api_collection_id IS NULL
     ORDER BY c.tcia_api_collection_id
     """
     result = client.query(query).result()

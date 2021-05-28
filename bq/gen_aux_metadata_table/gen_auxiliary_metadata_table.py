@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# This script generates the BQ auxiliary_metadata table. It basically joins the BQ version, collection,
+# patient, study, series, and instance tables. Typically these are uploaded from PostgreSQL to BQ using
+# the upload_psql_to_bq.py script
 import argparse
 import sys
 import os
