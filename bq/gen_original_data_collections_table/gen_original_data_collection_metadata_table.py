@@ -29,10 +29,10 @@ from utilities.tcia_scrapers import scrape_tcia_data_collections_page
 def get_collections_in_version(client, args):
     query = f"""
     SELECT c.* 
-    FROM `{args.project}.{args.bqdataset_name}.{args.bq_version_table}` as v
-    JOIN `{args.project}.{args.bqdataset_name}.{args.bq_collection_table}` as c
+    FROM `{args.src_project}.{args.bqdataset_name}.{args.bq_version_table}` as v
+    JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_collection_table}` as c
     ON v.id = c.version_id
-    LEFT JOIN `{args.project}.{args.bqdataset_name}.{args.bq_excluded_collections}` as ex
+    LEFT JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_excluded_collections}` as ex
     ON LOWER(c.tcia_api_collection_id) = LOWER(ex.tcia_api_collection_id)
     WHERE v.id = {args.version} AND ex.tcia_api_collection_id IS NULL
     ORDER BY c.tcia_api_collection_id
@@ -74,11 +74,11 @@ def build_metadata(args, collection_ids):
     return metadata
 
 def gen_collections_table(args):
-    BQ_client = bigquery.Client()
+    BQ_client = bigquery.Client(project=args.src_project)
     collection_ids = get_collections_in_version(BQ_client, args)
 
     metadata = build_metadata(args, collection_ids)
-    job = load_BQ_from_json(BQ_client, args.project, args.bqdataset_name, args.bqtable_name, metadata,
+    job = load_BQ_from_json(BQ_client, args.dst_project, args.bqdataset_name, args.bqtable_name, metadata,
                             data_collections_metadata_schema, write_disposition='WRITE_TRUNCATE')
     while not job.state == 'DONE':
         print('Status: {}'.format(job.state))
@@ -87,9 +87,10 @@ def gen_collections_table(args):
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--version', default=2, help='IDC version for which to build the table')
+    parser.add_argument('--version', default=1, help='IDC version for which to build the table')
     args = parser.parse_args()
+    parser.add_argument('--src_project', default='idc-dev-etl')
+    parser.add_argument('--dst_project', default='idc-dev-etl')
     parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
     parser.add_argument('--bq_version_table', default='version', help='BQ table from which to get versions')

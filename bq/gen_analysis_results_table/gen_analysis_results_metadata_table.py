@@ -32,18 +32,18 @@ def get_all_idc_dois(client, args):
     # Get all the source DOIs in this version
     query = f"""
         SELECT distinct se.source_doi as source_doi
-        FROM `{args.project}.{args.bqdataset_name}.{args.bq_version_table}` as v
-        JOIN `{args.project}.{args.bqdataset_name}.{args.bq_collection_table}` as c
+        FROM `{args.src_project}.{args.bqdataset_name}.{args.bq_version_table}` as v
+        JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_collection_table}` as c
         ON v.id = c.version_id
-        JOIN `{args.project}.{args.bqdataset_name}.{args.bq_patient_table}` as p
+        JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_patient_table}` as p
         ON c.id = p.collection_id
-        JOIN `{args.project}.{args.bqdataset_name}.{args.bq_study_table}` as st
+        JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_study_table}` as st
         ON p.id = st.patient_id
-        JOIN `{args.project}.{args.bqdataset_name}.{args.bq_series_table}` as se
+        JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_series_table}` as se
         ON st.id = se.study_id
-        LEFT JOIN `{args.project}.{args.bqdataset_name}.{args.bq_excluded_collections}` as ex
-        ON LOWER(c.tcia_api_collection_id) = LOWER(ex.collection)
-        WHERE v.id = {args.version} AND ex.collection IS NULL
+        LEFT JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_excluded_collections}` as ex
+        ON LOWER(c.tcia_api_collection_id) = LOWER(ex.tcia_api_collection_id)
+        WHERE v.id = {args.version} AND ex.tcia_api_collection_id IS NULL
         """
     result = client.query(query).result()
     all_source_dois = [series['source_doi'] for series in result]
@@ -68,11 +68,11 @@ def build_metadata(args, source_dois):
     return metadata
 
 def gen_collections_table(args):
-    BQ_client = bigquery.Client()
+    BQ_client = bigquery.Client(project=args.src_project)
     source_dois = get_all_idc_dois(BQ_client, args)
 
     metadata = build_metadata(args, source_dois)
-    job = load_BQ_from_json(BQ_client, args.project, args.bqdataset_name, args.bqtable_name, metadata, analysis_results_metadata_schema)
+    job = load_BQ_from_json(BQ_client, args.dst_project, args.bqdataset_name, args.bqtable_name, metadata, analysis_results_metadata_schema)
     while not job.state == 'DONE':
         print('Status: {}'.format(job.state))
         time.sleep(args.period * 60)
@@ -81,9 +81,10 @@ def gen_collections_table(args):
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
 
-    parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--version', default=2, help='IDC version for which to build the table')
+    parser.add_argument('--version', default=1, help='IDC version for which to build the table')
     args = parser.parse_args()
+    parser.add_argument('--src_project', default='idc-dev-etl')
+    parser.add_argument('--dst_project', default='idc-dev-etl')
     parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default='analysis_results_metadata', help='BQ table name')
     parser.add_argument('--bq_version_table', default='version', help='BQ table from which to get versions')

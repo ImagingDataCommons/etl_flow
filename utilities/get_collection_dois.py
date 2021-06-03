@@ -24,97 +24,45 @@ import requests
 import logging
 
 logger = logging.getLogger(__name__)
-from utilities.tcia_helpers import get_access_token
+from utilities.tcia_helpers import get_internal_series_ids, series_drill_down
 
 from python_settings import settings
 
 
-# from BQ.collection_ids_file.gen_collection_id_table import build_collections_id_table
-
-# Get NBIAs internal ID for all the series in a collection/patient
-def get_internal_series_ids(collection, patient, third_party="yes", size=100000):
-    access_token = get_access_token()
-
-    headers = dict(
-        Authorization=f"Bearer {access_token}",
-    )
-    if not patient=="":
-        data = dict(
-            criteriaType0="ThirdPartyAnalysis",
-            value0=third_party,
-            criteriaType1="CollectionCriteria",
-            value1=collection,
-            criteriaType2="PatientCriteria",
-            value2=patient,
-            sortField="subject",
-            sortDirection="descending",
-            start=0,
-            size=size)
-    else:
-        data = dict(
-            criteriaType0="ThirdPartyAnalysis",
-            value0=third_party,
-            criteriaType1="CollectionCriteria",
-            value1=collection,
-            sortField="subject",
-            sortDirection="descending",
-            start=0,
-            size=size)
-
-    result = requests.post(
-        "https://public.cancerimagingarchive.net/nbia-api/services/getSimpleSearchWithModalityAndBodyPartPaged",
-        headers=headers,
-        data=data
-    )
-    return result.json()
-
-
-def drill_down(series_ids):
-    access_token = get_access_token()
-    headers = dict(
-        Authorization=f"Bearer {access_token}",
-    )
-    data = "&".join(['list={}'.format(id) for id in series_ids])
-
-    url = "https://public.cancerimagingarchive.net/nbia-api/services/getStudyDrillDown"
-
-    # result = requests.post(
-    #     url,
-    #     headers=headers,
-    #     data=data
-    # )
-
-    try:
-        result = run(['curl', '-v', '-H', "Authorization:Bearer {}".format(access_token), '-k',  url, '-d', data],
-                     stdout=PIPE, stderr=PIPE)
-    except:
-        pass
-    return json.loads(result.stdout.decode())
-
-def get_data_collection_doi(collection):
+def get_data_collection_doi(collection, server=""):
 
     dois = []
     count = 0
     # This will get us doi's for a one or all patients in a collection
-    internal_ids = get_internal_series_ids(collection, patient="", third_party="no", size=1)
+    if server:
+        internal_ids = get_internal_series_ids(collection, patient="", third_party="no", size=1, server=server)
+    else:
+        internal_ids = get_internal_series_ids(collection, patient="", third_party="no", size=1)
+
     subject = internal_ids["resultSet"][0]
     study = subject["studyIdentifiers"][0]
     seriesIDs = study["seriesIdentifiers"]
-    study_metadata = drill_down(seriesIDs)
+    if server:
+        study_metadata = series_drill_down(seriesIDs, server=server)
+    else:
+        study_metadata = series_drill_down(seriesIDs)
     study = study_metadata[0]
     series = study["seriesList"][0]
     uri = series["descriptionURI"]
     # If it's a doi.org uri, keep just the DOI
-    if 'doi.org' in uri:
-        uri = uri.split('doi.org/')[1]
+    if uri:
+       if 'doi.org' in uri:
+           uri = uri.split('doi.org/')[1]
+    else:
+        uri = ''
 
     return uri
 
 
-def get_analysis_collection_dois(collection, patient= "", third_party="yes"):
+def get_analysis_collection_dois(collection, patient= "", third_party="yes", server=""):
     third_party_series = []
     try:
-        internal_ids = get_internal_series_ids(collection, patient)
+        internal_ids = get_internal_series_ids(collection, patient, server=server)
     except Exception as exc:
         print(f'Exception in get_analysis_collection_dois {exc}')
         logger.error('Exception in get_analysis_collection_dois %s', exc)
@@ -123,7 +71,7 @@ def get_analysis_collection_dois(collection, patient= "", third_party="yes"):
         seriesIDs = []
         for study in subject["studyIdentifiers"]:
             seriesIDs.extend(study["seriesIdentifiers"])
-        study_metadata = drill_down(seriesIDs)
+        study_metadata = series_drill_down(seriesIDs)
         for study in study_metadata:
             for series in study["seriesList"]:
                 uri = series["descriptionURI"]
