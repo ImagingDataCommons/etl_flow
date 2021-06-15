@@ -19,43 +19,60 @@ from google.cloud import bigquery
 
 
 auxiliary_metadata_schema = """
+    WITH version_with_max_timestamp as (
+    select v.id, v.idc_version_number, v.version_hash, max(c.collection_timestamp) as max_collection_timestamp
+    FROM
+      `{project}.{dataset}.version` AS v
+    JOIN
+      `{project}.{dataset}.collection` AS c
+    ON
+      v.id = c.version_id
+    LEFT JOIN 
+      `{project}.{dataset}.excluded_collections` as ex
+    ON 
+      LOWER(c.tcia_api_collection_id) = LOWER(ex.tcia_api_collection_id)
+    WHERE ex.tcia_api_collection_id IS NULL
+    GROUP BY v.id, v.idc_version_number, v.version_hash
+    )
+
     SELECT
       v.idc_version_number AS idc_version_number,
-      v.idc_version_timestamp AS idc_version_timestamp,
+      v.max_collection_timestamp as idc_version_timestamp,
       v.version_hash AS version_hash,
       c.tcia_api_collection_id AS tcia_api_collection_id,
       REPLACE(REPLACE(LOWER(c.tcia_api_collection_id),'-','_'), ' ','_') AS idc_webapp_collection_id,
       se.source_doi AS source_doi,
-      c.collection_timestamp AS collection_timestamp,
+--      c.collection_timestamp AS collection_timestamp,
       c.collection_hash AS collection_hash,
-      c.collection_initial_idc_version AS collection_init_idc_version,
+--      c.collection_initial_idc_version AS collection_init_idc_version,
       p.submitter_case_id AS submitter_case_id,
       p.idc_case_id AS idc_case_id,
-      p.patient_timestamp AS patient_timestamp,
+--      p.patient_timestamp AS patient_timestamp,
       p.patient_hash AS patient_hash,
-      p.patient_initial_idc_version AS patient_init_idc_version,
+--      p.patient_initial_idc_version AS patient_init_idc_version,
       st.study_instance_uid AS StudyInstanceUID,
       st.study_uuid AS study_uuid,
-      st.study_instances AS study_instances,
-      st.study_timestamp AS study_timestamp,
+--      st.study_instances AS study_instances,
+--      st.study_timestamp AS study_timestamp,
       st.study_hash AS study_hash,
-      st.study_initial_idc_version AS study_init_idc_version,
+--      st.study_initial_idc_version AS study_init_idc_version,
       se.series_instance_uid AS SeriesInstanceUID,
       se.series_uuid AS series_uuid,
-      se.series_instances AS series_instances,
-      se.series_timestamp AS series_timestamp,
+--      se.series_instances AS series_instances,
+--      se.series_timestamp AS series_timestamp,
       se.series_hash AS series_hash,
-      se.series_initial_idc_version AS series_init_idc_version,
+--      se.series_initial_idc_version AS series_init_idc_version,
       i.sop_instance_uid AS SOPInstanceUID,
       i.instance_uuid AS instance_uuid,
       CONCAT('gs://','{gcs_bucket}','/', i.instance_uuid,'.dcm') AS gcs_url,
       '{gcs_bucket}' AS gcs_bucket,
       i.instance_size AS instance_size,
-      i.instance_timestamp AS instance_timestamp,
+--      i.instance_timestamp AS instance_timestamp,
       i.instance_hash AS instance_hash,
-      i.instance_initial_idc_version AS instance_init_idc_version
+--      i.instance_initial_idc_version AS instance_init_idc_version
     FROM
-      `{project}.{dataset}.version` AS v
+--      `{project}.{dataset}.version` AS v
+      version_with_max_timestamp as v
     JOIN
       `{project}.{dataset}.collection` AS c
     ON
