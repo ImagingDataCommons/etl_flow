@@ -229,14 +229,14 @@ def compare_collection_hashes(cur, args):
         collection_id = row[0]
         if collection_id not in skips:
             retries = 0
-            for retries in range(3):
+            for retries in range(1):
                 try:
 
                     result = get_hash({'Collection': collection_id}, access_token=access_token)
                     if not result.status_code == 200:
                         print('{:32} IDC: {}, error: {}, reason: {}'.format(collection_id, row[1], result.status_code, result.reason))
                         rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', collection_id, row[1], result.status_code, result.reason)
-                        sleep((retries+1)*120)
+                        # sleep((retries+1)*120)
                         continue
                     else:
                         nbia_hash = result.text
