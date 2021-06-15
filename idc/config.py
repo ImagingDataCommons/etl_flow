@@ -37,8 +37,8 @@ sql_user = environ.get('DATABASE_USERNAME')
 sql_pass = environ.get('DATABASE_PASSWORD')
 sql_host = environ.get('DATABASE_HOST')
 sql_port = environ.get('DATABASE_PORT')
-sql_name = environ.get('DATABASE_NAME')
-sql_uri = f'postgresql+psycopg2://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{sql_name}'
+# sql_name = environ.get('DATABASE_NAME')
+# sql_uri = f'postgresql+psycopg2://{sql_user}:{sql_pass}@{sql_host}:{sql_port}/{sql_name}'
 
 # Locally stored queries
 local_sql_folder = 'sql'
