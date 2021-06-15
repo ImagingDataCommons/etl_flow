@@ -177,8 +177,6 @@ def get_TCIA_instances_per_series(dicom, series_instance_uid, server="NBIA"):
         headers = f'Authorization:Bearer {access_token}'
         result = run([
             'curl',
-            '--max-time',
-            600,
             '-o',
             filename,
             '-H',
