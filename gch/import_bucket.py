@@ -42,7 +42,6 @@ def get_gch_client():
     return discovery.build(service_name, api_version)
 
 
-
 def get_dataset_operation(
         project_id,
         cloud_region,
@@ -142,11 +141,11 @@ def import_bucket(args):
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--src_bucket', default='idc_dev')
-    parser.add_argument('--project', default='canceridc-data')
+    parser.add_argument('--src_bucket', default='idc_v5_nlst')
+    parser.add_argument('--project', default='idc-nlst')
     parser.add_argument('--region', default='us-central1', help='Dataset region')
     parser.add_argument('--gch_dataset_name', default='idc', help='Dataset name')
-    parser.add_argument('--gch_dicomstore_name', default='v2', help='Datastore name')
+    parser.add_argument('--gch_dicomstore_name', default='v5', help='Datastore name')
     parser.add_argument('--period', default=60, help="seconds to sleep between checking operation status")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
