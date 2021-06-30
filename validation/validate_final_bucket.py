@@ -47,6 +47,7 @@ def val_collection(cur, args, dones, collection_index, tcia_api_collection_id):
         bucket = client.bucket(args.final_bucket)
         n = 1
 
+        # Get the set of instances that have already been validated
         try:
             done_instances = set(open(f'./logs/rvfb_{tcia_api_collection_id}_success.log').read().splitlines())
         except:
@@ -67,6 +68,8 @@ def val_collection(cur, args, dones, collection_index, tcia_api_collection_id):
         # WHERE c.idc_version_number = {args.version} and c.tcia_api_collection_id = '{tcia_api_collection_id}'
         # order by sop_instance_uid
         # """
+
+        # Get all the instances that from the all_table table
         query= f"""
         SELECT *
         FROM {args.all_table}
@@ -75,10 +78,13 @@ def val_collection(cur, args, dones, collection_index, tcia_api_collection_id):
         """
         cur.execute(query)
         rowcount=cur.rowcount
+        # Record successes here
         successes = open(f'./logs/rvfb_{tcia_api_collection_id}_success.log', 'a')
+        # Record failures here
         failures = open(f'./logs/rvfb_{tcia_api_collection_id}_failures.log', 'a')
         failure_count=0
         while True:
+            # get a batch of instances to validate
             rows = cur.fetchmany(increment)
             if len(rows) == 0:
                 break

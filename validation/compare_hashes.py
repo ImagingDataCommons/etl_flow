@@ -121,7 +121,7 @@ def compare_series_hashes(access_token, cur, args, study_instance_uid):
                     rootlogger.info('\t\t\t%-32s IDC: %s, NBIA: %s; %s', row[0], row[1], nbia_hash, idc_hash==nbia_hash)
                 if not args.stop_expansion == 'series':
                     if idc_hash != nbia_hash or args.expand_all:
-                        if nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == "":
+                        if args.stop and (nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == ""):
                             if 'series' in args.log_level:
                                 print('\t\t{:32} Skip expansion'.format(""))
                                 rootlogger.info('\t\t%-32s Skip expansion', "")
@@ -162,7 +162,7 @@ def compare_study_hashes(access_token, cur, args, tcia_api_collection_id, submit
                     rootlogger.info('\t\t%-32s IDC: %s, NBIA: %s; %s', row[0], row[1], nbia_hash, idc_hash==nbia_hash)
                 if not args.stop_expansion == 'study':
                     if idc_hash != nbia_hash or args.expand_all:
-                        if nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == "":
+                        if args.stop and (nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == ""):
                             if 'study' in args.log_level:
                                 print('\t\t{:32} Skip expansion'.format(""))
                                 rootlogger.info('\t\t%-32s Skip expansion', "")
@@ -200,7 +200,7 @@ def compare_patient_hashes(access_token, cur, args, tcia_api_collection_id):
                     rootlogger.info('\t%-32s IDC: %s, NBIA: %s; %s', row[0], row[1], nbia_hash, idc_hash==nbia_hash)
                 if not args.stop_expansion == 'patient':
                     if idc_hash != nbia_hash or args.expand_all:
-                        if nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == "":
+                        if args.stop and (nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == ""):
                             if 'patient' in args.log_level:
                                 print('\t{:32} Skip expansion'.format(""))
                                 rootlogger.info('\t%-32s Skip expansion', "")
@@ -225,6 +225,9 @@ def compare_collection_hashes(cur, args):
 
     skips = open(args.skips).read().splitlines()
 
+    if args.collections != []:
+        collections = [collection for collection in collections if collection[0] in args.collections]
+
     for row in collections:
         collection_id = row[0]
         if collection_id not in skips:
@@ -246,7 +249,7 @@ def compare_collection_hashes(cur, args):
                             rootlogger.info('%-32s IDC: %s, NBIA: %s; %s', collection_id, row[1], nbia_hash, idc_hash==nbia_hash)
                         if not args.stop_expansion == 'collection':
                             if idc_hash != nbia_hash or args.expand_all:
-                                if nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == "":
+                                if args.stop and (nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == ""):
                                     if 'collection' in args.log_level:
                                         print('{:32} Skip expansion'.format(""))
                                         rootlogger.info('%-32s Skip expansion', "")
@@ -259,7 +262,7 @@ def compare_collection_hashes(cur, args):
                     sleep(retries*120)
 
 def compare_hashes(args):
-    conn = psycopg2.connect(dbname=settings.DATABASE_NAME, user=settings.DATABASE_USERNAME,
+    conn = psycopg2.connect(dbname=args.db, user=settings.DATABASE_USERNAME,
                             password=settings.DATABASE_PASSWORD, host=settings.DATABASE_HOST)
     with conn:
         with conn.cursor(cursor_factory=DictCursor) as cur:
@@ -284,10 +287,13 @@ if __name__ == '__main__':
     err_fh.setFormatter(errformatter)
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('--db', default='idc', help='Database to compare against')
     parser.add_argument('--suffix', default="")
-    parser.add_argument('--stop_expansion', default="collection", help="Level at which to stop expansion")
+    parser.add_argument('--stop_expansion', default="", help="Level at which to stop expansion")
+    parser.add_argument('--stop', default=False, help='Stop expansion if no hash returned by NBIA')
     parser.add_argument('--expand_all', default=False)
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"))
+    parser.add_argument('--collections', default=['AAPM-RT-MAC'])
     parser.add_argument('--skips', default='./logs/compare_hashes_skips')
     args = parser.parse_args()
 

@@ -48,7 +48,7 @@ def export_dicom_metadata(args):
     bearer = str(results.stdout,encoding='utf-8').strip()
 
     # BQ table to which to export metadata
-    destination = f'bq://{args.project}.{args.bqdataset}.{args.bqtable}'
+    destination = f'bq://{args.dst_project}.{args.bqdataset}.{args.bqtable}'
     data = {
         'bigqueryDestination': {
             'tableUri': destination,
@@ -62,7 +62,7 @@ def export_dicom_metadata(args):
         'Authorization': f'Bearer {bearer}',
         'Content-Type': 'application/json; charset=utf-8'
     }
-    url = f'https://healthcare.googleapis.com/v1/projects/{args.project}/locations/{args.region}/datasets/{args.dcmdataset_name}/dicomStores/{args.dcmdatastore_name}:export'
+    url = f'https://healthcare.googleapis.com/v1/projects/{args.src_project}/locations/{args.src_region}/datasets/{args.dcmdataset_name}/dicomStores/{args.dcmdatastore_name}:export'
     results = requests.post(url, headers=headers, json=data)
 
 
@@ -80,6 +80,7 @@ def export_dicom_metadata(args):
 
     # Get the operation ID so we can track progress
     operation_id = results.json()['name'].split('/')[-1]
+    print("Operation ID: {}".format(operation_id))
 
     while True:
         # Get an access token. This can be a long running job. Just get a new one every time.
@@ -89,7 +90,7 @@ def export_dicom_metadata(args):
         headers = {
             'Authorization': f'Bearer {bearer}'
         }
-        url = f'https://healthcare.googleapis.com/v1/projects/{args.project}/locations/{args.region}/datasets/{args.dcmdataset_name}/operations/{operation_id}'
+        url = f'https://healthcare.googleapis.com/v1/projects/{args.src_project}/locations/{args.src_region}/datasets/{args.dcmdataset_name}/operations/{operation_id}'
         results = requests.get(url, headers=headers)
 
         # cmd = ['curl', '-X', 'GET',
@@ -114,6 +115,51 @@ def export_dicom_metadata(args):
             print(details)
             time.sleep(5*60)
 
+def get_job(args):
+    results = subprocess.run(['gcloud', 'auth', 'application-default', 'print-access-token'], stdout=PIPE, stderr=PIPE)
+    bearer = str(results.stdout, encoding='utf-8').strip()
+
+    headers = {
+        'Authorization': f'Bearer {bearer}'
+    }
+    url = f'https://healthcare.googleapis.com/v1/projects/{args.src_project}/locations/{args.src_region}/datasets/{args.dcmdataset_name}/operations'
+    results = requests.get(url, headers=headers)
+    # Get the operation ID so we can track progress
+    operation_id = results.json()['operations'][0]['name'].split('/')[-1]
+    print("Operation ID: {}".format(operation_id))
+
+    while True:
+        # Get an access token. This can be a long running job. Just get a new one every time.
+        results = subprocess.run(['gcloud', 'auth', 'application-default', 'print-access-token'], stdout=PIPE, stderr=PIPE)
+        bearer = str(results.stdout, encoding='utf-8').strip()
+
+        headers = {
+            'Authorization': f'Bearer {bearer}'
+        }
+        url = f'https://healthcare.googleapis.com/v1/projects/{args.src_project}/locations/{args.src_region}/datasets/{args.dcmdataset_name}/operations/{operation_id}'
+        results = requests.get(url, headers=headers)
+
+        # cmd = ['curl', '-X', 'GET',
+        #        '-H', '"' + 'Authorization: Bearer {}'.format(bearer) + '"',
+        #        "https://healthcare.googleapis.com/v1/projects/{}/locations/{}/datasets/{}/operations/{}".format(
+        #            args.project, args.region, args.dcmdataset_name, operation_id)
+        #        ]
+
+        # results = subprocess.run(cmd, stdout=PIPE, stderr=PIPE)
+        # details = json.loads(str(results.stdout,encoding='utf-8'))
+
+        details = results.json()
+
+        # The result is JSON that will include a "done" element with status when the op us complete
+        if 'done' in details and details['done']:
+            if 'error' in details:
+                print('Done with errorcode: {}, message: {}'.format(details['error']['code'], details['error']['message']))
+            else:
+                print('Done')
+            break
+        else:
+            print(details)
+            time.sleep(5*60)
 
 def export_metadata(args):
     # try:
@@ -143,13 +189,18 @@ def export_metadata(args):
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--project', '-p', default='idc-dev-etl')
-    parser.add_argument('--region', '-r', default='us-central1', help='Dataset region')
-    parser.add_argument('--dcmdataset_name', '-d', default='idc', help='DICOM dataset name')
-    parser.add_argument('--dcmdatastore_name', '-s', default='v2', help='DICOM datastore name')
-    parser.add_argument('--bqdataset', default='idc_v2', help="BQ dataset name")
+    parser.add_argument('--version', default=5, help="IDC version")
+    args = parser.parse_args()
+    parser.add_argument('--src_project', default='idc-nlst')
+    parser.add_argument('--dst_project', default='idc-nlst')
+    parser.add_argument('--src_region', default='us-central1', help='Dataset region')
+    parser.add_argument('--dst_region', default='us', help='Dataset region')
+    parser.add_argument('--dcmdataset_name', default='idc', help='DICOM dataset name')
+    parser.add_argument('--dcmdatastore_name', default=f'v{args.version}', help='DICOM datastore name')
+    parser.add_argument('--bqdataset', default=f'idc_v{args.version}', help="BQ dataset name")
     parser.add_argument('--bqtable', default='dicom_metadata', help="BQ table name")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
+    get_job(args)
     export_metadata(args)
 
