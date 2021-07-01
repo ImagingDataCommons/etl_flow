@@ -29,8 +29,11 @@ TIMEOUT=60
 CHUNK_SIZE=1024*1024
 
 TCIA_URL = 'https://services.cancerimagingarchive.net/services/v4/TCIA/query'
-NBIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v1'
+# NBIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v1'
+NBIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services'
 NBIA_AUTH_URL = "https://public.cancerimagingarchive.net/nbia-api/oauth/token"
+NBIA_DEV_URL = 'https://public-dev.cancerimagingarchive.net/nbia-api/services'
+NBIA_DEV_AUTH_URL = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token"
 NLST_URL = 'https://nlst.cancerimagingarchive.net/nbia-api/services'
 NLST_V2_URL = 'https://nlst.cancerimagingarchive.net/nbia-api/services/v2'
 NLST_AUTH_URL = 'https://nlst.cancerimagingarchive.net/nbia-api/oauth/token'
@@ -343,7 +346,7 @@ def get_updated_series(date):
 
 def get_hash(request_data, access_token=None):
     if not access_token:
-        access_token = get_access_token(url = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")
+        access_token = get_access_token(NBIA_DEV_AUTH_URL)
     headers = dict(
         Authorization = f'Bearer {access_token}'
     )
@@ -438,15 +441,15 @@ if __name__ == "__main__":
         settings.configure(etl_settings)
         assert settings.configured
 
-    get_TCIA_instances_per_series("temp", '1.2.840.113654.2.55.262421043240525317038356381369289737801', server="NLST")
-    # results = get_collection_values_and_counts()
+    hash = get_hash({"SeriesInstanceUID":'1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353'})
+    # get_TCIA_instances_per_series("temp", '1.2.840.113654.2.55.262421043240525317038356381369289737801', server="NLST")
+    results = get_collection_values_and_counts()
     # results = v2_api('getCollectionValuesAndCounts', data="")
     # results = v2_api('getSimpleSearchCriteriaValues', data="")
     # results = get_collection_values_and_counts()
     # results = get_collection_values_and_counts_dev()
     results = get_patients_per_collection_dev('NLST')
     results = get_collections_dev()
-    # hash = get_hash({"SeriesInstanceUID":'1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353'})
     # result = get_images_with_md5_hash('1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353')
     # with open('/home/bcliffor/temp/1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353.zip', 'wb') as f:
     #     f.write(result.content)
