@@ -37,10 +37,11 @@ class Source:
 
     # Compute object's hash as hash of sort childrens' hashes
     def idc_version_hash(self):
-        objects = self.sess.execute(select(Collection))
+        objects = self.sess.execute(select(Collection)).fetchall()
         hashes = []
         for object in objects:
-            hashes.append(object.hashes[self.source_id])
+            hash = object[0].hashes[self.source_id] if object[0].hashes[self.source_id] != None else ""
+            hashes.append(hash)
         hash = get_merkle_hash(hashes)
         return hash
 
@@ -66,7 +67,7 @@ class Source:
 
     # Compute object's hash as hash of sort childrens' hashes
     def idc_study_hash(self, study):
-        objects = study.series
+        objects = study.seriess
         hashes = []
         for object in objects:
             hash = object.hashes[self.source_id] if object.hashes[self.source_id] != None else ""
@@ -90,6 +91,7 @@ class Source:
 class TCIA(Source):
     def __init__(self):
         super().__init__(instance_source['tcia'].value)
+        self.source = instance_source.tcia
         self.hash_access_token = get_access_token(auth_server = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")
 
 
@@ -133,6 +135,7 @@ class TCIA(Source):
 class Pathology(Source):
     def __init__(self, sess):
         super().__init__(instance_source['path'].value)
+        self.source = instance_source.path
         self.sess = sess
 
 

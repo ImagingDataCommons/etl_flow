@@ -21,49 +21,48 @@
 
 
 import os
-# import uuid
-import time
-import datetime
+import json
 import logging
 from logging import INFO
 import argparse
 from google.cloud import bigquery
-from utilities.bq_helpers import BQ_table_exists, create_BQ_table, delete_BQ_Table, load_BQ_from_CSV
-# from python_settings import settings
-# from idc.config import bigquery_uri, sql_uri
-# from idc.models import Auxilliary_Metadata, Version, Collection, Patient, Study, Series, Instance
-# from sqlalchemy import create_engine, text
-# from sqlalchemy.orm import Session
+from utilities.bq_helpers import BQ_table_exists, create_BQ_table, delete_BQ_Table, load_BQ_from_CSV, load_BQ_from_json
 
 from python_settings import settings
-import settings as etl_settings
 
-# settings.configure(etl_settings)
-# assert settings.configured
 import psycopg2
-from psycopg2.extras import DictCursor
+from psycopg2.extras import DictCursor, RealDictCursor
 
 # psql to bq type name conversions:
 type_name_conversion = {
     "integer": "INTEGER",
+    "bigint": "INT64",
     "boolean": "BOOLEAN",
     "character varying": "STRING",
     "nextval('instance_id_seq'::regclass)": "INTEGER",
-    "timestamp without time zone": "DATETIME"
+    "timestamp without time zone": "DATETIME",
+    "USER-DEFINED": "ARRAY"
 }
 
+record_type_name_conversion = {
+    "hashes": "STRING",
+    "sources": "BOOLEAN",
+    "versions": "INTEGER"
+}
 
 def get_schema(cur, args, table):
     # Get the psql schema fields
-    cur.execute("""
+    query = f"""
     SELECT column_name, data_type, character_maximum_length, column_default, is_nullable
     FROM INFORMATION_SCHEMA.COLUMNS 
-    WHERE table_name = (%s)
-    ORDER BY ordinal_position""", (table,))
+    WHERE table_name = '{table}'
+    ORDER BY ordinal_position
+    """
+    cur.execute(query)
     column_data = cur.fetchall()
 
     # Separate query for the descriptions
-    cur.execute("""
+    query = f"""
     SELECT cols.column_name, (
         SELECT
             pg_catalog.col_description(c.oid, cols.ordinal_position::int)
@@ -75,21 +74,42 @@ def get_schema(cur, args, table):
     ) AS column_comment
     FROM information_schema.columns cols
     WHERE
-        cols.table_catalog    = 'idc'
-        AND cols.table_name   = (%s)
+        cols.table_catalog    = '{args.db}'
+        AND cols.table_name   = '{table}'
         AND cols.table_schema = 'public'
-    ORDER BY ordinal_position""", (table,))
+    ORDER BY ordinal_position
+    """
+    cur.execute(query)
     descriptions = cur.fetchall()
-
     schema = []
     for col,desc in zip(column_data, descriptions):
+        type = "RECORD" if col["data_type"] == "USER-DEFINED" else type_name_conversion[col["data_type"]]
+        mode = "NULLABLE" if col["is_nullable"] == "YES" else "REQUIRED"
+        #### Hack alert ####
+        if col["column_name"] == 'source':
+            type="STRING"
+            mode="NULLABLE"
+
         try:
             s = {
                 "name": col["column_name"],
-                "description": desc[0],
-                "mode": "NULLABLE" if col["is_nullable"] == "YES" else "REQUIRED",
-                "type": type_name_conversion[col["data_type"]]
+                "description": desc['column_comment'],
+                "mode": mode,
+                "type": type,
             }
+            if type == "RECORD":
+                s['fields'] = [
+                    {
+                        "name": 'tcia',
+                        "type": record_type_name_conversion[col["column_name"]],
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": 'path',
+                        "type": record_type_name_conversion[col["column_name"]],
+                        "mode": "NULLABLE"
+                    }
+                ]
             schema.append(s)
         except Exception as exc:
             errlogger.error("Error creating schema: %s", exc)
@@ -110,22 +130,15 @@ def upload_version(cur, args):
     result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
 
     cur.execute("""
-        SELECT * from version
-        WHERE idc_version_number = (%s)
-        """, (args.version,))
+        SELECT json_agg(json)
+        FROM (
+            SELECT * from version
+        )  as json
+        """)
     rows = cur.fetchall()
-
-    # Make sure that the schema and retrieved data have the same order
-    col_order = cur.description
-    for col, sch in zip(col_order, schema):
-        try:
-            assert col.name == sch['name']
-        except:
-            errlogger.error('Order mismatch in version')
-            raise
-    data = "\n".join([",".join(map(str, row)) for row in rows])
-
-    load_BQ_from_CSV(client, args.bqdataset_name, table, data, schema),
+    json_rows = [json.dumps(row) for row in rows[0][0]]
+    data = "\n".join(json_rows)
+    load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
 
 
 def upload_collection(cur, args):
@@ -139,24 +152,17 @@ def upload_collection(cur, args):
     result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
 
     cur.execute("""
-        SELECT collection.* FROM version
-        JOIN collection
-        ON version.id = collection.version_id
-        WHERE version.id = (%s)
-        """, (args.version,))
+        SELECT json_agg(json)
+        FROM (
+            SELECT * from collection
+        )  as json
+        """)
     rows = cur.fetchall()
+    json_rows = [json.dumps(row) for row in rows[0][0]]
+    data = "\n".join(json_rows)
+    load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
 
-    # Make sure that the schema and retrieved data have the same order
-    col_order = cur.description
-    for col, sch in zip(col_order, schema):
-        try:
-            assert col.name == sch['name']
-        except:
-            errlogger.error('Order mismatch in version')
-            raise
-    data = "\n".join([",".join(map(str, row)) for row in rows])
 
-    load_BQ_from_CSV(client, args.bqdataset_name, table, data, schema)
 
 
 def upload_patient(cur, args):
@@ -170,26 +176,15 @@ def upload_patient(cur, args):
     result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
 
     cur.execute("""
-        SELECT patient.* FROM version
-        JOIN collection
-        ON version.id = collection.version_id
-        JOIN patient
-        ON collection.id = patient.collection_id
-        WHERE version.id = (%s)
-        """, (args.version,))
+        SELECT json_agg(json)
+        FROM (
+            SELECT * from patient
+        )  as json
+        """)
     rows = cur.fetchall()
-
-    # Make sure that the schema and retrieved data have the same order
-    col_order = cur.description
-    for col, sch in zip(col_order, schema):
-        try:
-            assert col.name == sch['name']
-        except:
-            errlogger.error('Order mismatch in version')
-            raise
-    data = "\n".join([",".join(map(str, row)) for row in rows])
-
-    load_BQ_from_CSV(client, args.bqdataset_name, table, data, schema)
+    json_rows = [json.dumps(row) for row in rows[0][0]]
+    data = "\n".join(json_rows)
+    load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
 
 
 def upload_study(cur, args):
@@ -203,28 +198,15 @@ def upload_study(cur, args):
     result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
 
     cur.execute("""
-        SELECT study.* FROM version
-        JOIN collection
-        ON version.id = collection.version_id
-        JOIN patient
-        ON collection.id = patient.collection_id
-        join study
-        ON patient.id = study.patient_id
-        WHERE version.id = (%s)
-        """, (args.version,))
+        SELECT json_agg(json)
+        FROM (
+            SELECT * from study
+        )  as json
+        """)
     rows = cur.fetchall()
-
-    # Make sure that the schema and retrieved data have the same order
-    col_order = cur.description
-    for col, sch in zip(col_order, schema):
-        try:
-            assert col.name == sch['name']
-        except:
-            errlogger.error('Order mismatch in version')
-            raise
-    data = "\n".join([",".join(map(str, row)) for row in rows])
-
-    load_BQ_from_CSV(client, args.bqdataset_name, table, data, schema)
+    json_rows = [json.dumps(row) for row in rows[0][0]]
+    data = "\n".join(json_rows)
+    load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
 
 
 def upload_series(cur, args):
@@ -237,43 +219,24 @@ def upload_series(cur, args):
         delete_BQ_Table(client, args.project, args.bqdataset_name, table)
     result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
 
-    # Upload series data per collection
-
-    # Get the ids of all collections
+    count =0
+    increment = 50000
     cur.execute("""
-        SELECT collection.tcia_api_collection_id FROM version
-        JOIN collection
-        ON version.id = collection.version_id
-        WHERE version.id = (%s)
-        """, (args.version,))
-    collection_ids = cur.fetchall()
+            SELECT row_to_json(json)
+            FROM (
+                SELECT * from series
+            )  as json
+            """)
 
-    for collection_id in collection_ids:
-        cur.execute("""
-            SELECT series.* FROM version
-            JOIN collection
-            ON version.id = collection.version_id
-            JOIN patient
-            ON collection.id = patient.collection_id
-            join study
-            ON patient.id = study.patient_id
-            join series
-            ON study.id = series.study_id
-            WHERE version.id = (%s) AND collection.tcia_api_collection_id = (%s)
-            """, (args.version, collection_id[0],))
-        rows = cur.fetchall()
-
-        # Make sure that the schema and retrieved data have the same order
-        col_order = cur.description
-        for col, sch in zip(col_order, schema):
-            try:
-                assert col.name == sch['name']
-            except:
-                errlogger.error('Order mismatch in version')
-                raise
-        data = "\n".join([",".join(map(str, row)) for row in rows])
-
-        load_BQ_from_CSV(client, args.bqdataset_name, table, data, schema)
+    while True:
+        rows = cur.fetchmany(increment)
+        if len(rows) == 0:
+            break
+        json_rows = [json.dumps(row[0]) for row in rows]
+        data = "\n".join(json_rows)
+        load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
+        count += len(rows)
+        print(f'Uploaded {count} series')
 
 
 def upload_instance(cur, args):
@@ -288,50 +251,41 @@ def upload_instance(cur, args):
 
     count =0
     increment = 50000
-
     cur.execute("""
-        SELECT * 
-        FROM instance
-
-        WHERE idc_version_number = (%s)
-        """, (args.version,))
+            SELECT row_to_json(json)
+            FROM (
+                SELECT * from instance
+            )  as json
+            """)
 
     while True:
         rows = cur.fetchmany(increment)
         if len(rows) == 0:
             break
-
-        # Make sure that the schema and retrieved data have the same order
-        col_order = cur.description
-        for col, sch in zip(col_order, schema):
-            try:
-                assert col.name == sch['name']
-            except:
-                errlogger.error('Order mismatch in version')
-                raise
-        data = "\n".join([",".join(map(str, row)) for row in rows])
-
-        load_BQ_from_CSV(client, args.bqdataset_name, table, data, schema)
+        json_rows = [json.dumps(row[0]) for row in rows]
+        data = "\n".join(json_rows)
+        load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
         count += len(rows)
-        print(f'Uploaded {count} instances')
+        print(f'Uploaded {count} series')
 
 
 def upload_to_bq(args):
-    conn = psycopg2.connect(dbname=settings.DATABASE_NAME, user=settings.DATABASE_USERNAME,
+    conn = psycopg2.connect(dbname=args.db, user=settings.DATABASE_USERNAME,
                             password=settings.DATABASE_PASSWORD, host=settings.DATABASE_HOST)
     with conn:
         with conn.cursor(cursor_factory=DictCursor) as cur:
-            upload_version(cur, args)
-            upload_collection(cur, args)
-            upload_patient(cur, args)
-            upload_study(cur, args)
-            upload_series(cur, args)
+            # upload_version(cur, args)
+            # upload_collection(cur, args)
+            # upload_patient(cur, args)
+            # upload_study(cur, args)
+            # upload_series(cur, args)
             upload_instance(cur, args)
             pass
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=2, help='Version to upload')
+    parser.add_argument('--db', default='idc_path_v3.1', help="Database to access")
     parser.add_argument('--project', default='idc-dev-etl')
     args = parser.parse_args()
     parser.add_argument('--bqdataset_name', default=f"idc_v{args.version}", help="BQ dataset of table")

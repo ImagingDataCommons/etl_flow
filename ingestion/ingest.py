@@ -48,7 +48,7 @@ import settings as etl_settings
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 
-from ingest.sources import TCIA, Pathology
+from ingestion.sources import TCIA, Pathology
 
 
 PATIENT_TRIES=3
@@ -199,8 +199,21 @@ def copy_gcs_to_gcs(args, instance, gcs_url):
     storage_client = storage.Client(project=args.project)
     src_bucket = args.src_bucket
     dst_bucket = storage_client.bucket((args.prestaging_bucket))
-    blob = src_bucket.blob(gcs_url)
-    new_blob = src_bucket.copy_blob(blob, dst_bucket, new_name = f'{instance.uuid}.dcm')
+    src_blob = src_bucket.blob(gcs_url)
+    dst_blob = dst_bucket.blob(f'{instance.uuid}.dcm')
+    token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob)
+    while token:
+        rootlogger.debug('******p%s: Rewrite bytes_rewritten %s, total_bytes %s', bytes_rewritten, total_bytes)
+        token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob, token=token)
+
+    # new_blob = src_bucket.copy_blob(blob, dst_bucket, new_name = f'{instance.uuid}.dcm')
+
+
+def accum_sources(parent, children):
+    sources = list(parent.sources)
+    for child in children:
+        sources = [x | y for (x, y) in zip(sources, child.sources)]
+    return sources
 
 
 def retire_instance(sess, args, instance, source):
@@ -231,6 +244,8 @@ def retire_instance(sess, args, instance, source):
 
         sess.delete(instance)
         sess.commit()
+    else:
+        instance.min_timestamp = instance.max_timestamp = datetime.utcnow()
 
 
 def build_instances_tcia(sess, args, source, version, collection, patient, study, series):
@@ -385,6 +400,8 @@ def retire_series(sess, args, series, source):
             return
         sess.delete(series)
         sess.commit()
+    else:
+        series.min_timestamp = series.max_timestamp = datetime.utcnow()
 
 
 def expand_series(sess, args, source, series):
@@ -403,14 +420,14 @@ def expand_series(sess, args, source, series):
                     done=False,
                     is_new=True,
                     expanded=False,
-                    source=source.source_id,
+                    source=source.source,
                     hash="",
                     size=0
                 )
             )
         sess.bulk_insert_mappings(Instance, metadata)
     else:
-        idc_objects = series.instances
+        idc_objects = {object.sop_instance_uid: object for object in series.instance}
 
         new_objects = [id for id in source_objects if id not in idc_objects]
         retired_objects = [idc_objects[id] for id in idc_objects if id not in source_objects]
@@ -440,7 +457,7 @@ def expand_series(sess, args, source, series):
                     done = False,
                     is_new = True,
                     expanded = False,
-                    source=source.source_id,
+                    source=source.source,
                     hash="",
                     size=0
                 )
@@ -448,7 +465,7 @@ def expand_series(sess, args, source, series):
         sess.bulk_insert_mappings(Instance, metadata)
     series.expanded = True
     sess.commit()
-    rootlogger.info("Expanded series %s", series.series_instance_uid)
+    # rootlogger.debug("      p%s: Expanded series %s", args.id, series.series_instance_uid)
 
 
 def build_series(sess, args, source, series_index, version, collection, patient, study, series):
@@ -458,27 +475,45 @@ def build_series(sess, args, source, series_index, version, collection, patient,
             tcia_time = expand_series(sess, args, source, series)
         else:
             tcia_time=0
+        begin1 = time.time_ns()
         rootlogger.info("      p%s: Series %s; %s; %s instances, tcia: %s, expand: %s", args.id, series.series_instance_uid, series_index, len(series.instances), tcia_time, time.time()-begin)
+        get_len_time = (time.time_ns() - begin1) / 10 ** 9
+
+        begin2 = time.time_ns()
         if source.source_id == instance_source['tcia']:
             build_instances_tcia(sess, args, source, version, collection, patient, study, series)
         else:
-            pass
-            # build_instances_path(sess, args, source, version, collection, patient, study, series)
+            build_instances_path(sess, args, source, version, collection, patient, study, series)
+        build_instances_time = (time.time_ns() - begin2) / 10 ** 9
 
         if all(instance.done for instance in series.instances):
-            series.series_instances = len(series.instances)
-            series.sources = any(instance.source for instance in series.instances)
             series.min_timestamp = min(instance.timestamp for instance in series.instances)
             series.max_timestamp = max(instance.timestamp for instance in series.instances)
-            series.rev_idc_version = max(instance.rev_idc_version for instance in series.instances)
+
+            # Get hash of children
             hash = source.idc_series_hash(series)
+            # Test whether anything has changed
             if hash != series.hashes[source.source_id]:
-                series.hash = hash
-                series.revised = True
-                series.uuid = uuid4()
+                hashes = list(series.hashes)
+                hashes[source.source_id] = hash
+                series.hashes = hashes
+
+                # Assume that all instances in a series have the same source
+                sources = list(series.sources)
+                sources[source.source_id] = True
+                series.sources = sources
+                series.series_instances = len(series.instances)
+                series.rev_idc_version = max(instance.rev_idc_version for instance in series.instances)
+
+                if not series.is_new:
+                    series.revised = True
+                    series.uuid = uuid4()
+
             series.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
+            rootlogger.debug("      p%s: Series %s, %s, get num instances: %s, build instances: %s", args.id, series.series_instance_uid, series_index, get_len_time, build_instances_time)
+
             rootlogger.info("      p%s: Series %s, %s, completed in %s", args.id, series.series_instance_uid, series_index, duration)
     else:
         rootlogger.info("      p%s: Series %s, %s, previously built", args.id, series.series_instance_uid, series_index)
@@ -498,6 +533,8 @@ def retire_study(sess, args, study, source):
             return
         sess.delete(study)
         sess.commit()
+    else:
+        study.min_timestamp = study.max_timestamp = datetime.utcnow()
 
 
 def expand_study(sess, args, source, study, data_collection_doi, analysis_collection_dois):
@@ -525,7 +562,7 @@ def expand_study(sess, args, source, study, data_collection_doi, analysis_collec
             )
         sess.bulk_insert_mappings(Series, metadata)
     else:
-        idc_objects = study.series
+        idc_objects = {object.series_instance_uid: object for object in study.series}
 
         new_objects = [id for id in source_objects if id not in idc_objects]
         retired_objects = [idc_objects[id] for id in idc_objects if id not in source_objects]
@@ -565,7 +602,7 @@ def expand_study(sess, args, source, study, data_collection_doi, analysis_collec
         sess.bulk_insert_mappings(Series, metadata)
     study.expanded = True
     sess.commit()
-    rootlogger.info("Expanded study %s", study.study_instance_uid)
+    # rootlogger.debug("    p%s: Expanded study %s",args.id,  study.study_instance_uid)
 
 
 def build_study(sess, args, source, study_index, version, collection, patient, study, data_collection_doi, analysis_collection_dois):
@@ -577,15 +614,27 @@ def build_study(sess, args, source, study_index, version, collection, patient, s
         for series in study.seriess:
             series_index = f'{study.seriess.index(series)+1} of {len(study.seriess)}'
             build_series(sess, args, source, series_index, version, collection, patient, study, series)
+
         if all([series.done for series in study.seriess]):
-            study.study_instances = sum([series.series_instances for series in study.seriess])
-            study.min_timestamp = min([series.min_timestamp for series in study.seriess])
-            study.max_timestamp = max([series.max_timestamp for series in study.seriess])
-            study.rev_idc_version = max(series.rev_idc_version for series in study.series)
+            study.min_timestamp = min([series.min_timestamp for series in study.seriess if series.min_timestamp != None])
+            study.max_timestamp = max([series.max_timestamp for series in study.seriess if series.max_timestamp != None])
+
+            # Get hash of children
+            hash = source.idc_study_hash(study)
+            # Test whether anything has changed
             if hash != study.hashes[source.source_id]:
-                study.hash = hash
-                study.revised = True
-                study.uuid = uuid4()
+                hashes = list(study.hashes)
+                hashes[source.source_id] = hash
+                study.hashes = hashes
+
+                study.sources = accum_sources(study, study.seriess)
+                study.study_instances = sum([series.series_instances for series in study.seriess])
+                study.rev_idc_version = max(series.rev_idc_version for series in study.seriess)
+
+                if not study.is_new:
+                    study.revised = True
+                    study.uuid = uuid4()
+
             study.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
@@ -608,6 +657,8 @@ def retire_patient(sess, args, patient, source):
             return
         sess.delete(study)
         sess.commit()
+    else:
+        patient.min_timestamp = patient.max_timestamp = datetime.utcnow()
 
 
 def expand_patient(sess, args, source, patient):
@@ -632,7 +683,7 @@ def expand_patient(sess, args, source, patient):
             )
         sess.bulk_insert_mappings(Study, metadata)
     else:
-        idc_objects = patient.studies
+        idc_objects = {object.study_instance_uid: object for object in patient.studies}
 
         new_objects = [id for id in source_objects if id not in idc_objects]
         retired_objects = [idc_objects[id] for id in idc_objects if id not in source_objects]
@@ -669,7 +720,7 @@ def expand_patient(sess, args, source, patient):
         sess.bulk_insert_mappings(Study, metadata)
     patient.expanded = True
     sess.commit()
-    rootlogger.info("Expanded patient %s", patient.submitter_case_id)
+    # rootlogger.debug("  p%s: Expanded patient %s",args.id, patient.submitter_case_id)
 
 
 
@@ -683,13 +734,23 @@ def build_patient(sess, args, source, patient_index, data_collection_doi, analys
             study_index = f'{patient.studies.index(study) + 1} of {len(patient.studies)}'
             build_study(sess, args, source, study_index, version, collection, patient, study, data_collection_doi, analysis_collection_dois)
         if all([study.done for study in patient.studies]):
-            patient.min_timestamp = min([study.min_timestamp for study in patient.studies])
-            patient.max_timestamp = max([study.max_timestamp for study in patient.studies])
-            patient.rev_idc_version = max(study.rev_idc_version for study in patient.studies)
+            patient.min_timestamp = min([study.min_timestamp for study in patient.studies if study.min_timestamp != None])
+            patient.max_timestamp = max([study.max_timestamp for study in patient.studies if study.max_timestamp != None])
+
+            # Get hash of children
+            hash = source.idc_patient_hash(patient)
+            # Test whether anything has changed
             if hash != patient.hashes[source.source_id]:
-                patient.hash = hash
-                patient.revised = True
-                patient.uuid = uuid4()
+                hashes = list(patient.hashes)
+                hashes[source.source_id] = hash
+                patient.hashes = hashes
+
+                patient.sources = accum_sources(patient, patient.studies)
+                patient.rev_idc_version = max(study.rev_idc_version for study in patient.studies)
+
+                if not patient.is_new:
+                    patient.revised = True
+
             patient.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
@@ -705,12 +766,13 @@ def worker(input, output, args, data_collection_doi, analysis_collection_dois):
         for more_args in iter(input.get, 'STOP'):
             for attempt in range(PATIENT_TRIES):
                 # index, idc_version_number, collection_id, submitter_case_id = more_args
-                index, version, collection, patient = more_args
+                index, collection_id, submitter_case_id = more_args
                 try:
                     # version = sess.query(Version).filter_by(idc_version_number=idc_version_number).one()
-                    # version = sess.query(Version).one()
+                    version = sess.query(Version).one()
                     # collection = next(collection for collection in version.collections if collection.collection_id==collection_id)
-                    # patient = next(patient for patient in collection.patients if patient.submitter_case_id==submitter_case_id)
+                    collection = sess.query(Collection).where(Collection.collection_id==collection_id).one()
+                    patient = next(patient for patient in collection.patients if patient.submitter_case_id==submitter_case_id)
                     # rootlogger.debug("p%s: In worker, sess: %s, submitter_case_id: %s", args.id, sess, submitter_case_id)
                     build_patient(sess, args, source, index, data_collection_doi, analysis_collection_dois, version, collection, patient)
                     break
@@ -740,6 +802,8 @@ def retire_collection(sess, args, collection, source):
             return
         sess.delete(collection)
         sess.commit()
+    else:
+        collection.min_timestamp = collection.max_timestamp = datetime.utcnow()
 
 
 def expand_collection(sess, args, source, collection):
@@ -818,7 +882,7 @@ def expand_collection(sess, args, source, collection):
         sess.bulk_insert_mappings(Patient, metadata)
     collection.expanded = True
     sess.commit()
-    rootlogger.info("Expanded collection %s", collection.collection_id)
+    # rootlogger.debug("p%s: Expanded collection %s",args.id, collection.collection_id)
 
 
 def build_collection(sess, args, source, collection_index, version, collection):
@@ -866,7 +930,7 @@ def build_collection(sess, args, source, collection_index, version, collection):
             patient_index = f'{collection.patients.index(patient) + 1} of {len(collection.patients)}'
             if not patient.done:
                 # task_queue.put((patient_index, version.idc_version_number, collection.collection_id, patient.submitter_case_id))
-                task_queue.put((patient_index, version, collection, patient))
+                task_queue.put((patient_index, collection.collection_id, patient.submitter_case_id))
                 enqueued_patients.append(patient.submitter_case_id)
             else:
                 if (collection.patients.index(patient) % 100 ) == 0:
@@ -900,17 +964,31 @@ def build_collection(sess, args, source, collection_index, version, collection):
                             duration)
 
     if all([patient.done for patient in collection.patients]):
+        collection.min_timestamp = min([patient.min_timestamp for patient in collection.patients if patient.min_timestamp != None])
+        collection.max_timestamp = max([patient.max_timestamp for patient in collection.patients if patient.max_timestamp != None])
+
+        # Get hash of children
         hash = source.idc_collection_hash(collection)
+        # Test whether anything has changed
         if hash != collection.hashes[source.source_id]:
-            collection.revised = True
-            collection.hashes[source.source_id] = hash
-        collection.min_timestamp = min([patient.min_timestamp for patient in collection.patients])
-        collection.max_timestamp = max([patient.max_timestamp for patient in collection.patients])
-        collection.rev_idc_version = max(patient.rev_idc_version for patient in collection.patients)
+            hashes = list(collection.hashes)
+            hashes[source.source_id] = hash
+            collection.hashes = hashes
+            collection.sources = accum_sources(collection, collection.patients)
+
+            collection.rev_idc_version = max(patient.rev_idc_version for patient in collection.patients)
+
+            if collection.is_new:
+                collection.revised = True
+
         collection.done = True
         sess.commit()
         duration = str(timedelta(seconds=(time.time() - begin)))
         rootlogger.info("Collection %s, %s, completed in %s", collection.collection_id, collection_index,
+                        duration)
+    else:
+        duration = str(timedelta(seconds=(time.time() - begin)))
+        rootlogger.info("Collection %s, %s, not completed in %s", collection.collection_id, collection_index,
                         duration)
 
 
@@ -994,14 +1072,15 @@ def build_version(sess, args, source, version):
         duration = str(timedelta(seconds=(time.time() - begin)))
         # Check whether the hash has changed. If so then declare this a new version
         # otherwise revert the version number
-        if hash != version.hash:
-            version.hashes[source.source_id] = hash;
-            #!!! Maybe per-source timestamps?
-            version.min_timestamp = min([collection.min_timestamp for collection in idc_collections])
-            version.max_timestamp = max([collection.maxtimestamp for collection in idc_collections])
+        if hash != version.hashes[source.source_id]:
+            hashes = list(version.hashes)
+            hashes[source.source_id] = hash
+            version.hashes = hashes
+            version.min_timestamp = min([collection.min_timestamp for collection in idc_collections if collection.min_timestamp != None])
+            version.max_timestamp = max([collection.max_timestamp for collection in idc_collections if collection.max_timestamp != None])
             version.done = True
             version.revised = True
-            rootlogger.info("Built new version %s in %s", version.version, duration)
+            rootlogger.info("Built new %s version %s in %s", source.source.name, version.versions[source.source_id], duration)
         else:
             version.versions[source.source_id] = args.version-1
             rootlogger.info("Version unchanged, remains at  %s in %s", version.version-1, duration)
@@ -1055,11 +1134,11 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=3, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())
     args = parser.parse_args()
-    parser.add_argument('--db', default=f'idc_path_v{args.version}', help='Database on which to operate')
+    parser.add_argument('--db', default=f'idc_path_v{args.version}.1', help='Database on which to operate')
     parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--src_bucket', default=storage.Bucket(args.client,'af-dac-wsi-conversion-results'))
     parser.add_argument('--prestaging_bucket_prefix', default=f'idc_v3_', help='Copy instances here before forwarding to --staging_bucket')
-    parser.add_argument('--num_processes', default=0, help="Number of concurrent processes")
+    parser.add_argument('--num_processes', default=8, help="Number of concurrent processes")
     parser.add_argument('--todos', default='{}/logs/path_ingest_v{}_todos.txt'.format(os.environ['PWD'], args.version ), help="Collections to include")
     parser.add_argument('--source', default=Pathology, help="Source from which to ingest")
     parser.add_argument('--server', default="", help="NBIA server to access")
@@ -1081,5 +1160,5 @@ if __name__ == '__main__':
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
 
-    rootlogger.info('Args: %s', args)
+    rootlogger.debug('Args: %s', args)
     prebuild(args)

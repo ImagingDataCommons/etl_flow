@@ -32,17 +32,6 @@ from googleapiclient.errors import HttpError
 # from helpers.dicom_helpers import get_dataset, get_dicom_store, create_dicom_store, import_dicom_instance
 
 def export_dicom_metadata(args):
-    """Export data to a Google Cloud Storage bucket by copying
-    it from the DICOM store."""
-    # client = get_client()
-    # dicom_store_parent = "projects/{}/locations/{}/datasets/{}".format(
-    #     args.project, args.region, args.dcmdataset_name
-    # )
-    # dicom_store_name = "{}/dicomStores/{}".format(args.dicom_store_parent, args.dcmdatastore_name)
-    #
-    # body = {"BigQueryDestination": {"tableURI": "gs://{}".format(table_uri), "force": False}}
-    #
-
     # Get an access token
     results = subprocess.run(['gcloud', 'auth', 'application-default', 'print-access-token'], stdout=PIPE, stderr=PIPE)
     bearer = str(results.stdout,encoding='utf-8').strip()
@@ -55,8 +44,6 @@ def export_dicom_metadata(args):
             'force': False
         }
     }
-    # data = f'{{"bigqueryDestination": {{"tableUri": {destination},"force": False}}}}'
-    # data = "{'bigqueryDestination': {'tableUri': %s,'force': False}}".format(destination)
 
     headers = {
         'Authorization': f'Bearer {bearer}',
@@ -64,19 +51,6 @@ def export_dicom_metadata(args):
     }
     url = f'https://healthcare.googleapis.com/v1/projects/{args.src_project}/locations/{args.src_region}/datasets/{args.dcmdataset_name}/dicomStores/{args.dcmdatastore_name}:export'
     results = requests.post(url, headers=headers, json=data)
-
-
-    # cmd = ['curl', '-X', 'POST',
-    #     '-H', '"' + 'Authorization: Bearer {}'.format(bearer) + '"',
-    #     '-H', '"Content-Type: application/json; charset=utf-8"',
-    #     '--data', '"' + "{{'bigqueryDestination': {{'tableUri': 'bq://{}.{}.{}'}}}}".format(args.project, args.bqdataset, args.bqtable) +'"',
-    #     "https://healthcare.googleapis.com/v1/projects/{}/locations/{}/datasets/{}/dicomStores/{}:export".format(
-    #         args.project, args.region,args.dcmdataset_name, args.dcmdatastore_name)
-    #     ]
-    #
-    # results = subprocess.run(cmd, stdout=PIPE, stderr=PIPE)
-
-    # operation_id = json.loads(str(results.stdout,encoding='utf-8'))['name'].split('/')[-1]
 
     # Get the operation ID so we can track progress
     operation_id = results.json()['name'].split('/')[-1]
@@ -92,15 +66,6 @@ def export_dicom_metadata(args):
         }
         url = f'https://healthcare.googleapis.com/v1/projects/{args.src_project}/locations/{args.src_region}/datasets/{args.dcmdataset_name}/operations/{operation_id}'
         results = requests.get(url, headers=headers)
-
-        # cmd = ['curl', '-X', 'GET',
-        #        '-H', '"' + 'Authorization: Bearer {}'.format(bearer) + '"',
-        #        "https://healthcare.googleapis.com/v1/projects/{}/locations/{}/datasets/{}/operations/{}".format(
-        #            args.project, args.region, args.dcmdataset_name, operation_id)
-        #        ]
-
-        # results = subprocess.run(cmd, stdout=PIPE, stderr=PIPE)
-        # details = json.loads(str(results.stdout,encoding='utf-8'))
 
         details = results.json()
 
@@ -138,15 +103,6 @@ def get_job(args):
         }
         url = f'https://healthcare.googleapis.com/v1/projects/{args.src_project}/locations/{args.src_region}/datasets/{args.dcmdataset_name}/operations/{operation_id}'
         results = requests.get(url, headers=headers)
-
-        # cmd = ['curl', '-X', 'GET',
-        #        '-H', '"' + 'Authorization: Bearer {}'.format(bearer) + '"',
-        #        "https://healthcare.googleapis.com/v1/projects/{}/locations/{}/datasets/{}/operations/{}".format(
-        #            args.project, args.region, args.dcmdataset_name, operation_id)
-        #        ]
-
-        # results = subprocess.run(cmd, stdout=PIPE, stderr=PIPE)
-        # details = json.loads(str(results.stdout,encoding='utf-8'))
 
         details = results.json()
 
@@ -201,6 +157,6 @@ if __name__ == '__main__':
     parser.add_argument('--bqtable', default='dicom_metadata', help="BQ table name")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-    get_job(args)
+    # get_job(args)
     export_metadata(args)
 

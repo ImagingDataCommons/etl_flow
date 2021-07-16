@@ -238,6 +238,7 @@ class Instance(Base):
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     series_instance_uid = Column(ForeignKey('series.series_instance_uid'), comment="Containing object")
     source = Column(Enum(instance_source), nullable=False, comment='Source of this object; "tcia", "path"')
+
     series = relationship("Series", back_populates="instances")
 
 class Retired(Base):
