@@ -193,7 +193,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     parser.add_argument('--db', default=f'idc_v{args.version}')
     parser.add_argument('--src_bucket', default='idc_dev')
-    parser.add_argument('--dst_bucket', default='public-datasets-dev-idc')
+    parser.add_argument('--dst_bucket', default='idc_gch_staging')
     parser.add_argument('--processes', default=32, help="Number of concurrent processes")
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-dev-etl')
