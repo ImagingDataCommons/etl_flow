@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# build_version.py did not correctly assign 3rd party source DOIs to series.
+# tcia_ingest.py did not correctly assign 3rd party source DOIs to series.
 # This should be a one-use script
 
 import sys

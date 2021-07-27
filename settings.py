@@ -40,11 +40,11 @@ GCP_PROJECT =           os.environ.get('GCP_PROJECT', '')
 BIGQUERY_DATASET =      os.environ.get('BIGQUERY_DATASET', '')
 BIGQUERY_AUXILLIARY_METADATA = "auxilliary_metadata"
 
-DATABASE_NAME =         os.environ.get('DATABASE_NAME', '')
-DATABASE_USERNAME =     os.environ.get('DATABASE_USERNAME', '')
-DATABASE_PASSWORD =     os.environ.get('DATABASE_PASSWORD', '')
-DATABASE_HOST =         os.environ.get('DATABASE_HOST', '')
-DATABASE_PORT =         os.environ.get('DATABASE_PORT', '')
+# DATABASE_NAME =         os.environ.get('DATABASE_NAME', '')
+LOCAL_DATABASE_USERNAME =     os.environ.get('LOCAL_DATABASE_USERNAME', '')
+LOCAL_DATABASE_PASSWORD =     os.environ.get('LOCAL_DATABASE_PASSWORD', '')
+LOCAL_DATABASE_HOST =         os.environ.get('LOCAL_DATABASE_HOST', '')
+LOCAL_DATABASE_PORT =         os.environ.get('LOCAL_DATABASE_PORT', '')
 
 LOGGER_NAME =           os.environ.get('ETL_LOGGER_NAME', 'main_logger')
 

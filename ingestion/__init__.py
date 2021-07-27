@@ -14,10 +14,3 @@
 # limitations under the License.
 #
 
-
-loguru
-pyarrow
-psycopg2-binary
-python-dotenv
-python_settings
-pg8000

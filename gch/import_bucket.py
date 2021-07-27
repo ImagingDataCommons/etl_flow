@@ -42,7 +42,6 @@ def get_gch_client():
     return discovery.build(service_name, api_version)
 
 
-
 def get_dataset_operation(
         project_id,
         cloud_region,
@@ -126,27 +125,25 @@ def import_bucket(args):
     pass
 
     # result = import_collection(args)
-    try:
-        print('Importing {}'.format(args.src_bucket))
-        content_uri = '{}/*'.format(args.src_bucket)
-        response = import_dicom_instances(args.project, args.region, args.gch_dataset_name,
-                        args.gch_dicomstore_name, content_uri)
-        result = wait_done(response, args, args.period)
-        return result
-    except HttpError as e:
-        err = json.loads(e.content)
-        print('Error loading {}; code: {}, message: {}'.format(args.src_bucket, err['error']['code'], err['error']['message']))
-        if 'resolves to zero GCS objects' in err['error']['message']:
-            # An empty collection bucket throws an error
-            return
+    for bucket in args.src_buckets:
+        try:
+            print('Importing {}'.format(bucket))
+            content_uri = '{}/*'.format(bucket)
+            response = import_dicom_instances(args.project, args.region, args.gch_dataset_name,
+                            args.gch_dicomstore_name, content_uri)
+            print(f'Response: {response}')
+            result = wait_done(response, args, args.period)
+        except HttpError as e:
+            err = json.loads(e.content)
+            print('Error loading {}; code: {}, message: {}'.format(bucket, err['error']['code'], err['error']['message']))
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--src_bucket', default='idc_dev')
-    parser.add_argument('--project', default='canceridc-data')
+    parser.add_argument('--src_buckets', default=['idc_dev'], help="List of buckets from which to import")
+    parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--region', default='us-central1', help='Dataset region')
     parser.add_argument('--gch_dataset_name', default='idc', help='Dataset name')
-    parser.add_argument('--gch_dicomstore_name', default='v2', help='Datastore name')
+    parser.add_argument('--gch_dicomstore_name', default='v3', help='Datastore name')
     parser.add_argument('--period', default=60, help="seconds to sleep between checking operation status")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

@@ -29,16 +29,13 @@ from utilities.tcia_scrapers import scrape_tcia_data_collections_page
 def get_collections_in_version(client, args):
     query = f"""
     SELECT c.* 
-    FROM `{args.project}.{args.bqdataset_name}.{args.bq_version_table}` as v
-    JOIN `{args.project}.{args.bqdataset_name}.{args.bq_collection_table}` as c
-    ON v.id = c.version_id
+    FROM `{args.project}.{args.bqdataset_name}.{args.bq_collection_table}` as c
     JOIN `{args.project}.{args.bqdataset_name}.{args.bq_excluded_collections}` as ex
-    ON LOWER(c.tcia_api_collection_id) = LOWER(ex.tcia_api_collection_id)
-    WHERE v.id = {args.version}
-    ORDER BY c.tcia_api_collection_id
+    ON LOWER(c.collection_id) = LOWER(ex.tcia_api_collection_id)
+    ORDER BY c.collection_id
     """
     result = client.query(query).result()
-    collection_ids = [collection['tcia_api_collection_id'] for collection in result]
+    collection_ids = [collection['collection_id'] for collection in result]
     return collection_ids
 
 
@@ -92,7 +89,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}_dev', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default='excluded_original_collections_metadata', help='BQ table name')
-    parser.add_argument('--bq_version_table', default='version', help='BQ table from which to get versions')
     parser.add_argument('--bq_collection_table', default='collection', help='BQ table from which to get collections in version')
     parser.add_argument('--bq_excluded_collections', default='excluded_collections', help='BQ table from which to get collections to exclude')
 

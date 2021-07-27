@@ -26,6 +26,7 @@ from datetime import timedelta
 from multiprocessing import Process, Queue
 from queue import Empty
 from google.cloud import storage
+from base64 import b64decode
 
 
 from python_settings import settings
@@ -40,29 +41,50 @@ TRIES=3
 
 def val_collection(cur, args, dones, collection_index, tcia_api_collection_id):
     if not tcia_api_collection_id in dones:
+        rootlogger.info('%s: Validating collection %s ', args.id, tcia_api_collection_id)
 
         client = storage.Client()
         bucket = client.bucket(args.final_bucket)
         n = 1
 
+        # Get the set of instances that have already been validated
         try:
             done_instances = set(open(f'./logs/rvfb_{tcia_api_collection_id}_success.log').read().splitlines())
         except:
             done_instances = []
 
         increment = 10000
+        # query= f"""
+        # SELECT *
+        # FROM collection as c
+        # JOIN patient as p
+        # ON c.id = p.collection_id
+        # JOIN study as st
+        # ON p.id = st.patient_id
+        # JOIN series as se
+        # ON st.id = se.study_id
+        # JOIN instance as i
+        # ON se.id = i.series_id
+        # WHERE c.idc_version_number = {args.version} and c.tcia_api_collection_id = '{tcia_api_collection_id}'
+        # order by sop_instance_uid
+        # """
+
+        # Get all the instances that from the all_table table
         query= f"""
-        SELECT * 
+        SELECT *
         FROM {args.all_table}
         WHERE tcia_api_collection_id = '{tcia_api_collection_id}'
         order by sop_instance_uid
         """
         cur.execute(query)
         rowcount=cur.rowcount
+        # Record successes here
         successes = open(f'./logs/rvfb_{tcia_api_collection_id}_success.log', 'a')
+        # Record failures here
         failures = open(f'./logs/rvfb_{tcia_api_collection_id}_failures.log', 'a')
         failure_count=0
         while True:
+            # get a batch of instances to validate
             rows = cur.fetchmany(increment)
             if len(rows) == 0:
                 break
@@ -73,14 +95,22 @@ def val_collection(cur, args, dones, collection_index, tcia_api_collection_id):
                     retries = 0
                     while True:
                         try:
-                            if storage.Blob(bucket=bucket, name=blob_name).exists(client):
-                                rootlogger.info('%s %s: %s: blob exists %s', args.id, index, tcia_api_collection_id, blob_name)
-                                successes.write(f'{blob_name}\n')
+                            blob = storage.Blob(bucket=bucket, name=blob_name)
+                            if blob.exists(client):
+                                blob.reload()
+                                if row["instance_hash"] == b64decode(blob.md5_hash).hex():
+                                    rootlogger.info('%s %s: %s: blob exists %s', args.id, index, tcia_api_collection_id, blob_name)
+                                    successes.write(f'{blob_name}\n')
+                                    break
+                                else:
+                                    errlogger.error('%s %s: %s: blob hash mismatch %', args.id, index,
+                                                    tcia_api_collection_id, blob_name)
+                                    failures.write(f'{blob_name} hash mismatch\n')
+                                    failure_count += 1
                             else:
                                 errlogger.error('%s %s: %s: blob not found %', args.id, index, tcia_api_collection_id, blob_name)
                                 failures.write(f'{blob_name} not found\n')
                                 failure_count += 1
-                            break
                         except Exception as exc:
                             errlogger.error('%s %s: %s: error checking if blob %s exists %s\n, retry %s; %s', args.id,
                                             index, tcia_api_collection_id,
@@ -110,7 +140,7 @@ def val_collection(cur, args, dones, collection_index, tcia_api_collection_id):
 
 def worker(input, output, args, dones):
     rootlogger.debug('p%s: Worker starting: args: %s', args.id, args)
-    conn = psycopg2.connect(dbname=settings.DATABASE_NAME, user=settings.DATABASE_USERNAME,
+    conn = psycopg2.connect(dbname=args.db, user=settings.DATABASE_USERNAME,
                             password=settings.DATABASE_PASSWORD, host=settings.DATABASE_HOST)
     with conn:
         with conn.cursor(cursor_factory=DictCursor) as cur:
@@ -120,6 +150,7 @@ def worker(input, output, args, dones):
                 for attempt in range(TRIES):
                     try:
                         collection_index, tcia_api_collection_id = more_args
+
                         # copy_collection(args, dones, collection_index, tcia_api_collection_id)
                         val_collection(cur, args, dones, collection_index, tcia_api_collection_id)
                         break
@@ -210,7 +241,7 @@ def copy_collections(cur, args, version):
 
 
 def prereval(args):
-    conn = psycopg2.connect(dbname=settings.DATABASE_NAME, user=settings.DATABASE_USERNAME,
+    conn = psycopg2.connect(dbname=args.db, user=settings.DATABASE_USERNAME,
                             password=settings.DATABASE_PASSWORD, host=settings.DATABASE_HOST)
     with conn:
         with conn.cursor(cursor_factory=DictCursor) as cur:
@@ -227,7 +258,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=2, help='Next version to generate')
     parser.add_argument('--final_bucket', default='idc_dev', help='Bucket to validate')
-    parser.add_argument('--all_table', default='all_v2')
+    args = parser.parse_args()
+    parser.add_argument('--all_table', default=f'all_v{args.version}', )
+    parser.add_argument('--db', default=f'idc', help='PSQL database to access')
     parser.add_argument('--processes', default=32, help="Number of concurrent processes")
     parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--skips', default='./logs/revalidate_final_bucket_skips.log' )
