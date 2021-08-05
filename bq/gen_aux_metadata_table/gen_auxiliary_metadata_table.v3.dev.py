@@ -20,7 +20,7 @@
 import argparse
 import sys
 from bq.gen_aux_metadata_table.gen_auxiliary_metadata_table import gen_aux_table
-from bq.gen_aux_metadata_table.schema_separate_buckets import auxiliary_metadata_schema
+from bq.gen_aux_metadata_table.sql_separate_buckets import auxiliary_metadata_schema
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()

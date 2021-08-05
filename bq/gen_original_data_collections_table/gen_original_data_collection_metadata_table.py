@@ -17,13 +17,12 @@
 
 import argparse
 import sys
-import os
 import json
 import time
 from google.cloud import bigquery
-from utilities.bq_helpers import load_BQ_from_json, query_BQ
+from utilities.bq_helpers import load_BQ_from_json
 from bq.gen_original_data_collections_table.schema import data_collections_metadata_schema
-from utilities.tcia_helpers import get_collection_descriptions
+from utilities.tcia_helpers import get_collection_descriptions_and_licenses, get_collection_license_info
 from utilities.tcia_scrapers import scrape_tcia_data_collections_page
 
 def get_collections_in_version(client, args):
@@ -39,13 +38,37 @@ def get_collections_in_version(client, args):
     collection_ids = [collection['collection_id'] for collection in result]
     return collection_ids
 
+def get_cases_per_collection(client, args):
+    query = f"""
+    SELECT
+      c.collection_id,
+      COUNT(DISTINCT p.submitter_case_id ),
+    FROM
+      `{args.src_project}.{args.bqdataset_name}.collection` as c
+    JOIN
+      `{args.src_project}.{args.bqdataset_name}.patient` as p 
+    ON c.collection_id = p.collection_id
+    GROUP BY
+        c.collection_id
+    """
 
-def build_metadata(args, collection_ids):
-    # Get collection descriptions from TCIA
-    collection_descriptions = get_collection_descriptions()
+    case_counts = {c.values()[0].lower(): c.values()[1] for c in client.query(query).result()}
+    return case_counts
+
+
+def build_metadata(client, args, collection_ids):
+    # Get collection descriptions and license IDs from TCIA
+    collection_descriptions = get_collection_descriptions_and_licenses()
+
+    # We report our case count rather than counts from the TCIA wiki pages.
+    case_counts = get_cases_per_collection(client, args)
+
+    # Get a list of the licenses used by data collections
+    licenses = get_collection_license_info()
 
     # Scrape the TCIA Data Collections page for collection metadata
     collection_metadata = scrape_tcia_data_collections_page()
+
 
     rows = []
     found_ids = []
@@ -56,9 +79,42 @@ def build_metadata(args, collection_ids):
             collection_data['tcia_api_collection_id'] = lowered_collection_ids[collection_id.lower()]
             collection_data['idc_webapp_collection_id'] = collection_id.lower().replace(' ','_').replace('-','_')
             if collection_id in collection_descriptions:
-                collection_data['Description'] = collection_descriptions[collection_id]
+                collection_data['Description'] = collection_descriptions[collection_id]['description']
+                collection_data['Subjects'] = case_counts[collection_id.lower()]
+                collection_data['LicenseURL'] = licenses[collection_id]['licenseURL']
+                collection_data['LicenseLongName'] = licenses[collection_id]['longName']
+                collection_data['LicenseShortName'] = licenses[collection_id]['shortName']
+                # collection_data['LicenseURL'] = \
+                #     licenses[collection_descriptions[collection_id]['licenseId']-1]['licenseURL']
+                # collection_data['LicenseLongName'] = \
+                #     licenses[collection_descriptions[collection_id]['licenseId'] - 1]['longName']
+                # collection_data['LicenseShortName'] = \
+                #     licenses[collection_descriptions[collection_id]['licenseId'] - 1]['shortName']
+
             elif collection_data['tcia_api_collection_id'] in collection_descriptions:
-                collection_data['Description'] = collection_descriptions[collection_data['tcia_api_collection_id']]
+                collection_data['Description'] = collection_descriptions[collection_data['tcia_api_collection_id']]['description']
+                collection_data['Subjects'] = case_counts[collection_data['tcia_api_collection_id'].lower()]
+                collection_data['LicenseURL'] = \
+                    licenses[collection_data['tcia_api_collection_id']]['licenseURL']
+                collection_data['LicenseLongName'] = \
+                    licenses[collection_data['tcia_api_collection_id']]['longName']
+                collection_data['LicenseShortName'] = \
+                    licenses[collection_data['tcia_api_collection_id']]['shortName']
+                # collection_data['LicenseURL'] = \
+                #     licenses[collection_descriptions[collection_data['tcia_api_collection_id']]['licenseId'] - 1][
+                #         'licenseURL']
+                # collection_data['LicenseLongName'] = \
+                #     licenses[collection_descriptions[collection_data['tcia_api_collection_id']]['licenseId'] - 1][
+                #         'longName']
+                # collection_data['LicenseShortName'] = \
+                #     licenses[collection_descriptions[collection_data['tcia_api_collection_id']]['licenseId'] - 1][
+                #         'shortName']
+            else:
+                collection_data['Description'] = ""
+                collection_data['LicenseURL'] = ""
+                collection_data['LicenseLongName'] = ""
+                collection_data['LicenseShortName'] = ""
+
             rows.append(json.dumps(collection_data))
         else:
             print(f'{collection_id} not in IDC collections')
@@ -75,7 +131,7 @@ def gen_collections_table(args):
     BQ_client = bigquery.Client(project=args.src_project)
     collection_ids = get_collections_in_version(BQ_client, args)
 
-    metadata = build_metadata(args, collection_ids)
+    metadata = build_metadata(BQ_client, args, collection_ids)
     job = load_BQ_from_json(BQ_client, args.dst_project, args.bqdataset_name, args.bqtable_name, metadata,
                             data_collections_metadata_schema, write_disposition='WRITE_TRUNCATE')
     while not job.state == 'DONE':
@@ -85,7 +141,7 @@ def gen_collections_table(args):
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--version', default=1, help='IDC version for which to build the table')
+    parser.add_argument('--version', default=3, help='IDC version for which to build the table')
     args = parser.parse_args()
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-dev-etl')

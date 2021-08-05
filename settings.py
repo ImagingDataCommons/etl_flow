@@ -46,6 +46,12 @@ LOCAL_DATABASE_PASSWORD =     os.environ.get('LOCAL_DATABASE_PASSWORD', '')
 LOCAL_DATABASE_HOST =         os.environ.get('LOCAL_DATABASE_HOST', '')
 LOCAL_DATABASE_PORT =         os.environ.get('LOCAL_DATABASE_PORT', '')
 
+CLOUD_SQL_USERNAME =        os.environ.get('CLOUD_SQL_USERNAME', '')
+CLOUD_SQL_PASSWORD =        os.environ.get('CLOUD_SQL_PASSWORD', '')
+CLOUD_SQL_HOST =            os.environ.get('CLOUD_SQL_HOST', '')
+CLOUD_SQL_PORT =            os.environ.get('CLOUD_SQL_PORT', '')
+CLOUD_SQL_INSTANCE =        os.environ.get('CLOUD_SQL_INSTANCE', '')
+
 LOGGER_NAME =           os.environ.get('ETL_LOGGER_NAME', 'main_logger')
 
 TCIA_ID =                os.environ.get('TCIA_ID')

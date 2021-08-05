@@ -69,7 +69,8 @@ def gen_collections_table(args):
     source_dois = get_all_idc_dois(BQ_client, args)
 
     metadata = build_metadata(args, source_dois)
-    job = load_BQ_from_json(BQ_client, args.dst_project, args.bqdataset_name, args.bqtable_name, metadata, analysis_results_metadata_schema)
+    job = load_BQ_from_json(BQ_client, args.dst_project, args.bqdataset_name, args.bqtable_name, metadata, analysis_results_metadata_schema,
+                            write_disposition='WRITE_TRUNCATE')
     while not job.state == 'DONE':
         print('Status: {}'.format(job.state))
         time.sleep(args.period * 60)
@@ -78,20 +79,17 @@ def gen_collections_table(args):
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
 
-    parser.add_argument('--version', default=1, help='IDC version for which to build the table')
+    parser.add_argument('--version', default=3, help='IDC version for which to build the table')
     args = parser.parse_args()
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
+    parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}_dev', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default='analysis_results_metadata', help='BQ table name')
-    parser.add_argument('--bq_version_table', default='version', help='BQ table from which to get versions')
     parser.add_argument('--bq_collection_table', default='collection', help='BQ table from which to get collections in version')
     parser.add_argument('--bq_patient_table', default='patient', help='BQ table from which to get patients in version')
     parser.add_argument('--bq_study_table', default='study', help='BQ table from which to get study in version')
     parser.add_argument('--bq_series_table', default='series', help='BQ table from which to get series in version')
     parser.add_argument('--bq_excluded_collections', default='excluded_collections', help='BQ table from which to get collections to exclude')
-    parser.add_argument('--bq_original_collections_metadata_table', default='original_collections_metadata',
-                        help='BQ original collections metadata table')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
