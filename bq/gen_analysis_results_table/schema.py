@@ -41,4 +41,7 @@ analysis_results_metadata_schema = [
     bigquery.SchemaField('Collections', 'STRING', mode='NULLABLE', description='Original data collections analyzed'),
     bigquery.SchemaField('AnalysisArtifactsonTCIA', 'STRING', mode='NULLABLE', description='Types of analysis artifacts produced'),
     bigquery.SchemaField('Updated', 'DATE', mode='NULLABLE', description='Most recent update reported by TCIA'),
+    bigquery.SchemaField('LicenseURL', 'STRING', mode='NULLABLE', description='URL of license of this analysis result'),
+    bigquery.SchemaField('LicenseLongName', 'STRING', mode='NULLABLE', description='Long name of license of this analysis result'),
+    bigquery.SchemaField('LicenseShortName', 'STRING', mode='NULLABLE', description='Short name of license of this analysis result'),
 ]

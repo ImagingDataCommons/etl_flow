@@ -21,9 +21,10 @@ from bq.gen_excluded_original_data_collections_table.gen_excluded_original_data_
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--version', default=3, help='IDC version for which to build the table')
     args = parser.parse_args()
+    parser.add_argument('--src_project', default='idc-dev-etl')
+    parser.add_argument('--dst_project', default='idc-dev-etl')
     parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default='excluded_original_collections_metadata', help='BQ table name')
     parser.add_argument('--bq_collection_table', default='collection', help='BQ table from which to get collections in version')

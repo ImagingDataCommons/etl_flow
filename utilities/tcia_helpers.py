@@ -314,7 +314,26 @@ def get_collection_size(collection, nbia_server=True):
     return size
 
 
-def get_collection_descriptions():
+def get_collection_descriptions_and_licenses(collection=None):
+    # Get access token for the guest account
+    access_token = get_access_token()
+    if collection:
+        url = f'https://public.cancerimagingarchive.net/nbia-api/services/getCollectionDescriptions?collectionName={collection}'
+    else:
+        url = 'https://public.cancerimagingarchive.net/nbia-api/services/getCollectionDescriptions'
+    result = run([
+        'curl',
+        '-H',
+        "Authorization:Bearer {}".format(access_token),
+        '-k',
+        url
+        ], stdout=PIPE, stderr=PIPE)
+    descriptions = json.loads(result.stdout.decode())
+    collection_descriptions = {description['collectionName']: {'description': description['description'], 'licenseId':description['licenseId']} for description in descriptions}
+
+    return collection_descriptions
+
+def get_collection_licenses():
     # Get access token for the guest account
     access_token = get_access_token()
     result = run([
@@ -322,12 +341,25 @@ def get_collection_descriptions():
         '-H',
         "Authorization:Bearer {}".format(access_token),
         '-k',
-        'https://public.cancerimagingarchive.net/nbia-api/services/getCollectionDescriptions'
+        'https://public.cancerimagingarchive.net/nbia-api/services/getLicenses'
         ], stdout=PIPE, stderr=PIPE)
-    descriptions = json.loads(result.stdout.decode())
-    collection_descriptions = {description['collectionName']: description['description'] for description in descriptions}
+    licenses = json.loads(result.stdout.decode())
+    # collection_descriptions = {description['collectionName']: description['description'] for description in descriptions}
 
-    return collection_descriptions
+    return licenses
+
+def get_collection_license_info():
+    table = get_collection_descriptions_and_licenses()
+    license_info = {license['id']: license for license in get_collection_licenses()}
+    licenses = {}
+    for collection_id, data in table.items():
+        licenseId = data['licenseId']
+        licenses[collection_id] = dict(
+            licenseURL = license_info[licenseId]["licenseURL"],
+            longName = license_info[licenseId]["longName"],
+            shortName = license_info[licenseId]["shortName"]
+        )
+    return licenses
 
 
 def get_updated_series(date):
@@ -441,6 +473,10 @@ if __name__ == "__main__":
         settings.configure(etl_settings)
         assert settings.configured
 
+    table = get_collection_license_info()
+    # table = get_collection_descriptions_and_licenses('TCGA-LUAD')
+    # table = get_collection_descriptions_and_licenses('Vestibular-Schwannoma-SEG')
+    table = get_collection_descriptions_and_licenses()
     hash = get_hash({"SeriesInstanceUID":'1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353'})
     # get_TCIA_instances_per_series("temp", '1.2.840.113654.2.55.262421043240525317038356381369289737801', server="NLST")
     results = get_collection_values_and_counts()
@@ -459,7 +495,6 @@ if __name__ == "__main__":
     # instances = get_TCIA_instances_per_series('/mnt/disks/idc-etl/temp', '1.2.840.113713.4.2.165042455211102753703326913551133262099', nbia_server=True)
     # print(instances)
     # patients = get_TCIA_patients_per_collection('LDCT-and-Projection-data')
-    get_collection_descriptions()
     # series = get_TCIA_series_per_collection('TCGA-BRCA')
     # series = get_updated_series('23/03/2021')
     # print(time.asctime());studies = get_TCIA_studies_per_collection('BREAST-DIAGNOSIS', nbia_server=False);print(time.asctime())

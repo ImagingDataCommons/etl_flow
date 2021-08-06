@@ -15,6 +15,7 @@
 #
 
 import difflib
+from utilities.tcia_helpers import get_collection_licenses
 
 import requests
 from bs4 import BeautifulSoup
@@ -44,6 +45,32 @@ def get_collection_id(doi):
             break
     return collection_id
 
+
+def get_license_from_wiki(doi):
+
+    # Get a list of the licenses used by collections
+    licenses = get_collection_licenses()
+
+    # Get the wiki page for some collection/analysis result
+    URL = f'https://doi.org/{doi}'
+    page = get_url(URL)
+
+    soup = BeautifulSoup(page.content, "html.parser")
+
+    for link in soup.find_all('div'):
+        if link.get('name') == "Citations BITVOODOO_ANDamp; Data Usage Policy":
+            for att in link.find('p').find_all('a'):
+                if att.text != 'TCIA Data Usage Policy':
+                    licenseURL = att.get('href')
+                    longName = att.text
+                    # We have to the shortname from the licenses list. It's not in the page.
+                    license = next((item for item in licenses if item['longName'] == longName), None)
+                    shortName = license["shortName"] if license else ""
+                    return (licenseURL, longName, shortName)
+
+    return ("", "")
+
+
 def scrape_tcia_analysis_collections_page():
     URL = 'https://www.cancerimagingarchive.net/tcia-analysis-results/'
     page = get_url(URL)
@@ -57,7 +84,7 @@ def scrape_tcia_analysis_collections_page():
     rows = table.find_all("tr")
 
     table = {}
-    header = "Collection,DOI,CancerType,Location,Subjects,Collections,AnalysisArtifactsonTCIA,Updated".split(",")
+    header = "Collection,DOI,CancerType,Location,Subjects,Collections,AnalysisArtifactsonTCIA,Updated,LicenseURL,LicenseName".split(",")
 
     for row in rows:
         trow = {}
@@ -71,10 +98,12 @@ def scrape_tcia_analysis_collections_page():
         if len(trow):
             # Strip off the http server prefix
             trow['DOI'] = trow['DOI'].split('doi.org/')[1]
+            trow['LicenseURL'], trow['LicenseLongName'], trow['LicenseShortName'] = get_license_from_wiki(trow['DOI'])
 
             collection = trow.pop('Collection')
             table[collection] = trow
             # table = table + [trow]
+
 
     # print(tabulate(table, headers=header))
 
@@ -133,5 +162,9 @@ def scrape_tcia_data_collections_page():
 
 
 if __name__ == "__main__":
-    m =scrape_tcia_data_collections_page()
-    s = get_collection_id('https://wiki.cancerimagingarchive.net/x/N4NyAQ')
+    # m =scrape_tcia_data_collections_page()
+    # s = get_collection_id('https://wiki.cancerimagingarchive.net/x/N4NyAQ')
+    url, longName, shortName = get_license_from_wiki('10.7937/tcia.2019.of2w8lxr')
+    table = scrape_tcia_analysis_collections_page()
+    table = scrape_tcia_data_collections_page()
+    pass

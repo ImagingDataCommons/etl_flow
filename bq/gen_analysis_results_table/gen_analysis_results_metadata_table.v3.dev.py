@@ -40,14 +40,11 @@ if __name__ == '__main__':
     parser.add_argument('--dst_project', default='idc-dev-etl')
     parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default='analysis_results_metadata', help='BQ table name')
-    parser.add_argument('--bq_version_table', default='version', help='BQ table from which to get versions')
     parser.add_argument('--bq_collection_table', default='collection', help='BQ table from which to get collections in version')
     parser.add_argument('--bq_patient_table', default='patient', help='BQ table from which to get patients in version')
     parser.add_argument('--bq_study_table', default='study', help='BQ table from which to get study in version')
     parser.add_argument('--bq_series_table', default='series', help='BQ table from which to get series in version')
     parser.add_argument('--bq_excluded_collections', default='excluded_collections', help='BQ table from which to get collections to exclude')
-    parser.add_argument('--bq_original_collections_metadata_table', default='original_collections_metadata',
-                        help='BQ original collections metadata table')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

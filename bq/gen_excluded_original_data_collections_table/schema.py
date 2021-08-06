@@ -31,5 +31,7 @@ data_collections_metadata_schema = [
     bigquery.SchemaField('SupportingData', 'STRING', mode='NULLABLE', description='Type(s) of addional available data'),
     bigquery.SchemaField('Species', 'STRING', mode='NULLABLE', description=" Species of collection subjects"),
     bigquery.SchemaField('Location','STRING', mode='NULLABLE', description='Body location that was studies'),
-    bigquery.SchemaField('Description', 'STRING', mode='NULLABLE', description='TCIA description of collection (HTML format)')
+    bigquery.SchemaField('LicenseURL', 'STRING', mode='NULLABLE', description='URL of license of this analysis result'),
+    bigquery.SchemaField('LicenseName', 'STRING', mode='NULLABLE', description='Name of license of this analysis result'),
+    bigquery.SchemaField('Description', 'STRING', mode='NULLABLE', description='TCIA description of collection (HTML format)'),
 ]
