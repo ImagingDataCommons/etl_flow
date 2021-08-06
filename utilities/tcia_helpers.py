@@ -329,12 +329,6 @@ def get_collection_descriptions_and_licenses(collection=None):
         url
         ], stdout=PIPE, stderr=PIPE)
     descriptions = json.loads(result.stdout.decode())
-    description = next((desc for desc in descriptions if \
-            desc['collectionName'] == 'Vestibular-Schwannoma-SEG' and desc['licenseId'] == None), None)
-    if description:
-        license_types = get_collection_licenses()
-        licenseId = next(license['id'] for license in license_types if license['longName'] == 'Creative Commons Attribution 4.0 International License')
-        description['licenseId'] = licenseId+1
     collection_descriptions = {description['collectionName']: {'description': description['description'], 'licenseId':description['licenseId']} for description in descriptions}
 
     return collection_descriptions
@@ -356,10 +350,10 @@ def get_collection_licenses():
 
 def get_collection_license_info():
     table = get_collection_descriptions_and_licenses()
-    license_info = get_collection_licenses()
+    license_info = {license['id']: license for license in get_collection_licenses()}
     licenses = {}
     for collection_id, data in table.items():
-        licenseId = data['licenseId']-1
+        licenseId = data['licenseId']
         licenses[collection_id] = dict(
             licenseURL = license_info[licenseId]["licenseURL"],
             longName = license_info[licenseId]["longName"],
@@ -480,8 +474,8 @@ if __name__ == "__main__":
         assert settings.configured
 
     table = get_collection_license_info()
-    table = get_collection_descriptions_and_licenses('TCGA-LUAD')
-    table = get_collection_descriptions_and_licenses('Vestibular-Schwannoma-SEG')
+    # table = get_collection_descriptions_and_licenses('TCGA-LUAD')
+    # table = get_collection_descriptions_and_licenses('Vestibular-Schwannoma-SEG')
     table = get_collection_descriptions_and_licenses()
     hash = get_hash({"SeriesInstanceUID":'1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353'})
     # get_TCIA_instances_per_series("temp", '1.2.840.113654.2.55.262421043240525317038356381369289737801', server="NLST")

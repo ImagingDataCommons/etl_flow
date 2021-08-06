@@ -21,14 +21,15 @@ import argparse
 import sys
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json, query_BQ
+from bq.gen_aux_metadata_table.auxiliary_metadata_sql import auxiliary_metadata_sql
 
-def gen_aux_table(args, auxiliary_metadata_schema):
+
+def gen_aux_table(args):
     client = bigquery.Client(project=args.dst_project)
-    query = auxiliary_metadata_schema.format(project=args.src_project, dataset=args.bqdataset_name, gcs_bucket=args.gcs_bucket, version=args.version)
+    query = auxiliary_metadata_sql.format(project=args.src_project, dataset=args.bqdataset_name, gcs_bucket=args.gcs_bucket, version=args.version)
     result=query_BQ(client, args.bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
 
 if __name__ == '__main__':
-    from bq.gen_aux_metadata_table.sql_separate_buckets import auxiliary_metadata_schema
 
     parser =argparse.ArgumentParser()
     parser.add_argument('--version', default=3, help='IDC version for which to build the table')
@@ -41,4 +42,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-    gen_aux_table(args, auxiliary_metadata_schema)
+    gen_aux_table(args)
