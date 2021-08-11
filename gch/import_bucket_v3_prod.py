@@ -28,9 +28,9 @@ from gch.import_bucket import import_bucket
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--src_buckets', default=['idc_dev'], help="List of buckets from which to import")
-    parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--dataset_region', default='us-central1', help='Dataset region')
+    parser.add_argument('--src_buckets', default=['idc-open'], help="List of buckets from which to import")
+    parser.add_argument('--dst_project', default='canceridc-data')
+    parser.add_argument('--dataset_region', default='us', help='Dataset region')
     parser.add_argument('--gch_dataset_name', default='idc', help='Dataset name')
     parser.add_argument('--gch_dicomstore_name', default='v3', help='Datastore name')
     parser.add_argument('--period', default=60, help="seconds to sleep between checking operation status")
