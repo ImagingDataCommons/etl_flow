@@ -472,14 +472,14 @@ if __name__ == "__main__":
 
         settings.configure(etl_settings)
         assert settings.configured
-
+    results = get_collection_values_and_counts()
+    result = get_TCIA_patients_per_collection("APOLLO")
     table = get_collection_license_info()
     # table = get_collection_descriptions_and_licenses('TCGA-LUAD')
     # table = get_collection_descriptions_and_licenses('Vestibular-Schwannoma-SEG')
     table = get_collection_descriptions_and_licenses()
     hash = get_hash({"SeriesInstanceUID":'1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353'})
     # get_TCIA_instances_per_series("temp", '1.2.840.113654.2.55.262421043240525317038356381369289737801', server="NLST")
-    results = get_collection_values_and_counts()
     # results = v2_api('getCollectionValuesAndCounts', data="")
     # results = v2_api('getSimpleSearchCriteriaValues', data="")
     # results = get_collection_values_and_counts()

@@ -28,7 +28,7 @@ def create_BQ_dataset(client, name, description=""):
 
     # Construct a full Dataset object to send to the API.
     dataset = bigquery.Dataset(dataset_id)
-    dataset.description = "Metadata in support of ETL process"
+    dataset.description = description
 
     # TODO(developer): Specify the geographic location where the dataset should reside.
     dataset.location = "US"
@@ -185,7 +185,7 @@ def query_BQ(client, dst_dataset, dst_table, sql, write_disposition='WRITE_APPEN
 
 # BQ to BQ copy. src_table and dst table are fully qualified `project.dataset.table`
 def copy_BQ_table(client, src_table, dst_table, create_disposition='CREATE_IF_NEEDED',
-                  write_disposition='WRITE_APPEND'):
+                  write_disposition='WRITE_TRUNCATE'):
     config = bigquery.CopyJobConfig()
     config.create_disposition = create_disposition
     config.write_disposition = write_disposition
@@ -200,6 +200,7 @@ def copy_BQ_table(client, src_table, dst_table, create_disposition='CREATE_IF_NE
         print("Error loading copying table: {}.{}.{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
               file=sys.stdout, flush=True)
         raise
+    return result
 
 
 # Export table contents to GCS
