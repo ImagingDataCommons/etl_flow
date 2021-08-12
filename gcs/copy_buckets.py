@@ -48,26 +48,22 @@ def create_dest_bucket(src_bucket_name, dst_bucket_name, src_project, dst_projec
 
 
 def copy_buckets(args):
-    # Not previously copied
-    print("Copying {}".format(args.src_bucket_name), flush=True)
-    try:
-        # result = run(['gsutil', '-u', args.dst_project, '-m', 'rsync',
-        #             'gs://{}'.format(src_bucket_name), 'gs://{}'.format(dst_bucket_name)], stdout=PIPE, stderr=PIPE)
-        result = run(['gsutil', '-m', '-q', 'cp', '-L', f'logs/copy_buckets.log', f'gs://{args.src_bucket_name}/*',
-                      f'gs://{args.dst_bucket_name}'])
-        # stdout=PIPE, stderr=PIPE)
-        print("   {} copied, results: {}".format(args.src_bucket_name, result), flush=True)
-        if result.returncode:
-            print('Copy {} failed: {}'.format(result.stderr), flush=True)
-            return {"bucket": args.src_bucket_name, "status": -1}
-        return {"bucket": args.src_bucket_name, "status": 0}
-    except:
-        print("Error in copying {}: {},{},{}".format(args.src_bucket_name, sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2]), file=sys.stdout, flush=True)
-        raise
+    for bucket in args.src_buckets:
+        print("Copying {}".format(bucket), flush=True)
+        try:
+            result = run(['gsutil', '-u', args.dst_project, '-m', 'cp', '-L', f'logs/copy_buckets.log', f'gs://{bucket}/*',
+                          f'gs://{args.dst_bucket_name}'])
+            print("   {} copied, results: {}".format(bucket, result), flush=True)
+            if result.returncode:
+                print('Copy {} failed: {}'.format(result.stderr), flush=True)
+                return {"bucket": bucket, "status": -1}
+        except:
+            print("Error in copying {}: {},{},{}".format(bucket, sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2]), file=sys.stdout, flush=True)
+            raise
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--src_bucket_name', default='idc_dev')
+    parser.add_argument('--src_buckets', default=['idc_v3_cptac_luad'])
     parser.add_argument('--dst_bucket_name', default='idc-open')
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='canceridc-data')

@@ -29,8 +29,8 @@ TIMEOUT=60
 CHUNK_SIZE=1024*1024
 
 TCIA_URL = 'https://services.cancerimagingarchive.net/services/v4/TCIA/query'
-# NBIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v1'
 NBIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services'
+NBIA_V1_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v1'
 NBIA_AUTH_URL = "https://public.cancerimagingarchive.net/nbia-api/oauth/token"
 NBIA_DEV_URL = 'https://public-dev.cancerimagingarchive.net/nbia-api/services'
 NBIA_DEV_AUTH_URL = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token"
@@ -107,7 +107,7 @@ def get_TCIA_patients_per_collection(collection_id, server=NBIA_URL):
         )
 
     else:
-        server_url = NBIA_URL
+        server_url = server
         headers = ''
     url = f'{server_url}/getPatient?Collection={collection_id}'
     results = get_url(url, headers)
@@ -472,52 +472,12 @@ if __name__ == "__main__":
 
         settings.configure(etl_settings)
         assert settings.configured
-
+    results = get_collection_values_and_counts()
+    result = get_TCIA_patients_per_collection('APOLLO-5-LSCC', server=NBIA_V1_URL)
     table = get_collection_license_info()
-    # table = get_collection_descriptions_and_licenses('TCGA-LUAD')
-    # table = get_collection_descriptions_and_licenses('Vestibular-Schwannoma-SEG')
     table = get_collection_descriptions_and_licenses()
     hash = get_hash({"SeriesInstanceUID":'1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353'})
-    # get_TCIA_instances_per_series("temp", '1.2.840.113654.2.55.262421043240525317038356381369289737801', server="NLST")
-    results = get_collection_values_and_counts()
-    # results = v2_api('getCollectionValuesAndCounts', data="")
-    # results = v2_api('getSimpleSearchCriteriaValues', data="")
-    # results = get_collection_values_and_counts()
-    # results = get_collection_values_and_counts_dev()
     results = get_patients_per_collection_dev('NLST')
     results = get_collections_dev()
-    # result = get_images_with_md5_hash('1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353')
-    # with open('/home/bcliffor/temp/1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353.zip', 'wb') as f:
-    #     f.write(result.content)
-
-    # series = get_updated_series('20/02/2021')
-    # hash = get_hash({"Collection":'TCGA-ESCA'})
-    # instances = get_TCIA_instances_per_series('/mnt/disks/idc-etl/temp', '1.2.840.113713.4.2.165042455211102753703326913551133262099', nbia_server=True)
-    # print(instances)
-    # patients = get_TCIA_patients_per_collection('LDCT-and-Projection-data')
-    # series = get_TCIA_series_per_collection('TCGA-BRCA')
-    # series = get_updated_series('23/03/2021')
-    # print(time.asctime());studies = get_TCIA_studies_per_collection('BREAST-DIAGNOSIS', nbia_server=False);print(time.asctime())
-    # studies = get_TCIA_studies_per_patient(collection.tcia_api_collection_id, patient.submitter_case_id)
-    # patients=get_TCIA_patients_per_collection('CBIS-DDSM')
-    #
-    # # collection = get_collection_values_and_counts()
-    # nbia_collections = [c['Collection'] for c in get_collections(nbia_server=True)]
-    # nbia_collections.sort()
-    # nbia_collections = [c['Collection'] for c in get_collections(nbia_server=True)]
-    # nbia_collections.sort()
-    # tcia_collections = [c['Collection'] for c in get_collections(nbia_server=False)]
-    # tcia_collections.sort()
-    # pass
-    # for collection in collections:
-    #     patients = get_TCIA_patients_per_collection(collection['Collection'])
-    #     for patient in patients:
-    #         studies = get_TCIA_studies_per_patient(collection['Collection'], patient['PatientId'])
-    #         for study in studies:
-    #             seriess = get_TCIA_series_per_study(collection['Collection'], patient['PatientId'], study['StudyInstanceUID'])
-    #             for series in seriess:
-    #                 instanceUIDs = get_TCIA_instance_uids_per_series(series['SeriesInstanceUID'])
-    #                 for instanceUID in instanceUIDs:
-    #                     instance = get_TCIA_instance(series['SeriesInstanceUID'], instanceUID['SOPInstanceUID'])
 
 

@@ -23,7 +23,7 @@ from bq.gen_aux_metadata_table.gen_auxiliary_metadata_table import gen_aux_table
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--version', default=2, help='IDC version for which to build the table')
+    parser.add_argument('--version', default=3, help='IDC version for which to build the table')
     args = parser.parse_args()
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='canceridc-data')

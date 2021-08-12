@@ -38,7 +38,8 @@ WITH
     se.study_instance_uid ),
   series_hash_all AS (
   SELECT
-    se.*,
+    se.* except (source_doi),
+    IF(STARTS_WITH(source_doi,'doi:'), SUBSTR(source_doi,5),IF(STARTS_WITH(source_doi,' '), SUBSTR(source_doi,2), source_doi)) as source_doi,
     seh.hash_all
   FROM
     `idc-dev-etl.idc_v3.series` AS se
@@ -185,7 +186,7 @@ SELECT
   se.rev_idc_version AS series_revised_idc_version,
   i.sop_instance_uid AS SOPInstanceUID,
   i.uuid AS instance_uuid,
-  CONCAT('gs://idc_dev/', i.uuid, '.dcm') as gcs_url,
+  CONCAT('gs://{gcs_bucket}/', i.uuid, '.dcm') as gcs_url,
 --  CONCAT('gs://',
 --  IF
 --    (i.source IS NULL,
