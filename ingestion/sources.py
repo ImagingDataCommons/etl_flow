@@ -92,7 +92,7 @@ class TCIA(Source):
     def __init__(self):
         super().__init__(instance_source['tcia'].value)
         self.source = instance_source.tcia
-        self.hash_access_token = get_access_token(auth_server = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")
+        self.hash_access_token, self.refresh_token = get_access_token(auth_server = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")
 
 
     def collections(self):
@@ -129,7 +129,8 @@ class TCIA(Source):
     #     return dcms
 
     def collection_hash(self, collection):
-        result = get_hash({'Collection': collection.collection_id}, access_token=self.hash_access_token)
+        result, self.hash_access_token, refresh_token= self.hash_refresh_token = get_hash({'Collection': collection.collection_id}, \
+                           access_token=self.hash_access_token, refresh_token= self.hash_refresh_token)
 
 
 class Pathology(Source):

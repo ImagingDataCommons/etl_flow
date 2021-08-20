@@ -41,16 +41,16 @@ BIGQUERY_DATASET =      os.environ.get('BIGQUERY_DATASET', '')
 BIGQUERY_AUXILLIARY_METADATA = "auxilliary_metadata"
 
 # DATABASE_NAME =         os.environ.get('DATABASE_NAME', '')
-LOCAL_DATABASE_USERNAME =     os.environ.get('LOCAL_DATABASE_USERNAME', '')
-LOCAL_DATABASE_PASSWORD =     os.environ.get('LOCAL_DATABASE_PASSWORD', '')
-LOCAL_DATABASE_HOST =         os.environ.get('LOCAL_DATABASE_HOST', '')
-LOCAL_DATABASE_PORT =         os.environ.get('LOCAL_DATABASE_PORT', '')
+LOCAL_USERNAME =     os.environ.get('LOCAL_USERNAME', '')
+LOCAL_PASSWORD =     os.environ.get('LOCAL_PASSWORD', '')
+LOCAL_HOST =         os.environ.get('LOCAL_HOST', '')
+LOCAL_PORT =         os.environ.get('LOCAL_PORT', '')
 
-CLOUD_SQL_USERNAME =        os.environ.get('CLOUD_SQL_USERNAME', '')
-CLOUD_SQL_PASSWORD =        os.environ.get('CLOUD_SQL_PASSWORD', '')
-CLOUD_SQL_HOST =            os.environ.get('CLOUD_SQL_HOST', '')
-CLOUD_SQL_PORT =            os.environ.get('CLOUD_SQL_PORT', '')
-CLOUD_SQL_INSTANCE =        os.environ.get('CLOUD_SQL_INSTANCE', '')
+CLOUD_USERNAME =        os.environ.get('CLOUD_USERNAME', '')
+CLOUD_PASSWORD =        os.environ.get('CLOUD_PASSWORD', '')
+CLOUD_HOST =            os.environ.get('CLOUD_HOST', '')
+CLOUD_PORT =            os.environ.get('CLOUD_PORT', '')
+CLOUD_INSTANCE =        os.environ.get('CLOUD_INSTANCE', '')
 
 LOGGER_NAME =           os.environ.get('ETL_LOGGER_NAME', 'main_logger')
 

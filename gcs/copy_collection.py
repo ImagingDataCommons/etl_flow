@@ -14,8 +14,11 @@
 # limitations under the License.
 #
 
-# Copy all blobs named in some collection from the dev bucket to some other bucket.
-
+"""
+Copy all blobs named in some collection from the dev bucket to some other bucket.
+This is/was used, among other things, for the initial population of the idc_gch_staging
+bucket from which Google Healthcare ingests our data.
+"""
 
 import argparse
 import os

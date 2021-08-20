@@ -46,7 +46,9 @@ class Version(Base):
                 sa.Column('tcia', Integer),
                 sa.Column('path', Integer)
             ]
-        )
+        ),
+        nullable=True,
+        comment="True if this objects includes instances from the corresponding source"
     )
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
@@ -62,7 +64,9 @@ class Version(Base):
                 sa.Column('tcia', String),
                 sa.Column('path', String)
             ]
-        )
+        ),
+        nullable=True,
+        comment="Source specific hierarchical hash"
     )
     id = Column(Integer, primary_key=True)
 
@@ -86,7 +90,9 @@ class Collection(Base):
                 sa.Column('tcia', Boolean),
                 sa.Column('path', Boolean)
             ]
-        )
+        ),
+        nullable=True,
+        comment="True if this objects includes instances from the corresponding source"
     )
     hashes = Column(
         CompositeType(
@@ -95,7 +101,9 @@ class Collection(Base):
                 sa.Column('tcia', String),
                 sa.Column('path', String)
             ]
-        )
+        ),
+        nullable=True,
+        comment="Source specific hierarchical hash"
     )
 
     patients = relationship("Patient", back_populates="collection", order_by="Patient.submitter_case_id", cascade="all, delete")
@@ -103,16 +111,13 @@ class Collection(Base):
 
 class Patient(Base):
     __tablename__ = 'patient'
-    id = Column(Integer, nullable=True, comment="Old primary key")
-    collection_id_fkey = Column(Integer, nullable=True, comment= "Obsolete foreign key")
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
-    submitter_case_id = Column(String, unique=True, nullable=False, primary_key=True, comment="Submitter's patient ID")
-    idc_case_id = Column(String, nullable=True, comment="IDC assigned patient ID")
+    submitter_case_id = Column(String, nullable=False, unique=True, primary_key=True, comment="Submitter's patient ID")
+    idc_case_id = Column(String, nullable=False, unique=True, comment="IDC assigned patient ID")
     revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=True, comment="True if this object has been processed")
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
-    v2_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of all data at this level")
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     collection_id = Column(ForeignKey('collection.collection_id'), comment="Containing object")
@@ -124,7 +129,9 @@ class Patient(Base):
                 sa.Column('tcia', Boolean),
                 sa.Column('path', Boolean)
             ]
-        )
+        ),
+        nullable=True,
+        comment="True if this objects includes instances from the corresponding source"
     )
     hashes = Column(
         CompositeType(
@@ -133,7 +140,9 @@ class Patient(Base):
                 sa.Column('tcia', String),
                 sa.Column('path', String)
             ]
-        )
+        ),
+        nullable=True,
+        comment="Source specific hierarchical hash"
     )
 
     collection = relationship("Collection", back_populates="patients")
@@ -142,17 +151,15 @@ class Patient(Base):
 
 class Study(Base):
     __tablename__ = 'study'
-    id = Column(Integer, nullable=True, comment="Old primary key")
     patient_id = Column(Integer, nullable=True, comment= "Obsolete foreign key")
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     study_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-    uuid = Column(String, nullable=False)
+    uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of this object")
     study_instances = Column(Integer, nullable=False, comment="Instances in this study")
     revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=True, comment="True if this object has been processed")
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
-    v2_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of all data at this level")
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     submitter_case_id = Column(ForeignKey('patient.submitter_case_id'), comment="Submitter's patient ID")
@@ -164,7 +171,9 @@ class Study(Base):
                 sa.Column('tcia', Boolean),
                 sa.Column('path', Boolean)
             ]
-        )
+        ),
+        nullable=True,
+        comment="True if this objects includes instances from the corresponding source"
     )
     hashes = Column(
         CompositeType(
@@ -173,7 +182,9 @@ class Study(Base):
                 sa.Column('tcia', String),
                 sa.Column('path', String)
             ]
-        )
+        ),
+        nullable=True,
+        comment="Source specific hierarchical hash"
     )
 
     patient = relationship("Patient", back_populates="studies")
@@ -182,18 +193,16 @@ class Study(Base):
 
 class Series(Base):
     __tablename__ = 'series'
-    id = Column(Integer, nullable=True, comment="Old primary key")
     study_id = Column(Integer, nullable=True, comment= "Obsolete foreign key")
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     series_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-    uuid = Column(String, nullable=False)
+    uuid = Column(String, nullable=False,  unique=True, comment="IDC assigned UUID of this object")
     series_instances = Column(Integer, nullable=False, comment="Instances in this series")
     source_doi = Column(String, nullable=True, comment="A doi to the wiki page of this source of this series")
     revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=True, comment="True if this object has been processed")
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
-    v2_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of all data at this level")
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     study_instance_uid = Column(ForeignKey('study.study_instance_uid'), comment="Containing object")
@@ -205,7 +214,9 @@ class Series(Base):
                 sa.Column('tcia', Boolean),
                 sa.Column('path', Boolean)
             ]
-        )
+        ),
+        nullable=True,
+        comment="True if this objects includes instances from the corresponding source"
     )
     hashes = Column(
         CompositeType(
@@ -214,7 +225,9 @@ class Series(Base):
                 sa.Column('tcia', String),
                 sa.Column('path', String)
             ]
-        )
+        ),
+        nullable=True,
+        comment="Source specific hierarchical hash"
     )
 
     study = relationship("Study", back_populates="seriess")
@@ -223,11 +236,10 @@ class Series(Base):
 
 class Instance(Base):
     __tablename__ = 'instance'
-    id = Column(Integer, nullable=True, comment="Old primary key")
     series_id = Column(Integer, nullable=True, comment= "Obsolete foreign key")
     timestamp = Column(DateTime, nullable=True, comment="Time when this object was last built")
     sop_instance_uid = Column(String, primary_key=True, nullable=False)
-    uuid = Column(String, nullable=False)
+    uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of this object")
     hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of TCIA data at this level")
     size = Column(Integer, nullable=True, comment='Instance blob size (bytes)')
     revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
