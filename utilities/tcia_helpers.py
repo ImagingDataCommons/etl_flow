@@ -31,7 +31,8 @@ CHUNK_SIZE=1024*1024
 TCIA_URL = 'https://services.cancerimagingarchive.net/services/v4/TCIA/query'
 NBIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services'
 NBIA_V1_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v1'
-NBIA_AUTH_URL = "https://public.cancerimagingarchive.net/nbia-api/oauth/token"
+# NBIA_AUTH_URL = "https://public.cancerimagingarchive.net/nbia-api/oauth/token"
+NBIA_AUTH_URL = "https://services.cancerimagingarchive.net/nbia-api/oauth/token"
 NBIA_DEV_URL = 'https://public-dev.cancerimagingarchive.net/nbia-api/services'
 NBIA_DEV_AUTH_URL = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token"
 NLST_URL = 'https://nlst.cancerimagingarchive.net/nbia-api/services'
@@ -42,8 +43,8 @@ NLST_AUTH_URL = 'https://nlst.cancerimagingarchive.net/nbia-api/oauth/token'
 # @backoff.on_exception(backoff.expo,
 #                       requests.exceptions.RequestException,
 #                       max_tries=3)
-def get_url(url, headers=""):  # , headers):
-    result =  requests.get(url, headers=headers, timeout=TIMEOUT)  # , headers=headers)
+def get_url(url, headers="", timeout=TIMEOUT):  # , headers):
+    result =  requests.get(url, headers=headers, timeout=timeout)  # , headers=headers)
     if result.status_code != 200:
         raise RuntimeError('In get_url(): status_code=%s; url: %s', result.status_code, url)
     return result
@@ -65,30 +66,59 @@ def get_access_token(auth_server = NBIA_AUTH_URL):
             grant_type="password")
 
     result = requests.post(auth_server, data = data)
+    return (result.json()['access_token'], result.json()['refresh_token'])
+
+
+def refresh_access_token(refresh_token, auth_server = NBIA_AUTH_URL):
+    data = dict(
+        refresh_token=refresh_token,
+        client_id=settings.TCIA_CLIENT_ID,
+        client_secret=settings.TCIA_CLIENT_SECRET,
+        grant_type="refresh_token")
+
+    result = requests.post(auth_server, data = data)
     access_token = result.json()['access_token']
-    return access_token
+    return (access_token, refresh_token)
 
 
-# def get_access_token(url="https://public.cancerimagingarchive.net/nbia-api/oauth/token"):
-#     data = dict(
-#         username="nbia_guest",
-#         password="",
-#         client_id=settings.TCIA_CLIENT_ID,
-#         client_secret=settings.TCIA_CLIENT_SECRET,
-#         grant_type="password")
-#     # url = "https://public.cancerimagingarchive.net/nbia-api/oauth/token"
-#     result = requests.post(url, data = data)
-#     access_token = result.json()
-#     return access_token
+def get_hash(request_data, access_token=None, refresh_token=None):
+    if not access_token:
+        access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
+    headers = dict(
+        Authorization=f'Bearer {access_token}'
+    )
+    # url = "https://public-dev.cancerimagingarchive.net/nbia-api/services/getMD5Hierarchy"
+    url = f"{NBIA_URL}/getMD5Hierarchy"
+    result = requests.post(url, headers=headers, data=request_data)
+    if result.status_code == 401:
+        if access_token:
+            # Refresh the token and try once more to get the hash
+            access_token, refresh_token = refresh_access_token(refresh_token, NBIA_AUTH_URL)
+            print('Refreshed access token')
+            headers = dict(
+                Authorization=f'Bearer {access_token}'
+            )
+            result = requests.post(url, headers=headers, data=request_data)
+        else:
+            return (result, access_token, refresh_token)
+
+    return (result, access_token, refresh_token)
+
+
+def get_images_with_md5_hash(SeriesInstanceUID, access_token=None):
+    server_url = NBIA_V1_URL
+    url = f'{server_url}/getImageWithMD5Hash?SeriesInstanceUID={SeriesInstanceUID}'
+    result = requests.get(url)
+    return result
 
 
 def get_collection_values_and_counts(server=NBIA_URL):
     if server == "NLST":
         server_url = NLST_URL
-        access_token = get_access_token(NLST_AUTH_URL)
+        access_token, refresh_token = get_access_token(NLST_AUTH_URL)
     else:
-        server_url = NBIA_URL
-        access_token = get_access_token()
+        server_url = server
+        access_token, refresh_token = get_access_token()
     headers = dict(
         Authorization = f'Bearer {access_token}'
     )
@@ -98,10 +128,10 @@ def get_collection_values_and_counts(server=NBIA_URL):
     return collections
 
 
-def get_TCIA_patients_per_collection(collection_id, server=NBIA_URL):
+def get_TCIA_patients_per_collection(collection_id, server=NBIA_V1_URL):
     if server == "NLST":
         server_url = NLST_V2_URL
-        access_token = get_access_token(NLST_AUTH_URL)
+        access_token, refresh_token = get_access_token(NLST_AUTH_URL)
         headers = dict(
             Authorization=f'Bearer {access_token}'
         )
@@ -115,16 +145,16 @@ def get_TCIA_patients_per_collection(collection_id, server=NBIA_URL):
     return patients
 
 
-def get_TCIA_studies_per_patient(collection, patientID, server=NBIA_URL):
+def get_TCIA_studies_per_patient(collection, patientID, server=NBIA_V1_URL):
     if server == "NLST":
         server_url = NLST_V2_URL
-        access_token = get_access_token(NLST_AUTH_URL)
+        access_token, refresh_token = get_access_token(NLST_AUTH_URL)
         headers = dict(
             Authorization=f'Bearer {access_token}'
         )
 
     else:
-        server_url = NBIA_URL
+        server_url = server
         headers = ''
     url = f'{server_url}/getPatientStudy?Collection={collection}&PatientID={patientID}'
     results = get_url(url, headers)
@@ -132,34 +162,47 @@ def get_TCIA_studies_per_patient(collection, patientID, server=NBIA_URL):
     return studies
 
 
-def get_TCIA_studies_per_collection(collection, nbia_server=True):
-    server_url = NBIA_URL if nbia_server else TCIA_URL
+def get_TCIA_studies_per_collection(collection, server=NBIA_V1_URL):
+    # server_url = NBIA_URL if nbia_server else TCIA_URL
+    # url = f'{server_url}/getPatientStudy?Collection={collection}'
+    # results = get_url(url)
+    # studies = results.json()
+    # return studies
+    if server == "NLST":
+        server_url = NLST_V2_URL
+        access_token, refresh_token = get_access_token(NLST_AUTH_URL)
+        headers = dict(
+            Authorization=f'Bearer {access_token}'
+        )
+    else:
+        server_url = server
+        headers = ''
     url = f'{server_url}/getPatientStudy?Collection={collection}'
     results = get_url(url)
     studies = results.json()
     return studies
 
 
-def get_TCIA_series_per_study(collection, patientID, studyInstanceUID, server=NBIA_URL):
+def get_TCIA_series_per_study(collection, patientID, studyInstanceUID, server=NBIA_V1_URL):
     if server == "NLST":
         server_url = NLST_V2_URL
-        access_token = get_access_token(NLST_AUTH_URL)
+        access_token, refresh_token = get_access_token(NLST_AUTH_URL)
         headers = dict(
             Authorization=f'Bearer {access_token}'
         )
 
     else:
-        server_url = NBIA_URL
+        server_url = server
         headers = ''
     url = f'{server_url}/getSeries?Collection ={collection}&PatientID={patientID}&StudyInstanceUID={studyInstanceUID}'
     results = get_url(url, headers)
     series = results.json()
     return series
 
-def get_TCIA_instance_uids_per_series(seriesInstanceUID, server='NBIA'):
+def get_TCIA_instance_uids_per_series(seriesInstanceUID, server=NBIA_V1_URL):
     if server == "NLST":
         server_url = NLST_V2_URL
-        access_token = get_access_token(NLST_AUTH_URL)
+        access_token, refresh_token = get_access_token(NLST_AUTH_URL)
         headers = dict(
             Authorization=f'Bearer {access_token}'
         )
@@ -171,11 +214,11 @@ def get_TCIA_instance_uids_per_series(seriesInstanceUID, server='NBIA'):
     instance_uids = results.json()
     return instance_uids
 
-def get_TCIA_instances_per_series(dicom, series_instance_uid, server="NBIA"):
+def get_TCIA_instances_per_series(dicom, series_instance_uid, server=NBIA_V1_URL):
     filename = "{}/{}.zip".format(dicom, series_instance_uid)
     if server == "NLST":
         server_url = NLST_V2_URL
-        access_token = get_access_token(NLST_AUTH_URL)
+        access_token, refresh_token = get_access_token(NLST_AUTH_URL)
         url = f'{server_url}/getImage?SeriesInstanceUID={series_instance_uid}'
         headers = f'Authorization:Bearer {access_token}'
         result = run([
@@ -189,10 +232,11 @@ def get_TCIA_instances_per_series(dicom, series_instance_uid, server="NBIA"):
         ], stdout=PIPE, stderr=PIPE)
 
     else:
-        if server == 'TCIA':
-            server_url = TCIA_URL
-        else:
-            server_url = NBIA_URL
+        # if server == 'TCIA':
+        #     server_url = TCIA_URL
+        # else:
+        #     server_url = NBIA_URL
+        server_url =server
         url = f'{server_url}/getImage?SeriesInstanceUID={series_instance_uid}'
 
         result = run([
@@ -235,10 +279,10 @@ def get_TCIA_series_per_collection(collection, nbia_server=True):
 def get_internal_series_ids(collection, patient, third_party="yes", size=100000, server="" ):
     if server == "NLST":
         server_url = NLST_URL
-        access_token = get_access_token(NLST_AUTH_URL)
+        access_token, refresh_token = get_access_token(NLST_AUTH_URL)
     else:
         server_url = NBIA_URL
-        access_token = get_access_token(NBIA_AUTH_URL)
+        access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
     headers = dict(
         Authorization=f'Bearer {access_token}'
     )
@@ -277,10 +321,10 @@ def get_internal_series_ids(collection, patient, third_party="yes", size=100000,
 def series_drill_down(series_ids, server="" ):
     if server == "NLST":
         server_url = NLST_URL
-        access_token = get_access_token(NLST_AUTH_URL)
+        access_token, refresh_token = get_access_token(NLST_AUTH_URL)
     else:
         server_url = NBIA_URL
-        access_token = get_access_token(NBIA_AUTH_URL)
+        access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
     url = f'{server_url}/getStudyDrillDown'
     data = "&".join(['list={}'.format(id) for id in series_ids])
 
@@ -292,31 +336,9 @@ def series_drill_down(series_ids, server="" ):
     return json.loads(result.stdout.decode())
 
 
-
-def create_jsonlines_from_list(original):
-    in_json = StringIO(json.dumps(original)) 
-    result = [json.dumps(record) for record in json.load(in_json)]
-    result = '\n'.join(result)
-    return result
-
-
-def get_collection_size(collection, nbia_server=True):
-    size = 0
-    serieses=TCIA_API_request('getSeries', parameters="Collection={}".format(collection.replace(' ','_')),
-                              nbia_server=nbia_server)
-    print("{} series in {}".format(len(serieses), collection), flush=True)
-    for aseries in serieses:
-        seriesSize=TCIA_API_request('getSeriesSize', parameters="SeriesInstanceUID={}".format(aseries['SeriesInstanceUID']),
-                            nbia_server=nbia_server)
-#             print(seriesSize)
-        size += int(float(seriesSize[0]['TotalSizeInBytes']))
-        print("{} {}\r".format(aseries['SeriesInstanceUID'], size),end="")
-    return size
-
-
 def get_collection_descriptions_and_licenses(collection=None):
     # Get access token for the guest account
-    access_token = get_access_token()
+    access_token, refresh_token = get_access_token()
     if collection:
         url = f'https://public.cancerimagingarchive.net/nbia-api/services/getCollectionDescriptions?collectionName={collection}'
     else:
@@ -335,7 +357,7 @@ def get_collection_descriptions_and_licenses(collection=None):
 
 def get_collection_licenses():
     # Get access token for the guest account
-    access_token = get_access_token()
+    access_token, refresh_token = get_access_token()
     result = run([
         'curl',
         '-H',
@@ -363,7 +385,7 @@ def get_collection_license_info():
 
 
 def get_updated_series(date):
-    access_token = get_access_token()
+    access_token, refresh_token = get_access_token()
     headers = dict(
         Authorization = f'Bearer {access_token}'
     )
@@ -376,95 +398,6 @@ def get_updated_series(date):
     return series
 
 
-def get_hash(request_data, access_token=None):
-    if not access_token:
-        access_token = get_access_token(NBIA_DEV_AUTH_URL)
-    headers = dict(
-        Authorization = f'Bearer {access_token}'
-    )
-    url = "https://public-dev.cancerimagingarchive.net/nbia-api/services/getMD5Hierarchy"
-    result = requests.post(url, headers=headers, data=request_data)
-
-    return result
-
-def get_images_with_md5_hash(SeriesInstanceUID, access_token=None):
-    if not access_token:
-        access_token = get_access_token(auth_server = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")
-    headers = dict(
-        Authorization = f'Bearer {access_token}'
-    )
-    server_url = "https://public-dev.cancerimagingarchive.net/nbia-api/services/v1"
-    # server_url = "https://tracker.nci.nih.gov/browse/NBIA-1478"
-    url = f'{server_url}/getImageWithMD5Hash?SeriesInstanceUID={SeriesInstanceUID}'
-    result = requests.get(url, headers=headers)
-
-    return result
-
-
-def get_access_token_dev(url="https://public.cancerimagingarchive.net/nbia-api/oauth/token"):
-    data = dict(
-        username=settings.TCIA_ID,
-        password=settings.TCIA_PASSWORD,
-        client_id=settings.TCIA_CLIENT_ID,
-        client_secret=settings.TCIA_CLIENT_SECRET,
-        grant_type="password")
-    # url = "https://public.cancerimagingarchive.net/nbia-api/oauth/token"
-    result = requests.post(url, data = data)
-    access_token = result.json()
-    return access_token
-
-
-def get_patients_per_collection_dev(collection_id):
-    access_token = get_access_token_dev(url = "https://nlst.cancerimagingarchive.net/nbia-api/oauth/token")
-    headers = dict(
-        Authorization = f'Bearer {access_token}'
-    )
-
-    server_url = 'https://nlst.cancerimagingarchive.net/nbia-api/services/v2'
-    url = f'{server_url}/getPatient?Collection={collection_id}'
-    results = requests.get(url, headers=headers)
-    collections = results.json()
-    # collections = [collection['Collection'].replace(' ', '_') for collection in results.json()]
-    return collections
-
-def get_collections_dev():
-    access_token = get_access_token_dev(url = "https://nlst.cancerimagingarchive.net/nbia-api/oauth/token")
-    headers = dict(
-        Authorization = f'Bearer {access_token}'
-    )
-
-    server_url = 'https://nlst.cancerimagingarchive.net/nbia-api/services/v2'
-    url = f'{server_url}/getCollectionValues'
-    results = requests.get(url, headers=headers)
-    collections = results.json()
-    # collections = [collection['Collection'].replace(' ', '_') for collection in results.json()]
-    return collections
-
-def get_collection_values_and_counts_dev():
-    access_token = get_access_token(url = "https://nlst.cancerimagingarchive.net/nbia-api/oauth/token")
-    headers = dict(
-        Authorization = f'Bearer {access_token}'
-    )
-    url = 'https://nlst.cancerimagingarchive.net/nbia-api/services/v2/getSimpleSearchCriteriaValues'
-    result = requests.get(url, headers=headers)
-    collections = [collection['criteria'] for collection in result.json()]
-    return collections
-
-def v2_api(endpoint, data):
-    access_token = get_access_token(url = "https://services.cancerimagingarchive.net/nbia-api/oauth/token")
-    headers = dict(
-        Authorization = f'Bearer {access_token}'
-    )
-    url = f'https://services.cancerimagingarchive.net/nbia-api/services/{endpoint}'
-    result = requests.get(url, headers=headers, data=data)
-    # collections = [collection['criteria'] for collection in result.json()]
-    return result
-
-
-
-
-
-
 if __name__ == "__main__":
     if not settings.configured:
         from python_settings import settings
@@ -472,12 +405,20 @@ if __name__ == "__main__":
 
         settings.configure(etl_settings)
         assert settings.configured
-    results = get_collection_values_and_counts()
-    result = get_TCIA_patients_per_collection('APOLLO-5-LSCC', server=NBIA_V1_URL)
-    table = get_collection_license_info()
-    table = get_collection_descriptions_and_licenses()
-    hash = get_hash({"SeriesInstanceUID":'1.3.6.1.4.1.14519.5.2.1.1706.6003.183542674700655712034736428353'})
-    results = get_patients_per_collection_dev('NLST')
-    results = get_collections_dev()
 
+    # studies = get_TCIA_studies_per_patient("PROSTATE-DIAGNOSIS", "ProstateDx-01-0035", server=NBIA_V1_URL)
+    # result = get_access_token()
+    # access_token, refresh_token = get_access_token()
+    # access_token, refresh_token = refresh_access_token(refresh_token)
+
+    # results = get_collection_values_and_counts()
+    # result = get_TCIA_series_per_study('TCGA-GBM', 'TCGA-02-0006', '1.3.6.1.4.1.14519.5.2.1.1706.4001.149500105036523046215258942545' )
+    # result = get_TCIA_patients_per_collection('APOLLO-5-LSCC', server=NBIA_V1_URL)
+    table = get_collection_license_info()
+    license_types = {row['id']:row['LongName'] for row in table}
+    table = get_collection_descriptions_and_licenses()
+    licenses = {c:license_types[table[c['licenseId']]] for c in table}
+    result, access_token, refresh_token = get_hash({"Collection":'TCGA-GBM'})
+
+    pass
 
