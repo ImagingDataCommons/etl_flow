@@ -47,7 +47,8 @@ if __name__ == '__main__':
     parser.add_argument('--src_bqdataset', default=f'idc_v{args.version}', help='Source BQ dataset')
     parser.add_argument('--dst_bqdataset', default=f'idc_v{args.version}', help='Destination BQ dataset')
     parser.add_argument('--dataset_description', default = f'IDC V{args.version} BQ tables and views')
-    parser.add_argument('--bqtables', default=['analysis_results_metadata', 'dicom_metadata', 'original_collections_metadata', 'version_metadata'], help='BQ tables to be copied')
+    # parser.add_argument('--bqtables', default=['analysis_results_metadata', 'dicom_metadata', 'original_collections_metadata', 'version_metadata'], help='BQ tables to be copied')
+    parser.add_argument('--bqtables', default=['analysis_results_metadata', 'original_collections_metadata', 'version_metadata'], help='BQ tables to be copied')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

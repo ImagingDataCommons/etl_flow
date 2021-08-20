@@ -98,7 +98,7 @@ def scrape_tcia_analysis_collections_page():
         if len(trow):
             # Strip off the http server prefix
             trow['DOI'] = trow['DOI'].split('doi.org/')[1]
-            trow['LicenseURL'], trow['LicenseLongName'], trow['LicenseShortName'] = get_license_from_wiki(trow['DOI'])
+            # trow['LicenseURL'], trow['LicenseLongName'], trow['LicenseShortName'] = get_license_from_wiki(trow['DOI'])
 
             collection = trow.pop('Collection')
             table[collection] = trow

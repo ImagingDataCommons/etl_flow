@@ -139,23 +139,24 @@ WITH
   JOIN
     version_hashes AS vh
   ON
-    1=1 ),
-  license_info AS (
-  SELECT
-    DOI,
-    LicenseURL,
-    LicenseLongName,
-    LicenseShortName
-  FROM
-    `idc-dev-etl.idc_v3.original_collections_metadata`
-  UNION ALL
-  SELECT
-    DOI,
-    LicenseURL,
-    LicenseLongName,
-    LicenseShortName
-  FROM
-    `idc-dev-etl.idc_v3.analysis_results_metadata` )
+    1=1 )
+--    ,
+--  license_info AS (
+--  SELECT
+--    DOI,
+--    LicenseURL,
+--    LicenseLongName,
+--    LicenseShortName
+--  FROM
+--    `idc-dev-etl.idc_v3.original_collections_metadata`
+--  UNION ALL
+--  SELECT
+--    DOI,
+--    LicenseURL,
+--    LicenseLongName,
+--    LicenseShortName
+--  FROM
+--    `idc-dev-etl.idc_v3.analysis_results_metadata` )
 SELECT
   --      3 AS idc_version,
   --      v.max_timestamp AS version_timestamp,
@@ -195,10 +196,10 @@ SELECT
   i.size AS instance_size,
   i.HASH AS instance_hash,
   i.init_idc_version AS instance_init_idc_version,
-  i.rev_idc_version AS instance_revised_idc_version,
-  li.LicenseURL AS LicenseURL,
-  li.LicenseLongName AS LicenseLongName,
-  li.LicenseShortName AS LicenseShortName
+  i.rev_idc_version AS instance_revised_idc_version
+--  li.LicenseURL AS LicenseURL,
+--  li.LicenseLongName AS LicenseLongName,
+--  li.LicenseShortName AS LicenseShortName
 FROM
   version_hash_all AS v
 JOIN
@@ -225,9 +226,9 @@ LEFT JOIN
   `idc-dev-etl.idc_v3.excluded_collections` AS ex
 ON
   LOWER(c.collection_id) = LOWER(ex.tcia_api_collection_id)
-JOIN
-  license_info AS li
-ON
-  se.source_doi = li.DOI
+--JOIN
+--  license_info AS li
+--ON
+--  se.source_doi = li.DOI
 WHERE
   ex.tcia_api_collection_id IS NULL"""

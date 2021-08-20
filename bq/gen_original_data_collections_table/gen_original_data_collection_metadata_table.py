@@ -69,7 +69,6 @@ def build_metadata(client, args, collection_ids):
     # Scrape the TCIA Data Collections page for collection metadata
     collection_metadata = scrape_tcia_data_collections_page()
 
-
     rows = []
     found_ids = []
     lowered_collection_ids = {collection_id.lower():collection_id for collection_id in collection_ids}
@@ -81,39 +80,24 @@ def build_metadata(client, args, collection_ids):
             if collection_id in collection_descriptions:
                 collection_data['Description'] = collection_descriptions[collection_id]['description']
                 collection_data['Subjects'] = case_counts[collection_id.lower()]
-                collection_data['LicenseURL'] = licenses[collection_id]['licenseURL']
-                collection_data['LicenseLongName'] = licenses[collection_id]['longName']
-                collection_data['LicenseShortName'] = licenses[collection_id]['shortName']
-                # collection_data['LicenseURL'] = \
-                #     licenses[collection_descriptions[collection_id]['licenseId']-1]['licenseURL']
-                # collection_data['LicenseLongName'] = \
-                #     licenses[collection_descriptions[collection_id]['licenseId'] - 1]['longName']
-                # collection_data['LicenseShortName'] = \
-                #     licenses[collection_descriptions[collection_id]['licenseId'] - 1]['shortName']
-
+                # collection_data['LicenseURL'] = licenses[collection_id]['licenseURL']
+                # collection_data['LicenseLongName'] = licenses[collection_id]['longName']
+                # collection_data['LicenseShortName'] = licenses[collection_id]['shortName']
             elif collection_data['tcia_api_collection_id'] in collection_descriptions:
                 collection_data['Description'] = collection_descriptions[collection_data['tcia_api_collection_id']]['description']
                 collection_data['Subjects'] = case_counts[collection_data['tcia_api_collection_id'].lower()]
-                collection_data['LicenseURL'] = \
-                    licenses[collection_data['tcia_api_collection_id']]['licenseURL']
-                collection_data['LicenseLongName'] = \
-                    licenses[collection_data['tcia_api_collection_id']]['longName']
-                collection_data['LicenseShortName'] = \
-                    licenses[collection_data['tcia_api_collection_id']]['shortName']
                 # collection_data['LicenseURL'] = \
-                #     licenses[collection_descriptions[collection_data['tcia_api_collection_id']]['licenseId'] - 1][
-                #         'licenseURL']
+                #     licenses[collection_data['tcia_api_collection_id']]['licenseURL']
                 # collection_data['LicenseLongName'] = \
-                #     licenses[collection_descriptions[collection_data['tcia_api_collection_id']]['licenseId'] - 1][
-                #         'longName']
+                #     licenses[collection_data['tcia_api_collection_id']]['longName']
                 # collection_data['LicenseShortName'] = \
-                #     licenses[collection_descriptions[collection_data['tcia_api_collection_id']]['licenseId'] - 1][
-                #         'shortName']
+                #     licenses[collection_data['tcia_api_collection_id']]['shortName']
             else:
                 collection_data['Description'] = ""
-                collection_data['LicenseURL'] = ""
-                collection_data['LicenseLongName'] = ""
-                collection_data['LicenseShortName'] = ""
+                collection_data['Subjects'] = ""
+                # collection_data['LicenseURL'] = ""
+                # collection_data['LicenseLongName'] = ""
+                # collection_data['LicenseShortName'] = ""
 
             rows.append(json.dumps(collection_data))
         else:
