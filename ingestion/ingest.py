@@ -35,7 +35,7 @@ from pydicom.errors import InvalidDicomError
 from uuid import uuid4
 from google.cloud import storage
 from idc.models import Version, Collection, Patient, Study, Series, Instance, Retired, WSI_metadata, instance_source
-from sqlalchemy import select
+from sqlalchemy import select,delete
 from sqlalchemy.orm import Session
 from utilities.tcia_helpers import  get_hash, get_TCIA_studies_per_patient, get_TCIA_patients_per_collection,\
     get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_TCIA_instances_per_series, get_collection_values_and_counts
@@ -50,6 +50,8 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from ingestion.sources import TCIA, Pathology
 
+rootlogger = logging.getLogger('root')
+errlogger = logging.getLogger('root.err')
 
 PATIENT_TRIES=3
 
@@ -274,14 +276,21 @@ def build_instances_tcia(sess, args, source, version, collection, patient, study
     # Get a list of the files from the download
     dcms = [dcm for dcm in os.listdir("{}/{}".format(args.dicom, series.series_instance_uid))]
 
+    if 'LICENSE' in dcms:
+        os.remove("{}/{}/LICENSE".format(args.dicom, series.series_instance_uid))
+        dcms.remove('LICENSE')
+
+
     # Ensure that the zip has the expected number of instances
-    # rootlogger.debug("      p%s: Series %s, check series length; %s", args.id, series.series_instance_uid, time.asctime())
+    # rootlogger.debug("      p%s: Series %s, check series length; %s", args.id, series.series_instance_uid, time.asctime()
 
     if not len(dcms) == len(series.instances):
         errlogger.error("      p%s: Invalid zip file for %s/%s/%s/%s", args.id,
             collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
-        raise RuntimeError("      \p%s: Invalid zip file for %s/%s/%s/%s", args.id,
-            collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
+        # Return without marking all instances done. This will be prevent the series from being done.
+        return
+        # raise RuntimeError("      \p%s: Invalid zip file for %s/%s/%s/%s", args.id,
+        #     collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
     # rootlogger.debug("      p%s: Series %s download successful", args.id, series.series_instance_uid)
 
     # TCIA file names are based on the position of the image in a scan. We need to extract the SOPInstanceUID
@@ -307,8 +316,13 @@ def build_instances_tcia(sess, args, source, version, collection, patient, study
         except InvalidDicomError:
             errlogger.error("       p%s: Invalid DICOM file for %s/%s/%s/%s", args.id,
                 collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
-            raise RuntimeError("      p%s: Invalid DICOM file for %s/%s/%s/%s", args.id,
-                collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
+            if args.server == 'NLST':
+                # For NLST only, just delete the invalid file
+                os.remove("{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm))
+                continue
+            else:
+                # Return without marking all instances done. This will be prevent the series from being done.
+                return
 
         psql_times.append(time.time_ns())
         ## instance = next(instance for instance in series.instances if instance.sop_instance_uid == SOPInstanceUID)
@@ -322,8 +336,14 @@ def build_instances_tcia(sess, args, source, version, collection, patient, study
         if os.path.exists(blob_name):
             errlogger.error("       p%s: Duplicate DICOM files for %s/%s/%s/%s/%s", args.id,
                 collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid, SOPInstanceUID)
-            raise  RuntimeError("       p%s: Duplicate DICOM files for %s/%s/%s/%s/%s", args.id,
-                collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid, SOPInstanceUID)
+            if args.server == 'NLST':
+                # For NLST only, just delete the duplicate
+                os.remove("{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm))
+                continue
+            else:
+                # Return without marking all instances done. This will be prevent the series from being done.
+                return
+
         os.rename(file_name, blob_name)
         rename_times.append(time.time_ns())
 
@@ -332,6 +352,13 @@ def build_instances_tcia(sess, args, source, version, collection, patient, study
         instance.instance_size = Path(blob_name).stat().st_size
         instance.timestamp = datetime.utcnow()
         metadata_times.append(time.time_ns())
+
+    if args.server == 'NLST':
+        # For NLST only, delete any instances for which there is not a corresponding file
+        for instance in series.instances:
+            if not os.path.exists("{}/{}/{}.dcm".format(args.dicom, series.series_instance_uid, instance.uuid)):
+                sess.execute(delete(Instance).where(Instance.uuid==instance.uuid))
+                series.instances.remove(instance)
 
     instances_time = time.time_ns() - begin
     # rootlogger.debug("      p%s: Renamed all files for series %s; %s", args.id, series.series_instance_uid, time.asctime())
@@ -342,7 +369,11 @@ def build_instances_tcia(sess, args, source, version, collection, patient, study
     # rootlogger.debug("      p%s: Series %s metadata time: %s", args.id, series.series_instance_uid, (sum(metadata_times[1::2]) - sum(metadata_times[0::2]))/10**9)
 
     copy_start = time.time_ns()
-    copy_disk_to_gcs(args, collection, patient, study, series)
+    try:
+        copy_disk_to_gcs(args, collection, patient, study, series)
+    except:
+        # Copy failed. Return without marking all instances done. This will be prevent the series from being done.
+        return
     copy_time = (time.time_ns() - copy_start)/10**9
     # rootlogger.debug("      p%s: Series %s, copying time; %s", args.id, series.series_instance_uid, (time.time_ns() - copy_start)/10**9)
 
@@ -480,7 +511,7 @@ def build_series(sess, args, source, series_index, version, collection, patient,
         get_len_time = (time.time_ns() - begin1) / 10 ** 9
 
         begin2 = time.time_ns()
-        if source.source_id == instance_source['tcia']:
+        if source.source_id == instance_source.tcia.value:
             build_instances_tcia(sess, args, source, version, collection, patient, study, series)
         else:
             build_instances_path(sess, args, source, version, collection, patient, study, series)
@@ -893,6 +924,8 @@ def build_collection(sess, args, source, collection_index, version, collection):
     rootlogger.info("Collection %s, %s, %s patients", collection.collection_id, collection_index, len(collection.patients))
     # Get the lists of data and analyis series in this patient
     data_collection_doi = get_data_collection_doi(collection.collection_id, server=args.server)
+    if data_collection_doi=="" and collection.collection_id=='NLST':
+        data_collection_doi = '10.7937/TCIA.hmq8-j677'
     pre_analysis_collection_dois = get_analysis_collection_dois(collection.collection_id, server=args.server)
     analysis_collection_dois = {x['SeriesInstanceUID']: x['SourceDOI'] for x in pre_analysis_collection_dois}
 
@@ -1080,7 +1113,7 @@ def build_version(sess, args, source, version):
             version.max_timestamp = max([collection.max_timestamp for collection in idc_collections if collection.max_timestamp != None])
             version.done = True
             version.revised = True
-            rootlogger.info("Built new %s version %s in %s", source.source.name, version.versions[source.source_id], duration)
+            rootlogger.info("Built new %s version %s in %s", source.source.name, version.version, duration)
         else:
             version.versions[source.source_id] = args.version-1
             rootlogger.info("Version unchanged, remains at  %s in %s", version.version-1, duration)
@@ -1090,7 +1123,22 @@ def build_version(sess, args, source, version):
 
 
 def prebuild(args):
-    sql_uri = f'postgresql+psycopg2://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{args.db}'
+    # rootlogger = logging.getLogger('root')
+    root_fh = logging.FileHandler('{}/logs/path_ingest_v{}_log.log'.format(os.environ['PWD'], args.version))
+    rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
+    rootlogger.addHandler(root_fh)
+    root_fh.setFormatter(rootformatter)
+    rootlogger.setLevel(DEBUG)
+
+    # errlogger = logging.getLogger('root.err')
+    err_fh = logging.FileHandler('{}/logs/path_ingest_v{}_err.log'.format(os.environ['PWD'], args.version))
+    errformatter = logging.Formatter('{%(pathname)s:%(lineno)d} %(levelname)s:err:%(message)s')
+    errlogger.addHandler(err_fh)
+    err_fh.setFormatter(errformatter)
+
+    rootlogger.debug('Args: %s', args)
+
+    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
     sql_engine = create_engine(sql_uri, echo=True)
     # sql_engine = create_engine(sql_uri)
     args.sql_engine = sql_engine
@@ -1106,21 +1154,22 @@ def prebuild(args):
     # Add a new Version with idc_version_number args.version, if it does not already exist
     with Session(sql_engine) as sess:
 
+
         source = (args.source)(sess)
 
         stmt = select(Version).distinct()
         result = sess.execute(stmt)
         version = result.fetchone()[0]
 
-        if version.versions[source.source_id] != args.version:
+        if version.version != args.version:
             #
             version.expanded=False
             version.done=False
             version.is_new=True
             version.revised=False
-            versions = list(version.versions[0:])
-            versions[source.source_id] = args.version
-            version.versions = versions
+            # versions = list(version.versions[0:])
+            # versions[source.source_id] = args.version
+            version.version = args.version
 
             sess.commit()
         if not version.done:
@@ -1148,17 +1197,17 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
 
     rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/path_ingest_v{}_log.log'.format(os.environ['PWD'], args.version))
-    rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
-    rootlogger.addHandler(root_fh)
-    root_fh.setFormatter(rootformatter)
-    rootlogger.setLevel(DEBUG)
+    # root_fh = logging.FileHandler('{}/logs/path_ingest_v{}_log.log'.format(os.environ['PWD'], args.version))
+    # rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
+    # rootlogger.addHandler(root_fh)
+    # root_fh.setFormatter(rootformatter)
+    # rootlogger.setLevel(DEBUG)
 
     errlogger = logging.getLogger('root.err')
-    err_fh = logging.FileHandler('{}/logs/path_ingest_v{}_err.log'.format(os.environ['PWD'], args.version))
-    errformatter = logging.Formatter('{%(pathname)s:%(lineno)d} %(levelname)s:err:%(message)s')
-    errlogger.addHandler(err_fh)
-    err_fh.setFormatter(errformatter)
-
-    rootlogger.debug('Args: %s', args)
+    # err_fh = logging.FileHandler('{}/logs/path_ingest_v{}_err.log'.format(os.environ['PWD'], args.version))
+    # errformatter = logging.Formatter('{%(pathname)s:%(lineno)d} %(levelname)s:err:%(message)s')
+    # errlogger.addHandler(err_fh)
+    # err_fh.setFormatter(errformatter)
+    #
+    # rootlogger.debug('Args: %s', args)
     prebuild(args)

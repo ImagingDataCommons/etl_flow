@@ -19,7 +19,7 @@ import argparse
 import sys
 from google.cloud import bigquery
 from utilities.bq_helpers import create_BQ_dataset, copy_BQ_table
-from bq.gen_aux_metadata_table.auxiliary_metadata_sql import auxiliary_metadata_sql
+from bq.gen_aux_metadata_table.auxiliary_metadata_sql_v3 import auxiliary_metadata_sql
 from google.api_core.exceptions import NotFound
 
 

@@ -77,7 +77,7 @@ def gen_version_metadata_table(args):
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--version', default=3, help='Max IDC version for which to build the table')
+    parser.add_argument('--version', default=4, help='Max IDC version for which to build the table')
     args = parser.parse_args()
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-dev-etl')

@@ -231,6 +231,9 @@ def get_TCIA_instances_per_series(dicom, series_instance_uid, server=NBIA_V1_URL
             url
         ], stdout=PIPE, stderr=PIPE)
 
+        s = f'curl -o {filename} -H {headers} -k {url}'
+        pass
+
     else:
         # if server == 'TCIA':
         #     server_url = TCIA_URL
@@ -350,7 +353,8 @@ def get_collection_descriptions_and_licenses(collection=None):
         headers=headers
     )
     descriptions = result.json()
-    collection_descriptions = {description['collectionName']: {'description': description['description'], 'licenseId':description['licenseId']} for description in descriptions}
+    # collection_descriptions = {description['collectionName']: {'description': description['description'], 'licenseId':description['licenseId']} for description in descriptions}
+    collection_descriptions = {description['collectionName']: description for description in descriptions}
 
     return collection_descriptions
 
@@ -418,7 +422,7 @@ if __name__ == "__main__":
     # result = get_access_token()
     # access_token, refresh_token = get_access_token()
     # access_token, refresh_token = refresh_access_token(refresh_token)
-
+    result=get_TCIA_instances_per_series('.', '1.3.6.1.4.1.14519.5.2.1.7009.9004.180224303090109944523368212991', 'NLST')
     # results = get_collection_values_and_counts()
     # result = get_TCIA_series_per_study('TCGA-GBM', 'TCGA-02-0006', '1.3.6.1.4.1.14519.5.2.1.1706.4001.149500105036523046215258942545' )
     # result = get_TCIA_patients_per_collection('APOLLO-5-LSCC', server=NBIA_V1_URL)

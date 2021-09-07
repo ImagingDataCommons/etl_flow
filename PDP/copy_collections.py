@@ -55,10 +55,10 @@ def copy_instances(args, rows, n, rowcount, done_instances, src_bucket, dst_buck
                     successlogger.info(f'{blob_name}')
                     break
                 except Exception as exc:
-                    errlogger.error('%s %s: %s: copy failed %s\n, retry %s; %s', args.id,
+                    if retries == TRIES:
+                        errlogger.error('%s %s: %s: copy failed %s\n, retry %s; %s', args.id,
                                     index, args.collection,
                                     blob_name, retries, exc)
-                    if retries == TRIES:
                         break
                 time.sleep(retries)
                 retries += 1
@@ -70,8 +70,8 @@ def copy_instances(args, rows, n, rowcount, done_instances, src_bucket, dst_buck
 
 def worker(input, output, args, done_instances):
     rootlogger.debug('p%s: Worker starting: args: %s', args.id, args )
-    conn = psycopg2.connect(dbname='idc_path_v3.1', user=settings.LOCAL_DATABASE_USERNAME,
-                            password=settings.LOCAL_DATABASE_PASSWORD, host=settings.LOCAL_DATABASE_HOST)
+    conn = psycopg2.connect(dbname=args.db, user=settings.CLOUD_USERNAME, port=settings.CLOUD_PORT,
+                            password=settings.CLOUD_PASSWORD, host=settings.CLOUD_HOST)
     with conn:
         with conn.cursor(cursor_factory=DictCursor) as cur:
             client = storage.Client()
@@ -94,9 +94,11 @@ def copy_all_instances(args, cur, query):
     except:
         done_instances = []
 
-    increment = 1000
+    increment = 100
     cur.execute(query)
     rowcount=cur.rowcount
+    print(f'Copying collection {args.collection}; {rowcount} instances')
+
     if args.processes == 0:
         failures = open(f'./logs/cc_{args.collection}_failures.log', 'a')
         while True:
@@ -142,6 +144,7 @@ def copy_all_instances(args, cur, query):
             args.id = process + 1
             processes.append(
                 Process(target=worker, args=(task_queue, done_queue, args, done_instances)))
+            print(f'Started process {process}')
             processes[-1].start()
 
         while True:
@@ -159,34 +162,62 @@ def copy_all_instances(args, cur, query):
         for process in processes:
             process.join()
 
-
-
-
-
+    print(f'Completed collection {args.collection}')
 
 
 
 def precopy(args):
-    conn = psycopg2.connect(dbname='idc_path_v3.1', user=settings.LOCAL_DATABASE_USERNAME,
-                            password=settings.LOCAL_DATABASE_PASSWORD, host=settings.LOCAL_DATABASE_HOST)
-    with conn:
-        with conn.cursor(cursor_factory=DictCursor) as cur:
-            query = f"""
-                SELECT i.uuid
-                FROM collection as c 
-                JOIN patient as p
-                ON c.collection_id = p.collection_id
-                JOIN study as st
-                ON p.submitter_case_id = st.submitter_case_id
-                JOIN series as se
-                ON st.study_instance_uid = se.study_instance_uid
-                JOIN instance as i
-                ON se.series_instance_uid = i.series_instance_uid
-                WHERE c.collection_id = '{args.collection}'
-                ORDER by i.uuid
-                """
-            args.id = 0
-            copy_all_instances(args, cur, query)
+    conn = psycopg2.connect(dbname=args.db, user=settings.CLOUD_USERNAME, port=settings.CLOUD_PORT,
+                            password=settings.CLOUD_PASSWORD, host=settings.CLOUD_HOST)
+
+    collections = open(args.collection_list).read().splitlines()
+    try:
+        dones = open(args.dones).read().splitlines()
+    except:
+        dones = []
+    for collection in collections:
+        if not collection in dones:
+            args.collection = collection
+            with conn:
+                if os.path.exists('{}/logs/cc_{}_error.log'.format(os.environ['PWD'], collection)):
+                    os.remove('{}/logs/cc_{}_error.log'.format(os.environ['PWD'], collection))
+
+                for hdlr in successlogger.handlers[:]:
+                    successlogger.removeHandler(hdlr)
+                success_fh = logging.FileHandler('{}/logs/cc_{}_success.log'.format(os.environ['PWD'], collection))
+                successlogger.addHandler(success_fh)
+                successformatter = logging.Formatter('%(message)s')
+                success_fh.setFormatter(successformatter)
+
+                for hdlr in errlogger.handlers[:]:
+                    errlogger.removeHandler(hdlr)
+                err_fh = logging.FileHandler('{}/logs/cc_{}_error.log'.format(os.environ['PWD'], collection))
+                errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
+                errlogger.addHandler(err_fh)
+                err_fh.setFormatter(errformatter)
+
+                with conn.cursor(cursor_factory=DictCursor) as cur:
+                    query = f"""
+                        SELECT i.uuid
+                        FROM collection as c 
+                        JOIN patient as p
+                        ON c.collection_id = p.collection_id
+                        JOIN study as st
+                        ON p.submitter_case_id = st.submitter_case_id
+                        JOIN series as se
+                        ON st.study_instance_uid = se.study_instance_uid
+                        JOIN instance as i
+                        ON se.series_instance_uid = i.series_instance_uid
+                        WHERE c.collection_id = '{args.collection}'
+                        ORDER by i.uuid
+                        """
+                    args.id = 0
+                    copy_all_instances(args, cur, query)
+
+            if not os.path.isfile('{}/logs/cc_{}_error.log'.format(os.environ['PWD'], collection)) or os.stat('{}/logs/cc_{}_error.log'.format(os.environ['PWD'], collection)).st_size==0:
+                # If no errors, then we are done with this collection
+                with open(args.dones, 'a') as f:
+                     f.write(f'{collection}\n')
 
 
 if __name__ == '__main__':
@@ -200,7 +231,8 @@ if __name__ == '__main__':
     parser.add_argument('--processes', default=32, help="Number of concurrent processes")
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--collection', default='QIN-HEADNECK')
+    parser.add_argument('--collection_list', default='./collection_list.txt')
+    parser.add_argument('--dones', default='./logs/dones.txt')
 
     args = parser.parse_args()
 
@@ -212,16 +244,8 @@ if __name__ == '__main__':
     rootlogger.setLevel(INFO)
 
     successlogger = logging.getLogger('success')
-    success_fh = logging.FileHandler('{}/logs/cc_{}_success.log'.format(os.environ['PWD'], args.collection))
-    successformatter = logging.Formatter('%(message)s')
-    successlogger.addHandler(success_fh)
-    success_fh.setFormatter(successformatter)
     successlogger.setLevel(INFO)
 
     errlogger = logging.getLogger('root.err')
-    err_fh = logging.FileHandler('{}/logs/copy_collections_err.log'.format(os.environ['PWD']))
-    errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
-    errlogger.addHandler(err_fh)
-    err_fh.setFormatter(errformatter)
 
     precopy(args)

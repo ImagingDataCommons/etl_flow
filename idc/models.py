@@ -38,48 +38,77 @@ Base = declarative_base()
 # in the idc_v2_final branch.
 class Version(Base):
     __tablename__ = 'version'
-#    version = Column(Integer, unique=True, nullable=False, primary_key=True, comment="Version number")
-    versions = Column(
-        CompositeType(
-            'versions',
-            [
-                sa.Column('tcia', Integer),
-                sa.Column('path', Integer)
-            ]
-        ),
-        nullable=True,
-        comment="True if this objects includes instances from the corresponding source"
-    )
+    # versions = Column(
+    #     CompositeType(
+    #         'versions',
+    #         [
+    #             sa.Column('tcia', Integer),
+    #             sa.Column('path', Integer)
+    #         ]
+    #     ),
+    #     nullable=True,
+    #     comment="True if this objects includes instances from the corresponding source"
+    # )
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=True, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
-    v2_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of all data at this level")
     max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
     hashes = Column(
         CompositeType(
             'hashes',
             [
-                sa.Column('tcia', String),
-                sa.Column('path', String)
+                Column('tcia', String, comment="Hash of tcia radiology data"),
+                Column('path', String, comment="Hash of tcia pathology data"),
+                Column('all_sources', String, comment="Hash of all data")
             ]
         ),
-        nullable=True,
         comment="Source specific hierarchical hash"
     )
     id = Column(Integer, primary_key=True)
+    # source_versions = Column(
+    #     CompositeType(
+    #         'source_versions',
+    #         [
+    #             CompositeType(
+    #                 'tcia',
+    #                 [
+    #                     Column('min_timestamp',DateTime, nullable=True, comment="Time when building this object started"),
+    #                     Column('max_timestamp', DateTime, nullable=True, comment="Time when building this object completed"),
+    #                     Column('revised', Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version"),
+    #                     Column('done', Boolean, default=True, comment="Set to True if this object has been processed"),
+    #                     Column('is_new', Boolean, default=True, comment="True if this object is new in this version"),
+    #                     Column('expanded', Boolean, default=False, comment="True if the next lower level has been populated"),
+    #                     Column('version', Integer, comment="Target version of source-specific revision")
+    #                 ]
+    #             ),
+    #             CompositeType(
+    #                 'path',
+    #                 [
+    #                     Column('min_timestamp',DateTime, nullable=True, comment="Time when building this object started"),
+    #                     Column('max_timestamp', DateTime, nullable=True, comment="Time when building this object completed"),
+    #                     Column('revised', Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version"),
+    #                     Column('done', Boolean, default=True, comment="Set to True if this object has been processed"),
+    #                     Column('is_new', Boolean, default=True, comment="True if this object is new in this version"),
+    #                     Column('expanded', Boolean, default=False, comment="True if the next lower level has been populated"),
+    #                     Column('version', Integer, comment="Target version of source-specific revision")
+    #                 ]
+    #             )
+    #         ]
+    #     ),
+    #     comment="Revision status of each source"
+    # )
+    version = Column(Integer, nullable=False, comment="Target version of revision")
 
 class Collection(Base):
     __tablename__ = 'collection'
-    id = Column(Integer, nullable=True, comment="Old primary key")
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
     revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=True, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
-    v2_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of all data at this level")
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
@@ -87,8 +116,8 @@ class Collection(Base):
         CompositeType(
             'sources',
             [
-                sa.Column('tcia', Boolean),
-                sa.Column('path', Boolean)
+                Column('tcia', Boolean),
+                Column('path', Boolean)
             ]
         ),
         nullable=True,
@@ -98,8 +127,9 @@ class Collection(Base):
         CompositeType(
             'hashes',
             [
-                sa.Column('tcia', String),
-                sa.Column('path', String)
+                Column('tcia', String, comment="Hash of tcia radiology data"),
+                Column('path', String, comment="Hash of tcia pathology data"),
+                Column('all_sources', String, comment="Hash of all data")
             ]
         ),
         nullable=True,
@@ -126,8 +156,8 @@ class Patient(Base):
         CompositeType(
             'sources',
             [
-                sa.Column('tcia', Boolean),
-                sa.Column('path', Boolean)
+                Column('tcia', Boolean),
+                Column('path', Boolean)
             ]
         ),
         nullable=True,
@@ -137,8 +167,9 @@ class Patient(Base):
         CompositeType(
             'hashes',
             [
-                sa.Column('tcia', String),
-                sa.Column('path', String)
+                Column('tcia', String, comment="Hash of tcia radiology data"),
+                Column('path', String, comment="Hash of tcia pathology data"),
+                Column('all_sources', String, comment="Hash of all data")
             ]
         ),
         nullable=True,
@@ -151,7 +182,6 @@ class Patient(Base):
 
 class Study(Base):
     __tablename__ = 'study'
-    patient_id = Column(Integer, nullable=True, comment= "Obsolete foreign key")
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     study_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
     uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of this object")
@@ -168,8 +198,8 @@ class Study(Base):
         CompositeType(
             'sources',
             [
-                sa.Column('tcia', Boolean),
-                sa.Column('path', Boolean)
+                Column('tcia', Boolean),
+                Column('path', Boolean)
             ]
         ),
         nullable=True,
@@ -179,8 +209,9 @@ class Study(Base):
         CompositeType(
             'hashes',
             [
-                sa.Column('tcia', String),
-                sa.Column('path', String)
+                Column('tcia', String, comment="Hash of tcia radiology data"),
+                Column('path', String, comment="Hash of tcia pathology data"),
+                Column('all_sources', String, comment="Hash of all data")
             ]
         ),
         nullable=True,
@@ -193,7 +224,6 @@ class Study(Base):
 
 class Series(Base):
     __tablename__ = 'series'
-    study_id = Column(Integer, nullable=True, comment= "Obsolete foreign key")
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     series_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
     uuid = Column(String, nullable=False,  unique=True, comment="IDC assigned UUID of this object")
@@ -211,8 +241,8 @@ class Series(Base):
         CompositeType(
             'sources',
             [
-                sa.Column('tcia', Boolean),
-                sa.Column('path', Boolean)
+                Column('tcia', Boolean),
+                Column('path', Boolean)
             ]
         ),
         nullable=True,
@@ -222,8 +252,9 @@ class Series(Base):
         CompositeType(
             'hashes',
             [
-                sa.Column('tcia', String),
-                sa.Column('path', String)
+                Column('tcia', String, comment="Hash of tcia radiology data"),
+                Column('path', String, comment="Hash of tcia pathology data"),
+                Column('all_sources', String, comment="Hash of all data")
             ]
         ),
         nullable=True,
@@ -236,7 +267,6 @@ class Series(Base):
 
 class Instance(Base):
     __tablename__ = 'instance'
-    series_id = Column(Integer, nullable=True, comment= "Obsolete foreign key")
     timestamp = Column(DateTime, nullable=True, comment="Time when this object was last built")
     sop_instance_uid = Column(String, primary_key=True, nullable=False)
     uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of this object")
