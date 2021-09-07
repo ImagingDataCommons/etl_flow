@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Copy some set of BQ tables from one dataset to another
+# Copy some set of BQ tables from one dataset to another. Used to populate public dataset
 import argparse
 import sys
 from google.cloud import bigquery
