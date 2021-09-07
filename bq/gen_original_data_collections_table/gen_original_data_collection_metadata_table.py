@@ -26,14 +26,25 @@ from utilities.tcia_helpers import get_collection_descriptions_and_licenses, get
 from utilities.tcia_scrapers import scrape_tcia_data_collections_page
 
 def get_collections_in_version(client, args):
-    query = f"""
-    SELECT c.* 
-    FROM `{args.src_project}.{args.bqdataset_name}.{args.bq_collection_table}` as c
-    LEFT JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_excluded_collections}` as ex
-    ON LOWER(c.collection_id) = LOWER(ex.tcia_api_collection_id)
-    WHERE ex.tcia_api_collection_id IS NULL
-    ORDER BY c.collection_id
-    """
+    if args.excluded:
+        # Only excluded collections
+        query = f"""
+        SELECT c.* 
+        FROM `{args.src_project}.{args.bqdataset_name}.{args.bq_collection_table}` as c
+        JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_excluded_collections}` as ex
+        ON LOWER(c.collection_id) = LOWER(ex.tcia_api_collection_id)
+        ORDER BY c.collection_id
+        """
+    else:
+        # Only included collections
+        query = f"""
+        SELECT c.* 
+        FROM `{args.src_project}.{args.bqdataset_name}.{args.bq_collection_table}` as c
+        LEFT JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_excluded_collections}` as ex
+        ON LOWER(c.collection_id) = LOWER(ex.tcia_api_collection_id)
+        WHERE ex.tcia_api_collection_id IS NULL
+        ORDER BY c.collection_id
+        """
     result = client.query(query).result()
     collection_ids = [collection['collection_id'] for collection in result]
     return collection_ids
@@ -56,7 +67,7 @@ def get_cases_per_collection(client, args):
     return case_counts
 
 
-def build_metadata(client, args, collection_ids):
+def build_metadata(client, args, idc_collection_ids):
     # Get collection descriptions and license IDs from TCIA
     collection_descriptions = get_collection_descriptions_and_licenses()
 
@@ -66,63 +77,66 @@ def build_metadata(client, args, collection_ids):
     # Get a list of the licenses used by data collections
     licenses = get_collection_license_info()
 
-    # Scrape the TCIA Data Collections page for collection metadata
+    # try:
+    #     collection_metadata = json.load(open('collection_metadata.txt'))
+    # except:
+    #     # Scrape the TCIA Data Collections page for collection metadata
+    #     collection_metadata = scrape_tcia_data_collections_page()
+    #     with open('collection_metadata.txt', 'w') as f:
+    #         json.dump(collection_metadata, f)
     collection_metadata = scrape_tcia_data_collections_page()
-
 
     rows = []
     found_ids = []
-    lowered_collection_ids = {collection_id.lower():collection_id for collection_id in collection_ids}
-    for collection_id, collection_data in collection_metadata.items():
-        if collection_id.lower() in lowered_collection_ids:
-            found_ids.append(lowered_collection_ids[collection_id.lower()])
-            collection_data['tcia_api_collection_id'] = lowered_collection_ids[collection_id.lower()]
-            collection_data['idc_webapp_collection_id'] = collection_id.lower().replace(' ','_').replace('-','_')
-            if collection_id in collection_descriptions:
-                collection_data['Description'] = collection_descriptions[collection_id]['description']
-                collection_data['Subjects'] = case_counts[collection_id.lower()]
-                collection_data['LicenseURL'] = licenses[collection_id]['licenseURL']
-                collection_data['LicenseLongName'] = licenses[collection_id]['longName']
-                collection_data['LicenseShortName'] = licenses[collection_id]['shortName']
-                # collection_data['LicenseURL'] = \
-                #     licenses[collection_descriptions[collection_id]['licenseId']-1]['licenseURL']
-                # collection_data['LicenseLongName'] = \
-                #     licenses[collection_descriptions[collection_id]['licenseId'] - 1]['longName']
-                # collection_data['LicenseShortName'] = \
-                #     licenses[collection_descriptions[collection_id]['licenseId'] - 1]['shortName']
+    # lowered_idc_collection_ids = {collection_id.lower():collection_id for collection_id in collection_ids}
+    lowered_collection_description_ids = {collection_id.lower():collection_id for collection_id in collection_descriptions}
+    lowered_license_ids = {collection_id.lower():collection_id for collection_id in licenses}
+    lowered_collection_metadata_ids = {collection_id.lower():collection_id for collection_id in collection_metadata}
 
-            elif collection_data['tcia_api_collection_id'] in collection_descriptions:
-                collection_data['Description'] = collection_descriptions[collection_data['tcia_api_collection_id']]['description']
-                collection_data['Subjects'] = case_counts[collection_data['tcia_api_collection_id'].lower()]
-                collection_data['LicenseURL'] = \
-                    licenses[collection_data['tcia_api_collection_id']]['licenseURL']
-                collection_data['LicenseLongName'] = \
-                    licenses[collection_data['tcia_api_collection_id']]['longName']
-                collection_data['LicenseShortName'] = \
-                    licenses[collection_data['tcia_api_collection_id']]['shortName']
-                # collection_data['LicenseURL'] = \
-                #     licenses[collection_descriptions[collection_data['tcia_api_collection_id']]['licenseId'] - 1][
-                #         'licenseURL']
-                # collection_data['LicenseLongName'] = \
-                #     licenses[collection_descriptions[collection_data['tcia_api_collection_id']]['licenseId'] - 1][
-                #         'longName']
-                # collection_data['LicenseShortName'] = \
-                #     licenses[collection_descriptions[collection_data['tcia_api_collection_id']]['licenseId'] - 1][
-                #         'shortName']
-            else:
-                collection_data['Description'] = ""
-                collection_data['LicenseURL'] = ""
-                collection_data['LicenseLongName'] = ""
-                collection_data['LicenseShortName'] = ""
+    # for collection_id, collection_data in collection_metadata.items():
+    #     if collection_id.lower() in lowered_collection_ids:
+    for idc_collection_id in idc_collection_ids:
+        if idc_collection_id.lower() in lowered_collection_metadata_ids:
+            tcia_collection_id = lowered_collection_metadata_ids[idc_collection_id.lower()]
+            found_ids.append(idc_collection_id)
+            collection_data = collection_metadata[tcia_collection_id]
+            collection_data['tcia_api_collection_id'] = idc_collection_id
+            collection_data['idc_webapp_collection_id'] = collection_data['tcia_api_collection_id'].lower().replace(' ','_').replace('-','_')
+            # if collection_id.lower() in lowered_collection_description_ids:
+            # mapped_collection_id = lowered_collection_ids[collection_id.lower()]
+            try:
+                try:
+                    collection_description_id = lowered_collection_description_ids[idc_collection_id.lower()]
+                    collection_data['Description'] = collection_descriptions[collection_description_id]['description']
+                except:
+                    collection_data['Description'] = ""
+                collection_data['Subjects'] = case_counts[idc_collection_id.lower()]
+                # mapped_license_id = lowered_license_ids[collection_id.lower()]
+                try:
+                    license_id = lowered_license_ids[idc_collection_id.lower()]
+                    collection_data['license_url'] = licenses[license_id]['licenseURL']
+                    collection_data['license_long_name'] = licenses[license_id]['longName']
+                    collection_data['license_short_name'] = licenses[license_id]['shortName']
+                except:
+                    collection_data['license_url'] = ''
+                    collection_data['license_long_name'] = ''
+                    collection_data['license_short_name'] = ''
+            except Exception as exc:
+                print(f'Exception building metadata {exc}')
 
             rows.append(json.dumps(collection_data))
+
         else:
-            print(f'{collection_id} not in IDC collections')
+            print(f'{idc_collection_id} not in collection metadata')
 
     # Make sure we found metadata for all out collections
-    for collection in collection_ids:
-        if not collection in found_ids:
-            print(f'****No metadata for {collection}')
+    for idc_collection in idc_collection_ids:
+        if not idc_collection in found_ids:
+            print(f'****No metadata for {idc_collection}')
+            if idc_collection == 'APOLLO':
+                collection_data = {"tcia_wiki_collection_id": "APOLLO-1-WA", "DOI": "https://wiki.cancerimagingarchive.net/x/N4NyAQ", "CancerType": "Non-small Cell Lung Cancer", "Location": "Lung", "Species": "Human", "Subjects": 7, "ImageTypes": "CT, PT", "SupportingData": "", "Access": "Public", "Status": "Complete", "Updated": "2018-03-08", "tcia_api_collection_id": "APOLLO", "idc_webapp_collection_id": "apollo", "Description": "", "license_url": "http://creativecommons.org/licenses/by/3.0/", "license_long_name": "Creative Commons Attribution 3.0 Unported License", "license_short_name": "CC BY 3.0"}
+                collection_data["Description"] = collection_descriptions['APOLLO']['description']
+                rows.append(json.dumps(collection_data))
 
     metadata = '\n'.join(rows)
     return metadata
@@ -149,6 +163,7 @@ if __name__ == '__main__':
     parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
     parser.add_argument('--bq_collection_table', default='collection', help='BQ table from which to get collections in version')
     parser.add_argument('--bq_excluded_collections', default='excluded_collections', help='BQ table from which to get collections to exclude')
+    parser.add_argument('--excluded', default=False, help="Generated excluded_original_collections_metadata if True")
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

@@ -29,8 +29,6 @@ import time
 from subprocess import PIPE
 from googleapiclient.errors import HttpError
 
-# from helpers.dicom_helpers import get_dataset, get_dicom_store, create_dicom_store, import_dicom_instance
-
 def export_dicom_metadata(args):
     # Get an access token
     results = subprocess.run(['gcloud', 'auth', 'application-default', 'print-access-token'], stdout=PIPE, stderr=PIPE)

@@ -1,6 +1,5 @@
-#!/usr/bin/env
 #
-# Copyright 2020, Institute for Systems Biology
+# Copyright 2015-2021, Institute for Systems Biology
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,22 +14,27 @@
 # limitations under the License.
 #
 
+# This script generates the BQ auxiliary_metadata table. It basically joins the BQ version, collection,
+# patient, study, series, and instance tables. Typically these are uploaded from PostgreSQL to BQ using
+# the upload_psql_to_bq.py script
 import argparse
 import sys
-from bq.gen_original_data_collections_table.gen_original_data_collection_metadata_table import  gen_collections_table
+from bq.gen_aux_metadata_table.gen_auxiliary_metadata_table import gen_aux_table
+from bq.gen_aux_metadata_table.auxiliary_metadata_sql_v4 import auxiliary_metadata_sql
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--version', default=3, help='IDC version for which to build the table')
+    parser.add_argument('--version', default=4, help='IDC version for which to build the table')
     args = parser.parse_args()
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-dev-etl')
     parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
-    parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
-    parser.add_argument('--bq_collection_table', default='collection', help='BQ table from which to get collections in version')
-    parser.add_argument('--bq_excluded_collections', default='excluded_collections', help='BQ table from which to get collections to exclude')
-    parser.add_argument('--excluded', default=False, help="Generated excluded_original_collections_metadata if True")
-
+    parser.add_argument('--bqtable_name', default='auxiliary_metadata', help='BQ table name')
+    parser.add_argument('--gcs_bucket', default='idc_dev', help="Bucket where blobs are")
     args = parser.parse_args()
+
+    args.sql = auxiliary_metadata_sql
+
     print("{}".format(args), file=sys.stdout)
-    gen_collections_table(args)
+
+    gen_aux_table(args)

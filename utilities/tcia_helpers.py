@@ -231,6 +231,9 @@ def get_TCIA_instances_per_series(dicom, series_instance_uid, server=NBIA_V1_URL
             url
         ], stdout=PIPE, stderr=PIPE)
 
+        s = f'curl -o {filename} -H {headers} -k {url}'
+        pass
+
     else:
         # if server == 'TCIA':
         #     server_url = TCIA_URL
@@ -337,50 +340,59 @@ def series_drill_down(series_ids, server="" ):
 
 
 def get_collection_descriptions_and_licenses(collection=None):
-    # Get access token for the guest account
     access_token, refresh_token = get_access_token()
     if collection:
         url = f'https://public.cancerimagingarchive.net/nbia-api/services/getCollectionDescriptions?collectionName={collection}'
     else:
         url = 'https://public.cancerimagingarchive.net/nbia-api/services/getCollectionDescriptions'
-    result = run([
-        'curl',
-        '-H',
-        "Authorization:Bearer {}".format(access_token),
-        '-k',
-        url
-        ], stdout=PIPE, stderr=PIPE)
-    descriptions = json.loads(result.stdout.decode())
-    collection_descriptions = {description['collectionName']: {'description': description['description'], 'licenseId':description['licenseId']} for description in descriptions}
+    headers = dict(
+        Authorization=f'Bearer {access_token}'
+    )
+    result = requests.get(
+        url,
+        headers=headers
+    )
+    descriptions = result.json()
+    # collection_descriptions = {description['collectionName']: {'description': description['description'], 'licenseId':description['licenseId']} for description in descriptions}
+    collection_descriptions = {description['collectionName']: description for description in descriptions}
 
     return collection_descriptions
 
+
 def get_collection_licenses():
-    # Get access token for the guest account
     access_token, refresh_token = get_access_token()
-    result = run([
-        'curl',
-        '-H',
-        "Authorization:Bearer {}".format(access_token),
-        '-k',
-        'https://public.cancerimagingarchive.net/nbia-api/services/getLicenses'
-        ], stdout=PIPE, stderr=PIPE)
-    licenses = json.loads(result.stdout.decode())
-    # collection_descriptions = {description['collectionName']: description['description'] for description in descriptions}
+    headers = dict(
+        Authorization=f'Bearer {access_token}'
+    )
+    result = requests.get(
+        url='https://public.cancerimagingarchive.net/nbia-api/services/getLicenses',
+        headers=headers
+    )
+    licenses = result.json()
 
     return licenses
+
 
 def get_collection_license_info():
     table = get_collection_descriptions_and_licenses()
     license_info = {license['id']: license for license in get_collection_licenses()}
     licenses = {}
     for collection_id, data in table.items():
+        print(collection_id, data['licenseId'])
         licenseId = data['licenseId']
-        licenses[collection_id] = dict(
-            licenseURL = license_info[licenseId]["licenseURL"],
-            longName = license_info[licenseId]["longName"],
-            shortName = license_info[licenseId]["shortName"]
-        )
+        if licenseId:
+            licenses[collection_id] = dict(
+                licenseURL = license_info[licenseId]["licenseURL"],
+                longName = license_info[licenseId]["longName"],
+                shortName = license_info[licenseId]["shortName"]
+            )
+        else:
+            licenses[collection_id] = dict(
+                licenseURL = "None",
+                longName = "None",
+                shortName = "None"
+            )
+
     return licenses
 
 
@@ -410,12 +422,14 @@ if __name__ == "__main__":
     # result = get_access_token()
     # access_token, refresh_token = get_access_token()
     # access_token, refresh_token = refresh_access_token(refresh_token)
-
+    result=get_TCIA_instances_per_series('.', '1.3.6.1.4.1.14519.5.2.1.7009.9004.180224303090109944523368212991', 'NLST')
     # results = get_collection_values_and_counts()
     # result = get_TCIA_series_per_study('TCGA-GBM', 'TCGA-02-0006', '1.3.6.1.4.1.14519.5.2.1.1706.4001.149500105036523046215258942545' )
     # result = get_TCIA_patients_per_collection('APOLLO-5-LSCC', server=NBIA_V1_URL)
     table = get_collection_license_info()
-    license_types = {row['id']:row['LongName'] for row in table}
+    collections = [key for key in table.keys()]
+    collections.sort()
+    for c in collections: print(c, table[c]['shortName'])
     table = get_collection_descriptions_and_licenses()
     licenses = {c:license_types[table[c['licenseId']]] for c in table}
     result, access_token, refresh_token = get_hash({"Collection":'TCGA-GBM'})

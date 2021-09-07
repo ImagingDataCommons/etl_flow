@@ -30,6 +30,7 @@ if __name__ == '__main__':
     parser.add_argument('--bq_version_table', default='version', help='BQ table from which to get versions')
     parser.add_argument('--bq_collection_table', default='collection', help='BQ table from which to get collections in version')
     parser.add_argument('--bq_excluded_collections', default='excluded_collections', help='BQ table from which to get collections to exclude')
+    parser.add_argument('--excluded', default=False, help="Generated excluded_original_collections_metadata if True")
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

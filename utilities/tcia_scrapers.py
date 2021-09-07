@@ -31,6 +31,8 @@ def get_url(url):  # , headers):
 def get_collection_id(doi):
     if doi.startswith('http'):
         URL = doi
+    elif doi.startswith(('//')):
+        URL = f'https:{doi}'
     else:
         URL = f'https://doi.org/{doi}'
     page = get_url(URL)
@@ -98,8 +100,11 @@ def scrape_tcia_analysis_collections_page():
         if len(trow):
             # Strip off the http server prefix
             trow['DOI'] = trow['DOI'].split('doi.org/')[1]
-            trow['LicenseURL'], trow['LicenseLongName'], trow['LicenseShortName'] = get_license_from_wiki(trow['DOI'])
-
+            try:
+                trow['license_url'], trow['license_long_name'], trow['license_short_name'] = get_license_from_wiki(trow['DOI'])
+            except Exception as exc:
+                print(f'Get license data failed for {trow["Collection"]} ')
+                pass
             collection = trow.pop('Collection')
             table[collection] = trow
             # table = table + [trow]
@@ -129,7 +134,6 @@ def scrape_tcia_data_collections_page():
     table = {}
     header = "tcia_wiki_collection_id,DOI,CancerType,Location,Species,Subjects,ImageTypes,SupportingData,Access,Status,Updated".split(
         ",")
-
     for row in rows:
         trow = {}
         cols = row.find_all("td")
@@ -154,6 +158,9 @@ def scrape_tcia_data_collections_page():
                     pass
             collection = get_collection_id(trow['DOI'])
             if collection == "":
+                if trow['tcia_wiki_collection_id'] == 'National Lung Screening Trial (NLST)':
+                    trow['tcia_wiki_collection_id'] = 'NLST'
+                    trow['DOI'] = '10.7937/TCIA.hmq8-j677'
                 collection = trow['tcia_wiki_collection_id']
             # trow.pop('Collection')
             table[collection] = trow
@@ -164,7 +171,7 @@ def scrape_tcia_data_collections_page():
 if __name__ == "__main__":
     # m =scrape_tcia_data_collections_page()
     # s = get_collection_id('https://wiki.cancerimagingarchive.net/x/N4NyAQ')
-    url, longName, shortName = get_license_from_wiki('10.7937/tcia.2019.of2w8lxr')
-    table = scrape_tcia_analysis_collections_page()
+    # url, longName, shortName = get_license_from_wiki('10.7937/tcia.2019.of2w8lxr')
+    # table = scrape_tcia_analysis_collections_page()
     table = scrape_tcia_data_collections_page()
     pass

@@ -121,20 +121,28 @@ def compare_series_hashes(access_token, refresh_token, cur, args, tcia_api_colle
         for row in series:
             # access_token = get_access_token(auth_server=NBIA_AUTH_URL)
             try:
-                while True:
-                    result, access_token, refresh_token = get_hash({'SeriesInstanceUID': row[0]}, access_token=access_token, refresh_token=refresh_token)
-                    if result.status_code == 504:
-                        print('\t\t\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code,
-                                                                                  result.reason))
-                        rootlogger.info('\t\t\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code,
-                                        result.reason)
-                        sleep(60)
-                    else:
-                        break
-                if not result.status_code == 200:
-                    print('\t\t\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
-                    rootlogger.info('\t\t\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
-                    break
+                # while True:
+                #     result, access_token, refresh_token = get_hash({'SeriesInstanceUID': row[0]}, access_token=access_token, refresh_token=refresh_token)
+                #     if result.status_code == 504:
+                #         print('\t\t\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code,
+                #                                                                   result.reason))
+                #         rootlogger.info('\t\t\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code,
+                #                         result.reason)
+                #         sleep(60)
+                #     else:
+                #         break
+                # if not result.status_code == 200:
+                #     print('\t\t\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
+                #     rootlogger.info('\t\t\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
+                #     break
+
+                result, access_token, refresh_token = get_hash({'SeriesInstanceUID': row[0]}, access_token=access_token, refresh_token=refresh_token)
+                if result.status_code == 504:
+                    print('\t\t\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code,
+                                                                              result.reason))
+                    rootlogger.info('\t\t\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code,
+                                    result.reason)
+
                 nbia_hash = result.text
                 idc_hash = row[1]
                 if 'series' in args.log_level:
@@ -179,21 +187,28 @@ def compare_study_hashes(access_token, refresh_token, cur, args, tcia_api_collec
         for row in studies:
             # access_token = get_access_token(auth_server=NBIA_AUTH_URL)
             try:
-                while True:
-                    result, access_token, refresh_token = get_hash({'StudyInstanceUID': row[0]}, access_token=access_token, refresh_token=refresh_token)
-                    if result.status_code == 504:
-                        print('\t\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code,
-                                                                                result.reason))
-                        rootlogger.info('\t\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code,
-                                        result.reason)
-                        sleep(60)
-                    else:
-                        break
+                # while True:
+                #     result, access_token, refresh_token = get_hash({'StudyInstanceUID': row[0]}, access_token=access_token, refresh_token=refresh_token)
+                #     if result.status_code == 504:
+                #         print('\t\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code,
+                #                                                                 result.reason))
+                #         rootlogger.info('\t\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code,
+                #                         result.reason)
+                #         sleep(60)
+                #     else:
+                #         break
+                #
+                # if not result.status_code == 200:
+                #     print('\t\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
+                #     rootlogger.info('\t\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
+                #     break
+                result, access_token, refresh_token = get_hash({'StudyInstanceUID': row[0]}, access_token=access_token, refresh_token=refresh_token)
+                if result.status_code == 504:
+                    print('\t\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code,
+                                                                            result.reason))
+                    rootlogger.info('\t\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code,
+                                    result.reason)
 
-                if not result.status_code == 200:
-                    print('\t\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
-                    rootlogger.info('\t\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
-                    break
                 nbia_hash = result.text
                 idc_hash = row[1]
                 if 'study' in args.log_level:
@@ -234,21 +249,28 @@ def compare_patient_hashes(access_token, refresh_token, cur, args, tcia_api_coll
         for row in patients:
             try:
                 # access_token = get_access_token(auth_server=NBIA_AUTH_URL)
-                while True:
-                    result, access_token, refresh_token = get_hash({'Collection': tcia_api_collection_id, 'PatientID': row[0]}, access_token=access_token, refresh_token=refresh_token)
-                    if result.status_code == 504:
-                        print('\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code,
-                                                                              result.reason))
-                        rootlogger.info('\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code,
-                                        result.reason)
-                        sleep(60)
-                    else:
-                        break
+                # while True:
+                #     result, access_token, refresh_token = get_hash({'Collection': tcia_api_collection_id, 'PatientID': row[0]}, access_token=access_token, refresh_token=refresh_token)
+                #     if result.status_code == 504:
+                #         print('\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code,
+                #                                                               result.reason))
+                #         rootlogger.info('\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code,
+                #                         result.reason)
+                #         sleep(60)
+                #     else:
+                #         break
+                #
+                # if not result.status_code == 200:
+                #     print('\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
+                #     rootlogger.info('\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
+                #     break
+                result, access_token, refresh_token = get_hash({'Collection': tcia_api_collection_id, 'PatientID': row[0]}, access_token=access_token, refresh_token=refresh_token)
+                if result.status_code == 504:
+                    print('\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code,
+                                                                          result.reason))
+                    rootlogger.info('\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code,
+                                    result.reason)
 
-                if not result.status_code == 200:
-                    print('\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
-                    rootlogger.info('\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
-                    break
                 nbia_hash = result.text
                 idc_hash = row[1]
                 if 'patient' in args.log_level:
@@ -291,19 +313,28 @@ def compare_collection_hashes(cur, args):
         collection_id = row[0]
         if collection_id not in skips:
             try:
-                while True:
-                    # Keep requesting the hash while we get server busy errors
-                    result, access_token, refresh_token = get_hash({'Collection': collection_id}, access_token=access_token, refresh_token=refresh_token)
-                    if result.status_code == 504:
-                        print('{:32} IDC: {}, error: {}, reason: {}'.format(collection_id, row[1], result.status_code, result.reason))
-                        rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', collection_id, row[1], result.status_code, result.reason)
-                        sleep(60)
-                    else:
-                        break
-                if not result.status_code == 200:
-                        print('{:32} IDC: {}, error: {}, reason: {}'.format(collection_id, row[1], result.status_code, result.reason))
-                        rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', collection_id, row[1], result.status_code, result.reason)
-                        break
+                # while True:
+                #     # Keep requesting the hash while we get server busy errors
+                #     result, access_token, refresh_token = get_hash({'Collection': collection_id}, access_token=access_token, refresh_token=refresh_token)
+                #     if result.status_code == 504:
+                #         print('{:32} IDC: {}, error: {}, reason: {}'.format(collection_id, row[1], result.status_code, result.reason))
+                #         rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', collection_id, row[1], result.status_code, result.reason)
+                #         sleep(60)
+                #     else:
+                #         break
+                # if not result.status_code == 200:
+                #         print('{:32} IDC: {}, error: {}, reason: {}'.format(collection_id, row[1], result.status_code, result.reason))
+                #         rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', collection_id, row[1], result.status_code, result.reason)
+                #         break
+                # Keep requesting the hash while we get server busy errors
+                result, access_token, refresh_token = get_hash({'Collection': collection_id}, access_token=access_token, refresh_token=refresh_token)
+                if result.status_code == 504:
+                    print('{:32} IDC: {}, error: {}, reason: {}'.format(collection_id, row[1], result.status_code, result.reason))
+                    rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', collection_id, row[1], result.status_code, result.reason)
+                # if not result.status_code == 200:
+                #     print('{:32} IDC: {}, error: {}, reason: {}'.format(collection_id, row[1], result.status_code, result.reason))
+                #     rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', collection_id, row[1], result.status_code, result.reason)
+                #     break
 
                 nbia_hash = result.text
                 idc_hash = row[1]
@@ -326,8 +357,8 @@ def compare_collection_hashes(cur, args):
             rootlogger.info('Skipping %-32s ', collection_id)
 
 def compare_hashes(args):
-    conn = psycopg2.connect(dbname=args.db, user=settings.LOCAL_DATABASE_USERNAME,
-                            password=settings.LOCAL_DATABASE_PASSWORD, host=settings.LOCAL_DATABASE_HOST)
+    conn = psycopg2.connect(dbname=args.db, user=settings.LOCAL_USERNAME,
+                            password=settings.LOCAL_PASSWORD, host=settings.LOCAL_HOST)
     with conn:
         with conn.cursor(cursor_factory=DictCursor) as cur:
             compare_collection_hashes(cur, args)

@@ -127,7 +127,7 @@ def build_metadata(client, args, collection_ids):
     metadata = '\n'.join(rows)
     return metadata
 
-def gen_collections_table(args):
+def gen_excluded_collections_table(args):
     BQ_client = bigquery.Client(project=args.src_project)
     collection_ids = get_collections_in_version(BQ_client, args)
 
@@ -146,10 +146,10 @@ if __name__ == '__main__':
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-dev-etl')
     parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
-    parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
+    parser.add_argument('--bqtable_name', default='excluded_collections_metadata', help='BQ table name')
     parser.add_argument('--bq_collection_table', default='collection', help='BQ table from which to get collections in version')
     parser.add_argument('--bq_excluded_collections', default='excluded_collections', help='BQ table from which to get collections to exclude')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-    gen_collections_table(args)
+    gen_excluded_collections_table(args)

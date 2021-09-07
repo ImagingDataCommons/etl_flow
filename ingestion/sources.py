@@ -89,11 +89,11 @@ class Source:
 
 
 class TCIA(Source):
-    def __init__(self):
+    def __init__(self, sess):
         super().__init__(instance_source['tcia'].value)
         self.source = instance_source.tcia
         self.hash_access_token, self.refresh_token = get_access_token(auth_server = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token")
-
+        self.sess = sess
 
     def collections(self):
         collections = get_collection_values_and_counts(self.nbia_server)

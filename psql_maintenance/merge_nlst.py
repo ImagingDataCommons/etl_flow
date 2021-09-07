@@ -65,7 +65,7 @@ def merge_collections(cur, args):
         values.append(data)
 
     query = f"""
-        INSERT INTO {level}_nlst (
+        INSERT INTO {level}{args.table_suffix} (
             min_timestamp,
             collection_id,
             revised,
@@ -121,7 +121,7 @@ def merge_patients(cur, args):
         values.append(data)
 
     query = f"""
-        INSERT INTO {level}_nlst (
+        INSERT INTO {level}{args.table_suffix} (
             min_timestamp,
             submitter_case_id,
             idc_case_id,
@@ -141,6 +141,7 @@ def merge_patients(cur, args):
         cur, query, values, template=None, page_size=1000
     )
     cur.connection.commit()
+    print(f'Merged {level}')
 
 
 def merge_studies(cur, args):
@@ -181,7 +182,7 @@ def merge_studies(cur, args):
         values.append(data)
 
     query = f"""
-        INSERT INTO {level}_nlst (
+        INSERT INTO {level}{args.table_suffix} (
             min_timestamp,
             study_instance_uid,
             uuid,
@@ -202,6 +203,7 @@ def merge_studies(cur, args):
         cur, query, values, template=None, page_size=1000
     )
     cur.connection.commit()
+    print(f'Merged {level}')
 
 
 def merge_series(cur, args):
@@ -244,7 +246,7 @@ def merge_series(cur, args):
         values.append(data)
 
     query = f"""
-        INSERT INTO {level}_nlst (
+        INSERT INTO {level}{args.table_suffix} (
             min_timestamp,
             series_instance_uid,
             uuid,
@@ -266,6 +268,7 @@ def merge_series(cur, args):
         cur, query, values, template=None, page_size=1000
     )
     cur.connection.commit()
+    print(f'Merged {level}')
 
 
 # def merge_instances(cur, args):
@@ -426,7 +429,7 @@ def merge_instances(cur, args):
             values.append(data)
 
         query = f"""
-            INSERT INTO {level}_nlst (
+            INSERT INTO {level}{args.table_suffix} (
                 timestamp,
                 sop_instance_uid,
                 uuid,
@@ -449,8 +452,7 @@ def merge_instances(cur, args):
         cur, query, values, template=None, page_size=1000
     )
     cur.connection.commit()
-
-
+    print(f'Merged {level}')
 
 
 def merge(args):
@@ -461,9 +463,9 @@ def merge(args):
     with conn:
         with conn.cursor(cursor_factory=DictCursor) as cur:
             # merge_collections(cur, args)
-            # merge_patients(cur, args)
-            # merge_studies(cur, args)
-            # merge_series(cur, args)
+            merge_patients(cur, args)
+            merge_studies(cur, args)
+            merge_series(cur, args)
             merge_instances(cur, args)
 
 
@@ -471,6 +473,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--db', default='idc_v4')
+    parser.add_argument('--table_suffix', default='')
     args = parser.parse_args()
 
     # Directory to which to download files from TCIA/NBIA
