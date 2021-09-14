@@ -59,7 +59,13 @@ def build_metadata(args, source_dois):
         # and therefore we have a series from this analysis result, and therefor we should include
         # this analysis result in the analysis_results metadata table
         if analysis_data["DOI"] in source_dois:
-            analysis_data["Collection"] = analysis_id
+            # analysis_data["Collection"] = analysis_id
+            title_id = analysis_id.rsplit('(',1)
+            title = title_id[0]
+            if title.endswith(' '):
+                title = title[:-1]
+            analysis_data['Title'] = title
+            analysis_data['ID'] = title_id[1].split(')')[0]
             rows.append(json.dumps(analysis_data))
     metadata = '\n'.join(rows)
     return metadata

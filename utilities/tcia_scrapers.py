@@ -159,9 +159,10 @@ def scrape_tcia_data_collections_page():
             collection = get_collection_id(trow['DOI'])
             if collection == "":
                 if trow['tcia_wiki_collection_id'] == 'National Lung Screening Trial (NLST)':
-                    trow['tcia_wiki_collection_id'] = 'NLST'
+                    collection = 'NLST'
                     trow['DOI'] = '10.7937/TCIA.hmq8-j677'
-                collection = trow['tcia_wiki_collection_id']
+                else:
+                    collection = trow['tcia_wiki_collection_id']
             # trow.pop('Collection')
             table[collection] = trow
 

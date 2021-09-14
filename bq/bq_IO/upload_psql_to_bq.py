@@ -248,6 +248,29 @@ def upload_version(cur, args):
     load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
 
 
+def upload_program(cur, args):
+    table = "program"
+    print(f'Populating table {table}')
+    schema = get_schema(cur, args, table)
+    client = bigquery.Client(project=args.project)
+
+    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
+        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
+    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
+
+    cur.execute("""
+        SELECT json_agg(json)
+        FROM (
+            SELECT * from program
+        )  as json
+        """)
+    rows = cur.fetchall()
+    json_rows = [json.dumps(row) for row in rows[0][0]]
+    data = "\n".join(json_rows)
+    load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
+
+
+
 def upload_collection(cur, args):
     table = "collection"
     print(f'Populating table {table}')
@@ -381,12 +404,13 @@ def upload_to_bq(args):
                             password=args.password, host=args.host)
     with conn:
         with conn.cursor(cursor_factory=DictCursor) as cur:
-            upload_version(cur, args)
-            upload_collection(cur, args)
-            upload_patient(cur, args)
-            upload_study(cur, args)
-            upload_series(cur, args)
-            upload_instance(cur, args)
+            upload_program(cur, args)
+            # upload_version(cur, args)
+            # upload_collection(cur, args)
+            # upload_patient(cur, args)
+            # upload_study(cur, args)
+            # upload_series(cur, args)
+            # upload_instance(cur, args)
             pass
 
 if __name__ == '__main__':

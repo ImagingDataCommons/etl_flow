@@ -21,6 +21,7 @@ data_collections_metadata_schema = [
     bigquery.SchemaField('tcia_api_collection_id', 'STRING', mode='NULLABLE', description='Collection ID as accepted by TCIA APIs'),
     bigquery.SchemaField('tcia_wiki_collection_id', 'STRING', mode='NULLABLE', description='Collection ID as on TCIA wiki page'),
     bigquery.SchemaField('idc_webapp_collection_id', 'STRING', mode='NULLABLE', description='Collection ID as used internally by IDC webapp'),
+    bigquery.SchemaField('Program', 'STRING', mode='NULLABLE', description='TCIA assigned program of this collection'),
     bigquery.SchemaField('Status', 'STRING', mode='NULLABLE', description='TCIA assigned status: Ongoing or Complete'),
     bigquery.SchemaField('Updated', 'DATE', mode='NULLABLE', description='Most recent update reported by TCIA'),
     bigquery.SchemaField('Access', 'STRING', mode='NULLABLE', description='Limited or Public'),
