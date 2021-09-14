@@ -33,7 +33,8 @@
 from google.cloud import bigquery
 
 analysis_results_metadata_schema = [
-    bigquery.SchemaField('Collection', 'STRING', mode='NULLABLE', description='Collection description'),
+    bigquery.SchemaField('ID', 'STRING', mode='NULLABLE', description='Results ID'),
+    bigquery.SchemaField('Title', 'STRING', mode='NULLABLE', description='Descriptive title'),
     bigquery.SchemaField('DOI','STRING', mode='NULLABLE', description='DOI that can be resolved at doi.org to a wiki page'),
     bigquery.SchemaField('CancerType','STRING', mode='NULLABLE', description='Type(s) of cancer analyzed'),
     bigquery.SchemaField('Location', 'STRING', mode='NULLABLE', description='Body location that was analyzed'),
