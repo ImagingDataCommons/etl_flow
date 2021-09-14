@@ -27,6 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--dst_project', default='idc-dev-etl')
     parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
+    parser.add_argument('--bq_program_table', default='program', help='BQ table from which to get program per collection')
     parser.add_argument('--bq_collection_table', default='collection', help='BQ table from which to get collections in version')
     parser.add_argument('--bq_excluded_collections', default='excluded_collections', help='BQ table from which to get collections to exclude')
     parser.add_argument('--excluded', default=False, help="Generated excluded_original_collections_metadata if True")

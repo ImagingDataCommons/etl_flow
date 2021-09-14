@@ -25,6 +25,20 @@ from bq.gen_original_data_collections_table.schema import data_collections_metad
 from utilities.tcia_helpers import get_collection_descriptions_and_licenses, get_collection_license_info
 from utilities.tcia_scrapers import scrape_tcia_data_collections_page
 
+from python_settings import settings
+
+import psycopg2
+from psycopg2.extras import DictCursor, RealDictCursor
+
+def get_collections_programs(client, args):
+    query = f"""
+        SELECT * 
+        FROM `{args.src_project}.{args.bqdataset_name}.{args.bq_program_table}`"""
+    programs = {row['tcia_wiki_collection_id']: row['program'] for row in client.query(query).result()}
+
+    return programs
+    # programs = {collection: program for cur.fetchall()
+
 def get_collections_in_version(client, args):
     if args.excluded:
         # Only excluded collections
@@ -67,7 +81,7 @@ def get_cases_per_collection(client, args):
     return case_counts
 
 
-def build_metadata(client, args, idc_collection_ids):
+def build_metadata(client, args, idc_collection_ids, programs):
     # Get collection descriptions and license IDs from TCIA
     collection_descriptions = get_collection_descriptions_and_licenses()
 
@@ -102,6 +116,7 @@ def build_metadata(client, args, idc_collection_ids):
             collection_data = collection_metadata[tcia_collection_id]
             collection_data['tcia_api_collection_id'] = idc_collection_id
             collection_data['idc_webapp_collection_id'] = collection_data['tcia_api_collection_id'].lower().replace(' ','_').replace('-','_')
+            collection_data['Program'] = programs[collection_data['tcia_wiki_collection_id']]
             # if collection_id.lower() in lowered_collection_description_ids:
             # mapped_collection_id = lowered_collection_ids[collection_id.lower()]
             try:
@@ -129,12 +144,30 @@ def build_metadata(client, args, idc_collection_ids):
         else:
             print(f'{idc_collection_id} not in collection metadata')
 
-    # Make sure we found metadata for all out collections
+    # Make sure we found metadata for all our collections
     for idc_collection in idc_collection_ids:
         if not idc_collection in found_ids:
             print(f'****No metadata for {idc_collection}')
             if idc_collection == 'APOLLO':
-                collection_data = {"tcia_wiki_collection_id": "APOLLO-1-WA", "DOI": "https://wiki.cancerimagingarchive.net/x/N4NyAQ", "CancerType": "Non-small Cell Lung Cancer", "Location": "Lung", "Species": "Human", "Subjects": 7, "ImageTypes": "CT, PT", "SupportingData": "", "Access": "Public", "Status": "Complete", "Updated": "2018-03-08", "tcia_api_collection_id": "APOLLO", "idc_webapp_collection_id": "apollo", "Description": "", "license_url": "http://creativecommons.org/licenses/by/3.0/", "license_long_name": "Creative Commons Attribution 3.0 Unported License", "license_short_name": "CC BY 3.0"}
+                collection_data = {
+                    "tcia_wiki_collection_id": "APOLLO-1-VA",
+                    "DOI": "https://wiki.cancerimagingarchive.net/x/N4NyAQ",
+                    "CancerType": "Non-small Cell Lung Cancer",
+                    "Location": "Lung",
+                    "Species": "Human",
+                    "Subjects": 7,
+                    "ImageTypes": "CT, PT",
+                    "SupportingData": "",
+                    "Access": "Public",
+                    "Status": "Complete",
+                    "Updated": "2018-03-08",
+                    "tcia_api_collection_id": "APOLLO",
+                    "idc_webapp_collection_id": "apollo",
+                    "Program": "APOLLO",
+                    "Description": "",
+                    "license_url": "http://creativecommons.org/licenses/by/3.0/",
+                    "license_long_name": "Creative Commons Attribution 3.0 Unported License",
+                    "license_short_name": "CC BY 3.0"}
                 collection_data["Description"] = collection_descriptions['APOLLO']['description']
                 rows.append(json.dumps(collection_data))
 
@@ -143,9 +176,10 @@ def build_metadata(client, args, idc_collection_ids):
 
 def gen_collections_table(args):
     BQ_client = bigquery.Client(project=args.src_project)
+    programs = get_collections_programs(BQ_client, args)
     collection_ids = get_collections_in_version(BQ_client, args)
 
-    metadata = build_metadata(BQ_client, args, collection_ids)
+    metadata = build_metadata(BQ_client, args, collection_ids, programs)
     job = load_BQ_from_json(BQ_client, args.dst_project, args.bqdataset_name, args.bqtable_name, metadata,
                             data_collections_metadata_schema, write_disposition='WRITE_TRUNCATE')
     while not job.state == 'DONE':
@@ -161,6 +195,7 @@ if __name__ == '__main__':
     parser.add_argument('--dst_project', default='idc-dev-etl')
     parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
+    parser.add_argument('--bq_program_table', default='program', help='BQ table from which to get program per collection')
     parser.add_argument('--bq_collection_table', default='collection', help='BQ table from which to get collections in version')
     parser.add_argument('--bq_excluded_collections', default='excluded_collections', help='BQ table from which to get collections to exclude')
     parser.add_argument('--excluded', default=False, help="Generated excluded_original_collections_metadata if True")
