@@ -392,6 +392,12 @@ def get_collection_license_info():
                 longName = "None",
                 shortName = "None"
             )
+    if not 'NLST' in licenses:
+        licenses['NLST'] = dict(
+            licenseURL=license_info[2]["licenseURL"],
+            longName=license_info[2]["longName"],
+            shortName=license_info[2]["shortName"]
+        )
 
     return licenses
 
@@ -422,17 +428,12 @@ if __name__ == "__main__":
     # result = get_access_token()
     # access_token, refresh_token = get_access_token()
     # access_token, refresh_token = refresh_access_token(refresh_token)
-    result=get_TCIA_instances_per_series('.', '1.3.6.1.4.1.14519.5.2.1.7009.9004.180224303090109944523368212991', 'NLST')
-    # results = get_collection_values_and_counts()
+    # result=get_TCIA_instances_per_series('.', '1.3.6.1.4.1.14519.5.2.1.7009.9004.180224303090109944523368212991', 'NLST')
+    table = get_collection_license_info()
+    results = get_collection_values_and_counts()
     # result = get_TCIA_series_per_study('TCGA-GBM', 'TCGA-02-0006', '1.3.6.1.4.1.14519.5.2.1.1706.4001.149500105036523046215258942545' )
     # result = get_TCIA_patients_per_collection('APOLLO-5-LSCC', server=NBIA_V1_URL)
-    table = get_collection_license_info()
     collections = [key for key in table.keys()]
-    collections.sort()
-    for c in collections: print(c, table[c]['shortName'])
-    table = get_collection_descriptions_and_licenses()
-    licenses = {c:license_types[table[c['licenseId']]] for c in table}
-    result, access_token, refresh_token = get_hash({"Collection":'TCGA-GBM'})
 
     pass
 
