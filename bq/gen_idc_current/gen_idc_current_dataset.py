@@ -28,11 +28,11 @@ from utilities.bq_helpers import load_BQ_from_json, query_BQ, create_BQ_dataset,
 def gen_idc_current_dataset(args):
     target_client = bigquery.Client(project=args.project)
 
-    # try:
-    #     delete_BQ_dataset(target_client, args.current_bqdataset)
-    # except Exception as exc:
-    #     print(exc)
-    #     exit
+    try:
+        delete_BQ_dataset(target_client, args.current_bqdataset)
+    except Exception as exc:
+        print(exc)
+        exit
 
     try:
         dataset = create_BQ_dataset(target_client, args.current_bqdataset)
