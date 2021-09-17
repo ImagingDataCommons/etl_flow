@@ -21,16 +21,19 @@ from subprocess import run, PIPE
 from google.api_core.exceptions import Conflict
 import sys
 import argparse
+import time
+from datetime import timedelta
 
-def create_dest_bucket(src_bucket_name, dst_bucket_name, src_project, dst_project, production, client):
+def create_dest_bucket(args):
     # Try to create the destination bucket
-    new_bucket = client.bucket(dst_bucket_name, user_project=args.dst_project)
+    client = storage.Client(project=args.dst_project)
+    new_bucket = client.bucket(args.dst_bucket_name, user_project=args.dst_project)
     new_bucket.iam_configuration.uniform_bucket_level_access_enabled = True
-    new_bucket.versioning_enabled = True
+    new_bucket.versioning_enabled = False
     try:
-        result = client.create_bucket(new_bucket, requester_pays=production, location='us')
+        result = client.create_bucket(new_bucket, requester_pays=args.requester_pays, location='us')
         # If we get here, this is a new bucket
-        if production:
+        if args.production:
             # Add allAuthenticatedUsers
             policy = new_bucket.get_iam_policy(requested_policy_version=3)
             policy.bindings.append({
@@ -48,6 +51,10 @@ def create_dest_bucket(src_bucket_name, dst_bucket_name, src_project, dst_projec
 
 
 def copy_buckets(args):
+    begin = time.time()
+
+    create_dest_bucket(args)
+
     for bucket in args.src_buckets:
         print("Copying {}".format(bucket), flush=True)
         try:
@@ -60,14 +67,17 @@ def copy_buckets(args):
         except:
             print("Error in copying {}: {},{},{}".format(bucket, sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2]), file=sys.stdout, flush=True)
             raise
+    duration = str(timedelta(seconds=(time.time() - begin)))
+    print(f"Completed in {duration}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--src_buckets', default=['idc_v3_cptac_luad'])
-    parser.add_argument('--dst_bucket_name', default='idc-open')
+    parser.add_argument('--src_buckets', default=['idc_v5_nlst'])
+    parser.add_argument('--dst_bucket_name', default='idc-nlst-open')
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='canceridc-data')
-    parser.add_argument('--production', type=bool, default='True', help="If a production bucket, enable requester pays, allAuthUsers")
+    parser.add_argument('--requester_pays', default=True)
+    parser.add_argument('--production', type=bool, default=False, help="If a production bucket, enable requester pays, allAuthUsers")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     client = storage.Client(project=args.dst_project)
