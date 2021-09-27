@@ -115,7 +115,11 @@ def compare_series_hashes(access_token, refresh_token, cur, args, tcia_api_colle
     series = cur.fetchall()
     # access_token = get_access_token(auth_server=NBIA_AUTH_URL)
 
-    tcia_series = get_TCIA_series_per_study(tcia_api_collection_id, submitter_case_id, study_instance_uid)
+    if tcia_api_collection_id == 'APOLLO':
+        tcia_series = get_TCIA_series_per_study('APOLLO-5-LSCC', submitter_case_id, study_instance_uid)
+    else:
+        tcia_series = get_TCIA_series_per_study(tcia_api_collection_id, submitter_case_id, study_instance_uid)
+
 
     if len(series) == len(tcia_series):
         for row in series:
@@ -181,7 +185,11 @@ def compare_study_hashes(access_token, refresh_token, cur, args, tcia_api_collec
     studies = cur.fetchall()
     # access_token = get_access_token(auth_server=NBIA_AUTH_URL)
 
-    tcia_studies = get_TCIA_studies_per_patient(tcia_api_collection_id, submitter_case_id)
+    if tcia_api_collection_id == 'APOLLO':
+        tcia_studies = get_TCIA_studies_per_patient('APOLLO-5-LSCC', submitter_case_id)
+    else:
+        tcia_studies = get_TCIA_studies_per_patient(tcia_api_collection_id, submitter_case_id)
+
 
     if len(studies) == len(tcia_studies):
         for row in studies:
@@ -243,7 +251,10 @@ def compare_patient_hashes(access_token, refresh_token, cur, args, tcia_api_coll
     patients = cur.fetchall()
 #    access_token = get_access_token(auth_server=NBIA_AUTH_URL)
 
-    tcia_patients = get_TCIA_patients_per_collection(tcia_api_collection_id)
+    if tcia_api_collection_id == 'APOLLO':
+        tcia_patients = get_TCIA_patients_per_collection('APOLLO-5-LSCC')
+    else:
+        tcia_patients = get_TCIA_patients_per_collection(tcia_api_collection_id)
 
     if len(patients) == len(tcia_patients):
         for row in patients:
@@ -264,7 +275,13 @@ def compare_patient_hashes(access_token, refresh_token, cur, args, tcia_api_coll
                 #     print('\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
                 #     rootlogger.info('\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
                 #     break
-                result, access_token, refresh_token = get_hash({'Collection': tcia_api_collection_id, 'PatientID': row[0]}, access_token=access_token, refresh_token=refresh_token)
+                if tcia_api_collection_id == 'APOLLO':
+                    result, access_token, refresh_token = get_hash({'Collection': 'APOLLO-1-LSCC', 'PatientID': row[0]}, access_token=access_token, refresh_token=refresh_token)
+                else:
+                    result, access_token, refresh_token = get_hash(
+                        {'Collection': tcia_api_collection_id, 'PatientID': row[0]}, access_token=access_token,
+                        refresh_token=refresh_token)
+
                 if result.status_code == 504:
                     print('\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code,
                                                                           result.reason))
@@ -327,7 +344,13 @@ def compare_collection_hashes(cur, args):
                 #         rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', collection_id, row[1], result.status_code, result.reason)
                 #         break
                 # Keep requesting the hash while we get server busy errors
-                result, access_token, refresh_token = get_hash({'Collection': collection_id}, access_token=access_token, refresh_token=refresh_token)
+                if collection_id == 'APOLLO':
+                    result, access_token, refresh_token = get_hash({'Collection': 'APOLLO-5-LSCC'}, access_token=access_token, refresh_token=refresh_token)
+                else:
+                    result, access_token, refresh_token = get_hash({'Collection': collection_id},
+                                                                   access_token=access_token,
+                                                                   refresh_token=refresh_token)
+
                 if result.status_code == 504:
                     print('{:32} IDC: {}, error: {}, reason: {}'.format(collection_id, row[1], result.status_code, result.reason))
                     rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', collection_id, row[1], result.status_code, result.reason)
@@ -388,7 +411,7 @@ if __name__ == '__main__':
     parser.add_argument('--stop', default=False, help='Stop expansion if no hash returned by NBIA')
     parser.add_argument('--expand_all', default=False)
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"))
-    parser.add_argument('--collections', default=['LDCT-and-Projection-data'])
+    parser.add_argument('--collections', default=['APOLLO'])
     parser.add_argument('--skips', default='./logs/compare_hashes_skips')
     args = parser.parse_args()
 
