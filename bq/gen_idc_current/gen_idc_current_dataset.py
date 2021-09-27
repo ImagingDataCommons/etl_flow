@@ -25,20 +25,28 @@ from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json, query_BQ, create_BQ_dataset, delete_BQ_dataset
 
 
+def delete_all_views_in_current_dataset(target_client, args):
+    views = [views for views in target_client.list_tables (f'{args.project}.{args.current_bqdataset}')]
+    for view in views:
+        # pass
+        target_client.delete_table(view)
+
+
 def gen_idc_current_dataset(args):
     target_client = bigquery.Client(project=args.project)
 
-    try:
-        delete_BQ_dataset(target_client, args.current_bqdataset)
-    except Exception as exc:
-        print(exc)
-        exit
-
+    # try:
+    #     delete_BQ_dataset(target_client, args.current_bqdataset)
+    # except Exception as exc:
+    #     print(exc)
+    #     exit
+    #
     try:
         dataset = create_BQ_dataset(target_client, args.current_bqdataset)
     except Exception as exc:
-        print(exc)
-        exit
+        print("Target dataset already exists")
+
+    delete_all_views_in_current_dataset(target_client, args)
 
     tables = [table for table in target_client.list_tables (f'{args.project}.{args.bqdataset}')]
 
@@ -54,7 +62,7 @@ def gen_idc_current_dataset(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=2, help='Current IDC version')
+    parser.add_argument('--version', default=0, help='Current IDC version')
     args = parser.parse_args()
     parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--bqdataset', default=f'idc_v{args.version}', help='BQ dataset name')
