@@ -139,7 +139,19 @@ def build_metadata(client, args, idc_collection_ids, programs):
             except Exception as exc:
                 print(f'Exception building metadata {exc}')
 
+            if idc_collection_id == 'NLST':
+                collection_data["Description"] = \
+"""<p>
+   The National Lung Screening Trial (NLST) was a randomized controlled clinical trial of screening tests for lung cancer. Approximately 54,000 participants were enrolled between August 2002 and April 2004. Participants were randomly assigned to two study arms in equal proportions. One arm received low-dose helical computed tomography (CT), while the other received single-view chest radiography. Participants were offered three exams (T0, T1, and T2) at one-year intervals, with the first (T0) performed soon after entry. The goal of the study was to assess whether low-dose CT screening reduces lung cancer mortality relative to chest radiography among high-risk individuals. Data were collected on cancer diagnoses and deaths that occurred through December 31, 2009. Median follow-up time was 6.5 years. The <a href="http://ClinicalTrials.gov" class="external-link" rel="nofollow">ClinicalTrials.gov</a> number for NLST is NCT00047385.
+</p>
+<p>
+   NLST was a collaborative effort of the National Cancer Institute's Division of Cancer Prevention (DCP) and Division of Cancer Treatment and Diagnosis (DCTD). DCP funded and administered the Lung Screening Study network (LSS, 10 centers, ~35,000 participants) while DCTD funded and administered the American College of Radiology Imaging Network (ACRIN, 23 centers, ~19,000 participants). The study protocols and data collection forms used by LSS and ACRIN were harmonized. A trial-wide database of harmonized data elements was built during the trial for reporting to the Data and Safety Monitoring Board (DSMB). Some additional data elements were collected only by ACRIN or by LSS, as described in the final section of this document.</p>
+<p>
+    Please see the <a href="https://wiki.cancerimagingarchive.net/display/NLST/National+Lung+Screening+Trial" target="_blank">NLST</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.
+</p>"""
+
             rows.append(json.dumps(collection_data))
+
 
         else:
             print(f'{idc_collection_id} not in collection metadata')
@@ -151,7 +163,7 @@ def build_metadata(client, args, idc_collection_ids, programs):
             if idc_collection == 'APOLLO':
                 collection_data = {
                     "tcia_wiki_collection_id": "APOLLO-1-VA",
-                    "DOI": "https://wiki.cancerimagingarchive.net/x/N4NyAQ",
+                    "DOI": "",
                     "CancerType": "Non-small Cell Lung Cancer",
                     "Location": "Lung",
                     "Species": "Human",
@@ -164,11 +176,14 @@ def build_metadata(client, args, idc_collection_ids, programs):
                     "tcia_api_collection_id": "APOLLO",
                     "idc_webapp_collection_id": "apollo",
                     "Program": "APOLLO",
-                    "Description": "",
-                    "license_url": "http://creativecommons.org/licenses/by/3.0/",
-                    "license_long_name": "Creative Commons Attribution 3.0 Unported License",
-                    "license_short_name": "CC BY 3.0"}
-                collection_data["Description"] = collection_descriptions['APOLLO']['description']
+                    "Description": \
+"""<p>	This data collection consists of images and associated data acquired from the <a class=""external-link"" href=""https://proteomics.cancer.gov/programs/apollo-network""> APOLLO Network</a> and may be subject to usage restrictions.</p>
+<p>	The <strong><em>A</em></strong>pplied <strong><em>P</em></strong>roteogenomics <strong><em>O</em></strong>rganizationa<strong><em>L</em></strong> <strong><em>L</em></strong>earning and <strong><em>O</em></strong>utcomes (APOLLO) network is a collaboration between NCI, the Department of Defense (DoD), and the Department of Veterans Affairs (VA) to incorporate proteogenomics into patient care as a way of looking beyond the genome, to the activity and expression of the proteins that the genome encodes. The emerging field of proteogenomics aims to better predict how patients will respond to therapy by screening their tumors for both genetic abnormalities and protein information, an approach that has been made possible in recent years due to advances in proteomic technology.</p>
+<p>	Please see the <a href=""https://wiki.cancerimagingarchive.net/display/Public/APOLLO-1-VA"">APOLLO</a> wiki page to learn more.</p>""",
+                    "license_url": "https://proteomics.cancer.gov/data-portal",
+                    "license_long_name": "APOLLO Network Data Use Agreement",
+                    "license_short_name": "APOLLO"}
+                # collection_data["Description"] = collection_descriptions['APOLLO']['description']
                 rows.append(json.dumps(collection_data))
 
     metadata = '\n'.join(rows)

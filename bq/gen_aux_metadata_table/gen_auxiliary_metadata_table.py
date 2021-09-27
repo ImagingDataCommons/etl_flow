@@ -40,7 +40,7 @@ if __name__ == '__main__':
     parser.add_argument('--gcs_bucket', default='idc_dev', help="Bucket where blobs are")
     args = parser.parse_args()
 
-    from bq.gen_aux_metadata_table.auxiliary_metadata_sql_v4 import auxiliary_metadata_sql
+    from bq.gen_aux_metadata_table.auxiliary_metadata_sql_v4_dev import auxiliary_metadata_sql
     args.sql = auxiliary_metadata_sql
 
     print("{}".format(args), file=sys.stdout)

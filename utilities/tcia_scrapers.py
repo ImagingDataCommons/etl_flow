@@ -161,6 +161,7 @@ def scrape_tcia_data_collections_page():
                 if trow['tcia_wiki_collection_id'] == 'National Lung Screening Trial (NLST)':
                     collection = 'NLST'
                     trow['DOI'] = '10.7937/TCIA.hmq8-j677'
+                    trow['Access'] = 'Public'
                 else:
                     collection = trow['tcia_wiki_collection_id']
             # trow.pop('Collection')

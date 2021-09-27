@@ -51,7 +51,7 @@ def copy_instances(args, rows, n, rowcount, done_instances, src_bucket, dst_buck
             while True:
                 try:
                     blob_copy = src_bucket.copy_blob(src_bucket.blob(blob_name), dst_bucket)
-                    rootlogger.info('%s %s: %s: copy succeeded %s', args.id, index, args.collection, blob_name)
+                    # rootlogger.info('%s %s: %s: copy succeeded %s', args.id, index, args.collection, blob_name)
                     successlogger.info(f'{blob_name}')
                     break
                 except Exception as exc:
@@ -90,7 +90,8 @@ def copy_all_instances(args, cur, query):
     n = 1
 
     try:
-        done_instances = set(open(f'./logs/cc_{args.collection}_success.log').read().splitlines())
+        # Create a set of previously copied blobs
+        done_instances = set(open(f'{args.log_dir}/cc_{args.collection}_success.log').read().splitlines())
     except:
         done_instances = []
 
@@ -113,7 +114,7 @@ def copy_all_instances(args, cur, query):
                     while True:
                         try:
                             blob_copy = src_bucket.copy_blob(src_bucket.blob(blob_name), dst_bucket)
-                            rootlogger.info('%s %s: %s: copy succeeded %s', args.id, index, args.collection, blob_name)
+                            # rootlogger.info('%s %s: %s: copy succeeded %s', args.id, index, args.collection, blob_name)
                             successlogger.info(f'{blob_name}\n')
                             break
                         except Exception as exc:
@@ -179,19 +180,20 @@ def precopy(args):
         if not collection in dones:
             args.collection = collection
             with conn:
-                if os.path.exists('{}/logs/cc_{}_error.log'.format(os.environ['PWD'], collection)):
-                    os.remove('{}/logs/cc_{}_error.log'.format(os.environ['PWD'], collection))
+                if os.path.exists('{}/logs/cc_{}_error.log'.format(args.log_dir, collection)):
+                    os.remove('{}/logs/cc_{}_error.log'.format(args.log_dir, collection))
 
+                # Change logging file. File name includes collection ID.
                 for hdlr in successlogger.handlers[:]:
                     successlogger.removeHandler(hdlr)
-                success_fh = logging.FileHandler('{}/logs/cc_{}_success.log'.format(os.environ['PWD'], collection))
+                success_fh = logging.FileHandler('{}/cc_{}_success.log'.format(args.log_dir, collection))
                 successlogger.addHandler(success_fh)
                 successformatter = logging.Formatter('%(message)s')
                 success_fh.setFormatter(successformatter)
 
                 for hdlr in errlogger.handlers[:]:
                     errlogger.removeHandler(hdlr)
-                err_fh = logging.FileHandler('{}/logs/cc_{}_error.log'.format(os.environ['PWD'], collection))
+                err_fh = logging.FileHandler('{}/cc_{}_error.log'.format(args.log_dir, collection))
                 errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
                 errlogger.addHandler(err_fh)
                 err_fh.setFormatter(errformatter)
@@ -214,7 +216,7 @@ def precopy(args):
                     args.id = 0
                     copy_all_instances(args, cur, query)
 
-            if not os.path.isfile('{}/logs/cc_{}_error.log'.format(os.environ['PWD'], collection)) or os.stat('{}/logs/cc_{}_error.log'.format(os.environ['PWD'], collection)).st_size==0:
+            if not os.path.isfile('{}/logs/cc_{}_error.log'.format(args.log_dir, collection)) or os.stat('{}/logs/cc_{}_error.log'.format(os.environ['PWD'], collection)).st_size==0:
                 # If no errors, then we are done with this collection
                 with open(args.dones, 'a') as f:
                      f.write(f'{collection}\n')
@@ -223,14 +225,15 @@ def precopy(args):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=3, help='Next version to generate')
+    parser.add_argument('--version', default=4, help='Next version to generate')
     args = parser.parse_args()
     parser.add_argument('--db', default=f'idc_v{args.version}')
-    parser.add_argument('--src_bucket', default='idc_dev')
-    parser.add_argument('--dst_bucket', default='idc_gch_staging')
-    parser.add_argument('--processes', default=32, help="Number of concurrent processes")
+    parser.add_argument('--src_bucket', default='idc_v5_nlst')
+    parser.add_argument('--dst_bucket', default='idc-open')
+    parser.add_argument('--processes', default=96, help="Number of concurrent processes")
     parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--dst_project', default='idc-dev-etl')
+    parser.add_argument('--dst_project', default='canceridc-data')
+    parser.add_argument('--log_dir', default='/mnt/disks/idc-etl/logs/PDP')
     parser.add_argument('--collection_list', default='./collection_list.txt')
     parser.add_argument('--dones', default='./logs/dones.txt')
 

@@ -39,7 +39,7 @@ WITH
   series_hash_all AS (
   SELECT
     se.* except (source_doi),
-    IF(STARTS_WITH(source_doi,'doi:'), SUBSTR(source_doi,5),IF(STARTS_WITH(source_doi,' '), SUBSTR(source_doi,2), source_doi)) as source_doi,
+    IF(STARTS_WITH(source_doi,'doi:'), SUBSTR(source_doi,5),IF(STARTS_WITH(source_doi,' '), SUBSTR(source_doi,2), IF(source_doi='https://wiki.cancerimagingarchive.net/x/N4NyAQ', '', source_doi))) AS source_doi,
     seh.hash_all
   FROM
     `idc-dev-etl.idc_v4.series` AS se
@@ -179,7 +179,7 @@ SELECT
   st.rev_idc_version AS study_revised_idc_version,
   se.series_instance_uid AS SeriesInstanceUID,
   se.uuid AS series_uuid,
-  se.source_doi AS source_doi,
+  IF(c.collection_id='APOLLO', '', se.source_doi) AS source_doi,
   se.series_instances AS series_instances,
   se.hash_all AS series_hash,
   se.init_idc_version AS series_init_idc_version,
