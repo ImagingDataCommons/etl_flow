@@ -19,7 +19,7 @@ import argparse
 from google.cloud import bigquery
 from utilities.bq_helpers import query_BQ, export_BQ_to_GCS, delete_BQ_Table
 
-def gen_v2_bundle_manifest(args):
+def gen_bundle_manifest(args):
     BQ_client = bigquery.Client(project=args.project)
     query= f"""
         SELECT
@@ -35,7 +35,8 @@ def gen_v2_bundle_manifest(args):
               ']') AS ids,
             concat('dg.4DCF/',study_uuid) as guid
           FROM
-            `idc-dev-etl.idc_v2.auxiliary_metadata` AS aux
+            `idc-dev-etl.idc_v{args.version}.auxiliary_metadata` AS aux
+          WHERE study_revised_idc_version = {args.version}
           GROUP BY
             aux.StudyInstanceUID,
             aux.tcia_api_collection_id,
@@ -49,7 +50,8 @@ def gen_v2_bundle_manifest(args):
               ']') AS ids,
             concat('dg.4DCF/',series_uuid) as guid
           FROM
-            `idc-dev-etl.idc_v2.auxiliary_metadata` AS aux
+            `idc-dev-etl.idc_v{args.version}.auxiliary_metadata` AS aux
+          WHERE series_revised_idc_version = {args.version}
           GROUP BY
             aux.SeriesInstanceUID,
             aux.tcia_api_collection_id,
@@ -70,18 +72,4 @@ def gen_v2_bundle_manifest(args):
 
     delete_BQ_Table(BQ_client, args.project, args.bqdataset, args.temp_table)
 
-
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--bqdataset', default='idc_v2')
-    parser.add_argument('--table', default='instance')
-    parser.add_argument('--manifest_uri', default='gs://indexd_manifests/dcf_input/idc_v2_bundle_manifest.tsv',
-                        help="GCS file in which to save results")
-    parser.add_argument('--temp_table', default='idc_v2_bundle_tmp_manifest', \
-                        help='Table in which to write query results')
-    args = parser.parse_args()
-
-    gen_v2_bundle_manifest(args)
 

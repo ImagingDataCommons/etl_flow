@@ -17,11 +17,10 @@
 
 # Generate a manifest of instances that are new in V2. We do not
 # include instances from collections that are excluded.
-import argparse
 from google.cloud import bigquery
 from utilities.bq_helpers import query_BQ, export_BQ_to_GCS, delete_BQ_Table
 
-def gen_v2_instance_manifest(args):
+def gen_instance_manifest(args):
     BQ_client = bigquery.Client(project=args.project)
     query= f"""
         SELECT concat('dg.4DFC/',instance_uuid) as GUID, 
@@ -30,7 +29,7 @@ def gen_v2_instance_manifest(args):
             '*' as acl, 
             concat('gs://idc-open/', instance_uuid, '.dcm') as url
         FROM {args.project}.{args.bqdataset}.auxiliary_metadata
-        WHERE instance_timestamp > DATETIME(2020, 06, 02, 0, 0, 0)"""
+        WHERE instance_revised_idc_version = {args.version}"""
 
     # Run a query that generates the manifest data
     results = query_BQ(BQ_client, args.bqdataset, args.temp_table, query, write_disposition='WRITE_TRUNCATE')
@@ -41,21 +40,5 @@ def gen_v2_instance_manifest(args):
         pass
 
     delete_BQ_Table(BQ_client, args.project, args.bqdataset, args.temp_table)
-
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--bqdataset', default='idc_v2')
-    parser.add_argument('--table', default='instance')
-    parser.add_argument('--manifest_uri', default='gs://indexd_manifests/dcf_input/idc_v2_instancemanifest-*.tsv',
-                        help="GCS file in which to save results")
-    parser.add_argument('--temp_table', default='gen_v2_instance_tmp_manifest', \
-                        help='Table in which to write query results')
-
-    args = parser.parse_args()
-
-
-    gen_v2_instance_manifest(args)
 
 
