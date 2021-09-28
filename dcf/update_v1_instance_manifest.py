@@ -46,7 +46,7 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--bqdataset', default='idc_v1')
     parser.add_argument('--table', default='instance')
-    parser.add_argument('--manifest_uri', default='gs://indexd_manifests/dcf_input/dcf_input_idc_v1_instance_update_manifest.tsv',
+    parser.add_argument('--manifest_uri', default='gs://indexd_manifests/dcf_input/idc_v1_instance_manifest_update.tsv',
                         help="GCS file in which to save results")
     parser.add_argument('--temp_table', default='update_v1_instance_tmp_manifest', \
                         help='Table in which to write query results')
