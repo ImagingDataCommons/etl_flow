@@ -40,7 +40,7 @@ if __name__ == '__main__':
     #             'original_collections_metadata', \
     #             'tcga_biospecimen_rel9', 'tcga_clinical_rel9', 'version_metadata'], help='BQ tables to be copied')
     parser.add_argument('--bqtables', \
-        default=['nlst_canc', 'nlst_ctab', 'nlst_ctabc', 'nlst_prsn', 'nlst_screen'], help='BQ tables to be copied')
+        default=['analysis_results_metadata'], help='BQ tables to be copied')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
