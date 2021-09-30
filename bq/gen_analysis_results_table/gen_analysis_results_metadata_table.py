@@ -26,35 +26,47 @@ from utilities.tcia_scrapers import scrape_tcia_analysis_collections_page
 
 # Build the analysis_results_metadata BQ table
 
-# Return a list of the source_dois in IDC collections
-# This includes original collection and analysis results DOIs
+# Get all source DOIS and collections they are in
 def get_all_idc_dois(client, args):
     query = f"""
-         SELECT distinct se.source_doi as source_doi
-         FROM `{args.src_project}.{args.bqdataset_name}.{args.bq_collection_table}` as c
-         JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_patient_table}` as p
-         ON c.collection_id = p.collection_id
-         JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_study_table}` as st
-         ON p.submitter_case_id = st.submitter_case_id
-         JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_series_table}` as se
-         ON st.study_instance_uid = se.study_instance_uid
-         LEFT JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_excluded_collections}` as ex
-         ON LOWER(c.collection_id) = LOWER(ex.tcia_api_collection_id)
-         WHERE ex.tcia_api_collection_id IS NULL
-         """
+        SELECT DISTINCT c.collection_id AS collection_id, se.source_doi AS source_doi 
+        FROM `{args.src_project}.{args.bqdataset_name}.{args.bq_collection_table}` AS c
+        JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_patient_table}` AS p
+        ON c.collection_id = p.collection_id
+        JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_study_table}` AS st
+        ON p.submitter_case_id = st.submitter_case_id
+        JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_series_table}` AS se
+        ON st.study_instance_uid = se.study_instance_uid
+        LEFT JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_excluded_collections}` AS ex
+        ON LOWER (c.collection_id) = LOWER(ex.tcia_api_collection_id)
+        WHERE ex.tcia_api_collection_id IS NULL
+        """
+
     result = client.query(query).result()
-    all_source_dois = [series['source_doi'] for series in result]
+    source_dois = {}
+    for row in result:
+        collection_id = row['collection_id'].lower().replace(' ','_').replace('-','_')
+        if row['source_doi'] not in source_dois:
+            source_dois[row['source_doi']] = [collection_id]
+        else:
+            source_dois[row['source_doi']].append(collection_id)
 
-    return all_source_dois
+    for doi in source_dois:
+        source_dois[doi] = ','.join(source_dois[doi])
 
-def build_metadata(args, source_dois):
+    return source_dois
+
+
+def build_metadata(args, BQ_client):
+    # Get all source DOIS and collections they are in
+    source_dois = get_all_idc_dois(BQ_client, args)
+
     # Scrape the TCIA analysis results page for metadata
     analysis_metadata = scrape_tcia_analysis_collections_page()
 
+
     rows = []
     for analysis_id, analysis_data in analysis_metadata.items():
-        # print(collection_id)
-        # if collection_data["DOI"].split('doi.org/')[1] in DOIs:
         # If the DOI of this analysis result is in source_dois, then it is in the series table
         # and therefore we have a series from this analysis result, and therefor we should include
         # this analysis result in the analysis_results metadata table
@@ -66,15 +78,14 @@ def build_metadata(args, source_dois):
                 title = title[:-1]
             analysis_data['Title'] = title
             analysis_data['ID'] = title_id[1].split(')')[0]
+            analysis_data['Collections'] = source_dois[analysis_data['DOI']]
             rows.append(json.dumps(analysis_data))
     metadata = '\n'.join(rows)
     return metadata
 
 def gen_collections_table(args):
     BQ_client = bigquery.Client(project=args.src_project)
-    source_dois = get_all_idc_dois(BQ_client, args)
-
-    metadata = build_metadata(args, source_dois)
+    metadata = build_metadata(args, BQ_client)
     job = load_BQ_from_json(BQ_client, args.dst_project, args.bqdataset_name, args.bqtable_name, metadata, analysis_results_metadata_schema,
                             write_disposition='WRITE_TRUNCATE')
     while not job.state == 'DONE':
@@ -85,7 +96,7 @@ def gen_collections_table(args):
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
 
-    parser.add_argument('--version', default=3, help='IDC version for which to build the table')
+    parser.add_argument('--version', default=4, help='IDC version for which to build the table')
     args = parser.parse_args()
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-dev-etl')

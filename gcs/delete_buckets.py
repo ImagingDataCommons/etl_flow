@@ -25,7 +25,7 @@ from utilities.gcs_helpers import list_buckets
 
 def delete_bucket(args, bucket):
     try:
-        result = run(['gsutil', '-m', '-q', 'rm', '-r', f'gs://{bucket}'])
+        result = run(['gsutil', '-m', 'rm', '-r', f'gs://{bucket}'])
         print("   {} copied, results: {}".format(bucket, result), flush=True)
         if result.returncode:
             print('Copy {} failed: {}'.format(result.stderr), flush=True)
@@ -51,8 +51,8 @@ def delete_buckets(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--bucket_prefix', default='idc_v2')
+    parser.add_argument('--project', default='canceridc-data')
+    parser.add_argument('--bucket_prefix', default='idc-nlst-open')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
 
