@@ -24,6 +24,10 @@ import argparse
 import os
 from subprocess import run, PIPE
 import logging
+rootlogger = logging.getLogger('root')
+successlogger = logging.getLogger('success')
+errlogger = logging.getLogger('root.err')
+
 from logging import INFO
 import time
 from datetime import timedelta
@@ -95,7 +99,7 @@ def copy_all_instances(args, cur, query):
     except:
         done_instances = []
 
-    increment = 100
+    increment = 1000
     cur.execute(query)
     rowcount=cur.rowcount
     print(f'Copying collection {args.collection}; {rowcount} instances')
@@ -222,33 +226,3 @@ def precopy(args):
                      f.write(f'{collection}\n')
 
 
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=4, help='Next version to generate')
-    args = parser.parse_args()
-    parser.add_argument('--db', default=f'idc_v{args.version}')
-    parser.add_argument('--src_bucket', default='idc_v5_nlst')
-    parser.add_argument('--dst_bucket', default='idc_dev')
-    parser.add_argument('--processes', default=96, help="Number of concurrent processes")
-    parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--log_dir', default='/mnt/disks/idc-etl/logs/PDP')
-    parser.add_argument('--collection_list', default='./collection_list.txt')
-    parser.add_argument('--dones', default='./logs/dones.txt')
-
-    args = parser.parse_args()
-
-    rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/copy_collections_log.log'.format(os.environ['PWD']))
-    rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
-    rootlogger.addHandler(root_fh)
-    root_fh.setFormatter(rootformatter)
-    rootlogger.setLevel(INFO)
-
-    successlogger = logging.getLogger('success')
-    successlogger.setLevel(INFO)
-
-    errlogger = logging.getLogger('root.err')
-
-    precopy(args)

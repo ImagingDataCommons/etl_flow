@@ -25,7 +25,7 @@ from utilities.gcs_helpers import list_buckets
 
 def empty_bucket(args):
     try:
-        result = run(['gsutil', '-m', '-u', f'{args.project}', 'rm', f'gs://{args.bucket}/*'])
+        result = run(['gsutil', '-m', '-u', f'{args.project}', 'rm', '-r', f'gs://{args.bucket}'])
         print("   {} emptied, results: {}".format(args.bucket, result), flush=True)
         if result.returncode:
             print('Copy {} failed: {}'.format(result.stderr), flush=True)
@@ -38,8 +38,8 @@ def empty_bucket(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--project', default='canceridc-data')
-    parser.add_argument('--bucket', default='idc-nlst-open')
+    parser.add_argument('--project', default='idc-nlst')
+    parser.add_argument('--bucket', default='idc_v5_nlst')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
 
