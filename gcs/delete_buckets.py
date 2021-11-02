@@ -51,8 +51,8 @@ def delete_buckets(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--project', default='canceridc-data')
-    parser.add_argument('--bucket_prefix', default='idc-nlst-open')
+    parser.add_argument('--project', default='idc-dev-etl')
+    parser.add_argument('--bucket_prefix', default='idc_dev_v5_dicomstore_staging')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
 

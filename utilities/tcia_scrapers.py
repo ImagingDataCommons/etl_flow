@@ -157,6 +157,9 @@ def scrape_tcia_data_collections_page():
                     trow['DOI'] = trow['DOI'].replace('http', 'https').strip()
                     pass
             collection = get_collection_id(trow['DOI'])
+            if collection == 'B-mode-and-CEUS-Liver':
+                if trow['tcia_wiki_collection_id'] == 'Ultrasound data of a variety of liver masses (B-mode-and-CEUS-Liver)':
+                    trow['tcia_wiki_collection_id'] = 'B-mode-and-CEUS-Liver'
             if collection == "":
                 if trow['tcia_wiki_collection_id'] == 'National Lung Screening Trial (NLST)':
                     collection = 'NLST'

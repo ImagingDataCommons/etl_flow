@@ -40,6 +40,7 @@ type_name_conversion = {
     "boolean": "BOOLEAN",
     "character varying": "STRING",
     "nextval('instance_id_seq'::regclass)": "INTEGER",
+    "text": "STRING",
     "timestamp without time zone": "DATETIME",
     "USER-DEFINED": "ARRAY"
 }
@@ -129,7 +130,7 @@ def get_schema(cur, args, table):
                             "mode": "NULLABLE"
                         }
                     ]
-                elif col['column_name'] == 'source_versions':
+                elif col['column_name'] == 'source_statuses':
                     s['fields'] = [
                         {
                             "name": 'tcia',
@@ -270,7 +271,6 @@ def upload_program(cur, args):
     load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
 
 
-
 def upload_collection(cur, args):
     table = "collection"
     print(f'Populating table {table}')
@@ -380,7 +380,7 @@ def upload_instance(cur, args):
     result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
 
     count =0
-    increment = 100000
+    increment = 250000
     cur.execute("""
             SELECT row_to_json(json)
             FROM (
@@ -398,19 +398,75 @@ def upload_instance(cur, args):
         count += len(rows)
         print(f'Uploaded {count} series')
 
+def upload_retired(cur, args):
+    table = "retired"
+    print(f'Populating table {table}')
+    schema = get_schema(cur, args, table)
+    client = bigquery.Client(project=args.project)
+
+    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
+        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
+    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
+
+    cur.execute("""
+        SELECT json_agg(json)
+        FROM (
+            SELECT * from retired
+        )  as json
+        """)
+    rows = cur.fetchall()
+    json_rows = [json.dumps(row) for row in rows[0][0]]
+    data = "\n".join(json_rows)
+    load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
+
+
+def upload_table(cur, args, table):
+    print(f'Populating table {table}')
+    schema = get_schema(cur, args, table)
+    client = bigquery.Client(project=args.project)
+
+    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
+        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
+    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
+
+    count =0
+    increment = 250000
+    query = f"""
+            SELECT row_to_json(json)
+            FROM (
+                SELECT * from {table}
+            )  as json
+            """
+    cur.execute(query)
+
+    while True:
+        rows = cur.fetchmany(increment)
+        if len(rows) == 0:
+            break
+        json_rows = [json.dumps(row[0]) for row in rows]
+        data = "\n".join(json_rows)
+        load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
+        count += len(rows)
+        print(f'Uploaded {count} {table}s')
+
+
+
 
 def upload_to_bq(args):
     conn = psycopg2.connect(dbname=args.db, user=args.user, port=args.port,
                             password=args.password, host=args.host)
     with conn:
         with conn.cursor(cursor_factory=DictCursor) as cur:
-            upload_program(cur, args)
+            for table in args.tables:
+                upload_table(cur, args, table)
+            # upload_program(cur, args)
             # upload_version(cur, args)
             # upload_collection(cur, args)
             # upload_patient(cur, args)
             # upload_study(cur, args)
             # upload_series(cur, args)
             # upload_instance(cur, args)
+            # upload_retired(cur, args)
             pass
 
 if __name__ == '__main__':

@@ -75,15 +75,3 @@ def gen_version_metadata_table(args):
     job = load_BQ_from_json(client, args.dst_project, args.bqdataset_name, args.bqtable_name, metadata,
                             version_metadata_schema, write_disposition='WRITE_TRUNCATE')
 
-if __name__ == '__main__':
-    parser =argparse.ArgumentParser()
-    parser.add_argument('--version', default=4, help='Max IDC version for which to build the table')
-    args = parser.parse_args()
-    parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
-    parser.add_argument('--bqtable_name', default='version_metadata', help='BQ table name')
-
-    args = parser.parse_args()
-    print("{}".format(args), file=sys.stdout)
-    gen_version_metadata_table(args)

@@ -92,11 +92,11 @@ def rsync_buckets(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--src_buckets', default=['idc_v5_nlst'])
-    parser.add_argument('--dst_bucket_name', default='idc-nlst-open')
+    parser.add_argument('--src_buckets', default=['idc_v5_nsclc_radiogenomics'])
+    parser.add_argument('--dst_bucket_name', default='idc_dev')
     parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--dst_project', default='canceridc-data')
-    parser.add_argument('--requester_pays', default=True)
+    parser.add_argument('--dst_project', default='idc-dev-etl')
+    parser.add_argument('--requester_pays', default=False)
     parser.add_argument('--production', type=bool, default=False, help="If a production bucket, enable requester pays, allAuthUsers")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

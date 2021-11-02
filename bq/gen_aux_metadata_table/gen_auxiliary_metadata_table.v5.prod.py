@@ -19,36 +19,25 @@
 # the upload_psql_to_bq.py script
 import argparse
 import sys
-from google.cloud import bigquery
-from utilities.bq_helpers import load_BQ_from_json, query_BQ
-
-
-def gen_aux_table(args):
-    client = bigquery.Client(project=args.dst_project)
-    query = args.sql.format(
-        project=args.src_project,
-        dataset=args.bqdataset_name,
-        gcs_bucket=args.gcs_bucket,
-        version=args.version,
-        target=args.target)
-    result=query_BQ(client, args.bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
+import json
+from bq.gen_aux_metadata_table.gen_auxiliary_metadata_table import gen_aux_table
+# from bq.gen_aux_metadata_table.auxiliary_metadata_sql_v5_dev import auxiliary_metadata_sql
 
 if __name__ == '__main__':
-
     parser =argparse.ArgumentParser()
-    parser.add_argument('--version', default=3, help='IDC version for which to build the table')
+    parser.add_argument('--version', default=5, help='IDC version for which to build the table')
     args = parser.parse_args()
+    parser.add_argument('--target', default='pub', help="dev or pub")
     parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}_dev_whc', help='BQ dataset name')
+    parser.add_argument('--dst_project', default='canceridc-data')
+    parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default='auxiliary_metadata', help='BQ table name')
     parser.add_argument('--gcs_bucket', default='idc_dev', help="Bucket where blobs are")
+    parser.add_argument('--sql', default=f'./auxiliary_metadata_v{args.version}_dev.sql')
     args = parser.parse_args()
-
-    from bq.gen_aux_metadata_table.auxiliary_metadata_sql_v4_dev import auxiliary_metadata_sql
-    args.sql = auxiliary_metadata_sql
 
     print("{}".format(args), file=sys.stdout)
 
+    args.sql = open(args.sql).read()
 
     gen_aux_table(args)

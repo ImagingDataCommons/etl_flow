@@ -40,7 +40,7 @@ def get_collections_programs(client, args):
     # programs = {collection: program for cur.fetchall()
 
 def get_collections_in_version(client, args):
-    if args.excluded:
+    if args.gen_excluded:
         # Only excluded collections
         query = f"""
         SELECT c.* 
@@ -80,6 +80,23 @@ def get_cases_per_collection(client, args):
     case_counts = {c.values()[0].lower(): c.values()[1] for c in client.query(query).result()}
     return case_counts
 
+def get_access_status(client, args):
+    query = f"""
+    SELECT o.tcia_api_collection_id, o.access
+    FROM `{args.src_project}.{args.bqdataset_name}.open_collections` o
+    UNION ALL
+    SELECT cr.tcia_api_collection_id, cr .access
+    FROM `{args.src_project}.{args.bqdataset_name}.cr_collections` cr
+    UNION ALL
+    SELECT r.tcia_api_collection_id, r.access
+    FROM `{args.src_project}.{args.bqdataset_name}.redacted_collections` r
+    UNION ALL
+    SELECT ex.tcia_api_collection_id, ex.access
+    FROM `{args.src_project}.{args.bqdataset_name}.excluded_collections` ex
+    """
+
+    access_status = {c.values()[0]: c.values()[1] for c in client.query(query).result()}
+    return access_status
 
 def build_metadata(client, args, idc_collection_ids, programs):
     # Get collection descriptions and license IDs from TCIA
@@ -88,10 +105,14 @@ def build_metadata(client, args, idc_collection_ids, programs):
     # We report our case count rather than counts from the TCIA wiki pages.
     case_counts = get_cases_per_collection(client, args)
 
+    # Get the access status of each collection
+    access_status = get_access_status(client,args)
+
     # Get a list of the licenses used by data collections
     licenses = get_collection_license_info()
 
     # try:
+    #     # a=1/0
     #     collection_metadata = json.load(open('collection_metadata.txt'))
     # except:
     #     # Scrape the TCIA Data Collections page for collection metadata
@@ -111,15 +132,16 @@ def build_metadata(client, args, idc_collection_ids, programs):
     #     if collection_id.lower() in lowered_collection_ids:
     for idc_collection_id in idc_collection_ids:
         if idc_collection_id.lower() in lowered_collection_metadata_ids:
-            tcia_collection_id = lowered_collection_metadata_ids[idc_collection_id.lower()]
-            found_ids.append(idc_collection_id)
-            collection_data = collection_metadata[tcia_collection_id]
-            collection_data['tcia_api_collection_id'] = idc_collection_id
-            collection_data['idc_webapp_collection_id'] = collection_data['tcia_api_collection_id'].lower().replace(' ','_').replace('-','_')
-            collection_data['Program'] = programs[collection_data['tcia_wiki_collection_id']]
-            # if collection_id.lower() in lowered_collection_description_ids:
-            # mapped_collection_id = lowered_collection_ids[collection_id.lower()]
             try:
+                tcia_collection_id = lowered_collection_metadata_ids[idc_collection_id.lower()]
+                found_ids.append(idc_collection_id)
+                collection_data = collection_metadata[tcia_collection_id]
+                collection_data['tcia_api_collection_id'] = idc_collection_id
+                collection_data['idc_webapp_collection_id'] = collection_data['tcia_api_collection_id'].lower().replace(' ','_').replace('-','_')
+                collection_data['Program'] = programs[collection_data['tcia_wiki_collection_id']]
+                collection_data['Access'] = access_status[collection_data['tcia_api_collection_id']]
+                # if collection_id.lower() in lowered_collection_description_ids:
+                # mapped_collection_id = lowered_collection_ids[collection_id.lower()]
                 try:
                     collection_description_id = lowered_collection_description_ids[idc_collection_id.lower()]
                     collection_data['Description'] = collection_descriptions[collection_description_id]['description']
@@ -151,8 +173,6 @@ def build_metadata(client, args, idc_collection_ids, programs):
 </p>"""
 
             rows.append(json.dumps(collection_data))
-
-
         else:
             print(f'{idc_collection_id} not in collection metadata')
 
@@ -202,19 +222,3 @@ def gen_collections_table(args):
         time.sleep(args.period * 60)
     print("{}: Completed collections metatdata upload \n".format(time.asctime()))
 
-if __name__ == '__main__':
-    parser =argparse.ArgumentParser()
-    parser.add_argument('--version', default=3, help='IDC version for which to build the table')
-    args = parser.parse_args()
-    parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
-    parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
-    parser.add_argument('--bq_program_table', default='program', help='BQ table from which to get program per collection')
-    parser.add_argument('--bq_collection_table', default='collection', help='BQ table from which to get collections in version')
-    parser.add_argument('--bq_excluded_collections', default='excluded_collections', help='BQ table from which to get collections to exclude')
-    parser.add_argument('--excluded', default=False, help="Generated excluded_original_collections_metadata if True")
-
-    args = parser.parse_args()
-    print("{}".format(args), file=sys.stdout)
-    gen_collections_table(args)
