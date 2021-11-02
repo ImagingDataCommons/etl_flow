@@ -33,7 +33,19 @@ auxiliary_metadata_schema = """
       LOWER(c.tcia_api_collection_id) = LOWER(ex.tcia_api_collection_id)
     WHERE ex.tcia_api_collection_id IS NULL
     GROUP BY v.id, v.idc_version_number, v.version_hash
-    )
+    ),
+    coll_stat AS (
+    SELECT o.tcia_api_collection_id, o.{target}_url as url, o.access
+    FROM
+    `idc-dev-etl.idc_v{version}.open_collections` as o
+    UNION ALL
+    SELECT cr.tcia_api_collection_id, cr.{target}_url as url, cr.access
+    FROM
+    `idc-dev-etl.idc_v{version}.cr_collections` as cr
+    UNION ALL
+    SELECT r.tcia_api_collection_id, r.{target}_url as url, r.access
+    FROM
+    `idc-dev-etl.idc_v{version}.redacted_collections` as r)
 
     SELECT
       v.idc_version_number AS idc_version_number,
@@ -45,6 +57,7 @@ auxiliary_metadata_schema = """
 --      c.collection_timestamp AS collection_timestamp,
       c.collection_hash AS collection_hash,
 --      c.collection_initial_idc_version AS collection_init_idc_version,
+      coll_stat.access AS access,
       p.submitter_case_id AS submitter_case_id,
       p.idc_case_id AS idc_case_id,
 --      p.patient_timestamp AS patient_timestamp,
@@ -64,8 +77,9 @@ auxiliary_metadata_schema = """
 --      se.series_initial_idc_version AS series_init_idc_version,
       i.sop_instance_uid AS SOPInstanceUID,
       i.instance_uuid AS instance_uuid,
-      CONCAT('gs://','{gcs_bucket}','/', i.instance_uuid,'.dcm') AS gcs_url,
-      '{gcs_bucket}' AS gcs_bucket,
+      CONCAT('gs://', coll_stat.url, '/', i.instance_uuid, '.dcm') as gcs_url,
+      # CONCAT('gs://','{gcs_bucket}','/', i.instance_uuid,'.dcm') AS gcs_url,
+      # '{gcs_bucket}' AS gcs_bucket,
       i.instance_size AS instance_size,
 --      i.instance_timestamp AS instance_timestamp,
       i.instance_hash AS instance_hash,
@@ -81,6 +95,10 @@ auxiliary_metadata_schema = """
       `{project}.{dataset}.patient` AS p
     ON
       c.id = p.collection_id
+    JOIN
+      coll_stat
+    ON
+      lower(c.tcia_api_collection_id) = lower(coll_stat.tcia_api_collection_id)
     JOIN
       `{project}.{dataset}.study` AS st
     ON
