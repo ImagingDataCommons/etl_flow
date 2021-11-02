@@ -25,8 +25,6 @@ from time import sleep
 from googleapiclient.errors import HttpError
 from google.cloud import storage
 from utilities.gch_helpers import get_dicom_store, get_dataset, create_dicom_store, create_dataset
-import logging
-from logging import INFO
 from googleapiclient import discovery
 
 _BASE_URL = "https://healthcare.googleapis.com/v1"
@@ -137,29 +135,4 @@ def import_bucket(args):
             err = json.loads(e.content)
             print('Error loading {}; code: {}, message: {}'.format(bucket, err['error']['code'], err['error']['message']))
 
-if __name__ == '__main__':
-    parser =argparse.ArgumentParser()
-    parser.add_argument('--src_buckets', default=['idc_dev'], help="List of buckets from which to import")
-    parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--dataset_region', default='us-central1', help='Dataset region')
-    parser.add_argument('--gch_dataset_name', default='idc', help='Dataset name')
-    parser.add_argument('--gch_dicomstore_name', default='v3', help='Datastore name')
-    parser.add_argument('--period', default=60, help="seconds to sleep between checking operation status")
-    args = parser.parse_args()
-    print("{}".format(args), file=sys.stdout)
-
-    rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/dicomstore_import_log_2020_3_25.log'.format(os.environ['PWD']))
-    rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
-    rootlogger.addHandler(root_fh)
-    root_fh.setFormatter(rootformatter)
-    rootlogger.setLevel(INFO)
-
-    errlogger = logging.getLogger('root.err')
-    err_fh = logging.FileHandler('{}/logs/dicomstore_import_err_2020_3_25.log'.format(os.environ['PWD']))
-    errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
-    errlogger.addHandler(err_fh)
-    err_fh.setFormatter(errformatter)
-
-    import_bucket(args)
 

@@ -15,9 +15,9 @@
 #
 
 """
-Copy all blobs named in some collection from the dev bucket to some other bucket.
-This is/was used, among other things, for the initial population of the idc_gch_staging
-bucket from which Google Healthcare ingests our data.
+Copy all blobs in commercial restricted collections from the dev bucket to idc-dev-cr.
+This is/was used, among other things, for the initial population of the idc-dev-cr
+bucket.
 """
 
 import argparse
@@ -25,42 +25,33 @@ import os
 from subprocess import run, PIPE
 import logging
 from logging import INFO
-import time
-from datetime import timedelta
-from multiprocessing import Process, Queue
-from queue import Empty
-from google.cloud import storage
 
-
-from python_settings import settings
-import settings as etl_settings
-
-# settings.configure(etl_settings)
-# assert settings.configured
-# import psycopg2
-# from psycopg2.extras import DictCursor
-from gcs.copy_collections.copy_collections_bq import precopy
+from gcs.populate_buckets.populate_bucket import precopy
 
 
 if __name__ == '__main__':
-
+    group = 'cr'
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=4, help='Next version to generate')
+    parser.add_argument('--version', default=5, help='Next version to generate')
     args = parser.parse_args()
     parser.add_argument('--db', default=f'idc_v{args.version}')
-    parser.add_argument('--src_bucket', default='idc_v5_nlst')
-    parser.add_argument('--dst_bucket', default='idc_dev')
-    parser.add_argument('--processes', default=96, help="Number of concurrent processes")
+    parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}')
+    parser.add_argument('--bq_collections_table', default=f'{group}_collections', help='Table listing collections in group')
+    parser.add_argument('--retired', default=True, help="Copy retired instances in collection if True")
+    parser.add_argument('--src_bucket', default='idc_dev')
+    parser.add_argument('--dst_bucket', default=f'idc-dev-{group}')
+    parser.add_argument('--processes', default=128, help="Number of concurrent processes")
+    parser.add_argument('--batch', default=1000, help='Size of batch assigned to each process')
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--log_dir', default='/mnt/disks/idc-etl/logs/copy_collections')
-    parser.add_argument('--collection_list', default='./collection_list.txt')
-    parser.add_argument('--dones', default='./logs/dones.txt')
+    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/populate_{group}_bucket_v5_dicomstore_staging')
+    # parser.add_argument('--collection_list', default='./collection_list.txt')
+    parser.add_argument('--dones', default=f'./logs/populate_{group}_bucket_v{args.version}_dicomstore_staging_dones.txt')
 
     args = parser.parse_args()
 
     rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/copy_collections.log'.format(os.environ['PWD']))
+    root_fh = logging.FileHandler(f'{os.environ["PWD"]}/logs/{group}_buckets.log')
     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
     rootlogger.addHandler(root_fh)
     root_fh.setFormatter(rootformatter)

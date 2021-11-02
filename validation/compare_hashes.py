@@ -120,9 +120,14 @@ def compare_series_hashes(access_token, refresh_token, cur, args, tcia_api_colle
     else:
         tcia_series = get_TCIA_series_per_study(tcia_api_collection_id, submitter_case_id, study_instance_uid)
 
-
-    if len(series) == len(tcia_series):
-        for row in series:
+    tcia_series = sorted(tcia_series, key=lambda id: id['SeriesInstanceUID'])
+    for series in tcia_series:
+        if not series['SeriesInstanceUID'] in [serie[0] for serie in series]:
+            print('\t\t{:32} Series {} not in IDC'.format(study_instance_uid, series['SeriesInstanceUID']))
+        else:
+            row = [s for s in series if s[0] == series['SeriesInstanceUID']][0]
+    # if len(series) == len(tcia_series):
+    #     for row in series:
             # access_token = get_access_token(auth_server=NBIA_AUTH_URL)
             try:
                 # while True:
@@ -191,8 +196,13 @@ def compare_study_hashes(access_token, refresh_token, cur, args, tcia_api_collec
         tcia_studies = get_TCIA_studies_per_patient(tcia_api_collection_id, submitter_case_id)
 
 
-    if len(studies) == len(tcia_studies):
-        for row in studies:
+    # if len(studies) == len(tcia_studies):
+    tcia_studies = sorted(tcia_studies, key=lambda id: id['StudyInstanceUID'])
+    for study in tcia_studies:
+        if not study['StudyInstanceUID'] in [study[0] for study in studies]:
+            print('\t{:32} Study {} not in IDC'.format(submitter_case_id, study['StudyInstanceUID']))
+        else:
+            row = [s for s in studies if s[0] == study['StudyInstanceUID']][0]
             # access_token = get_access_token(auth_server=NBIA_AUTH_URL)
             try:
                 # while True:
@@ -234,9 +244,9 @@ def compare_study_hashes(access_token, refresh_token, cur, args, tcia_api_collec
             except TimeoutError as esc:
                 print('{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
                 rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
-    else:
-        print('\t{:32} Different number of studies: IDC: {}, NBIA: {}'.format(submitter_case_id,
-                len(studies), len(tcia_studies)))
+    # else:
+    #     print('\t{:32} Different number of studies: IDC: {}, NBIA: {}'.format(submitter_case_id,
+    #             len(studies), len(tcia_studies)))
 
 def compare_patient_hashes(access_token, refresh_token, cur, args, tcia_api_collection_id):
     query = f"""
@@ -256,8 +266,13 @@ def compare_patient_hashes(access_token, refresh_token, cur, args, tcia_api_coll
     else:
         tcia_patients = get_TCIA_patients_per_collection(tcia_api_collection_id)
 
-    if len(patients) == len(tcia_patients):
-        for row in patients:
+    # if len(patients) == len(tcia_patients):
+    tcia_patients = sorted(tcia_patients, key=lambda id: id['PatientId'])
+    for patient in tcia_patients:
+        if not patient['PatientId'] in [patient[0] for patient in patients]:
+            print('{:32} Patient {} not in IDC'.format(tcia_api_collection_id, patient['PatientId']))
+        else:
+            row = [p for p in patients if p[0] == patient['PatientId']][0]
             try:
                 # access_token = get_access_token(auth_server=NBIA_AUTH_URL)
                 # while True:
@@ -304,9 +319,9 @@ def compare_patient_hashes(access_token, refresh_token, cur, args, tcia_api_coll
             except TimeoutError as esc:
                 print('{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
                 rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
-    else:
-        print('{:32} Different number of patients: IDC: {}, NBIA: {}'.format(tcia_api_collection_id,
-            len(patients), len(tcia_patients)))
+    # else:
+    #     print('{:32} Different number of patients: IDC: {}, NBIA: {}'.format(tcia_api_collection_id,
+    #         len(patients), len(tcia_patients)))
 
 def compare_collection_hashes(cur, args):
     query = f"""
@@ -411,7 +426,7 @@ if __name__ == '__main__':
     parser.add_argument('--stop', default=False, help='Stop expansion if no hash returned by NBIA')
     parser.add_argument('--expand_all', default=False)
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"))
-    parser.add_argument('--collections', default=['APOLLO'])
+    parser.add_argument('--collections', default=['QIN-HEADNECK'])
     parser.add_argument('--skips', default='./logs/compare_hashes_skips')
     args = parser.parse_args()
 

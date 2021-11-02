@@ -38,17 +38,6 @@ Base = declarative_base()
 # in the idc_v2_final branch.
 class Version(Base):
     __tablename__ = 'version'
-    # versions = Column(
-    #     CompositeType(
-    #         'versions',
-    #         [
-    #             sa.Column('tcia', Integer),
-    #             sa.Column('path', Integer)
-    #         ]
-    #     ),
-    #     nullable=True,
-    #     comment="True if this objects includes instances from the corresponding source"
-    # )
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=True, comment="Set to True if this object has been processed")
@@ -66,40 +55,45 @@ class Version(Base):
         ),
         comment="Source specific hierarchical hash"
     )
-    id = Column(Integer, primary_key=True)
-    # source_versions = Column(
-    #     CompositeType(
-    #         'source_versions',
-    #         [
-    #             CompositeType(
-    #                 'tcia',
-    #                 [
-    #                     Column('min_timestamp',DateTime, nullable=True, comment="Time when building this object started"),
-    #                     Column('max_timestamp', DateTime, nullable=True, comment="Time when building this object completed"),
-    #                     Column('revised', Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version"),
-    #                     Column('done', Boolean, default=True, comment="Set to True if this object has been processed"),
-    #                     Column('is_new', Boolean, default=True, comment="True if this object is new in this version"),
-    #                     Column('expanded', Boolean, default=False, comment="True if the next lower level has been populated"),
-    #                     Column('version', Integer, comment="Target version of source-specific revision")
-    #                 ]
-    #             ),
-    #             CompositeType(
-    #                 'path',
-    #                 [
-    #                     Column('min_timestamp',DateTime, nullable=True, comment="Time when building this object started"),
-    #                     Column('max_timestamp', DateTime, nullable=True, comment="Time when building this object completed"),
-    #                     Column('revised', Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version"),
-    #                     Column('done', Boolean, default=True, comment="Set to True if this object has been processed"),
-    #                     Column('is_new', Boolean, default=True, comment="True if this object is new in this version"),
-    #                     Column('expanded', Boolean, default=False, comment="True if the next lower level has been populated"),
-    #                     Column('version', Integer, comment="Target version of source-specific revision")
-    #                 ]
-    #             )
-    #         ]
-    #     ),
-    #     comment="Revision status of each source"
-    # )
-    version = Column(Integer, nullable=False, comment="Target version of revision")
+    version = Column(Integer, primary_key=True, comment="Target version of revision")
+
+    source_statuses = Column(
+        CompositeType(
+            'statuses',
+            [
+                Column('tcia',
+                    CompositeType(
+                        'status',
+                        [
+                            Column('min_timestamp',DateTime, nullable=True, comment="Time when building this object started"),
+                            Column('max_timestamp', DateTime, nullable=True, comment="Time when building this object completed"),
+                            Column('revised', Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version"),
+                            Column('done', Boolean, default=True, comment="Set to True if this object has been processed"),
+                            Column('is_new', Boolean, default=True, comment="True if this object is new in this version"),
+                            Column('expanded', Boolean, default=False, comment="True if the next lower level has been populated"),
+                            Column('version', Integer, comment="Target version of source-specific revision")
+                        ]
+                    ),
+                    comment="Revision status of tcia source"
+                ),
+                Column('path',
+                    CompositeType(
+                        'status',
+                        [
+                            Column('min_timestamp',DateTime, nullable=True, comment="Time when building this object started"),
+                            Column('max_timestamp', DateTime, nullable=True, comment="Time when building this object completed"),
+                            Column('revised', Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version"),
+                            Column('done', Boolean, default=True, comment="Set to True if this object has been processed"),
+                            Column('is_new', Boolean, default=True, comment="True if this object is new in this version"),
+                            Column('expanded', Boolean, default=False, comment="True if the next lower level has been populated"),
+                            Column('version', Integer, comment="Target version of source-specific revision")
+                        ]
+                    ),
+                    comment="Revision status of path source"
+                )
+            ]
+        )
+    )
 
 class Collection(Base):
     __tablename__ = 'collection'
@@ -287,19 +281,20 @@ class Retired(Base):
     __tablename__ = 'retired'
     timestamp = Column(DateTime, nullable=True, comment="Time when this object was last updated by TCIA/NBIA")
     sop_instance_uid = Column(String, primary_key=True, nullable=False)
-    instance_uuid = Column(String, nullable=False)
-    hash = Column(String, nullable=False, comment="Hex format MD5 hash of this instance")
     source = Column(Enum(instance_source), nullable=False, comment='Source of this instance; "tcia", "path"')
+    hash = Column(String, nullable=False, comment="Hex format MD5 hash of this instance")
     size = Column(Integer, nullable=False, comment='Instance blob size (bytes)')
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
-    series_instance_uid = Column(String, comment="Containing object")
     study_instance_uid = Column(String, comment="Containing object")
+    series_instance_uid = Column(String, comment="Containing object")
     submitter_case_id = Column(String, comment="Containing object")
     collection_id = Column(String, comment="Containing object")
+    instance_uuid = Column(String, nullable=False)
     series_uuid = Column(String, comment="Containing object")
     study_uuid = Column(String, comment="Containing object")
     idc_case_id = Column(String, comment="Containing object")
+    source_doi = Column(String, comment="Source DOI")
 
 class WSI_metadata(Base):
     __tablename__ = 'wsi_metadata'

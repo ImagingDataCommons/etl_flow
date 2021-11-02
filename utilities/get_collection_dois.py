@@ -85,7 +85,8 @@ def get_analysis_collection_dois(collection, patient= "", third_party="yes", ser
 
 if __name__ == "__main__":
     # access_token = get_access_token()
-    result = get_data_collection_doi('NSCLC-Radiomics')
+    # result = get_analysis_collection_dois('DRO-Toolkit')
+    result = get_data_collection_doi('APOLLO-5-LSCC')
     result = get_analysis_collection_dois('QIN-PROSTATE-Repeatability')
     pass
     # yes=get_internal_collection_series_ids('TCGA-GBM',"yes")
