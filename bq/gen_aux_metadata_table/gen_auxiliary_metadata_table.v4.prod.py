@@ -20,7 +20,7 @@
 import argparse
 import sys
 from bq.gen_aux_metadata_table.gen_auxiliary_metadata_table import gen_aux_table
-from bq.gen_aux_metadata_table.auxiliary_metadata_sql_v4_prod import auxiliary_metadata_sql
+from bq.gen_aux_metadata_table.auxiliary_metadata_sql_v4 import auxiliary_metadata_sql
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
@@ -30,7 +30,8 @@ if __name__ == '__main__':
     parser.add_argument('--dst_project', default='canceridc-data')
     parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default='auxiliary_metadata', help='BQ table name')
-    parser.add_argument('--gcs_bucket', default='idc-open', help="Bucket where blobs are")
+    parser.add_argument('--gcs_bucket', default='idc_dev', help="Bucket where blobs are")
+    parser.add_argument('--target', default='pub', help='dev or pub')
     args = parser.parse_args()
 
     args.sql = auxiliary_metadata_sql

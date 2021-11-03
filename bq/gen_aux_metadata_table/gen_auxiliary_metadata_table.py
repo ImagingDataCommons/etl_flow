@@ -25,7 +25,7 @@ from utilities.bq_helpers import load_BQ_from_json, query_BQ
 
 def gen_aux_table(args):
     client = bigquery.Client(project=args.dst_project)
-    query = args.sql.format(project=args.src_project, dataset=args.bqdataset_name, gcs_bucket=args.gcs_bucket, version=args.version)
+    query = args.sql.format(target=args.target, project=args.src_project, dataset=args.bqdataset_name, gcs_bucket=args.gcs_bucket, version=args.version)
     result=query_BQ(client, args.bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
 
 if __name__ == '__main__':
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     parser.add_argument('--gcs_bucket', default='idc_dev', help="Bucket where blobs are")
     args = parser.parse_args()
 
-    from bq.gen_aux_metadata_table.auxiliary_metadata_sql_v4_dev import auxiliary_metadata_sql
+    from bq.gen_aux_metadata_table.auxiliary_metadata_sql_v4 import auxiliary_metadata_sql
     args.sql = auxiliary_metadata_sql
 
     print("{}".format(args), file=sys.stdout)

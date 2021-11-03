@@ -20,6 +20,18 @@ from google.cloud import bigquery
 
 auxiliary_metadata_sql = """
 WITH
+  coll_stat AS (
+  SELECT o.tcia_api_collection_id, o.{target}_url as url, o.access
+  FROM
+    `idc-dev-etl.idc_v{version}.open_collections` as o
+  UNION ALL
+  SELECT cr.tcia_api_collection_id, cr.{target}_url as url, cr.access
+  FROM
+    `idc-dev-etl.idc_v{version}.cr_collections` as cr
+  UNION ALL
+  SELECT r.tcia_api_collection_id, r.{target}_url as url, r.access
+  FROM
+    `idc-dev-etl.idc_v{version}.redacted_collections` as r),
   series_hashes AS(
   SELECT
     se.series_instance_uid,
@@ -166,6 +178,7 @@ SELECT
   c.hash_all AS collection_hash,
   c.init_idc_version AS collection_init_idc_version,
   c.rev_idc_version AS collection_revised_idc_version,
+  coll_stat.access AS access,
   p.submitter_case_id AS submitter_case_id,
   p.idc_case_id AS idc_case_id,
   p.hash_all AS patient_hash,
@@ -186,9 +199,10 @@ SELECT
   se.rev_idc_version AS series_revised_idc_version,
   i.sop_instance_uid AS SOPInstanceUID,
   i.uuid AS instance_uuid,
+  CONCAT('gs://', coll_stat.url, '/', i.uuid, '.dcm') as gcs_url,
 --  CONCAT('gs://{gcs_bucket}/', i.uuid, '.dcm') as gcs_url,
-  CONCAT('gs://', IF
-    (c.collection_id='NLST', 'idc_v5_nlst', '{gcs_bucket}'), '/', i.uuid, '.dcm') as gcs_url,
+--  CONCAT('gs://', IF
+--    (c.collection_id='NLST', 'idc_v5_nlst', '{gcs_bucket}'), '/', i.uuid, '.dcm') as gcs_url,
   i.size AS instance_size,
   i.hash AS instance_hash,
   i.init_idc_version AS instance_init_idc_version,
@@ -202,6 +216,10 @@ JOIN
   collection_hash_all AS c
 ON
   1=1
+JOIN
+  coll_stat
+ON
+  lower(c.collection_id) = lower(coll_stat.tcia_api_collection_id)
 JOIN
   patient_hash_all AS p
 ON
