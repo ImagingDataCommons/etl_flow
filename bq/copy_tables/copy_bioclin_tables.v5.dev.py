@@ -19,10 +19,6 @@
 import argparse
 import sys
 from bq.copy_tables.copy_tables import copy_tables
-from google.cloud import bigquery
-from utilities.bq_helpers import create_BQ_dataset, copy_BQ_table
-from bq.gen_aux_metadata_table.auxiliary_metadata_sql_v3 import auxiliary_metadata_sql
-from google.api_core.exceptions import NotFound
 
 
 if __name__ == '__main__':
