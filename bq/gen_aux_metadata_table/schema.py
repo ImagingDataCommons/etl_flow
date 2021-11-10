@@ -35,7 +35,7 @@ auxiliary_metadata_schema = """
     GROUP BY v.id, v.idc_version_number, v.version_hash
     ),
     coll_stat AS (
-    SELECT o.tcia_api_collection_id, o.{target}_url as url, o.access
+    SELECT if(o.tcia_api_collection_id='APOLLO-5-LSCC', 'APOLLO', o.tcia_api_collection_id) as tcia_api_collection_id, o.{target}_url as url, o.access
     FROM
     `idc-dev-etl.idc_v{version}.open_collections` as o
     UNION ALL
