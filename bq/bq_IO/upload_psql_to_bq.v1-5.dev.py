@@ -14,11 +14,12 @@
 # limitations under the License.
 #
 
-# Duplicate psql version, collection, patient, study, series and instance metadata tables in BQ. These are
-# essentially a normalization of an auxilliary_metadata table
-# The BQ dataset containing the tables to be duplicated is specified in the .env file (maybe not the best place).
-# The bigquery_uri engine is configured to access that dataset.
-
+# Upload certain tables to all BQ dataset versions.
+# These tables define how collections are distributed among
+# various buckets.
+# The open_collections view defines the collections that are not
+# listed in any of these tables. It is populated into the BQ
+# datasets separately.
 
 import os
 import logging
@@ -30,21 +31,13 @@ from bq.bq_IO.upload_psql_to_bq import upload_to_bq
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=5, help='Version to upload')
-    args = parser.parse_args()
-    parser.add_argument('--db', default=f'idc_v{args.version}', help="Database to access")
     parser.add_argument('--project', default='idc-dev-etl')
-    args = parser.parse_args()
-    parser.add_argument('--bqdataset_name', default=f"idc_v{args.version}", help="BQ dataset of table")
     parser.add_argument('--tables', default= [
-                    'version',
-                    'collection',
-                    'patient',
-                    'study',
-                    'series',
-                    'instance',
-                    'retired'
-                    'program'
+                    # 'excluded_collections',
+                    # 'redacted_collections',
+                    # 'cr_collections',
+                    'defaced_collections',
+                    # 'open_collections'
                     ], help="Tables to upload")
     parser.add_argument('--server', default='CLOUD')
     parser.add_argument('--user', default=settings.CLOUD_USERNAME)
@@ -69,7 +62,12 @@ if __name__ == '__main__':
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
 
-    upload_to_bq(args)
+    for version in range(1,6):
+        print(f"Version {version}")
+        args.version=version
+        args.db = 'idc_v5' # Currently these tables are only in idc_v5
+        args.bqdataset_name = f'idc_v{version}'
+        upload_to_bq(args)
 
 
 
