@@ -17,13 +17,9 @@
 # Load data in some GCS buckets into a DICOM store.
 
 
-import argparse
-import sys
-import os
 import json
 from time import sleep
 from googleapiclient.errors import HttpError
-from google.cloud import storage
 from utilities.gch_helpers import get_dicom_store, get_dataset, create_dicom_store, create_dataset
 from googleapiclient import discovery
 

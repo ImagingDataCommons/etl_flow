@@ -93,6 +93,9 @@ def get_access_status(client, args):
     UNION ALL
     SELECT ex.tcia_api_collection_id, ex.access
     FROM `{args.src_project}.{args.bqdataset_name}.excluded_collections` ex
+    UNION ALL
+    SELECT de.tcia_api_collection_id, de.access
+    FROM `{args.src_project}.{args.bqdataset_name}.defaced_collections` de
     """
 
     access_status = {c.values()[0]: c.values()[1] for c in client.query(query).result()}
