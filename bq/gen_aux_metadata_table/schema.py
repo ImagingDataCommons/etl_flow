@@ -45,7 +45,11 @@ auxiliary_metadata_schema = """
     UNION ALL
     SELECT r.tcia_api_collection_id, r.{target}_url as url, r.access
     FROM
-    `idc-dev-etl.idc_v{version}.redacted_collections` as r)
+    `idc-dev-etl.idc_v{version}.redacted_collections` as r
+    UNION ALL
+    SELECT d.tcia_api_collection_id, d.{target}_url as url, d.access
+    FROM
+    `idc-dev-etl.idc_v{version}.defaced_collections` as d)
 
     SELECT
       v.idc_version_number AS idc_version_number,
@@ -57,7 +61,7 @@ auxiliary_metadata_schema = """
 --      c.collection_timestamp AS collection_timestamp,
       c.collection_hash AS collection_hash,
 --      c.collection_initial_idc_version AS collection_init_idc_version,
-      coll_stat.access AS access,
+--      coll_stat.access AS access,
       p.submitter_case_id AS submitter_case_id,
       p.idc_case_id AS idc_case_id,
 --      p.patient_timestamp AS patient_timestamp,
