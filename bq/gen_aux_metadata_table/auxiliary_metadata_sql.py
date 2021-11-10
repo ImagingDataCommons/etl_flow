@@ -21,7 +21,7 @@ from google.cloud import bigquery
 auxiliary_metadata_sql = """
 WITH
   coll_stat AS (
-  SELECT o.tcia_api_collection_id, o.{target}_url as url, o.access
+  SELECT if(o.tcia_api_collection_id='APOLLO-5-LSCC', 'APOLLO', o.tcia_api_collection_id) as tcia_api_collection_id, o.{target}_url as url, o.access
   FROM
     `idc-dev-etl.idc_v{version}.open_collections` as o
   UNION ALL
@@ -31,7 +31,11 @@ WITH
   UNION ALL
   SELECT r.tcia_api_collection_id, r.{target}_url as url, r.access
   FROM
-    `idc-dev-etl.idc_v{version}.redacted_collections` as r),
+    `idc-dev-etl.idc_v{version}.redacted_collections` as r
+  UNION ALL
+  SELECT d.tcia_api_collection_id, d.{target}_url as url, d.access
+  FROM
+    `idc-dev-etl.idc_v{version}.defaced_collections` as d),
   series_hashes AS(
   SELECT
     se.series_instance_uid,
