@@ -1366,10 +1366,14 @@ def prebuild(args):
                 source.lock = Lock()
                 if not version.source_statuses[source.source_id].done:
                     args.source_class = source_class
+                    # Note: The below should probably be:
+                    # build_version(sess, args, source, version.source_statuses[source.source_id])
+                    # Deal with this in v6
                     build_version(sess, args, source, version)
 
             if all([source.done for source in version.source_statuses]):
                 version.done = True
+                # Note: We should also accumulate hash and max_timestamp across sources here
 
         else:
             rootlogger.info("    version %s previously built", args.version)
