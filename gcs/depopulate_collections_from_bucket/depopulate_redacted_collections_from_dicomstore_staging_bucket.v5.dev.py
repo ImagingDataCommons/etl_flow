@@ -15,12 +15,13 @@
 #
 
 """
-Delete redacted collections from the idc-dev-v5-dicomstore-staging bucket.
+Delete collections from the idc-dev-v5-dicomstore-staging bucket.
 This is/was used for generating a bucket for dicom store import tocreate a dicomstore
 without redacted collections.
 Buckets for import into a dicomstore do not have retired instances, thus retired
 instances are not deleted.
 """
+
 
 import argparse
 import os

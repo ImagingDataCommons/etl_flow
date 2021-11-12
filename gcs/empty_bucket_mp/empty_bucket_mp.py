@@ -15,7 +15,8 @@
 #
 
 """
-Multiprocess bucket emptier.
+Multiprocess bucket emptier. Does not delete the bucket.
+May saturate a small VM, dwpwnding on the number of processes.
 """
 
 import argparse
@@ -138,7 +139,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--bucket', default='idc-dev-v5-dicomstore-staging')
     parser.add_argument('--dst_bucket', default=f'idc-dev-v5-dicomstore-staging')
-    parser.add_argument('--processes', default=21, help="Number of concurrent processes")
+    parser.add_argument('--processes', default=128, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
     parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/delete_bucket_mp')

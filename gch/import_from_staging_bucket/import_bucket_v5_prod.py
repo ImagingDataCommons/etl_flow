@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser.add_argument('--dst_project', default='canceridc-data')
     parser.add_argument('--dataset_region', default='us', help='Dataset region')
     parser.add_argument('--gch_dataset_name', default='idc', help='Dataset name')
-    parser.add_argument('--gch_dicomstore_name', default=f'v{args.version}', help='Datastore name')
+    parser.add_argument('--gch_dicomstore_name', default=f'v{args.version}-no-redacted', help='Datastore name')
     parser.add_argument('--period', default=60, help="seconds to sleep between checking operation status")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
