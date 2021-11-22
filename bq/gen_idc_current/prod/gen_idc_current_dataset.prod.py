@@ -22,12 +22,11 @@ import sys
 from bq.gen_idc_current.gen_idc_current_dataset import gen_idc_current_dataset
 
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=4, help='Current IDC version')
+    parser.add_argument('--version', default=5, help='Current IDC version')
     args = parser.parse_args()
-    parser.add_argument('--project', default='idc-dev-etl')
+    parser.add_argument('--project', default='canceridc-data')
     parser.add_argument('--bqdataset', default=f'idc_v{args.version}', help='BQ dataset name')
     parser.add_argument('--current_bqdataset', default=f'idc_current', help='current dataset name')
 

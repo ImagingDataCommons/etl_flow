@@ -1,4 +1,5 @@
 #
+#
 # Copyright 2015-2021, Institute for Systems Biology
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +36,7 @@ from google.cloud import bigquery
 analysis_results_metadata_schema = [
     bigquery.SchemaField('ID', 'STRING', mode='NULLABLE', description='Results ID'),
     bigquery.SchemaField('Title', 'STRING', mode='NULLABLE', description='Descriptive title'),
+    bigquery.SchemaField('Access', 'STRING', mode='NULLABLE', description='Limited or Public'),
     bigquery.SchemaField('DOI','STRING', mode='NULLABLE', description='DOI that can be resolved at doi.org to a wiki page'),
     bigquery.SchemaField('CancerType','STRING', mode='NULLABLE', description='Type(s) of cancer analyzed'),
     bigquery.SchemaField('Location', 'STRING', mode='NULLABLE', description='Body location that was analyzed'),
