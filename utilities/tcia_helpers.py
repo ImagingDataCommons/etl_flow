@@ -42,6 +42,7 @@ NBIA_AUTH_URL = "https://services.cancerimagingarchive.net/nbia-api/oauth/token"
 NBIA_DEV_URL = 'https://public-dev.cancerimagingarchive.net/nbia-api/services'
 NBIA_DEV_AUTH_URL = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token"
 NLST_URL = 'https://nlst.cancerimagingarchive.net/nbia-api/services'
+NLST_V1_URL = 'https://nlst.cancerimagingarchive.net/nbia-api/services/v1'
 NLST_V2_URL = 'https://nlst.cancerimagingarchive.net/nbia-api/services/v2'
 NLST_AUTH_URL = 'https://nlst.cancerimagingarchive.net/nbia-api/oauth/token'
 
@@ -147,16 +148,16 @@ def refresh_access_token(refresh_token, auth_server = NBIA_AUTH_URL):
 #         return (result, access_token, refresh_token)
 
 
-def get_instance_hash(sop_instance_uid, access_token=None):
+
+def get_hash_nlst(request_data, access_token=None):
     # if not access_token:
     #     access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
     headers = dict(
         Authorization=f'Bearer {access_token}'
     )
-    url = f"{NBIA_V2_URL}/getM5HashForImage?SOPInstanceUid={sop_instance_uid}"
-    result = requests.get(url, headers=headers)
+    url = f"{NLST_URL}/getMD5Hierarchy"
+    result = requests.post(url, headers=headers, data=request_data)
     return result
-
 
 def get_hash(request_data, access_token=None):
     # if not access_token:
@@ -166,6 +167,16 @@ def get_hash(request_data, access_token=None):
     )
     url = f"{NBIA_URL}/getMD5Hierarchy"
     result = requests.post(url, headers=headers, data=request_data)
+    return result
+
+
+def get_images_with_md5_hash_nlst(SeriesInstanceUID, access_token=None):
+    headers = dict(
+        Authorization=f'Bearer {access_token}'
+    )
+    server_url = NLST_V1_URL
+    url = f'{server_url}/getImageWithMD5Hash?SeriesInstanceUID={SeriesInstanceUID}'
+    result = requests.get(url, headers=headers)
     return result
 
 
@@ -445,14 +456,23 @@ def series_drill_down(series_ids, server="" ):
 
 
 def get_collection_descriptions_and_licenses(collection=None):
-    access_token, refresh_token = get_access_token()
-    if collection:
-        url = f'https://public.cancerimagingarchive.net/nbia-api/services/getCollectionDescriptions?collectionName={collection}'
+    if collection == 'NLST':
+        access_token, refresh_token = get_access_token(NLST_AUTH_URL)
+        headers = dict(
+            Authorization=f'Bearer {access_token}'
+        )
+        url = f'https://nlst.cancerimagingarchive.net/nbia-api/services/getCollectionDescriptions?collectionName=NLST'
     else:
-        url = 'https://public.cancerimagingarchive.net/nbia-api/services/getCollectionDescriptions'
-    headers = dict(
-        Authorization=f'Bearer {access_token}'
-    )
+
+        access_token, refresh_token = get_access_token()
+        if collection:
+            url = f'https://public.cancerimagingarchive.net/nbia-api/services/getCollectionDescriptions?collectionName={collection}'
+        else:
+            url = 'https://public.cancerimagingarchive.net/nbia-api/services/getCollectionDescriptions'
+        headers = dict(
+            Authorization=f'Bearer {access_token}'
+        )
+
     result = requests.get(
         url,
         headers=headers
@@ -460,6 +480,10 @@ def get_collection_descriptions_and_licenses(collection=None):
     descriptions = result.json()
     # collection_descriptions = {description['collectionName']: {'description': description['description'], 'licenseId':description['licenseId']} for description in descriptions}
     collection_descriptions = {description['collectionName']: description for description in descriptions}
+    # Now, if we are getting descriptions of all collections, get the NLST description
+    if not collection:
+        nlst_description = get_collection_descriptions_and_licenses('NLST')
+        collection_descriptions['NLST'] = nlst_description['NLST']
 
     return collection_descriptions
 
@@ -497,12 +521,6 @@ def get_collection_license_info():
                 longName = "None",
                 shortName = "None"
             )
-    if not 'NLST' in licenses:
-        licenses['NLST'] = dict(
-            licenseURL=license_info[2]["licenseURL"],
-            longName=license_info[2]["longName"],
-            shortName=license_info[2]["shortName"]
-        )
 
     return licenses
 
@@ -532,9 +550,13 @@ if __name__ == "__main__":
         assert settings.configured
 
 
-    # hashes = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
+    # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
 
     # p = get_TCIA_patients_per_collection('Training-Pseudo')
+    # p = get_TCIA_patients_per_collection('NLST', server="NLST")
+    token = get_access_token(auth_server=NLST_AUTH_URL)[0]
+    hash = get_hash_nlst({'SeriesInstanceUID':f'1.2.840.113654.2.55.97114726565566537928831413367474015470'}, token)
+    hash = get_images_with_md5_hash_nlst('1.2.840.113654.2.55.97114726565566537928831413367474015470', token)
     d = get_collection_descriptions_and_licenses()
     c = get_collection_values_and_counts()
     s = get_updated_series('01/06/2020')

@@ -13,26 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Generate a manifest of "large" bundles. These are bundles with >= 3000 instances.
-# We did not previously register these.
+
+
+# Generate a manifest of revised instance URLs V1 and v2 instances.
+
 import argparse
-from dcf.gen_bundle_manifest import gen_bundle_manifest
 from google.cloud import bigquery
-from utilities.bq_helpers import query_BQ, export_BQ_to_GCS, delete_BQ_Table
+from dcf.instance_manifest import gen_revision_manifest
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
 
-    parser.add_argument('--version', default=4)
-    args = parser.parse_args()
+    parser = argparse.ArgumentParser()
     parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--bqdataset', default=f'idc_v{args.version}')
+    parser.add_argument('--bqdataset', default='idc_v5')
+    parser.add_argument('--versions', default=(1,2), help= 'A tuple of version numbers, e.g. (1,2)')
     parser.add_argument('--table', default='instance')
-    parser.add_argument('--manifest_uri', default=f'gs://indexd_manifests/dcf_input/idc_v{args.version}_bundle_manifest.tsv',
+    parser.add_argument('--manifest_uri', default='gs://indexd_manifests/dcf_input/pdp_hosting/idc_v1_v2_instance_revision_manifest_*.tsv',
                         help="GCS file in which to save results")
-    parser.add_argument('--temp_table', default=f'idc_v{args.version}_bundle_tmp_manifest', \
+    parser.add_argument('--temp_table', default='idc_v1_v2_instance_revision_manifest', \
                         help='Table in which to write query results')
     args = parser.parse_args()
 
-    gen_bundle_manifest(args)
+    gen_revision_manifest(args)
+
 

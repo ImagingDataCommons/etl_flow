@@ -19,6 +19,10 @@ Copy all blobs in redacted collections from the dev bucket to idc-dev-redacted.
 This is/was used, among other things, for the initial population of the idc-dev-redacted
 bucket.
 """
+"""
+Note: This script should be restructured such to pass in the list of collections to be copied.
+"""
+
 
 import argparse
 import os

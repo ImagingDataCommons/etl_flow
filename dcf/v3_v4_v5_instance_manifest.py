@@ -15,27 +15,25 @@
 #
 
 
-# Generate a manifest of instances that are new in V2. We do not
-# include instances from collections that are excluded.
+# Generate a manifest of new v3, v4 and v5 instance URLs
+
 import argparse
-from dcf.gen_instance_manifest import gen_instance_manifest
+from google.cloud import bigquery
+from dcf.instance_manifest import gen_revision_manifest
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=4)
-    args = parser.parse_args()
     parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--bqdataset', default=f'idc_v{args.version}')
+    parser.add_argument('--bqdataset', default='idc_v5')
+    parser.add_argument('--versions', default=(3,4,5), help= 'A tuple of version numbers, e.g. (1,2)')
     parser.add_argument('--table', default='instance')
-    parser.add_argument('--manifest_uri', default=f'gs://indexd_manifests/dcf_input/idc_v{args.version}_instance_manifest-*.tsv',
+    parser.add_argument('--manifest_uri', default='gs://indexd_manifests/dcf_input/pdp_hosting/idc_v3_v4_v5_instance_manifest_*.tsv',
                         help="GCS file in which to save results")
-    parser.add_argument('--temp_table', default=f'gen_v{args.version}_instance_tmp_manifest', \
+    parser.add_argument('--temp_table', default='idc_vv3_v4_v5_instance_manifest', \
                         help='Table in which to write query results')
-
     args = parser.parse_args()
 
-
-    gen_instance_manifest(args)
+    gen_revision_manifest(args)
 
 

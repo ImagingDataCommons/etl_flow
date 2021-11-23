@@ -35,12 +35,6 @@ def delete_all_views_in_current_dataset(target_client, args):
 def gen_idc_current_dataset(args):
     target_client = bigquery.Client(project=args.project)
 
-    # try:
-    #     delete_BQ_dataset(target_client, args.current_bqdataset)
-    # except Exception as exc:
-    #     print(exc)
-    #     exit
-    #
     try:
         dataset = create_BQ_dataset(target_client, args.current_bqdataset)
     except Exception as exc:

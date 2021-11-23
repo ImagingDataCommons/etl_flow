@@ -20,6 +20,11 @@ This was used, among other things, for the initial population of the idc-dev-ope
 bucket.
 """
 
+"""
+Note: This script should be restructured such to pass in the list of collections to be copied.
+"""
+
+
 import argparse
 import os
 from subprocess import run, PIPE

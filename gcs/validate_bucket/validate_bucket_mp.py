@@ -15,11 +15,11 @@
 #
 
 """
-Multiprocess bucket emptier. Does not delete the bucket.
-May saturate a small VM, dwpwnding on the number of processes.
+Multiprocess script to validate that the instances in a bucket are only
+those in some set of collections
 """
 
-import argparse
+import json
 import os
 import logging
 from logging import INFO
@@ -38,31 +38,58 @@ import settings as etl_settings
 settings.configure(etl_settings)
 assert settings.configured
 
+def get_blobs_in_bucket(args):
+    client = bigquery.Client()
+    query = f"""
+        SELECT
+          instance_uuid
+        FROM
+          `idc-dev-etl.idc_v5.auxiliary_metadata` AS aux
+        JOIN
+          `{args.project}.{args.bqdataset}.{args.collection_table}` AS o
+        ON
+          aux.tcia_api_collection_id = o.tcia_api_collection_id
+        UNION ALL
+        SELECT
+          instance_uuid
+        FROM
+          `idc-dev-etl.idc_v5.retired` AS r
+        JOIN
+          `{args.project}.{args.bqdataset}.{args.collection_table}` AS o
+        ON
+          r.collection_id = o.tcia_api_collection_id
+    """
+    blobs = [f'{i[0]}.dcm' for i in client.query(query)]
+    return blobs
 
-def delete_instances(args, client, bucket, blobs, n):
-    try:
-        with client.batch():
-            for blob in blobs:
-                bucket.blob(blob[0], generation=blob[1]).delete()
 
-        successlogger.info('p%s Delete %s blobs %s:%s ', args.id, args.bucket, n, n+len(blobs)-1)
-    except ServiceUnavailable:
-        errlogger.error('p%s Delete %s blobs %s:%s failed', args.id, args.bucket, n, n+len(blobs)-1)
-    except NotFound:
-        errlogger.error('p%s Delete %s blobs %s:%s failed, not found', args.id, args.bucket, n, n+len(blobes)-1)
+def check_instances(args, client, bucket, blobs, allowed_blobs, n):
+    blobs = set(blobs)
+    if not blobs.issubset(allowed_blobs):
+        for blob in blobs:
+            if not blob in allowed_blobs:
+                errlogger.error('p%s blob %s not in allowed blobs', args.id, blob)
+    else:
+        successlogger.info('p%s Verified %s blobs %s:%s ', args.id, args.bucket, n, n+len(blobs)-1)
 
 
-
-
-def worker(input, args):
+def worker(input, args, allowed_blobs):
     client = storage.Client()
     bucket = storage.Bucket(client, args.bucket)
     for blobs, n in iter(input.get, 'STOP'):
-        delete_instances(args, client, bucket, blobs, n)
+        check_instances(args, client, bucket, blobs, allowed_blobs, n)
 
 
-def del_all_instances(args):
+def check_all_instances(args):
     client = storage.Client()
+
+    try:
+        psql_blobs = json.load(open(args.blob_names))
+    except:
+        psql_blobs = get_blobs_in_bucket(args)
+        json.dump(psql_blobs, open(args.blob_names), 'w')
+
+    allowed_blobs = set(psql_blobs)
 
     bucket = storage.Bucket(client, args.bucket)
 
@@ -79,7 +106,7 @@ def del_all_instances(args):
     for process in range(num_processes):
         args.id = process + 1
         processes.append(
-            Process(group=None, target=worker, args=(task_queue, args)))
+            Process(group=None, target=worker, args=(task_queue, args, allowed_blobs)))
         processes[-1].start()
 
 
@@ -89,7 +116,7 @@ def del_all_instances(args):
     # iterator = client.list_blobs(bucket, page_token=page_token, max_results=args.batch)
     iterator = client.list_blobs(bucket, versions=True, page_token=page_token, page_size=args.batch)
     for page in iterator.pages:
-        blobs = [[blob.name, blob.generation] for blob in page]
+        blobs = [blob.name for blob in page]
         if len(blobs) == 0:
             break
         task_queue.put((blobs, n))
@@ -114,7 +141,7 @@ def del_all_instances(args):
     print(f'Completed bucket {args.bucket}, {rate} instances/sec, {num_processes} processes')
 
 
-def pre_delete(args):
+def pre_validate(args):
 
     bucket = args.bucket
     if os.path.exists('{}/logs/{}_error.log'.format(args.log_dir, bucket)):
@@ -135,32 +162,6 @@ def pre_delete(args):
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
 
-    del_all_instances(args)
+    check_all_instances(args)
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--bucket', default='idc-dev-v5-dicomstore-staging')
-    parser.add_argument('--processes', default=128, help="Number of concurrent processes")
-    parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
-    parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/empty_bucket_mp')
-
-    args = parser.parse_args()
-
-    if not os.path.exists('{}'.format(args.log_dir)):
-        os.mkdir('{}'.format(args.log_dir))
-
-    rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler(f'{os.environ["PWD"]}/logs/bucket.log')
-    rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
-    rootlogger.addHandler(root_fh)
-    root_fh.setFormatter(rootformatter)
-    rootlogger.setLevel(INFO)
-
-    successlogger = logging.getLogger('success')
-    successlogger.setLevel(INFO)
-
-    errlogger = logging.getLogger('root.err')
-
-    pre_delete(args)

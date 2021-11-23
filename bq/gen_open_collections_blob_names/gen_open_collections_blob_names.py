@@ -14,3 +14,16 @@
 # limitations under the License.
 #
 
+# This script generates a BQ table that is the names, <uuid>.dcm,
+# of all blobs of instances in the open collections...those collections
+# hosted by Googls PDP.
+import argparse
+import sys
+from google.cloud import bigquery
+from utilities.bq_helpers import query_BQ
+
+
+def gen_blob_table(args):
+    client = bigquery.Client(project=args.dst_project)
+    query = args.sql.format(version=args.version)
+    result=query_BQ(client, args.bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')

@@ -15,6 +15,9 @@
 #
 
 # Build a table of collection/patient/study/series/instance metadata for the WSIs
+# Assumes that bucket containing the pathology WSI blobs is gcsfuse mounted (the
+# mount point is a paramater). This allows pydicom that extract DICOM UIDs
+# from each blob without having to import the entire (large) blob.
 
 import os
 import sys
@@ -156,12 +159,12 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=3, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())
     args = parser.parse_args()
-    parser.add_argument('--db', default=f'idc_path_v{args.version}.1', help='Database on which to operate')
+    parser.add_argument('--db', default=f'idc_path_v{args.version}', help='Database on which to operate')
     parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--gcsfuse_dir', default='/mnt/disks/idc-etl/wsi_bucket')
     parser.add_argument('--src_bucket', default=storage.Bucket(args.client,'af-dac-wsi-conversion-results'))
     parser.add_argument('--num_processes', default=0, help="Number of concurrent processes")
-    parser.add_argument('--todos', default='{}/logs/path_ingest_v{}_todo.txt'.format(os.environ['PWD'], args.version), help="Collections to includes")
+    parser.add_argument('--todos', default='{}/logs/path_ingest_v{}_todo.txt'.format(os.environ['PWD'], args.version), help="Collections to include")
     args = parser.parse_args()
 
     print("{}".format(args), file=sys.stdout)

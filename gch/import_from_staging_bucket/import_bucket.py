@@ -23,8 +23,6 @@ from googleapiclient.errors import HttpError
 from utilities.gch_helpers import get_dicom_store, get_dataset, create_dicom_store, create_dataset
 from googleapiclient import discovery
 
-_BASE_URL = "https://healthcare.googleapis.com/v1"
-
 
 def get_gch_client():
     """Returns an authorized API client by discovering the Healthcare API and

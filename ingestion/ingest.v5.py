@@ -60,6 +60,9 @@ from logging import INFO, DEBUG
 # rootlogger.debug('Args: %s', args)
 
 if __name__ == '__main__':
+    print('Why were sizes==0?')
+    exit(-1)
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=5, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())

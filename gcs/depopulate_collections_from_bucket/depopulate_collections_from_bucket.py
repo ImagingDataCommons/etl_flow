@@ -15,6 +15,17 @@
 #
 
 """
+Note: This script and scripts which call it should be restructured such
+that the calling script passes in the list of collections to be copied.
+"""
+
+"""
+NOTE: The get_collections_in_version function is hardcoded for v5.
+Also, probably shoud remove the test for 'where v1=False and v2=True'
+in the SQL. That was a special case that should have been parameterized
+"""
+
+"""
 General purpose multiprocessing routine to the instances of some set of
 collections from one bucket to another.
 
