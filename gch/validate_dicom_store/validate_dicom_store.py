@@ -15,11 +15,14 @@
 #
 
 # This script validates whether the patients in some set of collections are
-# or are not in some DICOM store. The intent mostly to ensure that (the patients)
+# or are not in some DICOM store. The intent is mostly to ensure that (the patients)
 # in the collections listed in the redacted_collections BQ table are not in
-# the v<x>-no-redacted DICOM store. However, the script can be parameterized
-# to test for the presence or absence of patients in other xxx_collections BQ
-# tables.
+# the v<x>-no-redacted DICOM store. We cannot query collections in a DICOM store or
+# directly for patients in a collection. So we must query for studies in patient in
+# a collection.
+# The script can be parameterized to test for the presence or absence of patients
+# in any xxx_collections BQ tables.
+
 
 import argparse
 import os
