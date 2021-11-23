@@ -129,6 +129,8 @@ class Collection(Base):
         nullable=True,
         comment="Source specific hierarchical hash"
     )
+    idc_collection_id = Column(String, nullable=False, unique=True, comment="IDC assigned collection ID")
+    uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of a version of this object")
 
     patients = relationship("Patient", back_populates="collection", order_by="Patient.submitter_case_id", cascade="all, delete")
     # patients = relationship("Patient", backref="the_collection")
@@ -169,6 +171,7 @@ class Patient(Base):
         nullable=True,
         comment="Source specific hierarchical hash"
     )
+    uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of a version of this object")
 
     collection = relationship("Collection", back_populates="patients")
     studies = relationship("Study", back_populates="patient", order_by="Study.study_instance_uid", cascade="all, delete")
@@ -178,7 +181,7 @@ class Study(Base):
     __tablename__ = 'study'
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     study_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-    uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of this object")
+    uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of a version of this object")
     study_instances = Column(Integer, nullable=False, comment="Instances in this study")
     revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=True, comment="True if this object has been processed")
@@ -220,7 +223,7 @@ class Series(Base):
     __tablename__ = 'series'
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     series_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-    uuid = Column(String, nullable=False,  unique=True, comment="IDC assigned UUID of this object")
+    uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of a version of this object")
     series_instances = Column(Integer, nullable=False, comment="Instances in this series")
     source_doi = Column(String, nullable=True, comment="A doi to the wiki page of this source of this series")
     revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
@@ -263,7 +266,7 @@ class Instance(Base):
     __tablename__ = 'instance'
     timestamp = Column(DateTime, nullable=True, comment="Time when this object was last built")
     sop_instance_uid = Column(String, primary_key=True, nullable=False)
-    uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of this object")
+    uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of a version of this object")
     hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of TCIA data at this level")
     size = Column(Integer, nullable=True, comment='Instance blob size (bytes)')
     revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
