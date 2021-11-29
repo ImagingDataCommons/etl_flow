@@ -17,7 +17,7 @@
 from utilities.tcia_helpers import  get_access_token, get_hash, get_TCIA_studies_per_patient, get_TCIA_patients_per_collection,\
     get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_TCIA_instances_per_series, get_collection_values_and_counts,\
     get_updated_series, get_instance_hash, refresh_access_token
-from idc.models import Collection, Patient, Study, Series, Instance, Retired, WSI_metadata, instance_source
+from idc.models import Collection, Patient, Study, Series, Instance, WSI_metadata, instance_source
 from sqlalchemy import select
 from multiprocessing import Lock
 import hashlib
@@ -372,6 +372,7 @@ class TCIA(Source):
 
     # def instance_hashes_differ(self, instance):
     #     return instance.path_hash != self.src_instance_hash(instance)
+
 
 class Pathology(Source):
     def __init__(self, sess):

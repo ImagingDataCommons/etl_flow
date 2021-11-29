@@ -134,7 +134,8 @@ def get_collection_metadata(sess, args, collection, topdir):
 
 
 def prebuild(args):
-    sql_uri = f'postgresql+psycopg2://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{args.db}'
+    # sql_uri = f'postgresql+psycopg2://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{args.db}'
+    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
     # sql_engine = create_engine(sql_uri, echo=True)
     sql_engine = create_engine(sql_uri)
 
@@ -156,10 +157,10 @@ def prebuild(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=3, help='Version to work on')
+    parser.add_argument('--version', default=6, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())
     args = parser.parse_args()
-    parser.add_argument('--db', default=f'idc_path_v{args.version}', help='Database on which to operate')
+    parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
     parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--gcsfuse_dir', default='/mnt/disks/idc-etl/wsi_bucket')
     parser.add_argument('--src_bucket', default=storage.Bucket(args.client,'af-dac-wsi-conversion-results'))

@@ -16,7 +16,7 @@
 
 import sqlalchemy as sa
 from sqlalchemy import Integer, String, Boolean, BigInteger,\
-    Column, DateTime, ForeignKey, create_engine, MetaData, Table, ForeignKeyConstraint, Enum
+    Column, DateTime, ForeignKey, create_engine, MetaData, Table, ForeignKeyConstraint, Enum, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy_utils import CompositeType
@@ -34,29 +34,32 @@ Base = declarative_base()
 # sql_engine = create_engine(sql_uri)
 
 # These tables define the ETL database. There is a separate DB for each IDC version.
-# Note that IDC v2 used a somewhat different schema. That schema and all IDC v2 ETL code is
-# in the idc_v2_final branch.
+# Note that earlier IDC versions used a one-to-many schema.
+
+version_collection = Table('version_collection', Base.metadata,
+                           Column('version', ForeignKey('version_mm.version'), primary_key=True),
+                           Column('collection_uuid', ForeignKey('collection_mm.uuid'), primary_key=True))
+
 class Version(Base):
-    __tablename__ = 'version'
+    __tablename__ = 'version_mm'
+    version = Column(Integer, primary_key=True, comment="Target version of revision")
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
-    revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
-    done = Column(Boolean, default=True, comment="Set to True if this object has been processed")
-    is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
-    expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
     max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
+    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
+    is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
+    expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
     hashes = Column(
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, comment="Hash of tcia radiology data"),
-                Column('path', String, comment="Hash of tcia pathology data"),
-                Column('all_sources', String, comment="Hash of all data")
+                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
+                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
         comment="Source specific hierarchical hash"
     )
-    version = Column(Integer, primary_key=True, comment="Target version of revision")
-
     source_statuses = Column(
         CompositeType(
             'statuses',
@@ -67,9 +70,9 @@ class Version(Base):
                         [
                             Column('min_timestamp',DateTime, nullable=True, comment="Time when building this object started"),
                             Column('max_timestamp', DateTime, nullable=True, comment="Time when building this object completed"),
-                            Column('revised', Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version"),
-                            Column('done', Boolean, default=True, comment="Set to True if this object has been processed"),
-                            Column('is_new', Boolean, default=True, comment="True if this object is new in this version"),
+                            Column('revised', Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version"),
+                            Column('done', Boolean, default=False, comment="Set to True if this object has been processed"),
+                            Column('is_new', Boolean, default=False, comment="True if this object is new in this version"),
                             Column('expanded', Boolean, default=False, comment="True if the next lower level has been populated"),
                             Column('version', Integer, comment="Target version of source-specific revision")
                         ]
@@ -82,9 +85,9 @@ class Version(Base):
                         [
                             Column('min_timestamp',DateTime, nullable=True, comment="Time when building this object started"),
                             Column('max_timestamp', DateTime, nullable=True, comment="Time when building this object completed"),
-                            Column('revised', Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version"),
-                            Column('done', Boolean, default=True, comment="Set to True if this object has been processed"),
-                            Column('is_new', Boolean, default=True, comment="True if this object is new in this version"),
+                            Column('revised', Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version"),
+                            Column('done', Boolean, default=False, comment="Set to True if this object has been processed"),
+                            Column('is_new', Boolean, default=False, comment="True if this object is new in this version"),
                             Column('expanded', Boolean, default=False, comment="True if the next lower level has been populated"),
                             Column('version', Integer, comment="Target version of source-specific revision")
                         ]
@@ -94,24 +97,35 @@ class Version(Base):
             ]
         )
     )
+    collections = relationship('Collection',
+                               secondary=version_collection,
+                               back_populates='versions')
+
+collection_patient = Table('collection_patient', Base.metadata,
+                           Column('collection_uuid', ForeignKey('collection_mm.uuid'), primary_key=True),
+                           Column('patient_uuid', ForeignKey('patient_mm.uuid'), primary_key=True))
 
 class Collection(Base):
-    __tablename__ = 'collection'
+    __tablename__ = 'collection_mm'
+    collection_id = Column(String, nullable=False, unique=False, comment='TCIA/NBIA collection ID')
+    idc_collection_id = Column(String, nullable=False, unique=False, comment="IDC assigned collection ID")
+    uuid = Column(String, nullable=False, primary_key=True, comment="IDC assigned UUID of a version of this object")
+
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
-    collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
-    revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
-    done = Column(Boolean, default=True, comment="Set to True if this object has been processed")
-    is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
-    expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
+    max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
-    max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
+    final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
+    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
+    is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
+    expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
     sources = Column(
         CompositeType(
             'sources',
             [
-                Column('tcia', Boolean),
-                Column('path', Boolean)
+                Column('tcia', Boolean, default=False),
+                Column('path', Boolean, default=False)
             ]
         ),
         nullable=True,
@@ -121,39 +135,48 @@ class Collection(Base):
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, comment="Hash of tcia radiology data"),
-                Column('path', String, comment="Hash of tcia pathology data"),
-                Column('all_sources', String, comment="Hash of all data")
+                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
+                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
         nullable=True,
         comment="Source specific hierarchical hash"
     )
-    idc_collection_id = Column(String, nullable=False, unique=True, comment="IDC assigned collection ID")
-    uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of a version of this object")
+    versions = relationship('Version',
+                               secondary=version_collection,
+                               back_populates='collections')
 
-    patients = relationship("Patient", back_populates="collection", order_by="Patient.submitter_case_id", cascade="all, delete")
-    # patients = relationship("Patient", backref="the_collection")
+    patients = relationship('Patient',
+                               secondary=collection_patient,
+                               back_populates='collections')
+
+
+patient_study = Table('patient_study', Base.metadata,
+                           Column('patient_uuid', ForeignKey('patient_mm.uuid'), primary_key=True),
+                           Column('study_uuid', ForeignKey('study_mm.uuid'), primary_key=True))
 
 class Patient(Base):
-    __tablename__ = 'patient'
+    __tablename__ = 'patient_mm'
+    submitter_case_id = Column(String, nullable=False, unique=False, comment="Submitter's patient ID")
+    idc_case_id = Column(String, nullable=False, unique=False, comment="IDC assigned patient ID")
+    uuid = Column(String, nullable=False, primary_key=True, comment="IDC assigned UUID of a version of this object")
+
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
-    submitter_case_id = Column(String, nullable=False, unique=True, primary_key=True, comment="Submitter's patient ID")
-    idc_case_id = Column(String, nullable=False, unique=True, comment="IDC assigned patient ID")
-    revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
-    done = Column(Boolean, default=True, comment="True if this object has been processed")
-    is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
-    expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
+    max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
-    collection_id = Column(ForeignKey('collection.collection_id'), comment="Containing object")
-    max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
+    final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
+    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
+    is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
+    expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
     sources = Column(
         CompositeType(
             'sources',
             [
-                Column('tcia', Boolean),
-                Column('path', Boolean)
+                Column('tcia', Boolean, default=False),
+                Column('path', Boolean, default=False)
             ]
         ),
         nullable=True,
@@ -163,40 +186,48 @@ class Patient(Base):
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, comment="Hash of tcia radiology data"),
-                Column('path', String, comment="Hash of tcia pathology data"),
-                Column('all_sources', String, comment="Hash of all data")
+                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
+                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
         nullable=True,
         comment="Source specific hierarchical hash"
     )
-    uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of a version of this object")
+    collections = relationship('Collection',
+                               secondary=collection_patient,
+                               back_populates='patients')
+    studies = relationship('Study',
+                            secondary=patient_study,
+                            back_populates='patients')
 
-    collection = relationship("Collection", back_populates="patients")
-    studies = relationship("Study", back_populates="patient", order_by="Study.study_instance_uid", cascade="all, delete")
-    # studies = relationship("Study", backref="patient")
+
+study_series = Table('study_series', Base.metadata,
+                      Column('study_uuid', ForeignKey('study_mm.uuid'), primary_key=True),
+                      Column('series_uuid', ForeignKey('series_mm.uuid'), primary_key=True))
+
 
 class Study(Base):
-    __tablename__ = 'study'
+    __tablename__ = 'study_mm'
+    study_instance_uid = Column(String, nullable=False, unique=False, comment="DICOM StudyInstanceUID")
+    uuid = Column(String, nullable=False, unique=True, primary_key=True, comment="IDC assigned UUID of a version of this object")
+    study_instances = Column(Integer, nullable=True, unique=False, comment="Instances in this study")
+
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
-    study_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-    uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of a version of this object")
-    study_instances = Column(Integer, nullable=False, comment="Instances in this study")
-    revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
-    done = Column(Boolean, default=True, comment="True if this object has been processed")
-    is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
-    expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
+    max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
-    submitter_case_id = Column(ForeignKey('patient.submitter_case_id'), comment="Submitter's patient ID")
-    max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
+    final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
+    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
+    is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
+    expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
     sources = Column(
         CompositeType(
             'sources',
             [
-                Column('tcia', Boolean),
-                Column('path', Boolean)
+                Column('tcia', Boolean, default=False),
+                Column('path', Boolean, default=False)
             ]
         ),
         nullable=True,
@@ -206,40 +237,49 @@ class Study(Base):
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, comment="Hash of tcia radiology data"),
-                Column('path', String, comment="Hash of tcia pathology data"),
-                Column('all_sources', String, comment="Hash of all data")
+                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
+                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
         nullable=True,
         comment="Source specific hierarchical hash"
     )
 
-    patient = relationship("Patient", back_populates="studies")
-    seriess = relationship("Series", back_populates="study", order_by="Series.series_instance_uid", cascade="all, delete")
-    # series = relationship("Study", backref="study")
+    patients = relationship('Patient',
+                            secondary=patient_study,
+                            back_populates='studies')
+    seriess = relationship('Series',
+                           secondary=study_series,
+                           back_populates='studies')
+
+
+series_instance = Table('series_instance', Base.metadata,
+                     Column('series_uuid', ForeignKey('series_mm.uuid'), primary_key=True),
+                     Column('instance_uuid', ForeignKey('instance_mm.uuid'), primary_key=True))
 
 class Series(Base):
-    __tablename__ = 'series'
-    min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
-    series_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-    uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of a version of this object")
-    series_instances = Column(Integer, nullable=False, comment="Instances in this series")
+    __tablename__ = 'series_mm'
+    series_instance_uid = Column(String, unique=False, nullable=False, comment="DICOM SeriesInstanceUID")
+    uuid = Column(String, primary_key=True, comment="IDC assigned UUID of a version of this object")
+    series_instances = Column(Integer, nullable=True, comment="Instances in this series")
     source_doi = Column(String, nullable=True, comment="A doi to the wiki page of this source of this series")
-    revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
-    done = Column(Boolean, default=True, comment="True if this object has been processed")
-    is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
-    expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
+
+    min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
+    max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
-    study_instance_uid = Column(ForeignKey('study.study_instance_uid'), comment="Containing object")
-    max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
+    final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
+    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
+    is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
+    expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
     sources = Column(
         CompositeType(
             'sources',
             [
-                Column('tcia', Boolean),
-                Column('path', Boolean)
+                Column('tcia', Boolean, default=False),
+                Column('path', Boolean, default=False)
             ]
         ),
         nullable=True,
@@ -249,55 +289,61 @@ class Series(Base):
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, comment="Hash of tcia radiology data"),
-                Column('path', String, comment="Hash of tcia pathology data"),
-                Column('all_sources', String, comment="Hash of all data")
+                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
+                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
         nullable=True,
         comment="Source specific hierarchical hash"
     )
 
-    study = relationship("Study", back_populates="seriess")
-    instances = relationship("Instance", back_populates="series", order_by="Instance.sop_instance_uid", cascade="all, delete")
-    # instances = relationship("Study", backref="series")
+    studies = relationship('Study',
+                           secondary=study_series,
+                           back_populates='seriess')
+    instances = relationship('Instance',
+                          secondary=series_instance,
+                          back_populates='seriess')
 
 class Instance(Base):
-    __tablename__ = 'instance'
-    timestamp = Column(DateTime, nullable=True, comment="Time when this object was last built")
-    sop_instance_uid = Column(String, primary_key=True, nullable=False)
-    uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of a version of this object")
+    __tablename__ = 'instance_mm'
+    sop_instance_uid = Column(String, nullable=False, unique=False, comment='DICOM SOPInstanceUID')
+    uuid = Column(String, primary_key=True, comment="IDC assigned UUID of a version of this object")
     hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of TCIA data at this level")
     size = Column(Integer, nullable=True, comment='Instance blob size (bytes)')
-    revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
-    done = Column(Boolean, default=True, comment="True if this object has been processed")
-    is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
+
+    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
+    is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
-    series_instance_uid = Column(ForeignKey('series.series_instance_uid'), comment="Containing object")
-    source = Column(Enum(instance_source), nullable=False, comment='Source of this object; "tcia", "path"')
+    final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
+    source = Column(Enum(instance_source), nullable=True, comment='Source of this object; "tcia", "path"')
+    timestamp = Column(DateTime, nullable=True, comment="Time when this object was last built")
 
-    series = relationship("Series", back_populates="instances")
+    seriess = relationship('Series',
+                          secondary=series_instance,
+                          back_populates='instances')
 
-class Retired(Base):
-    __tablename__ = 'retired'
-    timestamp = Column(DateTime, nullable=True, comment="Time when this object was last updated by TCIA/NBIA")
-    sop_instance_uid = Column(String, primary_key=True, nullable=False)
-    source = Column(Enum(instance_source), nullable=False, comment='Source of this instance; "tcia", "path"')
-    hash = Column(String, nullable=False, comment="Hex format MD5 hash of this instance")
-    size = Column(Integer, nullable=False, comment='Instance blob size (bytes)')
-    init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
-    rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
-    study_instance_uid = Column(String, comment="Containing object")
-    series_instance_uid = Column(String, comment="Containing object")
-    submitter_case_id = Column(String, comment="Containing object")
-    collection_id = Column(String, comment="Containing object")
-    instance_uuid = Column(String, nullable=False)
-    series_uuid = Column(String, comment="Containing object")
-    study_uuid = Column(String, comment="Containing object")
-    idc_case_id = Column(String, comment="Containing object")
-    source_doi = Column(String, comment="Source DOI")
+# class Retired(Base):
+#     __tablename__ = 'retired'
+#     timestamp = Column(DateTime, nullable=True, comment="Time when this object was last updated by TCIA/NBIA")
+#     sop_instance_uid = Column(String, primary_key=True, nullable=False)
+#     source = Column(Enum(instance_source), nullable=False, comment='Source of this instance; "tcia", "path"')
+#     hash = Column(String, nullable=False, comment="Hex format MD5 hash of this instance")
+#     size = Column(Integer, nullable=False, comment='Instance blob size (bytes)')
+#     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
+#     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
+#     study_instance_uid = Column(String, comment="Containing object")
+#     series_instance_uid = Column(String, comment="Containing object")
+#     submitter_case_id = Column(String, comment="Containing object")
+#     collection_id = Column(String, comment="Containing object")
+#     instance_uuid = Column(String, nullable=False)
+#     series_uuid = Column(String, comment="Containing object")
+#     study_uuid = Column(String, comment="Containing object")
+#     idc_case_id = Column(String, comment="Containing object")
+#     source_doi = Column(String, comment="Source DOI")
 
 class WSI_metadata(Base):
     __tablename__ = 'wsi_metadata'
@@ -309,9 +355,6 @@ class WSI_metadata(Base):
     gcs_url = Column(String, nullable=False)
     hash = Column(String, comment="Hex format MD5 hash of this instance")
     size = Column(BigInteger, comment='Instance blob size (bytes)')
-
-
-
 
 # Base.metadata.create_all(sql_engine)
 

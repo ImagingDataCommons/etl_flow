@@ -18,7 +18,6 @@
 
 import sys
 import os
-import argparse
 from pathlib import Path
 import time
 from datetime import datetime, timezone, timedelta
@@ -34,12 +33,10 @@ from base64 import b64decode
 from pydicom.errors import InvalidDicomError
 from uuid import uuid4
 from google.cloud import storage
-from idc.models import Version, Collection, Patient, Study, Series, Instance, Retired, WSI_metadata, instance_source
+from idc.models import Base, Version, Collection, Patient, Study, Series, Instance, WSI_metadata, instance_source
 from sqlalchemy import select,delete
 from sqlalchemy.orm import Session
-from utilities.tcia_helpers import  get_hash, get_TCIA_studies_per_patient, get_TCIA_patients_per_collection,\
-    get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_TCIA_instances_per_series, \
-    get_collection_values_and_counts, get_TCIA_instances_per_series_with_hashes
+from utilities.tcia_helpers import  get_TCIA_instances_per_series_with_hashes
 from utilities.get_collection_dois import get_data_collection_doi, get_analysis_collection_dois
 from google.api_core.exceptions import Conflict
 
@@ -47,10 +44,12 @@ from python_settings import settings
 import settings as etl_settings
 
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import register_composites
 
-from ingestion.sources import TCIA, Pathology
+import psycopg2
+from psycopg2.extras import DictCursor
+
+from ingestion.sources_build_m2m import TCIA, Pathology
 
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
@@ -432,44 +431,66 @@ def retire_series(sess, args, series, source):
         series.min_timestamp = series.max_timestamp = datetime.utcnow()
 
 
+def clone_object(object_class, object):
+    new_object = object_class()
+    for key, value in object.__dict__.items():
+        if key != '_sa_instance_state':
+            setattr(new_object, key, value)
+    return new_object
+
+
 def expand_series(sess, args, source, series):
     # not_done = 0
     # done = 0
-    source_objects = source.instances(series)
-    if len(source_objects) != len(set(source_objects)):
+    # if args.build_mtm_db:
+    #     instances = source.instances_metadata(series)
+    # else:
+    instances = source.instances(series)
+    if len(instances) != len(set(instances)):
         errlogger.error("\tp%s: Duplicate instance in expansion of series %s", args.id,
                         series.series_instance_uid)
         raise RuntimeError("p%s: Duplicate instance in  expansion of series %s", args.id,
                            series.series_instance_uid)
 
     if series.is_new:
-        metadata = []
-        for instance in source_objects:
-            # not_done += 1
-            metadata.append(
-                dict(
-                    series_instance_uid = series.series_instance_uid,
-                    min_timestamp = datetime.utcnow(),
-                    init_idc_version=args.version,
-                    rev_idc_version=args.version,
-                    sop_instance_uid=instance,
-                    uuid=uuid4(),
-                    revised=False,
-                    done=False,
-                    is_new=True,
-                    expanded=False,
-                    source=source.source,
-                    hash="",
-                    size=0
-                )
-            )
-        sess.bulk_insert_mappings(Instance, metadata)
+        for instance in instances:
+            new_instance = Instance()
+            if args.build_mtm_db:
+                new_instance.series_instance_uid = instance
+                new_instance.uuid=instances[instance]['uuid']
+                new_instance.hash=instances[instance]['hash']
+                new_instance.size=instances[instance]['size']
+                new_instance.revised=False
+                new_instance.done=True
+                new_instance.is_new=True
+                new_instance.expanded=False
+                new_instance.init_idc_version=args.version
+                new_instance.rev_idc_version=args.version
+                new_instance.sop_instance_uid=instance
+                new_instance.source=instances[instance]['source']
+                new_instance.timestamp = instances[instance]['timestamp']
+            else:
+                new_instance.series_instance_uid = series.series_instance_uid
+                new_instance.uuid=uuid4()
+                new_instance.hash=""
+                new_instance.size=0
+                new_instance.revised=False
+                new_instance.done=False
+                new_instance.is_new=True
+                new_instance.expanded=False
+                new_instance.init_idc_version=args.version
+                new_instance.rev_idc_version=args.version
+                new_instance.sop_instance_uid=instance
+                new_instance.source=source.source
+                new_instance.timestamp = datetime.utcnow()
+
+            series.instances.append(new_instance)
     else:
         idc_objects = {object.sop_instance_uid: object for object in series.instances}
 
-        new_objects = [id for id in source_objects if id not in idc_objects]
-        retired_objects = [idc_objects[id] for id in idc_objects if id not in source_objects]
-        existing_objects = [idc_objects[id] for id in source_objects if id in idc_objects]
+        new_objects = [id for id in instances if id not in idc_objects]
+        retired_objects = [idc_objects[id] for id in idc_objects if id not in instances]
+        existing_objects = [idc_objects[id] for id in instances if id in idc_objects]
 
         for instance in retired_objects:
             retire_instance(sess, args, instance, source)
@@ -538,6 +559,8 @@ def expand_series(sess, args, source, series):
             )
         sess.bulk_insert_mappings(Instance, metadata)
     series.expanded = True
+    if args.build_mtm_db:
+        series.done = True
     sess.commit()
     return 0
     # rootlogger.debug("      p%s: Expanded series %s", args.id, series.series_instance_uid)
@@ -551,17 +574,10 @@ def build_series(sess, args, source, series_index, version, collection, patient,
             return
     rootlogger.info("      p%s: Series %s; %s; %s instances, expand: %s", args.id, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
 
+
     if not all(instance.done for instance in series.instances):
         if source.source_id == instance_source.tcia.value:
-            # # Different paths depending on whether we are doing all instances or just some
-            # if not_done == instances:
-            #     # If all instances are not done
-            #     build_all_instances_tcia(sess, args, source, version, collection, patient, study, series)
-            # elif done:
-            #     # if some, but not all instances, are done
-            #     build_some_instances_tcia(sess, args, source, version, collection, patient, study, series)
             build_instances_tcia(sess, args, source, version, collection, patient, study, series)
-
         else:
             # Get instance data from path DB table/ GCS bucket.
             build_instances_path(sess, args, source, version, collection, patient, study, series)
@@ -569,39 +585,45 @@ def build_series(sess, args, source, series_index, version, collection, patient,
     if all(instance.done for instance in series.instances):
         # series.min_timestamp = min(instance.timestamp for instance in series.instances)
         series.max_timestamp = max(instance.timestamp for instance in series.instances)
-
-        # Get hash of children in the DB
-        hash = source.idc_series_hash(series)
-        # It should now match the source's (tcia's, path's,...) hash
-        if source.src_series_hash(series.series_instance_uid) != hash:
-            # errlogger.error('Hash match failed for series %s', series.series_instance_uid)
-            raise Exception('Hash match failed for series %s', series.series_instance_uid)
-        else:
-            # Test whether anything has changed
-            if hash != series.hashes[source.source_id]:
-                hashes = list(series.hashes)
-                hashes[source.source_id] = hash
-                series.hashes = hashes
-
-                # Assume that all instances in a series have the same source
-                sources = list(series.sources)
-                sources[source.source_id] = True
-                series.sources = sources
-                series.series_instances = len(series.instances)
-                series.rev_idc_version = args.version
-
-                if not series.is_new:
-                    # This series was revised. Give it a new uuid.
-                    series.revised = True
-                    series.uuid = uuid4()
-            else:
-                rootlogger.info("      p%s: Series %s, %s, unchanged", args.id, series.series_instance_uid,
-                                series_index)
-
+        if args.build_mtm_db:
             series.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
             rootlogger.info("      p%s: Series %s, %s, completed in %s", args.id, series.series_instance_uid, series_index, duration)
+        else:
+
+            # Get hash of children in the DB
+            hash = source.idc_series_hash(series)
+            # It should now match the source's (tcia's, path's,...) hash
+            if source.src_series_hash(series.series_instance_uid) != hash:
+                # errlogger.error('Hash match failed for series %s', series.series_instance_uid)
+                raise Exception('Hash match failed for series %s', series.series_instance_uid)
+            else:
+                # Test whether anything has changed
+                if hash != series.hashes[source.source_id]:
+                    hashes = list(series.hashes)
+                    hashes[source.source_id] = hash
+                    series.hashes = hashes
+
+                    # Assume that all instances in a series have the same source
+                    sources = list(series.sources)
+                    sources[source.source_id] = True
+                    series.sources = sources
+                    series.series_instances = len(series.instances)
+                    series.rev_idc_version = args.version
+
+                    if not series.is_new:
+                        # This series was revised. Give it a new uuid.
+                        series.revised = True
+                        series.uuid = uuid4()
+                else:
+                    rootlogger.info("      p%s: Series %s, %s, unchanged", args.id, series.series_instance_uid,
+                                    series_index)
+
+                series.done = True
+                sess.commit()
+                duration = str(timedelta(seconds=(time.time() - begin)))
+                rootlogger.info("      p%s: Series %s, %s, completed in %s", args.id, series.series_instance_uid, series_index, duration)
 
 
 def retire_study(sess, args, study, source):
@@ -625,42 +647,50 @@ def retire_study(sess, args, study, source):
 
 
 def expand_study(sess, args, source, study, data_collection_doi, analysis_collection_dois):
-    source_objects = source.series(study)
-    if len(source_objects) != len(set(source_objects)):
+    seriess = source.series(study)
+    if len(seriess) != len(set(seriess)):
         errlogger.error("\tp%s: Duplicate series in expansion of study %s", args.id,
                         study.study_instance_uid)
         raise RuntimeError("p%s: Duplicate series expansion of study %s", args.id,
                            study.study_instance_uid)
 
     if study.is_new:
-        metadata = []
-        for series in source_objects:
-            metadata.append(
-                dict(
-                    study_instance_uid = study.study_instance_uid,
-                    min_timestamp = datetime.utcnow(),
-                    init_idc_version=args.version,
-                    rev_idc_version=args.version,
-                    series_instance_uid=series,
-                    uuid = uuid4(),
-                    source_doi=analysis_collection_dois[series] \
-                        if series in analysis_collection_dois \
-                        else data_collection_doi,
-                    sources = (False, False),
-                    hashes = ("", "", ""),
-                    revised=False,
-                    done=False,
-                    is_new=True,
-                    expanded=False
-                )
-            )
-        sess.bulk_insert_mappings(Series, metadata)
+        for series in seriess:
+            new_series = Series()
+
+            new_series.series_instance_uid = series
+            if args.build_mtm_db:
+                new_series.uuid = seriess[series]['uuid']
+                new_series.min_timestamp = seriess[series]['min_timestamp']
+                new_series.source_doi = seriess[series]['source_doi']
+                new_series.series_instances = seriess[series]['series_instances']
+                new_series.sources = seriess[series]['sources']
+                new_series.hashes = seriess[series]['hashes']
+            else:
+                new_series.uuid = uuid4()
+                new_series.min_timestamp = datetime.utcnow()
+                new_series.source_doi=analysis_collection_dois[series] \
+                    if series in analysis_collection_dois \
+                    else data_collection_doi
+                new_series.series_instances = 0
+                new_series.sources = (False, False)
+                new_series.hashes = ("", "", "")
+            new_series.max_timestamp = new_series.min_timestamp
+            new_series.init_idc_version=args.version
+            new_series.rev_idc_version=args.version
+            new_series.final_idc_version = 0
+            new_series.revised=False
+            new_series.done=False
+            new_series.is_new=True
+            new_series.expanded=False
+
+            study.seriess.append(new_series)
     else:
         idc_objects = {object.series_instance_uid: object for object in study.seriess}
 
-        new_objects = [id for id in source_objects if id not in idc_objects]
-        retired_objects = [idc_objects[id] for id in idc_objects if id not in source_objects]
-        existing_objects = [idc_objects[id] for id in source_objects if id in idc_objects]
+        new_objects = [id for id in series if id not in idc_objects]
+        retired_objects = [idc_objects[id] for id in idc_objects if id not in series]
+        existing_objects = [idc_objects[id] for id in series if id in idc_objects]
 
         for series in retired_objects:
             retire_series(sess, args, series, source)
@@ -710,7 +740,7 @@ def expand_study(sess, args, source, study, data_collection_doi, analysis_collec
     study.expanded = True
     sess.commit()
     # rootlogger.debug("    p%s: Expanded study %s",args.id,  study.study_instance_uid)
-
+    return
 
 def build_study(sess, args, source, study_index, version, collection, patient, study, data_collection_doi, analysis_collection_dois):
     begin = time.time()
@@ -727,34 +757,39 @@ def build_study(sess, args, source, study_index, version, collection, patient, s
     if all([series.done for series in study.seriess]):
         # study.min_timestamp = min([series.min_timestamp for series in study.seriess if series.min_timestamp != None])
         study.max_timestamp = max([series.max_timestamp for series in study.seriess if series.max_timestamp != None])
-
-        # Get hash of children
-        hash = source.idc_study_hash(study)
-        if source.src_study_hash(study.study_instance_uid) != hash:
-            # errlogger.error('Hash match failed for study %s', study.study_instance_uid)
-            raise Exception('Hash match failed for study %s', study.study_instance_uid)
-        else:
-            # Test whether anything has changed
-            if hash != study.hashes[source.source_id]:
-                hashes = list(study.hashes)
-                hashes[source.source_id] = hash
-                study.hashes = hashes
-
-                study.sources = accum_sources(study, study.seriess)
-                study.study_instances = sum([series.series_instances for series in study.seriess])
-                study.rev_idc_version = args.version
-
-                if not study.is_new:
-                    study.revised = True
-                    study.uuid = uuid4()
-            else:
-                rootlogger.info("    p%s: Study %s, %s, unchanged", args.id, study.study_instance_uid,
-                                study_index)
-
+        if args.build_mtm_db:
             study.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
             rootlogger.info("    p%s: Study %s, %s,  completed in %s", args.id, study.study_instance_uid, study_index, duration)
+        else:
+            # Get hash of children
+            hash = source.idc_study_hash(study)
+            if source.src_study_hash(study.study_instance_uid) != hash:
+                # errlogger.error('Hash match failed for study %s', study.study_instance_uid)
+                raise Exception('Hash match failed for study %s', study.study_instance_uid)
+            else:
+                # Test whether anything has changed
+                if hash != study.hashes[source.source_id]:
+                    hashes = list(study.hashes)
+                    hashes[source.source_id] = hash
+                    study.hashes = hashes
+
+                    study.sources = accum_sources(study, study.seriess)
+                    study.study_instances = sum([series.series_instances for series in study.seriess])
+                    study.rev_idc_version = args.version
+
+                    if not study.is_new:
+                        study.revised = True
+                        study.uuid = uuid4()
+                else:
+                    rootlogger.info("    p%s: Study %s, %s, unchanged", args.id, study.study_instance_uid,
+                                    study_index)
+
+                study.done = True
+                sess.commit()
+                duration = str(timedelta(seconds=(time.time() - begin)))
+                rootlogger.info("    p%s: Study %s, %s,  completed in %s", args.id, study.study_instance_uid, study_index, duration)
 
 
 def retire_patient(sess, args, patient, source):
@@ -778,39 +813,50 @@ def retire_patient(sess, args, patient, source):
 
 
 def expand_patient(sess, args, source, patient):
-    source_objects = source.studies(patient)    # patient_ids = [patient['PatientId'] for patient in patients]
-    if len(source_objects) != len(set(source_objects)):
+    studies = source.studies(patient)    # patient_ids = [patient['PatientId'] for patient in patients]
+
+    if len(studies) != len(set(studies)):
         errlogger.error("\tp%s: Duplicate studies in expansion of patient %s", args.id,
                         patient.submitter_case_id)
         raise RuntimeError("p%s: Duplicate studies expansion of collection %s", args.id,
                            patient.submitter_case_i)
 
+
     if patient.is_new:
-        metadata = []
-        for study in source_objects:
-            metadata.append(
-                dict(
-                    submitter_case_id = patient.submitter_case_id,
-                    min_timestamp = datetime.utcnow(),
-                    init_idc_version=args.version,
-                    rev_idc_version=args.version,
-                    study_instance_uid=study,
-                    uuid = uuid4(),
-                    sources=(False, False),
-                    hashes=("", "", ""),
-                    revised=False,
-                    done=False,
-                    is_new=True,
-                    expanded=False
-                )
-            )
-        sess.bulk_insert_mappings(Study, metadata)
+        for study in studies:
+            new_study = Study()
+
+            new_study.study_instance_uid=study
+            if args.build_mtm_db:
+                new_study.uuid = studies[study]['uuid']
+                new_study.min_timestamp = studies[study]['min_timestamp']
+                new_study.study_instances = studies[study]['study_instances']
+                new_study.sources = studies[study]['sources']
+                new_study.hashes = studies[study]['hashes']
+            else:
+                new_study.uuid = uuid4()
+                new_study.min_timestamp = datetime.utcnow()
+                new_study.study_instances = 0
+                new_study.sources = (False, False)
+                new_study.hashes = ("", "", "")
+            new_study.study_instances = 0
+            new_study.max_timestamp = new_study.min_timestamp
+            new_study.init_idc_version=args.version
+            new_study.rev_idc_version=args.version
+            new_study.final_idc_version=0
+            new_study.revised=False
+            new_study.done = False
+            new_study.is_new=True
+            new_study.expanded=False
+
+            patient.studies.append(new_study)
+
     else:
         idc_objects = {object.study_instance_uid: object for object in patient.studies}
 
-        new_objects = [id for id in source_objects if id not in idc_objects]
-        retired_objects = [idc_objects[id] for id in idc_objects if id not in source_objects]
-        existing_objects = [idc_objects[id] for id in source_objects if id in idc_objects]
+        new_objects = [id for id in studies if id not in idc_objects]
+        retired_objects = [idc_objects[id] for id in idc_objects if id not in studies]
+        existing_objects = [idc_objects[id] for id in studies if id in idc_objects]
 
         for study in retired_objects:
             retire_study(sess, args, study, source)
@@ -855,8 +901,7 @@ def expand_patient(sess, args, source, patient):
     patient.expanded = True
     sess.commit()
     # rootlogger.debug("  p%s: Expanded patient %s",args.id, patient.submitter_case_id)
-
-
+    return
 
 def build_patient(sess, args, source, patient_index, data_collection_doi, analysis_collection_dois, version, collection, patient):
     begin = time.time()
@@ -873,49 +918,62 @@ def build_patient(sess, args, source, patient_index, data_collection_doi, analys
         # patient.min_timestamp = min([study.min_timestamp for study in patient.studies if study.min_timestamp != None])
         patient.max_timestamp = max([study.max_timestamp for study in patient.studies if study.max_timestamp != None])
 
-        # Get hash of children
-        hash = source.idc_patient_hash(patient)
-        if source.src_patient_hash(collection.collection_id, patient.submitter_case_id) != hash:
-            # errlogger.error('Hash match failed for patient %s', patient.submitter_case_id)
-            raise Exception('Hash match failed for patient %s', patient.submitter_case_id)
-        else:
-            # Test whether anything has changed
-            if hash != patient.hashes[source.source_id]:
-                hashes = list(patient.hashes)
-                hashes[source.source_id] = hash
-                patient.hashes = hashes
-
-                patient.sources = accum_sources(patient, patient.studies)
-                patient.rev_idc_version = args.version
-
-                if not patient.is_new:
-                    patient.revised = True
-            else:
-                rootlogger.info("  p%s: Patient %s, %s, unchanged", args.id, patient.submitter_case_id, patient_index)
-
+        if args.build_mtm_db:
             patient.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
-            rootlogger.info("  p%s: Patient %s, %s, completed in %s, %s", args.id, patient.submitter_case_id, patient_index, duration, time.asctime())
+            rootlogger.info("  p%s: Patient %s, %s, completed in %s, %s", args.id, patient.submitter_case_id,
+                            patient_index, duration, time.asctime())
+        else:
+            # Get hash of children
+            hash = source.idc_patient_hash(patient)
+            if source.src_patient_hash(collection.collection_id, patient.submitter_case_id) != hash:
+                # errlogger.error('Hash match failed for patient %s', patient.submitter_case_id)
+                raise Exception('Hash match failed for patient %s', patient.submitter_case_id)
+            else:
+                # Test whether anything has changed
+                if hash != patient.hashes[source.source_id]:
+                    hashes = list(patient.hashes)
+                    hashes[source.source_id] = hash
+                    patient.hashes = hashes
+
+                    patient.sources = accum_sources(patient, patient.studies)
+                    patient.rev_idc_version = args.version
+
+                    if not patient.is_new:
+                        patient.revised = True
+                else:
+                    rootlogger.info("  p%s: Patient %s, %s, unchanged", args.id, patient.submitter_case_id, patient_index)
+
+                patient.done = True
+                sess.commit()
+                duration = str(timedelta(seconds=(time.time() - begin)))
+                rootlogger.info("  p%s: Patient %s, %s, completed in %s, %s", args.id, patient.submitter_case_id, patient_index, duration, time.asctime())
 
 
 def worker(input, output, args, data_collection_doi, analysis_collection_dois, lock):
     # rootlogger.debug('p%s: Worker starting: args: %s', args.id, args)
-    with Session(args.sql_engine) as sess:
-        source = (args.source_class)(sess)
+    sql_engine = create_engine(args.sql_uri)
+    with Session(sql_engine) as sess:
+
+        if args.build_mtm_db:
+            conn = psycopg2.connect(dbname=args.db, user=settings.CLOUD_USERNAME, port=settings.CLOUD_PORT,
+                                    password=settings.CLOUD_PASSWORD, host=settings.CLOUD_HOST)
+            cur = conn.cursor(cursor_factory=DictCursor)
+            source = args.source_class(cur, args.version)
+        else:
+            source = args.source_class(sess)
         source.lock = lock
         # rootlogger.info('p%s: Worker starting: args: %s', args.id, args)
         # rootlogger.info('p%s: Source: args: %s', args.id, source)
-        # rootlogger.info('p%s: Access token: %s, Refresh token: %s', args.id, source.access_token, source.refresh_token)
+        # rootlogger.info('p%s: conn: %s, cur: %s', args.id, conn, cur)
         # rootlogger.info('p%s: Lock: _rand %s, _sem_lock: %s', args.id, source.lock._rand, source.lock._semlock)
         for more_args in iter(input.get, 'STOP'):
             for attempt in range(PATIENT_TRIES):
                 time.sleep((2**attempt)-1)
                 index, collection_id, submitter_case_id = more_args
                 try:
-                    # version = sess.query(Version).filter_by(idc_version_number=idc_version_number).one()
                     version = sess.query(Version).one()
-                    # collection = next(collection for collection in version.collections if collection.collection_id==collection_id)
                     collection = sess.query(Collection).where(Collection.collection_id==collection_id).one()
                     patient = next(patient for patient in collection.patients if patient.submitter_case_id==submitter_case_id)
                     # rootlogger.debug("p%s: In worker, sess: %s, submitter_case_id: %s", args.id, sess, submitter_case_id)
@@ -952,50 +1010,57 @@ def retire_collection(sess, args, collection, source):
 
 
 def expand_collection(sess, args, source, collection):
-    # Since we are starting, delete everything from the prestaging bucket.
-    rootlogger.info("Emptying prestaging bucket")
-    begin = time.time()
-    create_prestaging_bucket(args)
-    empty_bucket(args.prestaging_bucket)
-     # Since we are starting, delete everything from the prestaging bucket.
-    duration = str(timedelta(seconds=(time.time() - begin)))
-    rootlogger.info("Emptying prestaging bucket completed in %s", duration)
+    if not args.build_mtm_db:
+        # Since we are starting, delete everything from the prestaging bucket.
+        rootlogger.info("Emptying prestaging bucket")
+        begin = time.time()
+        create_prestaging_bucket(args)
+        empty_bucket(args.prestaging_bucket)
+        # Since we are starting, delete everything from the prestaging bucket.
+        duration = str(timedelta(seconds=(time.time() - begin)))
+        rootlogger.info("Emptying prestaging bucket completed in %s", duration)
 
-    source_objects = source.patients(collection)
+    patients = source.patients(collection)
     # Check for duplicates
-    if len(source_objects) != len(set(source_objects)):
+    if len(patients) != len(set(patients)):
         errlogger.error("\tp%s: Duplicate patients in expansion of collection %s", args.id,
                         collection.collection_id)
         raise RuntimeError("p%s: Duplicate patients expansion of collection %s", args.id,
                            collection.collection_id)
-
     if collection.is_new:
         # ...then all its children are new
         metadata = []
-        for patient in source_objects:
-            metadata.append(
-                dict(
-                    collection_id = collection.collection_id,
-                    min_timestamp = datetime.utcnow(),
-                    init_idc_version=args.version,
-                    rev_idc_version=args.version,
-                    submitter_case_id=patient,
-                    idc_case_id = uuid4(),
-                    sources = [False, False],
-                    hashes = ["", "", ""],
-                    revised=False,
-                    done=False,
-                    is_new=True,
-                    expanded=False
-                )
-            )
-        sess.bulk_insert_mappings(Patient, metadata)
+        for patient in patients:
+            new_patient = Patient()
+
+            new_patient.submitter_case_id = patient
+            if args.build_mtm_db:
+                new_patient.idc_case_id = patients[patient]['idc_case_id']
+                new_patient.min_timestamp = patients[patient]['min_timestamp']
+                new_patient.sources = patients[patient]['sources']
+                new_patient.hashes = patients[patient]['hashes']
+            else:
+                new_patient.idc_case_idc = uuid4()
+                new_patient.min_timestamp = datetime.utcnow()
+                new_patient.sources = (False, False)
+                new_patient.hashes = ("", "", "")
+            new_patient.uuid = uuid4()
+            new_patient.max_timestamp = new_patient.min_timestamp
+            new_patient.init_idc_version=args.version
+            new_patient.rev_idc_version=args.version
+            new_patient.final_idc_version=0
+            new_patient.revised=False
+            new_patient.done=False
+            new_patient.is_new=True
+            new_patient.expanded=False
+
+            collection.patients.append(new_patient)
     else:
         idc_objects = {object.submitter_case_id: object for object in collection.patients}
 
-        new_objects = [id for id in source_objects if id not in idc_objects]
-        retired_objects = [idc_objects[id] for id in idc_objects if id not in source_objects]
-        existing_objects = [idc_objects[id] for id in idc_objects if id in source_objects]
+        new_objects = [id for id in patients if id not in idc_objects]
+        retired_objects = [idc_objects[id] for id in idc_objects if id not in patients]
+        existing_objects = [idc_objects[id] for id in idc_objects if id in patients]
 
         for patient in retired_objects:
             retire_patient(sess, args, patient, source)
@@ -1041,6 +1106,7 @@ def expand_collection(sess, args, source, collection):
         sess.bulk_insert_mappings(Patient, metadata)
     collection.expanded = True
     sess.commit()
+    return
     # rootlogger.debug("p%s: Expanded collection %s",args.id, collection.collection_id)
 
 
@@ -1069,8 +1135,11 @@ def build_collection(sess, args, source, collection_index, version, collection):
         else:
             errlogger.error('No DOI for collection %s', collection.collection_id)
             return
-    pre_analysis_collection_dois = get_analysis_collection_dois(collection.collection_id, server=args.server)
-    analysis_collection_dois = {x['SeriesInstanceUID']: x['SourceDOI'] for x in pre_analysis_collection_dois}
+    if not args.build_mtm_db:
+        pre_analysis_collection_dois = get_analysis_collection_dois(collection.collection_id, server=args.server)
+        analysis_collection_dois = {x['SeriesInstanceUID']: x['SourceDOI'] for x in pre_analysis_collection_dois}
+    else:
+        analysis_collection_dois = {}
 
     if args.num_processes==0:
         # for series in sorted_seriess:
@@ -1094,9 +1163,11 @@ def build_collection(sess, args, source, collection_index, version, collection):
         # List of patients enqueued
         enqueued_patients = []
 
+        num_processes = min(args.num_process, len(collection.patients))
+
         # Start worker processes
         lock = Lock()
-        for process in range(args.num_processes):
+        for process in range(num_processes):
             args.id = process+1
             processes.append(
                 Process(target=worker, args=(task_queue, done_queue, args, data_collection_doi, analysis_collection_dois, lock )))
@@ -1146,41 +1217,47 @@ def build_collection(sess, args, source, collection_index, version, collection):
         # collection.min_timestamp = min([patient.min_timestamp for patient in collection.patients if patient.min_timestamp != None])
         collection.max_timestamp = max([patient.max_timestamp for patient in collection.patients if patient.max_timestamp != None])
 
-        # Get hash of children
-        hash = source.idc_collection_hash(collection)
-        try:
-            source_hash = source.src_collection_hash(collection.collection_id)
-            if  source_hash != hash:
-                errlogger.error('Hash match failed for collection %s', collection.collection_id)
-            else:
-                # Test whether anything has changed
-                if hash != collection.hashes[source.source_id]:
-                    hashes = list(collection.hashes)
-                    hashes[source.source_id] = hash
-                    collection.hashes = hashes
-                    collection.sources = accum_sources(collection, collection.patients)
-
-                    collection.rev_idc_version = args.version
-
-                    if collection.is_new:
-                        collection.revised = True
-                else:
-                    rootlogger.info("Collection %s, %s, unchanged", collection.collection_id, collection_index)
-
-                collection.done = True
-                sess.commit()
+        if args.build_mtm_db:
+            collection.done = True
+            sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
             rootlogger.info("Collection %s, %s, completed in %s", collection.collection_id, collection_index,
-                            duration)
-        except Exception as exc:
-            errlogger.error('Could not validate collection hash for %s: %s', collection.collection_id, exc)
+                        duration)
+
+        else:
+        # Get hash of children
+            hash = source.idc_collection_hash(collection)
+            try:
+                source_hash = source.src_collection_hash(collection.collection_id)
+                if  source_hash != hash:
+                    errlogger.error('Hash match failed for collection %s', collection.collection_id)
+                else:
+                    # Test whether anything has changed
+                    if hash != collection.hashes[source.source_id]:
+                        hashes = list(collection.hashes)
+                        hashes[source.source_id] = hash
+                        collection.hashes = hashes
+                        collection.sources = accum_sources(collection, collection.patients)
+
+                        collection.rev_idc_version = args.version
+
+                        if collection.is_new:
+                            collection.revised = True
+                    else:
+                        rootlogger.info("Collection %s, %s, unchanged", collection.collection_id, collection_index)
+
+                    collection.done = True
+                    sess.commit()
+                duration = str(timedelta(seconds=(time.time() - begin)))
+                rootlogger.info("Collection %s, %s, completed in %s", collection.collection_id, collection_index,
+                                duration)
+            except Exception as exc:
+                errlogger.error('Could not validate collection hash for %s: %s', collection.collection_id, exc)
 
     else:
         duration = str(timedelta(seconds=(time.time() - begin)))
         rootlogger.info("Collection %s, %s, not completed in %s", collection.collection_id, collection_index,
                         duration)
-
-
 
 def expand_version(sess, args, source, version, skips):
     # If we are here, we are beginning work on this version.
@@ -1194,36 +1271,51 @@ def expand_version(sess, args, source, version, skips):
     idc_objects = {c.collection_id:c for c in idc_objects_results}
 
     # Get the collections that the source knows about
-    source_objects = source.collections()
+    collections = source.collections()
 
     # New collections
-    new_objects = [collection_id for collection_id in source_objects if collection_id not in idc_objects]
+    new_objects = [collection_id for collection_id in collections if collection_id not in idc_objects]
     # Collections that are no longer known about by the source
-    retired_objects = [idc_objects[collection_id] for collection_id in idc_objects if collection_id not in source_objects]
+    retired_objects = [idc_objects[collection_id] for collection_id in idc_objects if collection_id not in collections]
     # Collections that are in the previous version and still known about by the source
-    existing_objects = [idc_objects[collection_id] for collection_id in source_objects if collection_id in idc_objects]
+    existing_objects = [idc_objects[collection_id] for collection_id in collections if collection_id in idc_objects]
 
     for collection in retired_objects:
         if not collection.collection_id in skips:
         # Remove from the collection table, moving instance data to the retired table
             rootlogger.info('Collection %s retiring', collection.collection_id)
-            retire_collection(sess, args, collection, instance_source['path'].value)
-            if not any(collection.sources):
-                sess.delete(collection)
+            # Mark the now previous version of this object as having been retired
+            collection.final_idc_version = args.version - 1
 
+            # retire_collection(sess, args, collection, instance_source['path'].value)
+            # if not any(collection.sources):
+            #     sess.delete(collection)
 
     for collection in existing_objects:
         if not collection.collection_id in skips:
-            # If the our hash and source's hash differ then we need to revise this collection
-            # if source.collection_hashes_differ(collection):
             if source.collection_was_updated(collection):
+                # If the source has an updated version of this object, create a new version.
                 rootlogger.debug('**Collection %s needs revision',collection.collection_id)
-                # Mark when we started work on this collection
                 collection.min_timestamp = datetime.utcnow()
-                collection.revised = False
-                collection.done = False
-                collection.is_new = False
-                collection.expanded = False
+                new_collection = clone_object(Collection, collection)
+                new_collection.uuid = uuid4()
+                new_collection.rev_idc_version = args.version
+                new_collection.revised = False
+                new_collection.done = False
+                new_collection.is_new = False
+                new_collection.expanded = False
+                if args.build_mtm_db:
+                    new_collection.min_timestamp = collections[collection.collection_id]['min_timestamp']
+                    new_collection.sources = collections[collection.collection_id]['sources']
+                    new_collection.hashes = collections[collection.collection_id]['hashes']
+                else:
+                    new_collection.min_timestamp = datetime.utcnow()
+                    new_collection.sources = (True, False)
+                    new_collection.hashes = ("", "", "")
+                version.collections.append(new_collection)
+
+                # Mark the now previous version of this object as having been replaced
+                collection.final_idc_version = args.version-1
             else:
                 collection.min_timestamp = datetime.utcnow()
                 collection.max_timestamp = datetime.utcnow()
@@ -1232,27 +1324,33 @@ def expand_version(sess, args, source, version, skips):
                 rootlogger.debug('Collection %s unchanged',collection.collection_id)
             collection.min_timestamp = datetime.utcnow()
 
-    collection_data = []
     for collection_id in new_objects:
         if not collection_id in skips:
             # The collection is new, so we must ingest it
-            collection_data.append(
-                dict(
-                    min_timestamp = datetime.utcnow(),
-                    init_idc_version=args.version,
-                    rev_idc_version=args.version,
-                    collection_id = collection_id,
-                    sources = (True,False),
-                    hashes = ("","",""),
-                    revised = False,
-                    done = False,
-                    is_new = True,
-                    expanded = False,
-                )
-            )
-            rootlogger.info('Collection %s added', collection_id)
+            new_collection = Collection()
+            new_collection.collection_id = collection_id
+            new_collection.idc_collection_id = uuid4()
+            new_collection.uuid = uuid4()
+            if args.build_mtm_db:
+                new_collection.min_timestamp = collections[collection_id]['min_timestamp']
+                new_collection.sources = collections[collection_id]['sources']
+                new_collection.hashes = collections[collection_id]['hashes']
+            else:
+                new_collection.min_timestamp = datetime.utcnow()
+                new_collection.sources = (True,False)
+                new_collection.hashes = ("","","")
+            new_collection.max_timestamp = new_collection.min_timestamp
+            new_collection.init_idc_version=args.version
+            new_collection.rev_idc_version=args.version
+            new_collection.final_idc_version=0
+            new_collection.revised = False
+            new_collection.done = False
+            new_collection.is_new = True
+            new_collection.expanded = False
 
-    sess.bulk_insert_mappings(Collection, collection_data)
+            version.collections.append(new_collection)
+
+    # sess.bulk_insert_mappings(Collection, collection_data)
     version.expanded = True
     sess.commit()
     rootlogger.info("Expanded version")
@@ -1322,7 +1420,12 @@ def prebuild(args):
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
     # sql_engine = create_engine(sql_uri, echo=True)
     sql_engine = create_engine(sql_uri)
-    args.sql_engine = sql_engine
+
+    Base.metadata.create_all(sql_engine)
+
+    # args.sql_engine = sql_engine
+    args.sql_uri = sql_uri
+    Base.metadata.create_all(sql_engine)
 
     conn = sql_engine.connect()
     register_composites(conn)
@@ -1343,26 +1446,43 @@ def prebuild(args):
 
         # source = (args.source)(sess)
 
-        stmt = select(Version).distinct()
-        result = sess.execute(stmt)
-        version = result.fetchone()[0]
+        # stmt = select(Version).filter(Version.version==args.version)
+        # result = sess.execute(stmt)
+        # version = result.fetchall()
 
-        if version.version != args.version:
-            #
+        version = sess.query(Version).filter(Version.version==args.version).first()
+        if not version:
+            version = Version()
             version.expanded=False
             version.done=False
             version.is_new=True
             version.revised=False
-            # versions = list(version.versions[0:])
-            # versions[source.source_id] = args.version
+            version.hashes = ["","",""]
+            version.source_statuses = [
+                (None, None, False, False, True, False, args.version),
+                (None, None, False, False, True, False, args.version)
+            ]
             version.version = args.version
+            sess.add(version)
             sess.commit()
 
+            # version.source_statuses = [
+            #     [None, None, False, True, False, False, args.version],
+            #     [None, None, False, True, False, False, args.version]
+            # ]
 
         if not version.done:
             # We're not done. Ingest from each source
             for source_class in [TCIA, Pathology]:
-                source = source_class(sess)
+                # If we are build the many to many DB, then use psycopg2 to
+                # access the tables from which we build the DB
+                if args.build_mtm_db:
+                    conn = psycopg2.connect(dbname=args.db, user=settings.CLOUD_USERNAME, port=settings.CLOUD_PORT,
+                                            password=settings.CLOUD_PASSWORD, host=settings.CLOUD_HOST)
+                    cur = conn.cursor(cursor_factory=DictCursor)
+                    source = source_class(cur, args.version)
+                else:
+                    source = source_class(sess)
                 source.lock = Lock()
                 if not version.source_statuses[source.source_id].done:
                     args.source_class = source_class
