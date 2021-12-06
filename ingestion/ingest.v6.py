@@ -29,15 +29,15 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     # ]
-    parser.add_argument('--previous_version', default=2, help='Previous version')
-    parser.add_argument('--version', default=3, help='Version to work on')
+    parser.add_argument('--previous_version', default=4, help='Previous version')
+    parser.add_argument('--version', default=5, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())
     args = parser.parse_args()
     parser.add_argument('--db', default=f'idc_v6', help='Database on which to operate')
     parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--wsi_src_bucket', default=storage.Bucket(args.client,'af-dac-wsi-conversion-results'), help='Bucket in which to find WSI DICOMs')
     parser.add_argument('--prestaging_bucket_prefix', default=f'idc_v{args.version}_', help='Copy instances here before forwarding to --staging_bucket')
-    parser.add_argument('--num_processes', default=32, help="Number of concurrent processes")
+    parser.add_argument('--num_processes', default=0, help="Number of concurrent processes")
     # parser.add_argument('--todos', default='{}/logs/path_ingest_v{}_todos.txt'.format(os.environ['PWD'], args.version ), help="Collections to include")
     parser.add_argument('--skips', default='{}/logs/ingest_v{}_skips.txt'.format(os.environ['PWD'], args.version ), help="Collections to skip")
     # parser.add_argument('--source', default=TCIA, help="Source (type of data) from which to ingest: 'Pathology' or 'TCIA'")

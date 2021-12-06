@@ -32,7 +32,8 @@ from python_settings import settings
 from sqlalchemy import create_engine
 from sqlalchemy_utils import register_composites
 
-from ingestion.sources import All, All_mtm
+from ingestion.sources import All
+from ingestion.sources_mtm import All_mtm
 
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
@@ -54,19 +55,24 @@ def ingest(args):
 
     rootlogger.debug('Args: %s', args)
 
-    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
-    sql_engine = create_engine(sql_uri, echo=True)
-    # sql_engine = create_engine(sql_uri)
-
-    Base.metadata.create_all(sql_engine)
-    args.sql_uri = sql_uri
-    conn = sql_engine.connect()
-    register_composites(conn)
-
-    # Create a local working directory
+    # Create a local working directory into which data
+    # from TCIA is copied
     if os.path.isdir('{}'.format(args.dicom)):
         shutil.rmtree('{}'.format(args.dicom))
     os.mkdir('{}'.format(args.dicom))
+
+
+    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
+    sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
+    # sql_engine = create_engine(sql_uri)
+    args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
+
+    # Create the tables if they do not already exist
+    Base.metadata.create_all(sql_engine)
+
+    # Enable the underlying psycopg2 to deal with composites
+    conn = sql_engine.connect()
+    register_composites(conn)
 
     with Session(sql_engine) as sess:
         # Get the target version, if it exists
@@ -109,7 +115,14 @@ def ingest(args):
         if not version.done:
 
             if args.build_mtm_db:
-                all_sources = All_mtm(sess, args.version)
+                # When build the many-to-many DB, we mine some existing one to many DB
+                sql_uri_mtm = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/idc_v{args.version}'
+                sql_engine_mtm = create_engine(sql_uri_mtm, echo=True)
+                conn_mtm = sql_engine_mtm.connect()
+                register_composites(conn_mtm)
+                # Use this to see the SQL being sent to PSQL
+                all_sources = All_mtm(sess, Session(sql_engine_mtm), args.version)
+                collections = all_sources.collections()
             else:
                 all_sources = All(sess, args.version)
             all_sources.lock = Lock()

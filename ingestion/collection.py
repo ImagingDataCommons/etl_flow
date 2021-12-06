@@ -31,7 +31,8 @@ from ingestion.utils import accum_sources, empty_bucket, create_prestaging_bucke
 
 from sqlalchemy import create_engine
 
-from ingestion.sources import All, All_mtm
+from ingestion.sources import All
+from ingestion.sources_mtm import All_mtm
 
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
