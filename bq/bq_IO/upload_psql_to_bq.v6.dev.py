@@ -30,22 +30,31 @@ from bq.bq_IO.upload_psql_to_bq import upload_to_bq
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=5, help='Version to upload')
+    parser.add_argument('--version', default=6, help='Version to upload')
     args = parser.parse_args()
     parser.add_argument('--db', default=f'idc_v{args.version}', help="Database to access")
     parser.add_argument('--project', default='idc-dev-etl')
     args = parser.parse_args()
     parser.add_argument('--bqdataset_name', default=f"idc_v{args.version}", help="BQ dataset of table")
     parser.add_argument('--tables', default= [
-                    'version',
-                    'collection',
-                    'patient',
-                    'study',
-                    'series',
-                    'instance',
-                    'retired',
-                    'program',
-                    'wsi_metadata'
+                    # 'version',
+                    # 'version_collection',
+                    # 'collection',
+                    # 'collection_patient',
+                    # 'patient',
+                    # 'patient_study',
+                    # 'study',
+                    # 'study_series',
+                    # 'series',
+                    # 'series_instance',
+                    # 'instance',
+                    # 'wsi_metadata',
+                    'cr_collections',
+                    'defaced_collections',
+                    'excluded_collections',
+                    'open_collections',
+                    'redacted_collections',
+                    'program'
                     ], help="Tables to upload")
     parser.add_argument('--server', default='CLOUD')
     parser.add_argument('--user', default=settings.CLOUD_USERNAME)

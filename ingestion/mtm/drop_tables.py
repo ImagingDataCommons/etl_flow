@@ -30,17 +30,17 @@ conn = psycopg2.connect(dbname='idc_v6', user=settings.CLOUD_USERNAME, port=sett
 cur = conn.cursor(cursor_factory=DictCursor)
 
 tables = [
-    "instance_mm",
+    "instance",
     "series_instance",
-    "series_mm",
+    "series",
     "study_series",
-    "study_mm",
+    "study",
     "patient_study",
-    "patient_mm",
+    "patient",
     "collection_patient",
-    "collection_mm",
+    "collection",
     "version_collection",
-    "version_mm",
+    "version",
     ]
 
 for table in tables:
