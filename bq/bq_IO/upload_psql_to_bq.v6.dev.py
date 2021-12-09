@@ -37,24 +37,25 @@ if __name__ == '__main__':
     args = parser.parse_args()
     parser.add_argument('--bqdataset_name', default=f"idc_v{args.version}", help="BQ dataset of table")
     parser.add_argument('--tables', default= [
-                    # 'version',
-                    # 'version_collection',
-                    # 'collection',
-                    # 'collection_patient',
-                    # 'patient',
-                    # 'patient_study',
-                    # 'study',
-                    # 'study_series',
-                    # 'series',
-                    # 'series_instance',
-                    # 'instance',
-                    # 'wsi_metadata',
+                    'version',
+                    'version_collection',
+                    'collection',
+                    'collection_patient',
+                    'patient',
+                    'patient_study',
+                    'study',
+                    'study_series',
+                    'series',
+                    'series_instance',
+                    'instance',
+                    'wsi_metadata',
                     'cr_collections',
                     'defaced_collections',
                     'excluded_collections',
                     'open_collections',
                     'redacted_collections',
-                    'program'
+                    'program',
+                    'collection_id_map'
                     ], help="Tables to upload")
     parser.add_argument('--server', default='CLOUD')
     parser.add_argument('--user', default=settings.CLOUD_USERNAME)
