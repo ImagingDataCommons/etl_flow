@@ -93,7 +93,6 @@ def expand_study(sess, args, all_sources, study, data_collection_doi, analysis_c
         existing_objects =sorted( [idc_objects[id] for id in seriess if id in idc_objects], key=lambda series: series.series_instance_uid)
 
         for series in retired_objects:
-            breakpoint()
             rootlogger.info('Series %s:%s retiring', series.series_instance_uid, series.uuid)
             retire_series(args, series)
             study.seriess.remove(series)
