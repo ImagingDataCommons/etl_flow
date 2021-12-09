@@ -38,6 +38,29 @@ from ingestion.sources_mtm import All_mtm
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
 
+def test_source(args, all_sources):
+    from types import  SimpleNamespace
+    metadata = all_sources.collections()
+
+    d = {'collection_id':list(metadata.values())[0]['collection_id']}
+    object = SimpleNamespace(**d)
+    metadata = all_sources.patients(object)
+
+    d = {'submitter_case_id':list(metadata.keys())[0]}
+    object = SimpleNamespace(**d)
+    metadata = all_sources.studies(object)
+
+    d = {'study_instance_uid':list(metadata.keys())[0]}
+    object = SimpleNamespace(**d)
+    metadata = all_sources.series(object)
+
+    d = {'series_instance_uid':list(metadata.keys())[0]}
+    object = SimpleNamespace(**d)
+    metadata = all_sources.instances(object)
+
+    pass
+
+
 
 def ingest(args):
     # rootlogger = logging.getLogger('root')
@@ -115,14 +138,17 @@ def ingest(args):
         if not version.done:
 
             if args.build_mtm_db:
-                # When build the many-to-many DB, we mine some existing one to many DB
+                # When building the many-to-many DB, we mine some existing one to many DB
                 sql_uri_mtm = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/idc_v{args.version}'
                 sql_engine_mtm = create_engine(sql_uri_mtm, echo=True)
                 conn_mtm = sql_engine_mtm.connect()
+
                 register_composites(conn_mtm)
+
                 # Use this to see the SQL being sent to PSQL
                 all_sources = All_mtm(sess, Session(sql_engine_mtm), args.version)
-                collections = all_sources.collections()
+                # test_source(args, all_sources)
+
             else:
                 all_sources = All(sess, args.version)
             all_sources.lock = Lock()

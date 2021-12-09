@@ -31,12 +31,13 @@ from ingestion.utils import validate_hashes, md5_hasher, copy_disk_to_gcs, copy_
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
 
-def clone_instance (instance, uuid):
+def clone_instance(instance, uuid):
     new_instance = Instance(uuid=uuid)
     for key, value in instance.__dict__.items():
         if key not in ['_sa_instance_state', 'uuid']:
             setattr(new_instance, key, value)
     return new_instance
+
 
 def build_instances_tcia(sess, args, source, version, collection, patient, study, series):
     # Download a zip of the instances in a series

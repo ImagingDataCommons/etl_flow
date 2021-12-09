@@ -21,7 +21,7 @@ import logging
 from uuid import uuid4
 from idc.models import Study, Series
 from ingestion.utils import accum_sources
-from ingestion.series import clone_series, build_series
+from ingestion.series import clone_series, build_series, retire_series
 
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
@@ -35,6 +35,13 @@ def clone_study(study, uuid):
     for series in study.seriess:
         new_study.seriess.append(series)
     return new_study
+
+
+def retire_study(args, study ):
+    # If this object has children from source, delete them
+    for series in study.seriess:
+        retire_series(args, series)
+    study.final_idc_version = args.previous_version
 
 
 def expand_study(sess, args, all_sources, study, data_collection_doi, analysis_collection_dois):
@@ -86,19 +93,16 @@ def expand_study(sess, args, all_sources, study, data_collection_doi, analysis_c
         existing_objects =sorted( [idc_objects[id] for id in seriess if id in idc_objects], key=lambda series: series.series_instance_uid)
 
         for series in retired_objects:
+            breakpoint()
             rootlogger.info('Series %s:%s retiring', series.series_instance_uid, series.uuid)
-            series.final_idc_version = args.previous_version
-
-            # retire_series(sess, args, series, source)
-            # # if the series does not include instances from an source, delete it
-            # if not any(series.sources):
-            #     sess.delete(series)
+            retire_series(args, series)
+            study.seriess.remove(series)
 
         for series in existing_objects:
             if all_sources.series_was_updated(series):
                 rootlogger.debug('**Series %s needs revision', series.series_instance_uid)
-                rev_series = clone_series(series,series[series.series_instance_uid]['uuid'] if args.build_mtm_db else str(uuid4()))
-                assert args.version == series[series.series_instance_uid]['rev_idc_version']
+                rev_series = clone_series(series,seriess[series.series_instance_uid]['uuid'] if args.build_mtm_db else str(uuid4()))
+                assert args.version == seriess[series.series_instance_uid]['rev_idc_version']
                 # rev_series.uuid = str(uuid4())
                 rev_series.rev_idc_version = args.version
                 rev_series.revised = True
@@ -106,11 +110,11 @@ def expand_study(sess, args, all_sources, study, data_collection_doi, analysis_c
                 rev_series.is_new = False
                 rev_series.expanded = False
                 if args.build_mtm_db:
-                    rev_series.min_timestamp = series[series.series_instance_uid]['min_timestamp']
-                    rev_series.max_timestamp = series[series.series_instance_uid]['max_timestamp']
-                    rev_series.sources = series[series.series_instance_uid]['sources']
-                    rev_series.hashes = series[series.series_instance_uid]['hashes']
-                    rev_series.rev_idc_version = series[series.series_instance_uid]['rev_idc_version']
+                    rev_series.min_timestamp = seriess[series.series_instance_uid]['min_timestamp']
+                    rev_series.max_timestamp = seriess[series.series_instance_uid]['max_timestamp']
+                    rev_series.sources = seriess[series.series_instance_uid]['sources']
+                    rev_series.hashes = seriess[series.series_instance_uid]['hashes']
+                    rev_series.rev_idc_version = seriess[series.series_instance_uid]['rev_idc_version']
                 else:
                     rev_series.rev_idc_version = args.version
                 study.seriess.append(rev_series)

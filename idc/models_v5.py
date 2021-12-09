@@ -257,10 +257,29 @@ class Series(Base):
 
     study = relationship("Study", back_populates="seriess")
     instances = relationship("Instance", back_populates="series", order_by="Instance.sop_instance_uid", cascade="all, delete")
-    # instances = relationship("Study", backref="series")
+
+    # instance_views = relationship("InstanceView", back_populates="series", order_by="InstanceView.sop_instance_uid", cascade="all, delete")
+
+# class Instance(Base):
+#     __tablename__ = 'instance'
+#     timestamp = Column(DateTime, nullable=True, comment="Time when this object was last built")
+#     sop_instance_uid = Column(String, primary_key=True, nullable=False)
+#     uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of this object")
+#     hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of TCIA data at this level")
+#     size = Column(Integer, nullable=True, comment='Instance blob size (bytes)')
+#     revised = Column(Boolean, default=True, comment="If True, this object is revised relative to the previous IDC version")
+#     done = Column(Boolean, default=True, comment="True if this object has been processed")
+#     is_new = Column(Boolean, default=True, comment="True if this object is new in this version")
+#     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
+#     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
+#     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
+#     series_instance_uid = Column(ForeignKey('series.series_instance_uid'), comment="Containing object")
+#     source = Column(Enum(instance_source), nullable=False, comment='Source of this object; "tcia", "path"')
+#
+#     series = relationship("Series", back_populates="instances")
 
 class Instance(Base):
-    __tablename__ = 'instance'
+    __tablename__ = 'instance_view'
     timestamp = Column(DateTime, nullable=True, comment="Time when this object was last built")
     sop_instance_uid = Column(String, primary_key=True, nullable=False)
     uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of this object")

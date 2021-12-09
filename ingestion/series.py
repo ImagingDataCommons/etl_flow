@@ -32,8 +32,14 @@ def clone_series(series, uuid):
         if key not in ['_sa_instance_state', 'uuid', 'studies', 'instances']:
             setattr(new_series, key, value)
     for instance in series.instances:
-        new_series.instance.append(instance)
+        new_series.instances.append(instance)
     return new_series
+
+def retire_series(args, series):
+    # If this object has children from source, mark them as retired
+    for instance in series.instances:
+        instance.final_idc_version = args.previous_version
+    series.final_idc_version = args.previous_version
 
 
 def expand_series(sess, args, all_sources, series):
@@ -72,23 +78,25 @@ def expand_series(sess, args, all_sources, series):
                 new_instance.expanded=False
                 new_instance.init_idc_version=args.version
                 new_instance.rev_idc_version=args.version
-                new_instance.source=instances[instance]['source']
+                breakpoint() # Next line is probably incorrect
+                new_instance.source=None
                 new_instance.timestamp = datetime.utcnow()
             new_instance.final_idc_version = 0
             series.instances.append(new_instance)
     else:
+        # Get a list of the instances that we currently have in this series
         idc_objects = {object.sop_instance_uid: object for object in series.instances}
 
         new_objects = sorted([id for id in instances if id not in idc_objects])
         retired_objects = sorted([idc_objects[id] for id in idc_objects if id not in instances], key=lambda instance: instance.sop_instance_uid)
         existing_objects = sorted([idc_objects[id] for id in instances if id in idc_objects], key=lambda instance: instance.sop_instance_uid)
 
+
         for instance in retired_objects:
             rootlogger.info('Instance %s:%s retiring', instance.sop_instance_uid, instance.uuid)
             instance.final_idc_version = args.previous_version
-            # retire_instance(sess, args, instance, source)
-            # if instance.source == source.source_id:
-            #     sess.delete(instance)
+            series.instances.remove(instance)
+
 
         for instance in existing_objects:
             if all_sources.instance_was_updated(instance):
@@ -96,11 +104,11 @@ def expand_series(sess, args, all_sources, series):
                 new_instance = clone_instance(instance, instances[instance.sop_instance_uid]['uuid'] if args.build_mtm_db else str(uuid4()))
                 assert args.version == instances[instance.sop_instance_uid]['rev_idc_version']
                 new_instance.revised = True
-                new_instance.done = False
+                new_instance.done = True
                 new_instance.is_new = False
                 new_instance.expanded = True
                 if args.build_mtm_db:
-                    new_instance.min_timestamp = instances[instance.sop_instance_uid]['min_timestamp']
+                    new_instance.timestamp = instances[instance.sop_instance_uid]['timestamp']
                     new_instance.source = instances[instance.sop_instance_uid]['source']
                     new_instance.hash =instances[instance.sop_instance_uid]['hash']
                     # new_instance.uuid = instances[instance.sop_instance_uid]['uuid']
@@ -158,7 +166,8 @@ def expand_series(sess, args, all_sources, series):
                 new_instance.init_idc_version=args.version
                 new_instance.rev_idc_version=args.version
                 new_instance.sop_instance_uid=instance
-                new_instance.instances[instance]['source']
+                breakpoint()
+                new_instance.source=None # What is the source?
                 new_instance.timestamp = datetime.utcnow()
             series.instances.append(new_instance)
     series.expanded = True

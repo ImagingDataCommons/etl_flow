@@ -304,6 +304,11 @@ class Instance(Base):
                           secondary=series_instance,
                           back_populates='instances')
 
+class Collection_id_map(Base):
+    __tablename__ = 'collection_id_map'
+    collection_id = Column(String, primary_key=True)
+    idc_collection_id = Column(String, nullable=False)
+
 class WSI_metadata(Base):
     __tablename__ = 'wsi_metadata'
     collection_id = Column(String, nullable=False)

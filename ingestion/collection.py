@@ -19,12 +19,15 @@ from datetime import datetime, timedelta
 import logging
 from uuid import uuid4
 from idc.models import Version, Collection, Patient
-from ingestion.patient import clone_patient, build_patient
+from ingestion.patient import clone_patient, build_patient, retire_patient
+
+from python_settings import settings
 
 from multiprocessing import Process, Queue, Lock
 from queue import Empty
 
 from sqlalchemy.orm import Session
+from sqlalchemy_utils import register_composites
 from utilities.get_collection_dois import get_data_collection_doi, get_analysis_collection_dois
 
 from ingestion.utils import accum_sources, empty_bucket, create_prestaging_bucket
@@ -48,6 +51,12 @@ def clone_collection(collection,uuid):
     return new_collection
 
 
+def retire_collection(args, collection):
+    # If this object has children from source, delete them
+    for patient in collection.patients:
+        retire_patient(args, patient)
+    collection.final_idc_version = args.previous_version
+
 
 PATIENT_TRIES=5
 def worker(input, output, args, data_collection_doi, analysis_collection_dois, lock):
@@ -56,7 +65,13 @@ def worker(input, output, args, data_collection_doi, analysis_collection_dois, l
     with Session(sql_engine) as sess:
 
         if args.build_mtm_db:
-            all_sources = All_mtm(sess, args.version)
+            # When build the many-to-many DB, we mine some existing one to many DB
+            sql_uri_mtm = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/idc_v{args.version}'
+            sql_engine_mtm = create_engine(sql_uri_mtm, echo=True)
+            conn_mtm = sql_engine_mtm.connect()
+            register_composites(conn_mtm)
+            # Use this to see the SQL being sent to PSQL
+            all_sources = All_mtm(sess, Session(sql_engine_mtm), args.version)
         else:
             all_sources = All(sess, args.version)
         all_sources.lock = lock
@@ -143,12 +158,11 @@ def expand_collection(sess, args, all_sources, collection):
         existing_objects = sorted([idc_objects[id] for id in idc_objects if id in patients], key=lambda patient: patient.submitter_case_id)
 
         for patient in retired_objects:
+            breakpoint()
             rootlogger.info('Patient %s retiring', patient.submitter_case_id)
-            patient.final_idc_version = args.previous_version
+            retire_patient(args, patient)
+            collection.patients.remove(patient)
 
-            # retire_patient(sess, args, patient, source)
-            # if not any(patient.sources):
-            #     sess.delete(patient)
 
         for patient in existing_objects:
             if all_sources.patient_was_updated(patient):
@@ -288,7 +302,8 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
 
         # Enqueue each patient in the the task queue
         args.id = 0
-        for patient in collection.patients:
+        patients = sorted(collection.patients, key=lambda patient: patient.done, reverse=True)
+        for patient in patients:
             patient_index = f'{collection.patients.index(patient) + 1} of {len(collection.patients)}'
             if not patient.done:
                 # task_queue.put((patient_index, version.idc_version_number, collection.collection_id, patient.submitter_case_id))

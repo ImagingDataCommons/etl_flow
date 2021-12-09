@@ -20,7 +20,7 @@ import logging
 from uuid import uuid4
 from idc.models import Patient, Study
 from ingestion.utils import accum_sources
-from ingestion.study import clone_study, build_study
+from ingestion.study import clone_study, build_study, retire_study
 
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
@@ -34,6 +34,13 @@ def clone_patient(patient, uuid):
     for study in patient.studies:
         new_patient.studies.append(study)
     return new_patient
+
+
+def retire_patient(args, patient):
+    # If this object has children from source, delete them
+    for study in patient.studies:
+        retire_study(args, study)
+    patient.final_idc_version = args.previous_version
 
 
 def expand_patient(sess, args, all_sources, patient):
@@ -83,17 +90,16 @@ def expand_patient(sess, args, all_sources, patient):
         existing_objects = sorted([idc_objects[id] for id in studies if id in idc_objects], key=lambda study: study.study_instance_uid)
 
         for study in retired_objects:
+            breakpoint()
             rootlogger.info('Study %s:%s retiring', study.study_instance_uid, study.uuid)
-            study.final_idc_version = args.previous_version
-            # retire_study(sess, args, study, source)
-            # if not any(study.sources):
-            #     sess.delete(study)
+            retire_study(args, study)
+            patient.studies.remove(study)
 
         for study in existing_objects:
             if all_sources.study_was_updated(study):
                 rootlogger.info('**Patient %s needs revision', patient.submitter_case_id)
                 rev_study = clone_study(study, studies[study.study_instance_uid]['uuid'] if args.build_mtm_db else str(uuid4()))
-                assert args.version == study[study.study_instance_uid]['rev_idc_version']
+                assert args.version == studies[study.study_instance_uid]['rev_idc_version']
                 rev_study.revised = True
                 rev_study.done = False
                 rev_study.is_new = False

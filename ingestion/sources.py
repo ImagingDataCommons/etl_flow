@@ -20,20 +20,11 @@ from utilities.tcia_helpers import  get_access_token, get_hash, get_TCIA_studies
 from idc.models  import Collection, Patient, Study, Series, Instance, WSI_metadata, instance_source
 from sqlalchemy import select
 from google.cloud import bigquery
-import hashlib
+from ingestion.utils import get_merkle_hash
 import logging
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
 
-
-
-# Hash a sorted list of hashes
-def get_merkle_hash(hashes):
-    md5 = hashlib.md5()
-    hashes.sort()
-    for hash in hashes:
-        md5.update(hash.encode())
-    return md5.hexdigest()
 
 
 class Source:
