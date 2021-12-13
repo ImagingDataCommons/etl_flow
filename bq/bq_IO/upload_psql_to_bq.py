@@ -461,36 +461,6 @@ def upload_to_bq(args):
                 upload_table(cur, args, table)
             pass
 
-# if __name__ == '__main__':
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('--version', default=5, help='Version to upload')
-#     parser.add_argument('--db', default='idc_v0', help="Database to access")
-#     parser.add_argument('--project', default='idc-dev-etl')
-#     args = parser.parse_args()
-#     parser.add_argument('--bqdataset_name', default=f"idc_v{args.version}", help="BQ dataset of table")
-#     parser.add_argument('--user', default=settings.CLOUD_USERNAME)
-#     parser.add_argument('--password', default=settings.CLOUD_PASSWORD)
-#     parser.add_argument('--host', default=settings.CLOUD_HOST)
-#     parser.add_argument('--port', default=settings.CLOUD_PORT)
-#     args = parser.parse_args()
-#
-#     print('args: {}'.format(args))
-#
-#
-#     rootlogger = logging.getLogger('root')
-#     root_fh = logging.FileHandler('{}/logs/copy_staging_log.log'.format(os.environ['PWD']))
-#     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
-#     rootlogger.addHandler(root_fh)
-#     root_fh.setFormatter(rootformatter)
-#     rootlogger.setLevel(INFO)
-#
-#     errlogger = logging.getLogger('root.err')
-#     err_fh = logging.FileHandler('{}/logs/copy_staging_err.log'.format(os.environ['PWD']))
-#     errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
-#     errlogger.addHandler(err_fh)
-#     err_fh.setFormatter(errformatter)
-#
-#     upload_to_bq(args)
 
 
 
