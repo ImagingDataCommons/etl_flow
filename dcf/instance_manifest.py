@@ -62,6 +62,7 @@ def gen_revision_manifest(args):
     # Run a query that generates the manifest data
     results = query_BQ(BQ_client, args.bqdataset, args.temp_table, query, write_disposition='WRITE_TRUNCATE')
 
+    # Export the resulting table to GCS
     results = export_BQ_to_GCS(BQ_client, args.bqdataset, args.temp_table, args.manifest_uri)
 
     while results.state == 'RUNNING':

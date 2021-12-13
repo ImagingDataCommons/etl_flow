@@ -25,33 +25,41 @@ from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json, query_BQ, create_BQ_dataset, delete_BQ_dataset
 
 
-def delete_all_views_in_current_dataset(target_client, args):
-    views = [views for views in target_client.list_tables (f'{args.project}.{args.current_bqdataset}')]
+def delete_all_views_in_target_dataset(target_client, args):
+    views = [views for views in target_client.list_tables (f'{args.trg_project}.{args.trg_bqdataset}')]
     for view in views:
         # pass
         target_client.delete_table(view)
 
 
 def gen_idc_current_dataset(args):
-    target_client = bigquery.Client(project=args.project)
+    trg_client = bigquery.Client(project=args.trg_project)
 
     try:
-        dataset = create_BQ_dataset(target_client, args.current_bqdataset)
+        trg_dataset = create_BQ_dataset(trg_client, args.current_bqdataset)
     except Exception as exc:
         print("Target dataset already exists")
 
-    delete_all_views_in_current_dataset(target_client, args)
+    # Delete any views in the target dataset
+    delete_all_views_in_target_dataset(trg_client, args)
 
-    tables = [table for table in target_client.list_tables (f'{args.project}.{args.bqdataset}')]
+    # Get a list of the tables in the source dataset
+    src_tables = [table for table in trg_client.list_tables (f'{args.src_project}.{args.src_bqdataset}')]
 
-    for table in tables:
+    # For each table, get a view and create a view in the target dataset
+    for table in src_tables:
+
         table_id = table.table_id
-        targ_view = bigquery.Table(f'{args.project}.{args.current_bqdataset}.{table_id}')
 
+        # Create the view object
+        trg_view = bigquery.Table(f'{args.trg_project}.{args.trg_bqdataset}.{table_id}')
+        # Form the view SQL
         view_sql = f"""
-            select * from `{args.project}.{args.bqdataset}.{table_id}`"""
-        targ_view.view_query = view_sql
-        installed_targ_view = target_client.create_table(targ_view)
+            select * from `{args.src_project}.{args.src_bqdataset}.{table_id}`"""
+        # Add the SQL to the view object
+        trg_view.view_query = view_sql
+        # Create the view in the target dataset
+        installed_targ_view = trg_client.create_table(trg_view)
 
 
 if __name__ == '__main__':

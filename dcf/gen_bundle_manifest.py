@@ -13,8 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Generate a manifest of "large" bundles. These are bundles with >= 3000 instances.
-# We did not previously register these.
+# Generate a manifest of bundles. The manifest will include bundles
+# for studies and series that were new or revised in some specifed
+# IDC version
 import argparse
 from google.cloud import bigquery
 from utilities.bq_helpers import query_BQ, export_BQ_to_GCS, delete_BQ_Table
@@ -61,11 +62,10 @@ def gen_bundle_manifest(args):
           bundle_names"""
 
     # Run a query that generates the manifest data
-    results = query_BQ(BQ_client, args.bqdataset, args.temp_table, query, write_disposition='WRITE_TRUNCATE')
+    query_BQ(BQ_client, args.bqdataset, args.temp_table, query, write_disposition='WRITE_TRUNCATE')
 
+    # Export the resulting table to GCS
     results = export_BQ_to_GCS(BQ_client, args.bqdataset, args.temp_table, args.manifest_uri)
-
-    delete_BQ_Table(BQ_client, args.project, args.bqdataset, args.temp_table)
 
     while results.state == 'RUNNING':
         pass

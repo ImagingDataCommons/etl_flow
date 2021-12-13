@@ -26,9 +26,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=5, help='Current IDC version')
     args = parser.parse_args()
-    parser.add_argument('--project', default='canceridc-data')
-    parser.add_argument('--bqdataset', default=f'idc_v{args.version}', help='BQ dataset name')
-    parser.add_argument('--current_bqdataset', default=f'idc_current', help='current dataset name')
+    parser.add_argument('--src_project', default='bigquery-public-data')
+    parser.add_argument('--src_bqdataset', default=f'idc_current', help='BQ dataset name')
+    parser.add_argument('--trg_project', default='canceridc-data')
+    parser.add_argument('--trg_bqdataset', default=f'idc_current', help='BQ dataset name')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

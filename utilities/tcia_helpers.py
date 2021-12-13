@@ -87,67 +87,25 @@ def refresh_access_token(refresh_token, auth_server = NBIA_AUTH_URL):
     access_token = result.json()['access_token']
     return (access_token, refresh_token)
 
+def get_instance_hash_nlst(sop_instance_uid, access_token=None):
+    # if not access_token:
+    #     access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
+    headers = dict(
+        Authorization=f'Bearer {access_token}'
+    )
+    url = f"{NLST_V1_URL}/getM5HashForImage?SOPInstanceUid={sop_instance_uid}"
+    result = requests.get(url, headers=headers)
+    return result
 
-# def get_instance_hash(sop_instance_uid, access_token=None, refresh_token=None):
-#     if not access_token:
-#         access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
-#     headers = dict(
-#         Authorization=f'Bearer {access_token}'
-#     )
-#     # url = "https://public-dev.cancerimagingarchive.net/nbia-api/services/getMD5Hierarchy"
-#     url = f"{NBIA_V2_URL}/getM5HashForImage?SOPInstanceUid={sop_instance_uid}"
-#     result = requests.get(url, headers=headers)
-#     if result.status_code == 401:
-#         if access_token:
-#             # Refresh the token and try once more to get the hash
-#             access_token, refresh_token = refresh_access_token(refresh_token, NBIA_AUTH_URL)
-#             print('Refreshed access token')
-#             headers = dict(
-#                 Authorization=f'Bearer {access_token}'
-#             )
-#             result = requests.post(url, headers=headers)
-#             if result.status_code != 200:
-#                 return (None, access_token, refresh_token)
-#             else:
-#                 return (result, access_token, refresh_token)
-#         else:
-#             return (result, access_token, refresh_token)
-#     elif result.status_code != 200:
-#         return (None, access_token, refresh_token)
-#     else:
-#         return (result, access_token, refresh_token)
-#
-#
-# def get_hash(request_data, access_token=None, refresh_token=None):
-#     if not access_token:
-#         access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
-#     headers = dict(
-#         Authorization=f'Bearer {access_token}'
-#     )
-#     # url = "https://public-dev.cancerimagingarchive.net/nbia-api/services/getMD5Hierarchy"
-#     url = f"{NBIA_URL}/getMD5Hierarchy"
-#     result = requests.post(url, headers=headers, data=request_data)
-#     if result.status_code == 401:
-#         if access_token:
-#             # Refresh the token and try once more to get the hash
-#             access_token, refresh_token = refresh_access_token(refresh_token, NBIA_AUTH_URL)
-#             print('Refreshed access token')
-#             headers = dict(
-#                 Authorization=f'Bearer {access_token}'
-#             )
-#             result = requests.post(url, headers=headers, data=request_data)
-#             if result.status_code != 200:
-#                 return (None, access_token, refresh_token)
-#             else:
-#                 return (result, access_token, refresh_token)
-#         else:
-#             return (result, access_token, refresh_token)
-#     elif result.status_code != 200:
-#         return (None, access_token, refresh_token)
-#     else:
-#         return (result, access_token, refresh_token)
-
-
+def get_instance_hash(sop_instance_uid, access_token=None):
+    # if not access_token:
+    #     access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
+    headers = dict(
+        Authorization=f'Bearer {access_token}'
+    )
+    url = f"{NBIA_V2_URL}/getM5HashForImage?SOPInstanceUid={sop_instance_uid}"
+    result = requests.get(url, headers=headers)
+    return result
 
 def get_hash_nlst(request_data, access_token=None):
     # if not access_token:
@@ -554,7 +512,12 @@ if __name__ == "__main__":
 
     # p = get_TCIA_patients_per_collection('Training-Pseudo')
     # p = get_TCIA_patients_per_collection('NLST', server="NLST")
-    token = get_access_token(auth_server=NLST_AUTH_URL)[0]
+    token= get_access_token()[0]
+    hash = get_hash({'Collection':'LDCT-and-Projection-data'}, token)
+    hash=get_instance_hash('1.3.6.1.4.1.14519.5.2.1.1239.1759.816520824397947445116098544516', access_token=token)
+    token= get_access_token(auth_server=NLST_AUTH_URL)[0]
+    hash=get_instance_hash_nlst('1.2.840.113654.2.55.41416806874377832798981746093165948327', access_token=token)
+
     hash = get_hash_nlst({'SeriesInstanceUID':f'1.2.840.113654.2.55.97114726565566537928831413367474015470'}, token)
     hash = get_images_with_md5_hash_nlst('1.2.840.113654.2.55.97114726565566537928831413367474015470', token)
     d = get_collection_descriptions_and_licenses()
