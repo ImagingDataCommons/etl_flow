@@ -86,8 +86,8 @@ def ingest(args):
 
 
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
-    sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
-    # sql_engine = create_engine(sql_uri)
+    # sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
+    sql_engine = create_engine(sql_uri)
     args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
 
     # Create the tables if they do not already exist
@@ -99,6 +99,23 @@ def ingest(args):
 
     with Session(sql_engine) as sess:
         # Get the target version, if it exists
+        if args.build_mtm_db:
+            # When building the many-to-many DB, we mine some existing one to many DB
+            sql_uri_mtm = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/idc_v{args.version}'
+            sql_engine_mtm = create_engine(sql_uri_mtm)
+            # sql_engine_mtm = create_engine(sql_uri_mtm, echo=True)
+            conn_mtm = sql_engine_mtm.connect()
+
+            register_composites(conn_mtm)
+
+            # Use this to see the SQL being sent to PSQL
+            all_sources = All_mtm(sess, Session(sql_engine_mtm), args.version)
+            # test_source(args, all_sources)
+
+        else:
+            all_sources = All(sess, args.version)
+        all_sources.lock = Lock()
+
         version = sess.query(Version).filter(Version.version == args.version).first()
         if not version:
             previous_version = sess.query(Version).filter(Version.version == args.previous_version).first()
@@ -129,29 +146,20 @@ def ingest(args):
                     version.done = False
                     version.is_new = False
                     version.revised = False
-                    version.hashes = ("","","")
-                    version.sources= (False,False)
-                    version.min_timestamp = None
-                    version.max_timestamp = None
+                    if args.build_mtm_db:
+                        version_metadata = all_sources.versions(args.version)
+                        version.hashes = version_metadata[args.version]['hashes']
+                        version.sources = (True, True)
+                        version.min_timestamp = version_metadata[args.version]['min_timestamp']
+                        version.max_timestamp = version_metadata[args.version]['max_timestamp']
+                    else:
+                        version.hashes = ("","","")
+                        version.sources= (False,False)
+                        version.min_timestamp = None
+                        version.max_timestamp = None
                     sess.commit()
 
         if not version.done:
-
-            if args.build_mtm_db:
-                # When building the many-to-many DB, we mine some existing one to many DB
-                sql_uri_mtm = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/idc_v{args.version}'
-                sql_engine_mtm = create_engine(sql_uri_mtm, echo=True)
-                conn_mtm = sql_engine_mtm.connect()
-
-                register_composites(conn_mtm)
-
-                # Use this to see the SQL being sent to PSQL
-                all_sources = All_mtm(sess, Session(sql_engine_mtm), args.version)
-                # test_source(args, all_sources)
-
-            else:
-                all_sources = All(sess, args.version)
-            all_sources.lock = Lock()
             build_version(sess, args, all_sources, version)
         else:
             rootlogger.info("    version %s previously built", args.version)

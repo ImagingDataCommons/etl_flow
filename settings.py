@@ -23,14 +23,14 @@ from dotenv import load_dotenv
 
 SECURE_LOCAL_PATH =     os.environ.get('SECURE_LOCAL_PATH', '')
 
-if not exists(join(dirname(__file__), SECURE_LOCAL_PATH, '.env')):
-    print("[ERROR] Couldn't open .env file expected at {}!".format(
-        join(dirname(__file__), SECURE_LOCAL_PATH, '.env'))
+if not exists(join(dirname(__file__), SECURE_LOCAL_PATH, '.env.idc-dev-etl')):
+    print("[ERROR] Couldn't open .env.idc-dev-etl file expected at {}!".format(
+        join(dirname(__file__), SECURE_LOCAL_PATH, '.env.idc-dev-etl'))
     )
     print("[ERROR] Exiting settings.py load - check your Pycharm settings and secure_path.env file.")
     exit(1)
 
-load_dotenv(dotenv_path=join(dirname(__file__), SECURE_LOCAL_PATH, '.env'))
+load_dotenv(dotenv_path=join(dirname(__file__), SECURE_LOCAL_PATH, '.env.idc-dev-etl'))
 
 DEBUG =                 (os.environ.get('DEBUG', 'False') == 'True')
 

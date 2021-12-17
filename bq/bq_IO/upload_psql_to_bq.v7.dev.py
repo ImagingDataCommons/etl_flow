@@ -16,7 +16,7 @@
 
 # Duplicate psql version, collection, patient, study, series and instance metadata tables in BQ. These are
 # essentially a normalization of an auxilliary_metadata table
-# The BQ dataset containing the tables to be duplicated is specified in the .env file (maybe not the best place).
+# The BQ dataset containing the tables to be duplicated is specified in the .env.idc-dev-etl file (maybe not the best place).
 # The bigquery_uri engine is configured to access that dataset.
 
 
@@ -30,32 +30,32 @@ from bq.bq_IO.upload_psql_to_bq import upload_to_bq
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=6, help='Version to upload')
+    parser.add_argument('--version', default=7, help='Version to upload')
     args = parser.parse_args()
     parser.add_argument('--db', default=f'idc_v{args.version}', help="Database to access")
     parser.add_argument('--project', default='idc-dev-etl')
     args = parser.parse_args()
     parser.add_argument('--bqdataset_name', default=f"idc_v{args.version}", help="BQ dataset of table")
     parser.add_argument('--tables', default= [
-                    'version',
-                    'version_collection',
-                    'collection',
-                    'collection_patient',
-                    'patient',
-                    'patient_study',
-                    'study',
-                    'study_series',
-                    'series',
-                    'series_instance',
+                    # 'collection',
+                    # 'collection_id_map',
+                    # 'collection_patient',
+                    # 'cr_collections',
+                    # 'defaced_collections',
+                    # 'excluded_collections',
                     'instance',
-                    'wsi_metadata',
-                    'cr_collections',
-                    'defaced_collections',
-                    'excluded_collections',
-                    'open_collections',
-                    'redacted_collections',
-                    'program',
-                    'collection_id_map'
+                    # 'open_collections',
+                    # 'patient',
+                    # 'patient_study',
+                    # 'program',
+                    # 'redacted_collections',
+                    # 'series',
+                    # 'series_instance',
+                    # 'study',
+                    # 'study_series',
+                    # 'version',
+                    # 'version_collection',
+                    # 'wsi_metadata'
                     ], help="Tables to upload")
     parser.add_argument('--server', default='CLOUD')
     parser.add_argument('--user', default=settings.CLOUD_USERNAME)

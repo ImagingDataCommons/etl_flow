@@ -67,7 +67,7 @@ def worker(input, output, args, data_collection_doi, analysis_collection_dois, l
         if args.build_mtm_db:
             # When build the many-to-many DB, we mine some existing one to many DB
             sql_uri_mtm = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/idc_v{args.version}'
-            sql_engine_mtm = create_engine(sql_uri_mtm, echo=True)
+            sql_engine_mtm = create_engine(sql_uri_mtm)
             conn_mtm = sql_engine_mtm.connect()
             register_composites(conn_mtm)
             # Use this to see the SQL being sent to PSQL

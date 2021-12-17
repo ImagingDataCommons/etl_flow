@@ -39,8 +39,10 @@ def clone_version(previous_version, new_version):
 def expand_version(sess, args, all_sources, version, skips):
     # Get the collections that the sources know about
     collections = all_sources.collections()
-    # Because collection IDs can change, we need to map these to
-    # idc_collection_ids. So get the ID map
+    # Because collection IDs can change, collections is indexed by the idc_collection_id
+    # of each collections. This mapping is maintained in the collection_id_map table. It
+    # should be updated with a new (collection_id, idc_collection_id) when the ingestion
+    # process will see a change in the collection_id for some collection.
 
     # Get the collections in the previous version
     idc_objects_results = sess.query(Collection)
@@ -107,7 +109,7 @@ def expand_version(sess, args, all_sources, version, skips):
                 collection.final_idc_version = args.previous_version
                 version.collections.remove(collection)
             elif collection.collection_id != collections[collection.idc_collection_id]['collection_id']:
-                # The collection_id has changed. Treat as a revised collection
+                # The collection_id has changed. Treat as a revised collection even though the hash is unchanged
                 rootlogger.debug('**Collection_id changed %s. Generating revision',collection.collection_id)
                 rev_collection = clone_collection(collection, uuid=str(uuid4()))
 

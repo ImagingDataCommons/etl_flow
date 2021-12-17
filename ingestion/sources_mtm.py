@@ -231,6 +231,18 @@ class All_mtm(All):
         self.sources[instance_source.path] = Pathology_mtm(mtm_sess)
 
 
+    def version(self, version):
+        version_metadata = {row.submitter_case_id: {
+            'min_timestamp': row.min_timestamp,
+            'max_timestamp': row.max_timestamp,
+            'hashes': list(dict({key: val if not val is None else "" for key, val in row.hashes._asdict().items()}).values())
+            } for row in self.sess.query(Patient).where(Patient.collection_id==collection.collection_id).all()}
+
+         # Make a copy for subsequent access by other sources functions
+        self.version_metadata = version_metadata
+        return version_metadata
+
+
     def collections(self):
         pre_metadata = {row.collection_id: {
             'rev_idc_version':row.rev_idc_version,

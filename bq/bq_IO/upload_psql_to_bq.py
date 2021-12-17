@@ -16,7 +16,7 @@
 
 # Duplicate psql version, collection, patient, study, series and instance metadata tables in BQ. These are
 # essentially a normalization of an auxilliary_metadata table
-# The BQ dataset containing the tables to be duplicated is specified in the .env file (maybe not the best place).
+# The BQ dataset containing the tables to be duplicated is specified in the .env.idc-dev-etl file (maybe not the best place).
 # The bigquery_uri engine is configured to access that dataset.
 
 

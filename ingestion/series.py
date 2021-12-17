@@ -111,6 +111,7 @@ def expand_series(sess, args, all_sources, series):
                     new_instance.timestamp = instances[instance.sop_instance_uid]['timestamp']
                     new_instance.source = instances[instance.sop_instance_uid]['source']
                     new_instance.hash =instances[instance.sop_instance_uid]['hash']
+                    new_instance.size =instances[instance.sop_instance_uid]['size']
                     # new_instance.uuid = instances[instance.sop_instance_uid]['uuid']
                     new_instance.rev_idc_version = instances[instance.sop_instance_uid]['rev_idc_version']
                 else:

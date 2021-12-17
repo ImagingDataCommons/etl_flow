@@ -111,6 +111,7 @@ def expand_study(sess, args, all_sources, study, data_collection_doi, analysis_c
                 if args.build_mtm_db:
                     rev_series.min_timestamp = seriess[series.series_instance_uid]['min_timestamp']
                     rev_series.max_timestamp = seriess[series.series_instance_uid]['max_timestamp']
+                    rev_series.source_doi = seriess[series.series_instance_uid]['source_doi']
                     rev_series.sources = seriess[series.series_instance_uid]['sources']
                     rev_series.hashes = seriess[series.series_instance_uid]['hashes']
                     rev_series.rev_idc_version = seriess[series.series_instance_uid]['rev_idc_version']
