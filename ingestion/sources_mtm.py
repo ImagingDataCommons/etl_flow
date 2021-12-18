@@ -19,7 +19,7 @@ from google.cloud import bigquery
 from uuid import uuid4
 from utilities.tcia_helpers import  get_access_token
 from ingestion.sources import All, TCIA, Pathology
-from idc.models_v5  import Collection, Patient, Study, Series, Instance, WSI_metadata, instance_source
+from idc.models_v5  import Version, Collection, Patient, Study, Series, Instance, WSI_metadata, instance_source
 from idc.models import Collection_id_map
 from ingestion.utils import get_merkle_hash
 import logging
@@ -231,12 +231,12 @@ class All_mtm(All):
         self.sources[instance_source.path] = Pathology_mtm(mtm_sess)
 
 
-    def version(self, version):
-        version_metadata = {row.submitter_case_id: {
+    def versions(self, version):
+        version_metadata = {row.version: {
             'min_timestamp': row.min_timestamp,
             'max_timestamp': row.max_timestamp,
             'hashes': list(dict({key: val if not val is None else "" for key, val in row.hashes._asdict().items()}).values())
-            } for row in self.sess.query(Patient).where(Patient.collection_id==collection.collection_id).all()}
+            } for row in self.sess.query(Version).where(Version.version == version).all()}
 
          # Make a copy for subsequent access by other sources functions
         self.version_metadata = version_metadata
