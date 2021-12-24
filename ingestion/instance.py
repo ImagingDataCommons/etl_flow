@@ -39,7 +39,7 @@ def clone_instance(instance, uuid):
     return new_instance
 
 
-def build_instances_tcia(sess, args, source, version, collection, patient, study, series):
+def build_instances_tcia(sess, args, collection, patient, study, series):
     # Download a zip of the instances in a series
     # It will be write the zip to a file dicom/<series_instance_uid>.zip in the
     # working directory, and expand the zip to directory dicom/<series_instance_uid>
@@ -144,7 +144,7 @@ def build_instances_tcia(sess, args, source, version, collection, patient, study
 
         metadata_times.append(time.time_ns())
         instance.hash = md5_hasher(blob_name)
-        instance.instance_size = Path(blob_name).stat().st_size
+        instance.size = Path(blob_name).stat().st_size
         instance.timestamp = datetime.utcnow()
         metadata_times.append(time.time_ns())
 
@@ -168,6 +168,8 @@ def build_instances_tcia(sess, args, source, version, collection, patient, study
         copy_disk_to_gcs(args, collection, patient, study, series)
     except:
         # Copy failed. Return without marking all instances done. This will be prevent the series from being done.
+        errlogger.error("       p%s: Copy files to GCS failed for %s/%s/%s/%s", args.id,
+                collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
         return
     copy_time = (time.time_ns() - copy_start)/10**9
     # rootlogger.debug("      p%s: Series %s, copying time; %s", args.id, series.series_instance_uid, (time.time_ns() - copy_start)/10**9)
@@ -189,7 +191,7 @@ def build_instances_tcia(sess, args, source, version, collection, patient, study
                      mark_done_time)
 
 
-def build_instances_path(sess, args, source, version, collection, patient, study, series):
+def build_instances_path(sess, args, series):
     # Download a zip of the instances in a series
     # It will be write the zip to a file dicom/<series_instance_uid>.zip in the
     # working directory, and expand the zip to directory dicom/<series_instance_uid>

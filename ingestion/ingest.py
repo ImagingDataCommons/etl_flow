@@ -18,7 +18,7 @@
 
 import os
 import logging
-from logging import INFO
+from logging import INFO, DEBUG
 from datetime import datetime, timedelta
 import shutil
 from multiprocessing import Lock
@@ -32,7 +32,7 @@ from python_settings import settings
 from sqlalchemy import create_engine
 from sqlalchemy_utils import register_composites
 
-from ingestion.sources import All
+from ingestion.all_sources import All
 from ingestion.sources_mtm import All_mtm
 
 rootlogger = logging.getLogger('root')
@@ -68,7 +68,7 @@ def ingest(args):
     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
     rootlogger.addHandler(root_fh)
     root_fh.setFormatter(rootformatter)
-    rootlogger.setLevel(INFO)
+    rootlogger.setLevel(DEBUG)
 
     # errlogger = logging.getLogger('root.err')
     err_fh = logging.FileHandler('{}/logs/v{}_err.log'.format(os.environ['PWD'], args.version))
@@ -86,8 +86,8 @@ def ingest(args):
 
 
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
-    # sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
-    sql_engine = create_engine(sql_uri)
+    sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
+    # sql_engine = create_engine(sql_uri)
     args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
 
     # Create the tables if they do not already exist
@@ -113,8 +113,8 @@ def ingest(args):
             # test_source(args, all_sources)
 
         else:
-            all_sources = All(sess, args.version)
-        all_sources.lock = Lock()
+            all_sources = All(sess, args.version, Lock())
+        # all_sources.lock = Lock()
 
         version = sess.query(Version).filter(Version.version == args.version).first()
         if not version:
@@ -154,8 +154,9 @@ def ingest(args):
                         version.max_timestamp = version_metadata[args.version]['max_timestamp']
                     else:
                         version.hashes = ("","","")
-                        version.sources= (False,False)
-                        version.min_timestamp = None
+                        version.revised = [True, True] # Assume something has changed
+                        version.sources= [False,False]
+                        version.min_timestamp = datetime.utcnow()
                         version.max_timestamp = None
                     sess.commit()
 

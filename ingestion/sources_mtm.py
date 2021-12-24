@@ -18,7 +18,8 @@ from sqlalchemy import select
 from google.cloud import bigquery
 from uuid import uuid4
 from utilities.tcia_helpers import  get_access_token
-from ingestion.sources import All, TCIA, Pathology
+from ingestion.all_sources import All
+from ingestion.sources import TCIA, Pathology
 from idc.models_v5  import Version, Collection, Patient, Study, Series, Instance, WSI_metadata, instance_source
 from idc.models import Collection_id_map
 from ingestion.utils import get_merkle_hash
@@ -480,7 +481,7 @@ class All_mtm(All):
     #     return study_metadata
 
 
-    def series(self,study):
+    def series(self, series):
         series_metadata = {row.series_instance_uid: {
             'uuid':row.uuid,
             'rev_idc_version':row.rev_idc_version,
@@ -490,7 +491,7 @@ class All_mtm(All):
             'max_timestamp': row.max_timestamp,
             'sources': list(row.sources._asdict().values()),
             'hashes': list(dict({key: val if not val is None else "" for key, val in row.hashes._asdict().items()}).values())
-        } for row in self.sess.query(Series).where(Series.study_instance_uid==study.study_instance_uid).all()}
+        } for row in self.sess.query(Series).where(Series.study_instance_uid == series.study_instance_uid).all()}
 
         self.series_metadata = series_metadata
         return series_metadata

@@ -44,11 +44,12 @@ from sqlalchemy import create_engine, update
 from sqlalchemy.ext.declarative import declarative_base
 from google.cloud import storage
 
-def get_blob_hash(args, blob_name):
+def get_blob_hash_and_size(args, blob_name):
     blob = args.src_bucket.blob(blob_name)
     blob.reload()
     hash = b64decode(blob.md5_hash).hex()
-    return hash
+    size = blob.size
+    return hash, size
 
 def get_blob_size(args, blob_name):
     blob = args.src_bucket.blob(blob_name)
@@ -67,8 +68,8 @@ def insert_metadata(sess, args, collection, root, files):
             series_instance_uid = ds.SeriesInstanceUID.name
             sop_instance_uid = ds.SOPInstanceUID.name
             blob_name = '/'.join((root.split('/',5)[-1],file))
-            hash = get_blob_hash(args, blob_name)
-            size = get_blob_size(args, blob_name)
+            hash, size  = get_blob_hash_and_size(args, blob_name)
+            # size = get_blob_size(args, blob_name)
             metadata.append(
                 dict (
                     collection_id = collection,
@@ -85,36 +86,36 @@ def insert_metadata(sess, args, collection, root, files):
     sess.bulk_insert_mappings(WSI_metadata, metadata)
 
 
-def update_sizes(args):
-    sql_uri = f'postgresql+psycopg2://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{args.db}'
-    # sql_engine = create_engine(sql_uri, echo=True)
-    sql_engine = create_engine(sql_uri, echo=True)
+# def update_sizes(args):
+#     sql_uri = f'postgresql+psycopg2://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{args.db}'
+#     # sql_engine = create_engine(sql_uri, echo=True)
+#     sql_engine = create_engine(sql_uri, echo=True)
+#
+#     declarative_base().metadata.create_all(sql_engine)
+#
+#     with Session(sql_engine) as sess:
+#         result = sess.execute(select(WSI_metadata))
+#         for row in result:
+#             size = get_blob_size(args, row[0].gcs_url)
+#             row[0].size = size
+#         sess.flush()
+#         sess.commit()
 
-    declarative_base().metadata.create_all(sql_engine)
 
-    with Session(sql_engine) as sess:
-        result = sess.execute(select(WSI_metadata))
-        for row in result:
-            size = get_blob_size(args, row[0].gcs_url)
-            row[0].size = size
-        sess.flush()
-        sess.commit()
-
-
-def update_hashes(args):
-    sql_uri = f'postgresql+psycopg2://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{args.db}'
-    # sql_engine = create_engine(sql_uri, echo=True)
-    sql_engine = create_engine(sql_uri, echo=True)
-
-    declarative_base().metadata.create_all(sql_engine)
-
-    with Session(sql_engine) as sess:
-        result = sess.execute(select(WSI_metadata))
-        for row in result:
-            hash = get_blob_hash(args, row[0].gcs_url)
-            row[0].hash = hash
-        sess.flush()
-        sess.commit()
+# def update_hashes(args):
+#     sql_uri = f'postgresql+psycopg2://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{args.db}'
+#     # sql_engine = create_engine(sql_uri, echo=True)
+#     sql_engine = create_engine(sql_uri, echo=True)
+#
+#     declarative_base().metadata.create_all(sql_engine)
+#
+#     with Session(sql_engine) as sess:
+#         result = sess.execute(select(WSI_metadata))
+#         for row in result:
+#             hash = get_blob_hash(args, row[0].gcs_url)
+#             row[0].hash = hash
+#         sess.flush()
+#         sess.commit()
 
 
 
@@ -153,17 +154,15 @@ def prebuild(args):
     sess.commit()
 
 
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=6, help='Version to work on')
+    parser.add_argument('--version', default=7, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())
     args = parser.parse_args()
     parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
     parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--gcsfuse_dir', default='/mnt/disks/idc-etl/wsi_bucket')
-    parser.add_argument('--src_bucket', default=storage.Bucket(args.client,'af-dac-wsi-conversion-results'))
+    parser.add_argument('--src_bucket', default=storage.Bucket(args.client,'dac-wsi-conversion-results-v2'))
     parser.add_argument('--num_processes', default=0, help="Number of concurrent processes")
     parser.add_argument('--todos', default='{}/logs/path_ingest_v{}_todo.txt'.format(os.environ['PWD'], args.version), help="Collections to include")
     args = parser.parse_args()

@@ -18,8 +18,7 @@ import os
 import json
 import sys
 from subprocess import run, PIPE
-import time, datetime
-from io import StringIO
+from time import sleep
 import requests
 import logging
 import zipfile
@@ -120,11 +119,18 @@ def get_hash_nlst(request_data, access_token=None):
 def get_hash(request_data, access_token=None):
     # if not access_token:
     #     access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
-    headers = dict(
-        Authorization=f'Bearer {access_token}'
-    )
-    url = f"{NBIA_URL}/getMD5Hierarchy"
-    result = requests.post(url, headers=headers, data=request_data)
+    retries = 4
+    while retries:
+        headers = dict(
+            Authorization=f'Bearer {access_token}'
+        )
+        url = f"{NBIA_URL}/getMD5Hierarchy"
+        result = requests.post(url, headers=headers, data=request_data)
+        if result.status_code == 200:
+            break
+        else:
+            sleep( 2**(5-retries))
+            retries -= 1
     return result
 
 
@@ -512,27 +518,26 @@ if __name__ == "__main__":
 
     # p = get_TCIA_patients_per_collection('Training-Pseudo')
     # p = get_TCIA_patients_per_collection('NLST', server="NLST")
-    token= get_access_token()[0]
-    hash = get_hash({'Collection':'LDCT-and-Projection-data'}, token)
-    hash=get_instance_hash('1.3.6.1.4.1.14519.5.2.1.1239.1759.816520824397947445116098544516', access_token=token)
-    token= get_access_token(auth_server=NLST_AUTH_URL)[0]
-    hash=get_instance_hash_nlst('1.2.840.113654.2.55.41416806874377832798981746093165948327', access_token=token)
-
-    hash = get_hash_nlst({'SeriesInstanceUID':f'1.2.840.113654.2.55.97114726565566537928831413367474015470'}, token)
-    hash = get_images_with_md5_hash_nlst('1.2.840.113654.2.55.97114726565566537928831413367474015470', token)
-    d = get_collection_descriptions_and_licenses()
-    c = get_collection_values_and_counts()
-    s = get_updated_series('01/06/2020')
+    # token= get_access_token()[0]
+    # hash = get_hash({'Collection':'LDCT-and-Projection-data'}, token)
+    # hash=get_instance_hash('1.3.6.1.4.1.14519.5.2.1.1239.1759.816520824397947445116098544516', access_token=token)
+    # token= get_access_token(auth_server=NLST_AUTH_URL)[0]
+    # hash=get_instance_hash_nlst('1.2.840.113654.2.55.41416806874377832798981746093165948327', access_token=token)
+    #
+    # hash = get_hash_nlst({'SeriesInstanceUID':f'1.2.840.113654.2.55.97114726565566537928831413367474015470'}, token)
+    # hash = get_images_with_md5_hash_nlst('1.2.840.113654.2.55.97114726565566537928831413367474015470', token)
+    # d = get_collection_descriptions_and_licenses()
+    # c = get_collection_values_and_counts()
+    s = get_updated_series('13/01/2021')
     # studies = get_TCIA_studies_per_patient("PROSTATE-DIAGNOSIS", "ProstateDx-01-0035", server=NBIA_V1_URL)
     # result = get_access_token()
     # access_token, refresh_token = get_access_token()
     # access_token, refresh_token = refresh_access_token(refresh_token)
     # result=get_TCIA_instances_per_series('.', '1.3.6.1.4.1.14519.5.2.1.7009.9004.180224303090109944523368212991', 'NLST')
-    table = get_collection_license_info()
+    # table = get_collection_license_info()
     results = get_collection_values_and_counts()
     # result = get_TCIA_series_per_study('TCGA-GBM', 'TCGA-02-0006', '1.3.6.1.4.1.14519.5.2.1.1706.4001.149500105036523046215258942545' )
     # result = get_TCIA_patients_per_collection('APOLLO-5-LSCC', server=NBIA_V1_URL)
     collections = [key for key in table.keys()]
 
-    pass
 

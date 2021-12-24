@@ -68,8 +68,8 @@ def validate_series_in_gcs(storage_client, args, collection, patient, study, ser
         for instance in series.instances:
             blob = bucket.blob(f'{instance.instance_uuid}.dcm')
             blob.reload()
-            assert instance.instance_hash == b64decode(blob.md5_hash).hex()
-            assert instance.instance_size == blob.size
+            assert instance.hash == b64decode(blob.md5_hash).hex()
+            assert instance.size == blob.size
 
     except Exception as exc:
         rollback_copy_to_prestaging_bucket(args, series)

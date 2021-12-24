@@ -46,7 +46,7 @@ class Version(Base):
     previous_version = Column(Integer, nullable=False, comment="ID of the previous version")
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
-    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    # revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
@@ -71,6 +71,16 @@ class Version(Base):
         ),
         nullable=True,
         comment="True if this objects includes instances from the corresponding source"
+    )
+    revised = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
+                Column('path', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+            ]
+        ),
+        nullable=True,
     )
 
     collections = relationship('Collection',
@@ -92,7 +102,7 @@ class Collection(Base):
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
-    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    # revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
@@ -118,6 +128,16 @@ class Collection(Base):
         ),
         nullable=True,
         comment="Source specific hierarchical hash"
+    )
+    revised = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
+                Column('path', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+            ]
+        ),
+        nullable=True,
     )
     versions = relationship('Version',
                                secondary=version_collection,
@@ -143,7 +163,7 @@ class Patient(Base):
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
-    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    # revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
@@ -169,6 +189,16 @@ class Patient(Base):
         ),
         nullable=True,
         comment="Source specific hierarchical hash"
+    )
+    revised = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
+                Column('path', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+            ]
+        ),
+        nullable=True,
     )
     collections = relationship('Collection',
                                secondary=collection_patient,
@@ -194,7 +224,7 @@ class Study(Base):
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
-    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    # revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
@@ -221,7 +251,16 @@ class Study(Base):
         nullable=True,
         comment="Source specific hierarchical hash"
     )
-
+    revised = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
+                Column('path', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+            ]
+        ),
+        nullable=True,
+    )
     patients = relationship('Patient',
                             secondary=patient_study,
                             back_populates='studies')
@@ -246,7 +285,7 @@ class Series(Base):
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
-    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    # revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
@@ -273,7 +312,16 @@ class Series(Base):
         nullable=True,
         comment="Source specific hierarchical hash"
     )
-
+    revised = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
+                Column('path', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+            ]
+        ),
+        nullable=True,
+    )
     studies = relationship('Study',
                            secondary=study_series,
                            back_populates='seriess')

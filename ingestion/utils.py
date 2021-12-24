@@ -15,7 +15,7 @@
 #
 
 import shutil
-
+import os
 import hashlib
 from base64 import b64decode
 
@@ -79,7 +79,7 @@ def validate_series_in_gcs(args, collection, patient, study, series):
             blob = bucket.blob(f'{instance.uuid}.dcm')
             blob.reload()
             assert instance.hash == b64decode(blob.md5_hash).hex()
-            assert instance.instance_size == blob.size
+            assert instance.size == blob.size
 
     except Exception as exc:
         rollback_copy_to_prestaging_bucket(client, args, series)
@@ -165,7 +165,7 @@ def copy_gcs_to_gcs(args, instance, gcs_url):
 
 
 def accum_sources(parent, children):
-    sources = list(parent.sources)
-    for child in children:
+    sources = children[0].sources
+    for child in children[1:]:
         sources = [x | y for (x, y) in zip(sources, child.sources)]
     return sources
