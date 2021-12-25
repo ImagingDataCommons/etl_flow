@@ -120,16 +120,6 @@ class All:
         self.collection_metadata = collection_metadata
         return collection_metadata
 
-    # Determine whether the object is revised in each source
-    def collection_was_revised(self, collection, sources):
-        revised = [False, False]
-        for source in self.sources:
-            # It can only be revised if it is in the source
-            if sources[source.value]:
-                revised[source.value] |= bool(self.sources[source].collection_was_revised(collection))
-        return revised
-
-
     # Get objects per-source hashes from DB
     def idc_collection_hashes(self, collection):
         objects = collection.patients
@@ -173,16 +163,6 @@ class All:
         # Make a copy for subsequent access by other sources functions
         self.patient_metadata = patients
         return patients
-
-
-    # Determine whether the object is revised in each source
-    def patient_was_revised(self, patient, sources):
-        revised = [False, False]
-        for source in self.sources:
-            # It can only be revised if it is in the source
-            if sources[source.value]:
-                revised[source.value] |= bool(self.sources[source].patient_was_revised(patient))
-        return revised
 
 
     # Get objects per-source hashes from DB
@@ -229,16 +209,6 @@ class All:
         self.study_metadata = studies
         return studies
 
-    # updated |= self.sources[source].patient_hashes_differ(patient)
-    def study_was_revised(self, study, sources):
-        revised = [False, False]
-        for source in self.sources:
-            # It can only be revised if it is in the source
-            if sources[source.value]:
-                revised[source.value] |= bool(self.sources[source].study_was_revised(study))
-        return revised
-
-
     # Get objects per-source hashes from DB
     def idc_study_hashes(self, study):
         objects = study.seriess
@@ -281,15 +251,6 @@ class All:
         # Make a copy for subsequent access by other sources functions
         self.series_metadata = seriess
         return seriess
-
-    def series_was_revised(self, series, sources):
-        revised = [False, False]
-        for source in self.sources:
-            # It can only be revised if it is in the source
-            if sources[source.value]:
-                revised[source.value] |= bool(self.sources[source].series_was_revised(series))
-        return revised
-
 
     # Get objects per-source hashes from DB
     def idc_series_hashes(self, series):
@@ -335,14 +296,6 @@ class All:
         # Make a copy for subsequent access by other sources functions
         self.instance_metadata = instance_metadata
         return instance_metadata
-
-    def instance_was_revised(self, instance, sources):
-        revised = [False, False]
-        for source in self.sources:
-            # It can only be revised if it is in the source
-            if sources[source.value]:
-                revised[source.value] |= bool(self.sources[source].series_was_revised(series))
-        return revised
 
     # Compute object's hashes according to sources
     def src_instance_hashes(self, sop_instance_uid, source):

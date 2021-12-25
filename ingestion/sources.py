@@ -85,34 +85,6 @@ class TCIA(Source):
         return collections
 
 
-    # Return True if the source's object is updated relative to the version in our DB, else
-    # return False (objects are the same).
-    def collection_was_revised(self,collection):
-        result = self.collection_hashes_differ(collection)
-        if result == -1:
-            last_scan = collection.min_timestamp
-            last_scan_string = f'{last_scan.day}/{last_scan.month}/{last_scan.year}'
-            serieses = get_updated_series(last_scan_string)
-            updated = next((item for item in serieses if item["Collection"] == collection.collection_id), None)
-            return updated
-        else:
-            return result
-
-
-    # Return True (1) if hash of object from source differs from hash of object in our DB, else
-    # return 0. Return -1 if could not get hash from the source
-    def collection_hashes_differ(self, collection):
-        # return self.idc_collection_hash(collection) != self.src_collection_hash(collection)
-        nbia_hash = self.src_collection_hash(collection.collection_id)
-        if nbia_hash:
-            if collection.hashes[self.source_id] != nbia_hash:
-                return 1
-            else:
-                return 0
-        else:
-            return -1
-
-
     def src_collection_hash(self, collection_id):
         try:
             # result, self.access_token, refresh_token = get_hash(
@@ -138,30 +110,6 @@ class TCIA(Source):
         # return False (objects are the same).
 
 
-    def patient_was_revised(self, patient):
-        result = self.patient_hashes_differ(patient)
-        if result == -1:
-            last_scan = patient.min_timestamp
-            last_scan_string = f'{last_scan.day}/{last_scan.month}/{last_scan.year}'
-            serieses = get_updated_series(last_scan_string)
-            updated = next((item for item in serieses if item["PatientID"] == patient.submitter_case_id), None)
-            return updated
-        else:
-            return result
-
-    # Return True (1) if hash of object from source differs from hash of object in our DB, else
-    # return 0. Return -1 if could not get hash from the source
-    def patient_hashes_differ(self, patient):
-        nbia_hash = self.src_patient_hash(patient.collections[0].collection_id, patient.submitter_case_id)
-        if nbia_hash != -1:
-            if patient.hashes[self.source_id] != nbia_hash:
-                return 1
-            else:
-                return 0
-        else:
-            return -1
-
-
     def src_patient_hash(self, collection_id, submitter_case_id):
         try:
             result = self.get_hash({'Collection':collection_id, 'PatientID': submitter_case_id})
@@ -182,33 +130,6 @@ class TCIA(Source):
     def studies(self, patient):
         studies = [study['StudyInstanceUID'] for study in get_TCIA_studies_per_patient(patient.collections[0].collection_id, patient.submitter_case_id, self.nbia_server)]
         return studies
-
-
-     # Return True if the source's object is updated relative to the version in our DB, else
-    # return False (objects are the same).
-    def study_was_revised(self,study):
-        result = self.study_hashes_differ(study)
-        if result == -1:
-            last_scan = study.min_timestamp
-            last_scan_string = f'{last_scan.day}/{last_scan.month}/{last_scan.year}'
-            serieses = get_updated_series(last_scan_string)
-            updated = next((item for item in serieses if item["StudyInstanceUID"] == study.study_instance_uid), None)
-            return updated
-        else:
-            return result
-
-
-    # Return True (1) if hash of object from source differs from hash of object in our DB, else
-    # return 0. Return -1 if could not get hash from the source
-    def study_hashes_differ(self, study):
-        nbia_hash = self.src_study_hash(study.study_instance_uid,)
-        if nbia_hash:
-            if study.hashes[self.source_id] != nbia_hash:
-                return 1
-            else:
-                return 0
-        else:
-            return -1
 
 
     def src_study_hash(self, study_instance_uid):
@@ -232,33 +153,6 @@ class TCIA(Source):
         return series
 
 
-    # Return True if the source's object is updated relative to the version in our DB, else
-    # return False (objects are the same).
-    def series_was_revised(self,series):
-        result = self.series_hashes_differ(series)
-        if result == -1:
-            last_scan = series.min_timestamp
-            last_scan_string = f'{last_scan.day}/{last_scan.month}/{last_scan.year}'
-            serieses = get_updated_series(last_scan_string)
-            updated = next((item for item in serieses if item["SeriesInstanceUID"] == series.series_instance_uid), None)
-            return updated
-        else:
-            return result
-
-
-    # Return True (1) if hash of object from source differs from hash of object in our DB, else
-    # return 0. Return -1 if could not get hash from the source
-    def series_hashes_differ(self, series):
-        nbia_hash = self.src_series_hash(series.series_instance_uid,)
-        if nbia_hash:
-            if series.hashes[self.source_id] != nbia_hash:
-                return 1
-            else:
-                return 0
-        else:
-            return -1
-
-
     def src_series_hash(self, series_instance_uid):
         try:
             result = self.get_hash({'SeriesInstanceUID': series_instance_uid})
@@ -276,17 +170,6 @@ class TCIA(Source):
     def instances(self, series):
         instances = [instance['SOPInstanceUID'] for instance in get_TCIA_instance_uids_per_series(series.series_instance_uid, self.nbia_server)]
         return instances
-
-
-    def instance_hashes_differ(self, instance):
-        nbia_hash = self.src_instance_hash(instance.sop_instance_uid, )
-        if nbia_hash:
-            if instance.hash != nbia_hash:
-                return 1
-            else:
-                return 0
-        else:
-            return -1
 
 
     def src_instance_hash(self, sop_instance_uid):
@@ -352,15 +235,6 @@ class Pathology(Source):
         return collections
 
 
-    def collection_was_revised(self, collection):
-        return self.collection_hashes_differ(collection)
-
-
-    def collection_hashes_differ(self, collection):
-        # return self.idc_collection_hash(collection) != self.src_collection_hash(collection)
-        return collection.hashes[self.source_id] != self.src_collection_hash(collection.collection_id)
-
-
     def src_collection_hash(self, collection_id):
         patients = self.sess.execute(select(WSI_metadata.submitter_case_id).distinct().where(WSI_metadata.collection_id == collection_id))
         hashes = []
@@ -376,15 +250,6 @@ class Pathology(Source):
         result = self.sess.execute(stmt)
         patients = [row['submitter_case_id'] for row in result.fetchall()]
         return patients
-
-
-    def patient_was_revised(self, patient):
-        return self.patient_hashes_differ(patient)
-
-
-    def patient_hashes_differ(self, patient):
-        # return self.idc_patient_hash(patient) != self.src_patient_hash(patient)
-        return patient.hashes[self.source_id] != self.src_patient_hash(patient.submitter_case_id)
 
 
     def src_patient_hash(self, collection_id, submitter_case_id):
@@ -404,10 +269,6 @@ class Pathology(Source):
         return studies
 
 
-    def study_was_revised(self, study):
-        return self.study_hashes_differ(study)
-
-
     def src_study_hash(self, study_instance_uid):
         seriess = self.sess.execute(select(WSI_metadata.series_instance_uid).distinct().where(WSI_metadata.study_instance_uid == study_instance_uid))
         hashes = []
@@ -425,20 +286,6 @@ class Pathology(Source):
         return series
 
 
-    def series_was_revised(self, series):
-        return self.series_hashes_differ(series)
-
-
-    def study_hashes_differ(self, study):
-        # return self.idc_study_hash(study) != self.src_study_hash(study)
-        return study.hashes[self.source_id] != self.src_study_hash(study.study_instance_uid)
-
-
-    def series_hashes_differ(self, series):
-        # return self.idc_series_hash(series) != self.src_series_hash(series)
-        return series.hashes[self.source_id] != self.src_series_hash(series.series_instance_uid)
-
-
     def src_series_hash(self, series_instance_uid):
         hashes = [hash['hash'] for hash in self.sess.execute(select(WSI_metadata.hash).where(WSI_metadata.series_instance_uid == series_instance_uid))]
         hash = get_merkle_hash(hashes) if len(hashes) else ""
@@ -451,12 +298,3 @@ class Pathology(Source):
         result = self.sess.execute(stmt)
         instances = [row['sop_instance_uid'] for row in result.fetchall()]
         return instances
-
-
-    def instance_data(self, series):
-        pass
-
-
-
-
-
