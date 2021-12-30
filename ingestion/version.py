@@ -21,6 +21,7 @@ from uuid import uuid4
 from idc.models import Version, Collection
 from ingestion.utils import accum_sources, get_merkle_hash
 from ingestion.collection import clone_collection, build_collection, retire_collection
+from ingestion.egest import egest_version
 
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
@@ -46,8 +47,8 @@ def expand_version(sess, args, all_sources, version, skips):
     ### It must be manually updated with a new (collection_id, idc_collection_id) when the ingestion
     ### process will see a change in the collection_id for some collection.
 
-    # Get the collections in the previous version
-    idc_objects_results = sess.query(Collection)
+    # Get the most recent set of collections.
+    idc_objects_results = version.collections
     idc_objects = {c.idc_collection_id: c for c in idc_objects_results}
 
     # Collections that are not previously known ahout by any source
@@ -212,11 +213,9 @@ def build_version(sess, args, all_sources, version):
                 version.done = True
                 version.revised = [True, True]
             else:
-                #### Need to delete the new version ####
-                # Revert the version, to show it is unchanged
-                breakpoint()
-                # version.version = args.previous_version
-                rootlogger.info("Version unchanged, remains at %s", version.version-1)
+                # Revert the version
+                egest_version(sess, version)
+                rootlogger.info("Version unchanged, remains at %s", args.previous_version)
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
             rootlogger.info("Version %s, completed in %s", version.version, duration)

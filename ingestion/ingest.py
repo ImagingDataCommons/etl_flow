@@ -35,31 +35,31 @@ from sqlalchemy_utils import register_composites
 from ingestion.all_sources import All
 from ingestion.sources_mtm import All_mtm
 
+
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
 
-def test_source(args, all_sources):
-    from types import  SimpleNamespace
-    metadata = all_sources.collections()
-
-    d = {'collection_id':list(metadata.values())[0]['collection_id']}
-    object = SimpleNamespace(**d)
-    metadata = all_sources.patients(object)
-
-    d = {'submitter_case_id':list(metadata.keys())[0]}
-    object = SimpleNamespace(**d)
-    metadata = all_sources.studies(object)
-
-    d = {'study_instance_uid':list(metadata.keys())[0]}
-    object = SimpleNamespace(**d)
-    metadata = all_sources.series(object)
-
-    d = {'series_instance_uid':list(metadata.keys())[0]}
-    object = SimpleNamespace(**d)
-    metadata = all_sources.instances(object)
-
-    pass
-
+# def test_source(args, all_sources):
+#     from types import  SimpleNamespace
+#     metadata = all_sources.collections()
+#
+#     d = {'collection_id':list(metadata.values())[0]['collection_id']}
+#     object = SimpleNamespace(**d)
+#     metadata = all_sources.patients(object)
+#
+#     d = {'submitter_case_id':list(metadata.keys())[0]}
+#     object = SimpleNamespace(**d)
+#     metadata = all_sources.studies(object)
+#
+#     d = {'study_instance_uid':list(metadata.keys())[0]}
+#     object = SimpleNamespace(**d)
+#     metadata = all_sources.series(object)
+#
+#     d = {'series_instance_uid':list(metadata.keys())[0]}
+#     object = SimpleNamespace(**d)
+#     metadata = all_sources.instances(object)
+#
+#     pass
 
 
 def ingest(args):
