@@ -268,6 +268,25 @@ def get_TCIA_instance_uids_per_series(seriesInstanceUID, server=NBIA_V1_URL):
     instance_uids = results.json()
     return instance_uids
 
+
+def get_TCIA_single_instance(seriesInstanceUID, sopInstanceUID, server=NBIA_V1_URL):
+    if server == "NLST":
+        server_url = NLST_V2_URL
+        access_token, refresh_token = get_access_token(NLST_AUTH_URL)
+        headers = dict(
+            Authorization=f'Bearer {access_token}'
+        )
+    elif server == "NBIA":
+        server_url = NBIA_V1_URL
+        headers = ''
+    else:
+        server_url = server
+        headers = ''
+    url = f'{server_url}/getSingleImage?SeriesInstanceUID={seriesInstanceUID}&SOPInstanceUID={sopInstanceUID}'
+    results = get_url(url, headers)
+    return results
+
+
 def get_TCIA_instances_per_series_with_hashes(dicom, series_instance_uid):
     filename = "{}/{}.zip".format(dicom, series_instance_uid)
     dirname = "{}/{}".format(dicom, series_instance_uid)
