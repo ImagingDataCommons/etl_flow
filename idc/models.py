@@ -368,5 +368,51 @@ class WSI_metadata(Base):
     hash = Column(String, comment="Hex format MD5 hash of this instance")
     size = Column(BigInteger, comment='Instance blob size (bytes)')
 
+class WSI_Collection(Base):
+    __tablename__ = 'wsi_collection'
+    collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
+    hash = Column(String, comment='Collection hash')
+
+    patients = relationship("WSI_Patient", back_populates="collection", order_by="WSI_Patient.submitter_case_id", cascade="all, delete")
+    # patients = relationship("Patient", backref="the_collection")
+
+class WSI_Patient(Base):
+    __tablename__ = 'wsi_patient'
+    submitter_case_id = Column(String, nullable=False, unique=True, primary_key=True, comment="Submitter's patient ID")
+    collection_id = Column(ForeignKey('wsi_collection.collection_id'), comment="Containing object")
+    hash = Column(String, comment='Patient hash')
+
+    collection = relationship("WSI_Collection", back_populates="patients")
+    studies = relationship("WSI_Study", back_populates="patient", order_by="WSI_Study.study_instance_uid", cascade="all, delete")
+    # studies = relationship("Study", backref="patient")
+
+class WSI_Study(Base):
+    __tablename__ = 'wsi_study'
+    study_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
+    submitter_case_id = Column(ForeignKey('wsi_patient.submitter_case_id'), comment="Submitter's patient ID")
+    hash = Column(String, comment='Study hash')
+
+    patient = relationship("WSI_Patient", back_populates="studies")
+    seriess = relationship("WSI_Series", back_populates="study", order_by="WSI_Series.series_instance_uid", cascade="all, delete")
+    # series = relationship("Study", backref="study")
+
+class WSI_Series(Base):
+    __tablename__ = 'wsi_series'
+    series_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
+    study_instance_uid = Column(ForeignKey('wsi_study.study_instance_uid'), comment="Containing object")
+    hash = Column(String, comment='Series hash')
+
+    study = relationship("WSI_Study", back_populates="seriess")
+    instances = relationship("WSI_Instance", back_populates="seriess", order_by="WSI_Instance.sop_instance_uid", cascade="all, delete")
+    # instances = relationship("Study", backref="series")
+
+class WSI_Instance(Base):
+    __tablename__ = 'wsi_instance'
+    sop_instance_uid = Column(String, primary_key=True, nullable=False)
+    series_instance_uid = Column(ForeignKey('wsi_series.series_instance_uid'), comment="Containing object")
+    hash = Column(String, comment='Instance hash')
+    url = Column(String, comment='GCS URL of instance')
+
+    seriess = relationship("WSI_Series", back_populates="instances")
 # Base.metadata.create_all(sql_engine)
 

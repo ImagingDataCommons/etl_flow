@@ -24,134 +24,129 @@ import sys
 import argparse
 import pydicom
 
+from idc.models import Base, WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance
+from ingestion.utils import get_merkle_hash
+
+from google.cloud import storage
+
+
 import logging
 from logging import INFO, DEBUG
 from base64 import b64decode
-
-
-from pydicom.errors import InvalidDicomError
-from idc.models import WSI_metadata
-from sqlalchemy import select, bindparam
-from sqlalchemy.orm import Session
-
-from python_settings import settings
-
 import settings as etl_settings
-
+from python_settings import settings
 settings.configure(etl_settings)
 
+from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, update
-from sqlalchemy.ext.declarative import declarative_base
 from google.cloud import storage
 
-def get_blob_hash_and_size(args, blob_name):
-    blob = args.src_bucket.blob(blob_name)
-    blob.reload()
-    hash = b64decode(blob.md5_hash).hex()
-    size = blob.size
-    return hash, size
 
-def get_blob_size(args, blob_name):
-    blob = args.src_bucket.blob(blob_name)
-    blob.reload()
-    size = blob.size
-    return size
+def list_blobs_with_prefix(bucket, prefix, delimiter=None):
+    # storage_client = storage.Client()
+    # bucket = storage_client.bucket(args.src_bucket)
+    blobs = args.client.list_blobs(bucket, prefix=prefix, delimiter=delimiter)
+    names = [blob.name for blob in blobs]
+    ids = [ prefix.split('/')[-2] for prefix in blobs.prefixes]
+    ids.sort()
+    return blobs, ids
 
-def insert_metadata(sess, args, collection, root, files):
-    metadata = []
-    for file in files:
-        if file != "DICOMDIR":
-            gcs_url = os.path.join(root, file)
-            ds = pydicom.dcmread(gcs_url)
-            submitter_case_id = ds.PatientID
-            study_instance_uid = ds.StudyInstanceUID.name
-            series_instance_uid = ds.SeriesInstanceUID.name
-            sop_instance_uid = ds.SOPInstanceUID.name
-            blob_name = '/'.join((root.split('/',5)[-1],file))
-            hash, size  = get_blob_hash_and_size(args, blob_name)
-            # size = get_blob_size(args, blob_name)
-            metadata.append(
-                dict (
-                    collection_id = collection,
-                    submitter_case_id=submitter_case_id,
-                    study_instance_uid=study_instance_uid,
-                    series_instance_uid=series_instance_uid,
-                    sop_instance_uid=sop_instance_uid,
-                    gcs_url=blob_name,
-                    hash=hash,
-                    size=size
-                )
-            )
-            print('{}/{}/{}/{}/{}, {}'.format(collection, submitter_case_id, study_instance_uid, series_instance_uid, sop_instance_uid, blob_name))
-    sess.bulk_insert_mappings(WSI_metadata, metadata)
+def build_instances(client, args, sess, series, prefix):
+    blobs = client.list_blobs(args.src_bucket, prefix=prefix, delimiter=None)
+    for blob in blobs:
+        instance_id = blob.name.rsplit('/',1)[-1].split('.dcm')[0]
+        instance = sess.query(WSI_Instance).filter(WSI_Instance.sop_instance_uid == instance_id).first()
+        if not instance:
+            instance = WSI_Instance()
+            instance.sop_instance_uid = instance_id
+            instance.series_instance_uid = series.series_instance_uid
+            instance.url = f'gs://{args.src_bucket.name}/{blob.name}'
+            series.instances.append(instance)
+            # sess.commit()
+        instance.hash = b64decode(blob.md5_hash).hex()
 
 
-# def update_sizes(args):
-#     sql_uri = f'postgresql+psycopg2://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{args.db}'
-#     # sql_engine = create_engine(sql_uri, echo=True)
-#     sql_engine = create_engine(sql_uri, echo=True)
-#
-#     declarative_base().metadata.create_all(sql_engine)
-#
-#     with Session(sql_engine) as sess:
-#         result = sess.execute(select(WSI_metadata))
-#         for row in result:
-#             size = get_blob_size(args, row[0].gcs_url)
-#             row[0].size = size
-#         sess.flush()
-#         sess.commit()
+def build_series(client, args, sess, study, prefix):
+    _, series_ids = list_blobs_with_prefix(args.src_bucket, prefix=prefix, delimiter='/')
+    for series_id in series_ids:
+        series = sess.query(WSI_Series).filter(WSI_Series.series_instance_uid == series_id).first()
+        if not series:
+            series = WSI_Series()
+            series.series_instance_uid = series_id
+            series.study_instance_uid = study.study_instance_uid
+            study.seriess.append(series)
+            # sess.commit()
+        build_instances(client, args, sess, series, f'{prefix}{series_id}/')
+        hashes = [instance.hash for instance in series.instances]
+        series.hash = get_merkle_hash(hashes)
 
 
-# def update_hashes(args):
-#     sql_uri = f'postgresql+psycopg2://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{args.db}'
-#     # sql_engine = create_engine(sql_uri, echo=True)
-#     sql_engine = create_engine(sql_uri, echo=True)
-#
-#     declarative_base().metadata.create_all(sql_engine)
-#
-#     with Session(sql_engine) as sess:
-#         result = sess.execute(select(WSI_metadata))
-#         for row in result:
-#             hash = get_blob_hash(args, row[0].gcs_url)
-#             row[0].hash = hash
-#         sess.flush()
-#         sess.commit()
+def build_studies(client, args, sess, patient, prefix):
+    _, study_ids= list_blobs_with_prefix(args.src_bucket, prefix=prefix, delimiter='/')
+    for study_id in study_ids:
+        study = sess.query(WSI_Study).filter(WSI_Study.study_instance_uid == study_id).first()
+        if not study:
+            study = WSI_Study()
+            study.study_instance_uid = study_id
+            study.submitter_case_id = patient.submitter_case_id
+            patient.studies.append(study)
+            # sess.commit()
+        build_series(client, args, sess, study, f'{prefix}{study_id}/')
+        hashes = [series.hash for series in study.seriess]
+        study.hash = get_merkle_hash(hashes)
 
 
+def build_patients(client, args, sess, collection, prefix):
+    _, patient_ids= list_blobs_with_prefix(args.src_bucket, prefix=prefix, delimiter='/')
+    for patient_id in patient_ids:
+        patient = sess.query(WSI_Patient).filter(WSI_Patient.submitter_case_id == patient_id).first()
+        if not patient:
+            patient = WSI_Patient()
+            patient.submitter_case_id = patient_id
+            patient.collection_id = collection.collection_id
+            collection.patients.append(patient)
+            # sess.commit()
+        build_studies(client, args, sess, patient, f'{prefix}{patient_id}/')
+        hashes = [study.hash for study in patient.studies]
+        patient.hash = get_merkle_hash(hashes)
 
 
-# def get_collection_metadata(sess, args, collection, topdir):
-#     for root, dirs, files in os.walk(topdir):
-#         insert_metadata(sess, args, collection, root, files)
-#         for dir in dirs:
-#             get_collection_metadata(sess, args, collection, os.path.join(root, dir))
-def get_collection_metadata(sess, args, collection, topdir):
-    for root, dirs, files in os.walk(topdir):
-        # print(root)
-        insert_metadata(sess, args, collection, root, files)
-        # insert_metadata(sess, args, collection, root, files)
-        # for dir in dirs:
-        #     get_collection_metadata(sess, args, collection, os.path.join(root, dir))
+def build_collections(client, args, sess):
+    try:
+        dones = open(args.dones).read().splitlines()
+    except:
+        dones = []
 
+    _, collection_ids = list_blobs_with_prefix(args.src_bucket, prefix=None, delimiter='/')
+    for collection_id in collection_ids:
+        if not collection_id in dones:
+            rootlogger.info('Collecting metadata from collection %s', collection_id)
+            collection = sess.query(WSI_Collection).filter(WSI_Collection.collection_id == collection_id).first()
+            if not collection:
+                collection = WSI_Collection()
+                collection.collection_id = collection_id
+                sess.add(collection)
+                # sess.commit()
+            build_patients(client, args, sess, collection, f'{collection_id}/')
+            hashes = [patient.hash for patient in collection.patients]
+            collection.hash = get_merkle_hash(hashes)
+            sess.commit()
+
+            with open(args.dones, 'a') as f:
+                f.write(f'{collection_id}\n')
 
 def prebuild(args):
-    # sql_uri = f'postgresql+psycopg2://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{args.db}'
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
     # sql_engine = create_engine(sql_uri, echo=True)
     sql_engine = create_engine(sql_uri)
+    # Create the tables if they do not already exist
+    Base.metadata.create_all(sql_engine)
 
-    declarative_base().metadata.create_all(sql_engine)
-
-    todos = open(args.todos).read().splitlines()
+    # todos = open(args.todos).read().splitlines()
 
     with Session(sql_engine) as sess:
-        # collections = [x[0] for x in os.walk(args.gcsfuse_dir)]
-        collections = os.listdir(path=args.gcsfuse_dir)
-        for collection in collections:
-            if  collection in todos:
-                get_collection_metadata(sess, args, collection, os.path.join(args.gcsfuse_dir,collection))
-
-    sess.commit()
+        client = storage.Client()
+        build_collections(client, args, sess)
 
 
 if __name__ == '__main__':
@@ -162,9 +157,10 @@ if __name__ == '__main__':
     parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
     parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--gcsfuse_dir', default='/mnt/disks/idc-etl/wsi_bucket')
-    parser.add_argument('--src_bucket', default=storage.Bucket(args.client,'dac-wsi-conversion-results-v2'))
+    parser.add_argument('--src_bucket', default=storage.Bucket(args.client,'dac-wsi-conversion-results-v2-sorted'))
     parser.add_argument('--num_processes', default=0, help="Number of concurrent processes")
-    parser.add_argument('--todos', default='{}/logs/path_ingest_v{}_todo.txt'.format(os.environ['PWD'], args.version), help="Collections to include")
+    # parser.add_argument('--todos', default='{}/logs/path_ingest_v{}_todo.txt'.format(os.environ['PWD'], args.version), help="Collections to include")
+    parser.add_argument('--dones', default='{}/logs/wsi_build_dones.txt'.format(os.environ['PWD']), help="Completed collections")
     args = parser.parse_args()
 
     print("{}".format(args), file=sys.stdout)
@@ -182,7 +178,5 @@ if __name__ == '__main__':
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
 
-    rootlogger.info('Args: %s', args)
+    # rootlogger.info('Args: %s', args)
     prebuild(args)
-    # update_hashes(args)
-    # update_sizes(args)
