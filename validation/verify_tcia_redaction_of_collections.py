@@ -14,11 +14,7 @@
 # limitations under the License.
 #
 
-# Duplicate psql version, collection, patient, study, series and instance metadata tables in BQ. These are
-# essentially a normalization of an auxilliary_metadata table
-# The BQ dataset containing the tables to be duplicated is specified in the .env.idc-dev-etl file (maybe not the best place).
-# The bigquery_uri engine is configured to access that dataset.
-
+# Query TCIA to determine whether "faceful" collections have been redacted.
 
 import json
 from google.cloud import bigquery
@@ -54,7 +50,12 @@ def verify_redactions(args):
             collections = sorted([row[0]['tcia_api_collection_id'] for row in rows])
             for collection in collections:
                 patients = [patient['PatientId'] for patient in get_TCIA_patients_per_collection(collection)]
-                print(f'\t{collection} has {len(patients)} patients')
+                if not(len(patients)):
+                    print(f'\t{collection} redacted')
+                    continue
+                else:
+                    print(f'\t{collection} has {len(patients)} patients')
+
                 studies = [study['StudyInstanceUID'] for study in get_TCIA_studies_per_patient(collection, patients[0])]
                 print(f'\t\t{patients[0]} has {len(studies)} studies')
                 seriess = [series['SeriesInstanceUID'] for series in get_TCIA_series_per_study(collection, patients[0], studies[0])]
