@@ -22,9 +22,9 @@
 import os
 import sys
 import argparse
-import pydicom
+from fnmatch import fnmatch
 
-from idc.models import Base, WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance
+from idc.models import Base, WSI_Version, WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance
 from ingestion.utils import get_merkle_hash
 
 from google.cloud import storage
@@ -69,6 +69,7 @@ def build_instances(client, args, sess, series, prefix):
 def build_series(client, args, sess, study, prefix):
     _, series_ids = list_blobs_with_prefix(args.src_bucket, prefix=prefix, delimiter='/')
     for series_id in series_ids:
+        rootlogger.info('\t\t\tCollecting metadata from series %s', series_id)
         series = sess.query(WSI_Series).filter(WSI_Series.series_instance_uid == series_id).first()
         if not series:
             series = WSI_Series()
@@ -84,6 +85,7 @@ def build_series(client, args, sess, study, prefix):
 def build_studies(client, args, sess, patient, prefix):
     _, study_ids= list_blobs_with_prefix(args.src_bucket, prefix=prefix, delimiter='/')
     for study_id in study_ids:
+        rootlogger.info('\t\tCollecting metadata from study %s', study_id)
         study = sess.query(WSI_Study).filter(WSI_Study.study_instance_uid == study_id).first()
         if not study:
             study = WSI_Study()
@@ -99,6 +101,7 @@ def build_studies(client, args, sess, patient, prefix):
 def build_patients(client, args, sess, collection, prefix):
     _, patient_ids= list_blobs_with_prefix(args.src_bucket, prefix=prefix, delimiter='/')
     for patient_id in patient_ids:
+        rootlogger.info('\tCollecting metadata from patient %s', patient_id)
         patient = sess.query(WSI_Patient).filter(WSI_Patient.submitter_case_id == patient_id).first()
         if not patient:
             patient = WSI_Patient()
@@ -111,29 +114,46 @@ def build_patients(client, args, sess, collection, prefix):
         patient.hash = get_merkle_hash(hashes)
 
 
-def build_collections(client, args, sess):
+def build_collections(client, args, sess, version):
     try:
         dones = open(args.dones).read().splitlines()
     except:
         dones = []
 
+    try:
+        included = open(args.included).read().splitlines()
+    except:
+        included = ["*"]
     _, collection_ids = list_blobs_with_prefix(args.src_bucket, prefix=None, delimiter='/')
     for collection_id in collection_ids:
         if not collection_id in dones:
-            rootlogger.info('Collecting metadata from collection %s', collection_id)
-            collection = sess.query(WSI_Collection).filter(WSI_Collection.collection_id == collection_id).first()
-            if not collection:
-                collection = WSI_Collection()
-                collection.collection_id = collection_id
-                sess.add(collection)
-                # sess.commit()
-            build_patients(client, args, sess, collection, f'{collection_id}/')
-            hashes = [patient.hash for patient in collection.patients]
-            collection.hash = get_merkle_hash(hashes)
-            sess.commit()
+            if any([fnmatch(collection_id, include) for include in included]):
+                rootlogger.info('Collecting metadata from collection %s', collection_id)
+                collection = sess.query(WSI_Collection).filter(WSI_Collection.collection_id == collection_id).first()
+                if not collection:
+                    collection = WSI_Collection()
+                    collection.collection_id = collection_id
+                    version.collections.append(collection)
+                    # sess.commit()
+                build_patients(client, args, sess, collection, f'{collection_id}/')
+                hashes = [patient.hash for patient in collection.patients]
+                collection.hash = get_merkle_hash(hashes)
+                sess.commit()
 
-            with open(args.dones, 'a') as f:
-                f.write(f'{collection_id}\n')
+                with open(args.dones, 'a') as f:
+                    f.write(f'{collection_id}\n')
+
+def build_version(client, args, sess):
+    version = sess.query(WSI_Version).filter(WSI_Version.version == args.version).first()
+    if not version:
+        version = WSI_Version()
+        version.version = args.version
+        sess.add(version)
+    build_collections(client, args, sess, version)
+    hashes = [collection.hash for collection in version.collections]
+    version.hash = get_merkle_hash(hashes)
+    sess.commit()
+
 
 def prebuild(args):
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
@@ -146,7 +166,7 @@ def prebuild(args):
 
     with Session(sql_engine) as sess:
         client = storage.Client()
-        build_collections(client, args, sess)
+        build_version(client, args, sess)
 
 
 if __name__ == '__main__':
@@ -159,7 +179,7 @@ if __name__ == '__main__':
     parser.add_argument('--gcsfuse_dir', default='/mnt/disks/idc-etl/wsi_bucket')
     parser.add_argument('--src_bucket', default=storage.Bucket(args.client,'dac-wsi-conversion-results-v2-sorted'))
     parser.add_argument('--num_processes', default=0, help="Number of concurrent processes")
-    # parser.add_argument('--todos', default='{}/logs/path_ingest_v{}_todo.txt'.format(os.environ['PWD'], args.version), help="Collections to include")
+    parser.add_argument('--included', default='{}/logs/wsi_build_included.txt'.format(os.environ['PWD']), help="Collections to include. ")
     parser.add_argument('--dones', default='{}/logs/wsi_build_dones.txt'.format(os.environ['PWD']), help="Completed collections")
     args = parser.parse_args()
 

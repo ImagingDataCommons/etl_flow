@@ -23,8 +23,11 @@ import requests
 import logging
 import zipfile
 
-rootlogger = logging.getLogger('root')
-errlogger = logging.getLogger('root.err')
+from http.client import HTTPConnection
+HTTPConnection.debuglevel = 0
+
+# rootlogger = logging.getLogger('root')
+# errlogger = logging.getLogger('root.err')
 
 from python_settings import settings
 
@@ -185,7 +188,7 @@ def get_TCIA_patients_per_collection(collection_id, server=NBIA_V1_URL):
         headers = ''
     url = f'{server_url}/getPatient?Collection={collection_id}'
     results = get_url(url, headers)
-    patients = results.json()
+    patients = results.json() if results.content else []
     return patients
 
 
@@ -204,7 +207,7 @@ def get_TCIA_studies_per_patient(collection, patientID, server=NBIA_V1_URL):
         headers = ''
     url = f'{server_url}/getPatientStudy?Collection={collection}&PatientID={patientID}'
     results = get_url(url, headers)
-    studies = results.json()
+    studies = results.json() if results.content else []
     return studies
 
 
@@ -247,7 +250,7 @@ def get_TCIA_series_per_study(collection, patientID, studyInstanceUID, server=NB
         headers = ''
     url = f'{server_url}/getSeries?Collection ={collection}&PatientID={patientID}&StudyInstanceUID={studyInstanceUID}'
     results = get_url(url, headers)
-    series = results.json()
+    series = results.json() if results.content else []
     return series
 
 def get_TCIA_instance_uids_per_series(seriesInstanceUID, server=NBIA_V1_URL):
@@ -265,7 +268,7 @@ def get_TCIA_instance_uids_per_series(seriesInstanceUID, server=NBIA_V1_URL):
         headers = ''
     url = f'{server_url}/getSOPInstanceUIDs?SeriesInstanceUID={seriesInstanceUID}'
     results = get_url(url, headers)
-    instance_uids = results.json()
+    instance_uids = results.json() if results.content else []
     return instance_uids
 
 

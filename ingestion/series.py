@@ -37,7 +37,9 @@ def clone_series(series, uuid):
 
 def retire_series(args, series):
     # If this object has children from source, mark them as retired
+    rootlogger.debug('      p%s: Series %s:%s retiring', args.id, series.series_instance_uid, series.uuid)
     for instance in series.instances:
+        rootlogger.debug('        p%s: Instance %s:%s retiring', args.id, instance.sop_instance_uid, instance.uuid)
         instance.final_idc_version = args.previous_version
     series.final_idc_version = args.previous_version
 
@@ -95,6 +97,7 @@ def expand_series(sess, args, all_sources, series):
             new_instance.timestamp = datetime.utcnow()
         new_instance.final_idc_version = 0
         series.instances.append(new_instance)
+        rootlogger.debug('        p%s: Instance %s is new', args.id, new_instance.sop_instance_uid)
 
     for instance in existing_objects:
         idc_hash = instance.hash
@@ -102,7 +105,7 @@ def expand_series(sess, args, all_sources, series):
         revised = idc_hash != src_hash
         # if all_sources.instance_was_revised(instance):
         if revised:
-            rootlogger.debug('**Instance %s needs revision', instance.sop_instance_uid)
+            # rootlogger.debug('**Instance %s needs revision', instance.sop_instance_uid)
             rev_instance = clone_instance(instance, instances[instance.sop_instance_uid]['uuid'] if args.build_mtm_db else str(uuid4()))
             assert args.version == instances[instance.sop_instance_uid]['rev_idc_version']
             rev_instance.revised = True
@@ -123,6 +126,8 @@ def expand_series(sess, args, all_sources, series):
                 rev_instance.size = 0
                 rev_instance.rev_idc_version = args.version
             series.instances.append(rev_instance)
+            rootlogger.debug('        p%s: Instance %s is revised', args.id, rev_instance.sop_instance_uid)
+
 
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised series
@@ -136,11 +141,11 @@ def expand_series(sess, args, all_sources, series):
                 # Shouldn't be needed if the previous version is done
                 instance.done = True
                 instance.expanded = True
-            rootlogger.debug('**Instance %s unchanged', instance.sop_instance_uid)
+            rootlogger.debug('        p%s: Instance %s unchanged', args.id, instance.sop_instance_uid)
             # series.instances.append(instance)
 
     for instance in retired_objects:
-        rootlogger.info('Instance %s:%s retiring', instance.sop_instance_uid, instance.uuid)
+        # rootlogger.debug('        p%s: Instance %s:%s retiring', instance.sop_instance_uid, instance.uuid)
         instance.final_idc_version = args.previous_version
         series.instances.remove(instance)
 
@@ -154,11 +159,12 @@ def expand_series(sess, args, all_sources, series):
 
 def build_series(sess, args, all_sources, series_index, version, collection, patient, study, series):
     begin = time.time()
+    rootlogger.debug("      p%s: Expand Series %s; %s", args.id, series.series_instance_uid, series_index)
     if not series.expanded:
         failed = expand_series(sess, args, all_sources, series)
         if failed:
             return
-    rootlogger.info("      p%s: Series %s; %s; %s instances, expand: %s", args.id, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
+    rootlogger.info("      p%s: Expanded Series %s; %s; %s instances, expand: %s", args.id, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
 
 
     if not all(instance.done for instance in series.instances):
@@ -166,7 +172,7 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
             build_instances_tcia(sess, args, collection, patient, study, series)
         if series.sources.path:
             # Get instance data from path DB table/ GCS bucket.
-            build_instances_path(sess, args, series)
+            build_instances_path(sess, args, collection, patient, study, series)
 
     if all(instance.done for instance in series.instances):
         # series.min_timestamp = min(instance.timestamp for instance in series.instances)
@@ -175,7 +181,7 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
             series.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
-            rootlogger.info("      p%s: Series %s, %s, completed in %s", args.id, series.series_instance_uid, series_index, duration)
+            rootlogger.info("      p%s: Completed Series %s, %s, in %s", args.id, series.series_instance_uid, series_index, duration)
         else:
             # Get a list of what DB thinks are the series's hashes
             idc_hashes = all_sources.idc_series_hashes(series)
@@ -192,5 +198,5 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
                 series.done = True
                 sess.commit()
                 duration = str(timedelta(seconds=(time.time() - begin)))
-                rootlogger.info("      p%s: Series %s, %s, completed in %s", args.id, series.series_instance_uid, series_index, duration)
+                rootlogger.info("      p%s: Completed Series %s, %s, in %s", args.id, series.series_instance_uid, series_index, duration)
 

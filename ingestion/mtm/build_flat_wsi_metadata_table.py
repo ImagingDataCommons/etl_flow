@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+# DEPRECATED #
 # Build a table of collection/patient/study/series/instance metadata for the WSIs
 # Assumes that bucket containing the pathology WSI blobs is gcsfuse mounted (the
 # mount point is a paramater). This allows pydicom that extract DICOM UIDs

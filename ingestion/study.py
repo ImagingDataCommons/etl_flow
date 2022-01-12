@@ -39,6 +39,7 @@ def clone_study(study, uuid):
 
 def retire_study(args, study ):
     # If this object has children from source, delete them
+    rootlogger.debug('    p%s: Study %s:%s retiring', args.id, study.study_instance_uid, study.uuid)
     for series in study.seriess:
         retire_series(args, series)
     study.final_idc_version = args.previous_version
@@ -97,6 +98,7 @@ def expand_study(sess, args, all_sources, study, data_collection_doi, analysis_c
         new_series.is_new=True
         new_series.expanded=False
         study.seriess.append(new_series)
+        rootlogger.debug('      p%s:Series %s new', args.id, new_series.series_instance_uid)
 
     for series in existing_objects:
         idc_hashes = series.hashes
@@ -124,6 +126,8 @@ def expand_study(sess, args, all_sources, study, data_collection_doi, analysis_c
                 rev_series.sources = [False, False]
                 rev_series.rev_idc_version = args.version
             study.seriess.append(rev_series)
+            rootlogger.debug('      p%s:Series %s revised',  args.id, rev_series.series_instance_uid)
+
 
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised study
@@ -139,10 +143,10 @@ def expand_study(sess, args, all_sources, study, data_collection_doi, analysis_c
                 # Shouldn't be needed if the previous version is done
                 series.done = True
                 series.expanded = True
-            rootlogger.debug('Series %s unchanged', series.series_instance_uid)
+            rootlogger.debug('      p%s: Series %s unchanged',  args.id, series.series_instance_uid)
 
     for series in retired_objects:
-        rootlogger.info('Series %s:%s retiring', series.series_instance_uid, series.uuid)
+        # rootlogger.debug('      p%s: Series %s:%s retiring', args.id, series.series_instance_uid, series.uuid)
         retire_series(args, series)
         study.seriess.remove(series)
 
@@ -153,9 +157,10 @@ def expand_study(sess, args, all_sources, study, data_collection_doi, analysis_c
 
 def build_study(sess, args, all_sources, study_index, version, collection, patient, study, data_collection_doi, analysis_collection_dois):
     begin = time.time()
+    rootlogger.debug("    p%s: Expand Study %s, %s", args.id, study.study_instance_uid, study_index)
     if not study.expanded:
         expand_study(sess, args, all_sources, study, data_collection_doi, analysis_collection_dois)
-    rootlogger.info("    p%s: Study %s, %s, %s series, expand time: %s", args.id, study.study_instance_uid, study_index, len(study.seriess), time.time()-begin)
+    rootlogger.info("    p%s: Expanded Study %s, %s, %s series, expand time: %s", args.id, study.study_instance_uid, study_index, len(study.seriess), time.time()-begin)
     for series in study.seriess:
         series_index = f'{study.seriess.index(series) + 1} of {len(study.seriess)}'
         if not series.done:
@@ -169,7 +174,7 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
             study.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
-            rootlogger.info("    p%s: Study %s, %s,  completed in %s", args.id, study.study_instance_uid, study_index, duration)
+            rootlogger.info("    p%s: Completed Study %s, %s,  in %s", args.id, study.study_instance_uid, study_index, duration)
         else:
             # Get a list of what DB thinks are the study's hashes
             idc_hashes = all_sources.idc_study_hashes(study)
@@ -187,6 +192,6 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
                 study.done = True
                 sess.commit()
                 duration = str(timedelta(seconds=(time.time() - begin)))
-                rootlogger.info("    p%s: Study %s, %s,  completed in %s", args.id, study.study_instance_uid, study_index, duration)
+                rootlogger.info("    p%s: Completed Study %s, %s,  in %s", args.id, study.study_instance_uid, study_index, duration)
 
 

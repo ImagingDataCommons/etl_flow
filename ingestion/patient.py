@@ -38,6 +38,7 @@ def clone_patient(patient, uuid):
 
 def retire_patient(args, patient):
     # If this object has children from source, delete them
+    rootlogger.debug  ('  p%s: Patient %s retiring', args.id, patient.submitter_case_id)
     for study in patient.studies:
         retire_study(args, study)
     patient.final_idc_version = args.previous_version
@@ -91,13 +92,15 @@ def expand_patient(sess, args, all_sources, patient):
         new_study.is_new=True
         new_study.expanded=False
         patient.studies.append(new_study)
+        rootlogger.debug  ('    p%s: Study %s is new',  args.id, new_study.study_instance_uid)
+
 
     for study in existing_objects:
         idc_hashes = study.hashes
         src_hashes = all_sources.src_study_hashes(study.study_instance_uid)
         revised = [x != y for x, y in zip(idc_hashes[:-1], src_hashes)]
         if any(revised):
-            rootlogger.info('**Patient %s needs revision', patient.submitter_case_id)
+            # rootlogger.debug  ('**Patient %s needs revision', patient.submitter_case_id)
             rev_study = clone_study(study, studies[study.study_instance_uid]['uuid'] if args.build_mtm_db else str(uuid4()))
             assert args.version == studies[study.study_instance_uid]['rev_idc_version']
             rev_study.revised = True
@@ -115,6 +118,7 @@ def expand_patient(sess, args, all_sources, patient):
                 rev_study.hashes = None
                 rev_study.rev_idc_version = args.version
             patient.studies.append(rev_study)
+            rootlogger.debug  ('    p%s: Study %s is revised',  args.id, rev_study.study_instance_uid)
 
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised patient
@@ -130,11 +134,10 @@ def expand_patient(sess, args, all_sources, patient):
                 # Shouldn't be needed if the previous version is done
                 study.done = True
                 study.expanded = True
-            rootlogger.debug('**Study %s unchanged', study.study_instance_uid)
+            rootlogger.debug  ('    p%s: Study %s unchanged',  args.id, study.study_instance_uid)
 
     for study in retired_objects:
-        breakpoint()
-        rootlogger.info('Study %s:%s retiring', study.study_instance_uid, study.uuid)
+        # rootlogger.debug  ('    p%s: Study %s:%s retiring', args.id, study.study_instance_uid, study.uuid)
         retire_study(args, study)
         patient.studies.remove(study)
 
@@ -145,9 +148,10 @@ def expand_patient(sess, args, all_sources, patient):
 
 def build_patient(sess, args, all_sources, patient_index, data_collection_doi, analysis_collection_dois, version, collection, patient):
     begin = time.time()
+    rootlogger.debug("  p%s: Expand Patient %s, %s", args.id, patient.submitter_case_id, patient_index)
     if not patient.expanded:
         expand_patient(sess, args, all_sources, patient)
-    rootlogger.info("  p%s: Patient %s, %s, %s studies, expand_time: %s, %s", args.id, patient.submitter_case_id, patient_index, len(patient.studies), time.time()-begin, time.asctime())
+    rootlogger.info("  p%s: Expanded Patient %s, %s, %s studies, expand_time: %s, %s", args.id, patient.submitter_case_id, patient_index, len(patient.studies), time.time()-begin, time.asctime())
     for study in patient.studies:
         study_index = f'{patient.studies.index(study) + 1} of {len(patient.studies)}'
         if not study.done:
@@ -161,7 +165,7 @@ def build_patient(sess, args, all_sources, patient_index, data_collection_doi, a
             patient.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
-            rootlogger.info("  p%s: Patient %s, %s, completed in %s, %s", args.id, patient.submitter_case_id,
+            rootlogger.info("  p%s: Completed Patient %s, %s, in %s, %s", args.id, patient.submitter_case_id,
                             patient_index, duration, time.asctime())
         else:
             # Get a list of what DB thinks are the patient's hashes
@@ -179,4 +183,4 @@ def build_patient(sess, args, all_sources, patient_index, data_collection_doi, a
                 patient.done = True
                 sess.commit()
                 duration = str(timedelta(seconds=(time.time() - begin)))
-                rootlogger.info("  p%s: Patient %s, %s, completed in %s, %s", args.id, patient.submitter_case_id, patient_index, duration, time.asctime())
+                rootlogger.info("  p%s: Completed Patient %s, %s, in %s, %s", args.id, patient.submitter_case_id, patient_index, duration, time.asctime())

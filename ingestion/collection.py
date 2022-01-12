@@ -19,15 +19,16 @@ from datetime import datetime, timedelta
 import logging
 from uuid import uuid4
 from idc.models import Version, Collection, Patient
-from ingestion.utils import accum_sources, empty_bucket, create_prestaging_bucket, get_merkle_hash
+from ingestion.utils import accum_sources, empty_bucket, create_prestaging_bucket
 from ingestion.patient import clone_patient, build_patient, retire_patient
 from ingestion.all_sources import All
-from ingestion.sources_mtm import All_mtm
+from ingestion.mtm.sources_mtm import All_mtm
 from utilities.get_collection_dois import get_data_collection_doi, get_analysis_collection_dois
+from utilities.tcia_helpers import get_access_token
 
 from python_settings import settings
 
-from multiprocessing import Process, Queue, Lock
+from multiprocessing import Process, Queue, Lock, shared_memory
 from queue import Empty
 
 from sqlalchemy.orm import Session
@@ -50,13 +51,14 @@ def clone_collection(collection,uuid):
 
 def retire_collection(args, collection):
     # If this object has children from source, delete them
+    rootlogger.debug('p%s: Collection %s retiring', args.id, collection.collection_id)
     for patient in collection.patients:
         retire_patient(args, patient)
     collection.final_idc_version = args.previous_version
 
 
 PATIENT_TRIES=5
-def worker(input, output, args, data_collection_doi, analysis_collection_dois, lock):
+def worker(input, output, args, data_collection_doi, analysis_collection_dois, access, lock):
     # rootlogger.debug('p%s: Worker starting: args: %s', args.id, args)
     sql_engine = create_engine(args.sql_uri)
     with Session(sql_engine) as sess:
@@ -70,12 +72,11 @@ def worker(input, output, args, data_collection_doi, analysis_collection_dois, l
             # Use this to see the SQL being sent to PSQL
             all_sources = All_mtm(sess, Session(sql_engine_mtm), args.version)
         else:
-            all_sources = All(sess, args.version, lock)
+            all_sources = All(args.id, sess, args.version, access, lock)
         # all_sources.lock = lock
-        # rootlogger.info('p%s: Worker starting: args: %s', args.id, args)
-        # rootlogger.info('p%s: Source: args: %s', args.id, source)
-        # rootlogger.info('p%s: conn: %s, cur: %s', args.id, conn, cur)
-        # rootlogger.info('p%s: Lock: _rand %s, _sem_lock: %s', args.id, source.lock._rand, source.lock._semlock)
+        # rootlogger.info('p%s: Lock: _rand %s, _sem_lock: %s', args.id, list(all_sources.sources.values())[0].lock._rand, list(all_sources.sources.values())[0].lock._semlock)
+        # rootlogger.info('p%s: access token: %s, refresh token: %s', args.id, list(all_sources.sources.values())[0].access_token, list(all_sources.sources.values())[0].refresh_token)
+
         for more_args in iter(input.get, 'STOP'):
             for attempt in range(PATIENT_TRIES):
                 time.sleep((2**attempt)-1)
@@ -114,7 +115,7 @@ def expand_collection(sess, args, all_sources, collection):
 
     # Check for duplicates
     if len(patients) != len(set(patients)):
-        errlogger.error("\tp%s: Duplicate patients in expansion of collection %s", args.id,
+        errlogger.error("  p%s: Duplicate patients in expansion of collection %s", args.id,
                         collection.collection_id)
         raise RuntimeError("p%s: Duplicate patients expansion of collection %s", args.id,
                            collection.collection_id)
@@ -158,13 +159,14 @@ def expand_collection(sess, args, all_sources, collection):
         new_patient.expanded=False
 
         collection.patients.append(new_patient)
+        rootlogger.debug('  p%s: Patient %s is new',  args.id, new_patient.submitter_case_id)
 
     for patient in existing_objects:
         idc_hashes = patient.hashes
         src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id)
         revised = [x != y for x, y in zip(idc_hashes[:-1], src_hashes)]
         if any(revised):
-            rootlogger.info('p%s **Revising patient %s', args.id, patient.submitter_case_id)
+            # rootlogger.debug('p%s **Revising patient %s', args.id, patient.submitter_case_id)
             # Mark when we started work on this patient
             # assert args.version == patients[patient.submitter_case_id]['rev_idc_version']
             rev_patient = clone_patient(patient, str(uuid4()))
@@ -183,6 +185,7 @@ def expand_collection(sess, args, all_sources, collection):
                 rev_patient.sources = [False, False]
                 rev_patient.rev_idc_version = args.version
             collection.patients.append(rev_patient)
+            rootlogger.debug('  p%s: Patient %s is revised',  args.id, rev_patient.submitter_case_id)
 
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised collection
@@ -200,13 +203,14 @@ def expand_collection(sess, args, all_sources, collection):
 
                 patient.done = True
                 patient.expanded = True
-            rootlogger.info('Patient %s unchanged', patient.submitter_case_id)
+            rootlogger.debug('  p%s: Patient %s unchanged',  args.id, patient.submitter_case_id)
 
     for patient in retired_objects:
         breakpoint()
-        rootlogger.info('Patient %s retiring', patient.submitter_case_id)
+        # rootlogger.debug('  p%s: Patient %s retiring', args.id, patient.submitter_case_id)
         retire_patient(args, patient)
         collection.patients.remove(patient)
+
 
     collection.expanded = True
     sess.commit()
@@ -216,23 +220,33 @@ def expand_collection(sess, args, all_sources, collection):
 
 def build_collection(sess, args, all_sources, collection_index, version, collection):
     begin = time.time()
+    rootlogger.debug("p%s: Expand Collection %s, %s", args.id, collection.collection_id, collection_index)
     args.prestaging_bucket = f"{args.prestaging_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
     if not collection.expanded:
         expand_collection(sess, args, all_sources, collection)
-    rootlogger.info("Collection %s, %s, %s patients", collection.collection_id, collection_index, len(collection.patients))
+    rootlogger.info("p%s: Expanded Collection %s, %s, %s patients", args.id, collection.collection_id, collection_index, len(collection.patients))
     if not args.build_mtm_db:
         # Get the lists of data and analyis series for this collection
         data_collection_doi = get_data_collection_doi(collection.collection_id, server=args.server)
         if data_collection_doi=="":
             if collection.collection_id=='NLST':
                 data_collection_doi = '10.7937/TCIA.hmq8-j677'
-            elif collection.collection_id == 'CPTAC-LSCC':
-                data_collection_doi = '10.7937/K9/TCIA.2018.6EMUB5L2'
             elif collection.collection_id == 'Pancreatic-CT-CBCT-SEG':
                 data_collection_doi = '10.7937/TCIA.ESHQ-4D90'
+            elif collection.collection_id == 'CPTAC-LSCC':
+                data_collection_doi = '10.7937/K9/TCIA.2018.6EMUB5L2'
+            elif collection.collection_id == 'CPTAC-AML':
+                data_collection_doi = '10.7937/tcia.2019.b6foe619'
+            elif collection.collection_id == 'CPTAC-BRCA':
+                data_collection_doi = '10.7937/TCIA.CAEM-YS80'
+            elif collection.collection_id == 'CPTAC-COAD':
+                data_collection_doi = '10.7937/TCIA.YZWQ-ZZ63'
+            elif collection.collection_id == 'CPTAC-OV':
+                data_collection_doi = '10.7937/TCIA.ZS4A-JD58'
             else:
                 errlogger.error('No DOI for collection %s', collection.collection_id)
-                return
+                pass
+                # return
         pre_analysis_collection_dois = get_analysis_collection_dois(collection.collection_id, server=args.server)
         analysis_collection_dois = {x['SeriesInstanceUID']: x['SourceDOI'] for x in pre_analysis_collection_dois}
     else:
@@ -241,7 +255,6 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
 
     if args.num_processes==0:
         # for series in sorted_seriess:
-        args.id = 0
         for patient in collection.patients:
             patient_index = f'{collection.patients.index(patient) + 1} of {len(collection.patients)}'
             if not patient.done:
@@ -267,7 +280,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         for process in range(num_processes):
             args.id = process+1
             processes.append(
-                Process(target=worker, args=(task_queue, done_queue, args, data_collection_doi, analysis_collection_dois, lock )))
+                Process(target=worker, args=(task_queue, done_queue, args, data_collection_doi, analysis_collection_dois, args.access, lock )))
             processes[-1].start()
 
         # Enqueue each patient in the the task queue
@@ -318,7 +331,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
             collection.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
-            rootlogger.info("Collection %s, %s, completed in %s", collection.collection_id, collection_index,
+            rootlogger.info("Completed Collection %s, %s, in %s", collection.collection_id, collection_index,
                         duration)
         else:
 
@@ -336,7 +349,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
                     collection.done = True
                     sess.commit()
                 duration = str(timedelta(seconds=(time.time() - begin)))
-                rootlogger.info("Collection %s, %s, completed in %s", collection.collection_id, collection_index,
+                rootlogger.info("Completed Collection %s, %s, in %s", collection.collection_id, collection_index,
                                 duration)
             except Exception as exc:
                 errlogger.error('Could not validate collection hash for %s: %s', collection.collection_id, exc)

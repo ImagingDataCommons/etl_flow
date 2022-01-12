@@ -22,7 +22,7 @@ import logging
 import pydicom
 import shutil
 from pydicom.errors import InvalidDicomError
-from idc.models import Version, Instance, WSI_metadata
+from idc.models import Version, Instance, WSI_Instance
 from sqlalchemy import select,delete
 from utilities.tcia_helpers import  get_TCIA_instances_per_series_with_hashes
 
@@ -191,7 +191,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
                      mark_done_time)
 
 
-def build_instances_path(sess, args, series):
+def build_instances_path(sess, args, collection, patient, study, series):
     # Download a zip of the instances in a series
     # It will be write the zip to a file dicom/<series_instance_uid>.zip in the
     # working directory, and expand the zip to directory dicom/<series_instance_uid>
@@ -199,19 +199,33 @@ def build_instances_path(sess, args, series):
     # When TCIA provided series timestamps, we'll us that for timestamp.
     now = datetime.now(timezone.utc)
 
-    stmt = select(WSI_metadata.sop_instance_uid, WSI_metadata.gcs_url, WSI_metadata.hash, WSI_metadata.size).\
-        where(WSI_metadata.series_instance_uid == series.series_instance_uid)
+    # stmt = select(WSI_Instance.sop_instance_uid, WSI_Instance.gcs_url, WSI_Instance.hash, ). \
+    #     where(WSI_Instance.series_instance_uid == series.series_instance_uid)
+    stmt = select(WSI_Instance.sop_instance_uid, WSI_Instance.url, WSI_Instance.hash ). \
+        where(WSI_Instance.series_instance_uid == series.series_instance_uid)
     result = sess.execute(stmt)
-    src_instance_metadata = {i.sop_instance_uid:{'gcs_url':i.gcs_url, 'hash':i.hash, 'size': i.size} \
+    src_instance_metadata = {i.sop_instance_uid:{'gcs_url':i.url, 'hash':i.hash} \
                              for i in result.fetchall()}
+    start = time.time()
+    total_size = 0
     for instance in series.instances:
         if not instance.done:
-            instance.size = src_instance_metadata[instance.sop_instance_uid]['size']
             instance.hash = src_instance_metadata[instance.sop_instance_uid]['hash']
-            instance.rev_idc_version = args.version
-            instance.timestamp = datetime.utcnow()
-            copy_gcs_to_gcs(args, instance, src_instance_metadata[instance.sop_instance_uid]['gcs_url'])
+            instance.size, hash = copy_gcs_to_gcs(args, instance, src_instance_metadata[instance.sop_instance_uid]['gcs_url'])
+            if hash != instance.hash:
+                errlogger.error("       p%s: Copy files to GCS failed for %s/%s/%s/%s/%s", args.id,
+                                collection.collection_id, patient.submitter_case_id, study.study_instance_uid,
+                                series.series_instance_uid, instance.sop_instance_uid)
+                # Copy failed. Return without marking all instances done. This will be prevent the series from being done.
+                return
+            total_size += instance.size
             instance.done = True
+    rootlogger.debug("        p%s: Series %s: instances: %s, gigabytes: %.2f, rate: %.2fMB/s",
+                     args.id, series.series_instance_uid,
+                     len(series.instances),
+                     total_size/(2**30),
+                     (total_size/(time.time() - start))/(2**20)
+                     )
 
 
 

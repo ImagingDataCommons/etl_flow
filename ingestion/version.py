@@ -63,7 +63,7 @@ def expand_version(sess, args, all_sources, version, skips):
 
     for idc_collection_id in sorted(new_objects,
             key=lambda idc_collection_id: collections[idc_collection_id]['collection_id']):
-        if not idc_collection_id in skips:
+        if not collections[idc_collection_id]['collection_id'] in skips:
             # The collection is new, so we must ingest it
             new_collection = Collection()
             new_collection.collection_id = collections[idc_collection_id]['collection_id']
@@ -88,7 +88,7 @@ def expand_version(sess, args, all_sources, version, skips):
             new_collection.expanded = False
 
             version.collections.append(new_collection)
-
+            rootlogger.debug('p%s: Collection %s is new', args.id, new_collection.collection_id)
 
     for collection in existing_objects:
         if not collection.collection_id in skips:
@@ -99,7 +99,7 @@ def expand_version(sess, args, all_sources, version, skips):
             revised = [x != y for x, y in zip(idc_hashes[:-1], src_hashes)]
             if any(revised):
                 # If any sources has an updated version of this object, create a new version.
-                rootlogger.debug('**Collection %s needs revision',collection.collection_id)
+                # rootlogger.debug('**Collection %s needs revision',collection.collection_id)
                 rev_collection = clone_collection(collection, uuid=str(uuid4()))
 
                 # Here is where we update the collecton ID in case it has changed
@@ -121,6 +121,7 @@ def expand_version(sess, args, all_sources, version, skips):
                     rev_collection.revised = revised
                     rev_collection.rev_idc_version = args.version
                 version.collections.append(rev_collection)
+                rootlogger.debug('p%s: Collection %s is revised',  args.id, rev_collection.collection_id)
 
                 # Mark the now previous version of this object as having been replaced
                 # and drop it from the revised version
@@ -143,6 +144,7 @@ def expand_version(sess, args, all_sources, version, skips):
                 collection.expanded = True
 
                 version.collections.append(rev_collection)
+                rootlogger.debug('p%s: Collection %s is renamed',  args.id, rev_collection.collection_id)
 
                 # Mark the now previous version of this object as having been replaced
                 # and drop it from the revised version
@@ -158,12 +160,12 @@ def expand_version(sess, args, all_sources, version, skips):
                     # Shouldn't be needed if the previous version is done
                     collection.done = True
                     collection.expanded = True
-                rootlogger.debug('Collection %s unchanged',collection.collection_id)
+                rootlogger.debug('p%s: Collection %s unchanged', args.id, collection.collection_id)
 
     for collection in retired_objects:
         breakpoint()
         if not collection.collection_id in skips:
-            rootlogger.info('Collection %s retiring', collection.collection_id)
+            # rootlogger.debug('p%s: Collection %s retiring', args.id, collection.collection_id)
             # Mark the now previous version of this object as having been retired
             retire_collection(args, collection)
             version.collections.remove(collection)
@@ -178,17 +180,18 @@ def build_version(sess, args, all_sources, version):
         skips = open(args.skips).read().splitlines()
     except:
         skips = []
+    rootlogger.debug("p%s: Expand version %s", args.id, args.version)
     if not version.expanded:
         expand_version(sess, args, all_sources, version, skips)
     idc_collections = sorted(version.collections, key=lambda collection: collection.collection_id)
-    rootlogger.info("Version %s; %s collections", args.version, len(idc_collections))
+    rootlogger.info("p%s: Expanded Version %s; %s collections", args.id, args.version, len(idc_collections))
     for collection in idc_collections:
         if not collection.collection_id in skips:
             collection_index = f'{idc_collections.index(collection) + 1} of {len(idc_collections)}'
             if not collection.done:
                 build_collection(sess, args, all_sources, collection_index, version, collection)
             else:
-                rootlogger.info("Collection %s, %s, previously built", collection.collection_id, collection_index)
+                rootlogger.info("p%s: Collection %s, %s, previously built", args.id, collection.collection_id, collection_index)
 
     # Check if we are really done
     if all([collection.done for collection in idc_collections]):
@@ -200,7 +203,7 @@ def build_version(sess, args, all_sources, version):
             version.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
-            rootlogger.info("Version %s, completed in %s", version.version, duration)
+            rootlogger.info("Completed Version %s, in %s", version.version, duration)
         else:
             # Get the new version's hashes
             idc_hashes = all_sources.idc_version_hashes(version)
@@ -214,11 +217,11 @@ def build_version(sess, args, all_sources, version):
                 version.revised = [True, True]
             else:
                 # Revert the version
-                egest_version(sess, version)
+                egest_version(sess, args, version)
                 rootlogger.info("Version unchanged, remains at %s", args.previous_version)
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
-            rootlogger.info("Version %s, completed in %s", version.version, duration)
+            rootlogger.info("Completed Version %s, in %s", version.version, duration)
 
     else:
         rootlogger.info("Not all collections are done. Rerun.")

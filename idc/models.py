@@ -357,22 +357,22 @@ class Collection_id_map(Base):
     collection_id = Column(String, primary_key=True)
     idc_collection_id = Column(String, nullable=False)
 
-class WSI_metadata(Base):
-    __tablename__ = 'wsi_metadata'
-    collection_id = Column(String, nullable=False)
-    submitter_case_id = Column(String, nullable=False)
-    study_instance_uid = Column(String, nullable=False)
-    series_instance_uid = Column(String, nullable=False)
-    sop_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-    gcs_url = Column(String, nullable=False)
-    hash = Column(String, comment="Hex format MD5 hash of this instance")
-    size = Column(BigInteger, comment='Instance blob size (bytes)')
+
+class WSI_Version(Base):
+    __tablename__ = 'wsi_version'
+    version = Column(Integer, unique=True, primary_key=True, comment='NBIA collection ID')
+    hash = Column(String, comment='Version hash')
+
+    collections = relationship("WSI_Collection", back_populates="vers", order_by="WSI_Collection.collection_id", cascade="all, delete")
+    # patients = relationship("Patient", backref="the_collection")
 
 class WSI_Collection(Base):
     __tablename__ = 'wsi_collection'
     collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
+    version = Column(ForeignKey('wsi_version.version'), comment="Containing object")
     hash = Column(String, comment='Collection hash')
 
+    vers = relationship("WSI_Version", back_populates="collections")
     patients = relationship("WSI_Patient", back_populates="collection", order_by="WSI_Patient.submitter_case_id", cascade="all, delete")
     # patients = relationship("Patient", backref="the_collection")
 

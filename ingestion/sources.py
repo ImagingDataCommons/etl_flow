@@ -13,12 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import time
 
 from utilities.tcia_helpers import  get_access_token, get_hash, get_TCIA_studies_per_patient, get_TCIA_patients_per_collection,\
     get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_TCIA_instances_per_series, get_collection_values_and_counts,\
     get_updated_series, get_instance_hash, refresh_access_token
 from uuid import uuid4
-from idc.models  import Collection_id_map, WSI_metadata, instance_source
+from idc.models  import WSI_Version, WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance, instance_source
 from sqlalchemy import select
 from google.cloud import bigquery
 from ingestion.utils import get_merkle_hash
@@ -34,11 +35,13 @@ class Source:
 
 
 class TCIA(Source):
-    def __init__(self, sess, lock):
+    def __init__(self, pid, sess, access, lock):
         super().__init__(instance_source['tcia'].value)
         self.source = instance_source.tcia
-        self.access_token, self.refresh_token = get_access_token()
+        # self.access_token, self.refresh_token = get_access_token()
+        self.pid = pid
         self.sess = sess
+        self.access = access
         self.lock = lock
 
     def get_hash(self, request_data, access_token=None, refresh_token=None):
@@ -52,11 +55,17 @@ class TCIA(Source):
         # result = requests.get(url, headers=headers)
         self.lock.acquire()
         try:
-            result = get_hash(request_data, self.access_token)
+            # result = get_hash(request_data, self.access_token)
+            result = get_hash(request_data, self.access[0])
             if result.status_code == 401:
                 # Refresh the token and try once more to get the hash
-                self.access_token, self.refresh_token = refresh_access_token(self.refresh_token)
-                result = get_hash(request_data, self.access_token)
+                # errlogger.error('%s Refreshing access token %s', access_token)
+                # self.access_token, self.refresh_token = refresh_access_token(self.refresh_token)
+                # result = get_hash(request_data, self.access_token)
+                errlogger.error('p%s Refreshing access token %s, refresh token %s at %s', self.pid, self.access[0], self.access[1], time.asctime(time.localtime()))
+                self.access[0], self.access[1] = refresh_access_token(self.access[1])
+                errlogger.error('p%s After refresh, token %s, refresh token %s', self.pid, self.access[0], self.access[1])
+                result = get_hash(request_data, self.access[0])
                 if result.status_code != 200:
                     result = None
             elif result.status_code != 200:
@@ -218,83 +227,65 @@ class Pathology(Source):
     ###-------------------Versions-----------------###
 
     def src_version_hash(self):
-        collections = self.sess.execute(select(WSI_metadata.collection_id).distinct())
-        hashes = []
-        for collection in collections:
-            hashes.append(self.src_collection_hash(collection['collection_id']))
-        hash = get_merkle_hash(hashes)
+        query = select(WSI_Version.hash)
+        hash = self.sess.execute(query).fetchone().hash
         return hash
 
     ###-------------------Collections-----------------###
 
     def collections(self):
-        stmt = select(WSI_metadata.collection_id).distinct()
-        result = self.sess.execute(stmt)
-        # collections = [row['collection_id'].lower() for row in result.fetchall()]
-        collections = [row['collection_id'] for row in result.fetchall()]
+        query = select(WSI_Collection.collection_id)
+        collections = [row.collection_id for row in self.sess.execute(query).fetchall()]
         return collections
 
 
     def src_collection_hash(self, collection_id):
-        patients = self.sess.execute(select(WSI_metadata.submitter_case_id).distinct().where(WSI_metadata.collection_id == collection_id))
-        hashes = []
-        for patient in patients:
-            hashes.append(self.src_patient_hash(collection_id, patient['submitter_case_id']))
-        hash = get_merkle_hash(hashes) if len(hashes) else ""
+        query = select(WSI_Collection.hash).where(WSI_Collection.collection_id == collection_id)
+        hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
         return hash
 
     ###-------------------Patients-----------------###
 
     def patients(self, collection):
-        stmt = select(WSI_metadata.submitter_case_id).distinct().where(WSI_metadata.collection_id==collection.collection_id)
-        result = self.sess.execute(stmt)
-        patients = [row['submitter_case_id'] for row in result.fetchall()]
+        query = select(WSI_Patient.submitter_case_id).where(WSI_Patient.collection_id == collection.collection_id)
+        patients = [row.submitter_case_id for row in self.sess.execute(query).fetchall()]
         return patients
 
 
     def src_patient_hash(self, collection_id, submitter_case_id):
-        studies = self.sess.execute(select(WSI_metadata.study_instance_uid).distinct().where(WSI_metadata.submitter_case_id == submitter_case_id))
-        hashes = []
-        for study in studies:
-            hashes.append(self.src_study_hash(study['study_instance_uid']))
-        hash = get_merkle_hash(hashes) if len(hashes) else ""
+        query = select(WSI_Patient.hash).where(WSI_Patient.submitter_case_id == submitter_case_id)
+        hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
         return hash
 
     ###-------------------Studies-----------------###
 
     def studies(self, patient):
-        stmt = select(WSI_metadata.study_instance_uid).distinct().where(WSI_metadata.submitter_case_id==patient.submitter_case_id)
-        result = self.sess.execute(stmt)
-        studies = [row['study_instance_uid'] for row in result.fetchall()]
+        query = select(WSI_Study.study_instance_uid).where(WSI_Study.submitter_case_id == patient.submitter_case_id)
+        studies = [row.study_instance_uid for row in self.sess.execute(query).fetchall()]
         return studies
 
 
     def src_study_hash(self, study_instance_uid):
-        seriess = self.sess.execute(select(WSI_metadata.series_instance_uid).distinct().where(WSI_metadata.study_instance_uid == study_instance_uid))
-        hashes = []
-        for series in seriess:
-            hashes.append(self.src_series_hash(series['series_instance_uid']))
-        hash = get_merkle_hash(hashes) if len(hashes) else ""
+        query = select(WSI_Study.hash).where(WSI_Study.study_instance_uid == study_instance_uid)
+        hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
         return hash
 
     ###-------------------Series-----------------###
 
     def series(self, study):
-        stmt = select(WSI_metadata.series_instance_uid).distinct().where(WSI_metadata.study_instance_uid==study.study_instance_uid)
-        result = self.sess.execute(stmt)
-        series = [row['series_instance_uid'] for row in result.fetchall()]
+        query = select(WSI_Series.series_instance_uid).where(WSI_Series.study_instance_uid == study.study_instance_uid)
+        series = [row.series_instance_uid for row in self.sess.execute(query).fetchall()]
         return series
 
 
     def src_series_hash(self, series_instance_uid):
-        hashes = [hash['hash'] for hash in self.sess.execute(select(WSI_metadata.hash).where(WSI_metadata.series_instance_uid == series_instance_uid))]
-        hash = get_merkle_hash(hashes) if len(hashes) else ""
+        query = select(WSI_Series.hash).where(WSI_Series.series_instance_uid == series_instance_uid)
+        hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
         return hash
 
     ###-------------------Instances-----------------###
 
     def instances(self, series):
-        stmt = select(WSI_metadata.sop_instance_uid).where(WSI_metadata.series_instance_uid==series.series_instance_uid)
-        result = self.sess.execute(stmt)
-        instances = [row['sop_instance_uid'] for row in result.fetchall()]
+        query = select(WSI_Instance.sop_instance_uid).where(WSI_Instance.series_instance_uid == series.series_instance_uid)
+        instances = [row.sop_instance_uid for row in self.sess.execute(query).fetchall()]
         return instances

@@ -18,7 +18,7 @@ from utilities.tcia_helpers import  get_access_token, get_hash, get_TCIA_studies
     get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_TCIA_instances_per_series, get_collection_values_and_counts,\
     get_updated_series, get_instance_hash, refresh_access_token
 from uuid import uuid4
-from idc.models  import Collection_id_map, WSI_metadata, instance_source
+from idc.models  import Collection_id_map, instance_source
 from sqlalchemy import select
 from google.cloud import bigquery
 from ingestion.utils import get_merkle_hash
@@ -30,13 +30,13 @@ errlogger = logging.getLogger('root.err')
 
 class All:
 
-    def __init__(self, sess, version, lock):
+    def __init__(self, pid, sess, version, access, lock):
         self.sess = sess
         self.idc_version = version
         self.client = bigquery.Client()
         self.sources = {}
         try:
-            self.sources[instance_source.tcia] = TCIA(sess, lock)
+            self.sources[instance_source.tcia] = TCIA(pid, sess, access, lock)
             self.sources[instance_source.path] = Pathology(sess)
         except Exception as exc:
             print(exc)
@@ -280,22 +280,19 @@ class All:
 
     # Get the instances in some series from all sources
     def instances(self, series):
-        instance_metadata = {}
+        instances = {}
         for source in instance_source:
-            # # Only collect series from a source if the series is
-            # # is revised in the source.
-            # # We assume that all instances is a series are from a
-            # # a single source, therefor we only return a scalar
-            # if series.revised[source.value]:
-            if True:
-                instance_ids = self.sources[source].instances(series)
-                for instance_id in instance_ids:
-                    instance_metadata[instance_id] = source.name
+            instance_ids = self.sources[source].instances(series)
+            for instance_id in instance_ids:
+                instances[instance_id] = source.name
+            # We assume that all instances in a series are from a
+            # a single source. Therefore we only return a scalar
+            if instances:
                 break
 
         # Make a copy for subsequent access by other sources functions
-        self.instance_metadata = instance_metadata
-        return instance_metadata
+        self.instance_metadata = instances
+        return instances
 
     # Compute object's hashes according to sources
     def src_instance_hashes(self, sop_instance_uid, source):

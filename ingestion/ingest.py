@@ -21,9 +21,9 @@ import logging
 from logging import INFO, DEBUG
 from datetime import datetime, timedelta
 import shutil
-from multiprocessing import Lock
+from multiprocessing import Lock, shared_memory
 from idc.models import Base, Version, Collection
-from sqlalchemy.orm import Session
+from utilities.tcia_helpers import get_access_token
 
 from ingestion.version import clone_version, build_version
 
@@ -31,9 +31,13 @@ from python_settings import settings
 
 from sqlalchemy import create_engine
 from sqlalchemy_utils import register_composites
+from sqlalchemy.orm import Session
 
 from ingestion.all_sources import All
-from ingestion.sources_mtm import All_mtm
+from ingestion.mtm.sources_mtm import All_mtm
+from http.client import HTTPConnection
+HTTPConnection.debuglevel = 0
+
 
 
 rootlogger = logging.getLogger('root')
@@ -63,12 +67,15 @@ errlogger = logging.getLogger('root.err')
 
 
 def ingest(args):
+    HTTPConnection.debuglevel = 0
+    logging.getLogger("urllib3").setLevel(logging.ERROR)
+
     # rootlogger = logging.getLogger('root')
     root_fh = logging.FileHandler('{}/logs/v{}_log.log'.format(os.environ['PWD'], args.version))
     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
     rootlogger.addHandler(root_fh)
     root_fh.setFormatter(rootformatter)
-    rootlogger.setLevel(DEBUG)
+    rootlogger.setLevel(INFO)
 
     # errlogger = logging.getLogger('root.err')
     err_fh = logging.FileHandler('{}/logs/v{}_err.log'.format(os.environ['PWD'], args.version))
@@ -86,8 +93,8 @@ def ingest(args):
 
 
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
-    sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
-    # sql_engine = create_engine(sql_uri)
+    # sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
+    sql_engine = create_engine(sql_uri)
     args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
 
     # Create the tables if they do not already exist
@@ -113,7 +120,9 @@ def ingest(args):
             # test_source(args, all_sources)
 
         else:
-            all_sources = All(sess, args.version, Lock())
+            access = shared_memory.ShareableList(get_access_token())
+            args.access = access
+            all_sources = All(args.id, sess, args.version, args.access, Lock())
         # all_sources.lock = Lock()
 
         version = sess.query(Version).filter(Version.version == args.version).first()
