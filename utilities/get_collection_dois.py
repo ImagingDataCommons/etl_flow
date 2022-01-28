@@ -39,20 +39,23 @@ def get_data_collection_doi(collection, server=""):
     else:
         internal_ids = get_internal_series_ids(collection, patient="", third_party="no", size=1)
 
-    subject = internal_ids["resultSet"][0]
-    study = subject["studyIdentifiers"][0]
-    seriesIDs = study["seriesIdentifiers"]
-    if server:
-        study_metadata = series_drill_down(seriesIDs, server=server)
-    else:
-        study_metadata = series_drill_down(seriesIDs)
-    study = study_metadata[0]
-    series = study["seriesList"][0]
-    uri = series["descriptionURI"]
-    # If it's a doi.org uri, keep just the DOI
-    if uri:
-       if 'doi.org' in uri:
-           uri = uri.split('doi.org/')[1]
+    if internal_ids["resultSet"]:
+        subject = internal_ids["resultSet"][0]
+        study = subject["studyIdentifiers"][0]
+        seriesIDs = study["seriesIdentifiers"]
+        if server:
+            study_metadata = series_drill_down(seriesIDs, server=server)
+        else:
+            study_metadata = series_drill_down(seriesIDs)
+        study = study_metadata[0]
+        series = study["seriesList"][0]
+        uri = series["descriptionURI"]
+        # If it's a doi.org uri, keep just the DOI
+        if uri:
+           if 'doi.org' in uri:
+               uri = uri.split('doi.org/')[1]
+        else:
+            uri = ''
     else:
         uri = ''
 
@@ -86,7 +89,7 @@ def get_analysis_collection_dois(collection, patient= "", third_party="yes", ser
 if __name__ == "__main__":
     # access_token = get_access_token()
     # result = get_analysis_collection_dois('DRO-Toolkit')
-    result = get_data_collection_doi('APOLLO-5-LSCC')
+    result = get_data_collection_doi('CPTAC-AML')
     result = get_analysis_collection_dois('QIN-PROSTATE-Repeatability')
     pass
     # yes=get_internal_collection_series_ids('TCGA-GBM',"yes")

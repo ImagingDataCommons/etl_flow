@@ -112,11 +112,6 @@ def scrape_tcia_analysis_collections_page():
 
     # print(tabulate(table, headers=header))
 
-    print(len(rows))
-
-    # with open("output/analysis_collections.json", "w") as f:
-    #     f.write(json.dumps(table, indent=2))
-
     return table
 
 def scrape_tcia_data_collections_page():
@@ -148,14 +143,17 @@ def scrape_tcia_data_collections_page():
         if len(trow):
             # Strip off the http server prefix
             try:
-                trow['DOI'] = trow['DOI'].split('doi.org/doi:')[1].strip()
+                trow['DOI'] = trow['DOI'].split('https://doi.org/https://doi.org/')[1].strip()
             except:
                 try:
-                    trow['DOI'] = trow['DOI'].split('doi.org/')[1].strip()
+                    trow['DOI'] = trow['DOI'].split('doi.org/doi:')[1].strip()
                 except:
-                    # Probably an http: URL not a DOI.
-                    trow['DOI'] = trow['DOI'].replace('http', 'https').strip()
-                    pass
+                    try:
+                        trow['DOI'] = trow['DOI'].split('doi.org/')[1].strip()
+                    except:
+                        # Probably an http: URL not a DOI.
+                        trow['DOI'] = trow['DOI'].replace('http', 'https').strip()
+                        pass
             collection = get_collection_id(trow['DOI'])
             if collection == 'B-mode-and-CEUS-Liver':
                 if trow['tcia_wiki_collection_id'] == 'Ultrasound data of a variety of liver masses (B-mode-and-CEUS-Liver)':
@@ -167,7 +165,7 @@ def scrape_tcia_data_collections_page():
                     trow['Access'] = 'Public'
                 else:
                     collection = trow['tcia_wiki_collection_id']
-            # trow.pop('Collection')
+            # print(f'{collection}')
             table[collection] = trow
 
     return table
@@ -178,5 +176,6 @@ if __name__ == "__main__":
     # s = get_collection_id('https://wiki.cancerimagingarchive.net/x/N4NyAQ')
     # url, longName, shortName = get_license_from_wiki('10.7937/tcia.2019.of2w8lxr')
     # table = scrape_tcia_analysis_collections_page()
+    table = scrape_tcia_analysis_collections_page()
     table = scrape_tcia_data_collections_page()
     pass

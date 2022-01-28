@@ -15,7 +15,7 @@
 #
 
 import shutil
-
+import os
 import hashlib
 from base64 import b64decode
 
@@ -79,7 +79,7 @@ def validate_series_in_gcs(args, collection, patient, study, series):
             blob = bucket.blob(f'{instance.uuid}.dcm')
             blob.reload()
             assert instance.hash == b64decode(blob.md5_hash).hex()
-            assert instance.instance_size == blob.size
+            assert instance.size == blob.size
 
     except Exception as exc:
         rollback_copy_to_prestaging_bucket(client, args, series)
@@ -153,19 +153,22 @@ def copy_disk_to_gcs(args, collection, patient, study, series):
 # Copy an instance from a source bucket to a destination bucket. Currently used when ingesting pathology
 # which is placed in some bucket after conversion from svs, etc. to DICOM WSI format
 def copy_gcs_to_gcs(args, instance, gcs_url):
-    storage_client = storage.Client(project=args.project)
-    wsi_src_bucket = args.wsi_src_bucket
+    storage_client = args.client
+    wsi_src_bucket = storage_client.bucket(gcs_url.split('gs://')[1].split('/',1)[0])
+    blob_id = gcs_url.split('gs://')[1].split('/',1)[1]
     dst_bucket = storage_client.bucket((args.prestaging_bucket))
-    src_blob = wsi_src_bucket.blob(gcs_url)
+    src_blob = wsi_src_bucket.blob(blob_id)
     dst_blob = dst_bucket.blob(f'{instance.uuid}.dcm')
     token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob)
     while token:
-        rootlogger.debug('******p%s: Rewrite bytes_rewritten %s, total_bytes %s', bytes_rewritten, total_bytes)
+        rootlogger.debug('******p%s: Rewrite bytes_rewritten %s, total_bytes %s', args.id, bytes_rewritten, total_bytes)
         token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob, token=token)
+    dst_blob.reload()
+    return dst_blob.size, b64decode(dst_blob.md5_hash).hex()
 
 
 def accum_sources(parent, children):
-    sources = list(parent.sources)
-    for child in children:
+    sources = children[0].sources
+    for child in children[1:]:
         sources = [x | y for (x, y) in zip(sources, child.sources)]
     return sources

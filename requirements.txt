@@ -14,10 +14,20 @@
 # limitations under the License.
 #
 
-
-loguru
-pyarrow
-psycopg2-binary==2.9.1
+backoff
+google
+google-api-python-client
+google-auth-httplib2
+google-cloud-bigquery
+google-cloud-bigquery-storage
+google-cloud-core
+google-cloud-storage
+google-crc32c
+google-resumable-media
+googleapis-common-protos
+psycopg2
+pydicom
 python-dotenv
 python_settings
-pg8000
+sqlalchemy
+sqlalchemy_utils

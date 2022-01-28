@@ -28,6 +28,7 @@ import enum
 class instance_source(enum.Enum):
     tcia = 0
     path = 1
+    all_sources = 2
 
 Base = declarative_base()
 # sql_engine = create_engine(sql_uri, echo=True)
@@ -46,7 +47,7 @@ class Version(Base):
     previous_version = Column(Integer, nullable=False, comment="ID of the previous version")
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
-    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    # revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
@@ -71,6 +72,16 @@ class Version(Base):
         ),
         nullable=True,
         comment="True if this objects includes instances from the corresponding source"
+    )
+    revised = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
+                Column('path', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+            ]
+        ),
+        nullable=True,
     )
 
     collections = relationship('Collection',
@@ -92,7 +103,7 @@ class Collection(Base):
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
-    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    # revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
@@ -118,6 +129,16 @@ class Collection(Base):
         ),
         nullable=True,
         comment="Source specific hierarchical hash"
+    )
+    revised = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
+                Column('path', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+            ]
+        ),
+        nullable=True,
     )
     versions = relationship('Version',
                                secondary=version_collection,
@@ -143,7 +164,7 @@ class Patient(Base):
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
-    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    # revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
@@ -169,6 +190,16 @@ class Patient(Base):
         ),
         nullable=True,
         comment="Source specific hierarchical hash"
+    )
+    revised = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
+                Column('path', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+            ]
+        ),
+        nullable=True,
     )
     collections = relationship('Collection',
                                secondary=collection_patient,
@@ -194,7 +225,7 @@ class Study(Base):
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
-    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    # revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
@@ -221,7 +252,16 @@ class Study(Base):
         nullable=True,
         comment="Source specific hierarchical hash"
     )
-
+    revised = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
+                Column('path', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+            ]
+        ),
+        nullable=True,
+    )
     patients = relationship('Patient',
                             secondary=patient_study,
                             back_populates='studies')
@@ -246,7 +286,7 @@ class Series(Base):
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
-    revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    # revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
     done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
@@ -273,7 +313,16 @@ class Series(Base):
         nullable=True,
         comment="Source specific hierarchical hash"
     )
-
+    revised = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
+                Column('path', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+            ]
+        ),
+        nullable=True,
+    )
     studies = relationship('Study',
                            secondary=study_series,
                            back_populates='seriess')
@@ -309,16 +358,105 @@ class Collection_id_map(Base):
     collection_id = Column(String, primary_key=True)
     idc_collection_id = Column(String, nullable=False)
 
-class WSI_metadata(Base):
-    __tablename__ = 'wsi_metadata'
-    collection_id = Column(String, nullable=False)
-    submitter_case_id = Column(String, nullable=False)
-    study_instance_uid = Column(String, nullable=False)
-    series_instance_uid = Column(String, nullable=False)
-    sop_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-    gcs_url = Column(String, nullable=False)
-    hash = Column(String, comment="Hex format MD5 hash of this instance")
-    size = Column(BigInteger, comment='Instance blob size (bytes)')
 
-# Base.metadata.create_all(sql_engine)
+class WSI_Version(Base):
+    __tablename__ = 'wsi_version'
+    version = Column(Integer, unique=True, primary_key=True, comment='NBIA collection ID')
+    hash = Column(String, comment='Version hash')
+
+    collections = relationship("WSI_Collection", back_populates="vers", order_by="WSI_Collection.collection_id", cascade="all, delete")
+    # patients = relationship("Patient", backref="the_collection")
+
+class WSI_Collection(Base):
+    __tablename__ = 'wsi_collection'
+    collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
+    version = Column(ForeignKey('wsi_version.version'), comment="Containing object")
+    hash = Column(String, comment='Collection hash')
+
+    vers = relationship("WSI_Version", back_populates="collections")
+    patients = relationship("WSI_Patient", back_populates="collection", order_by="WSI_Patient.submitter_case_id", cascade="all, delete")
+    # patients = relationship("Patient", backref="the_collection")
+
+class WSI_Patient(Base):
+    __tablename__ = 'wsi_patient'
+    submitter_case_id = Column(String, nullable=False, unique=True, primary_key=True, comment="Submitter's patient ID")
+    collection_id = Column(ForeignKey('wsi_collection.collection_id'), comment="Containing object")
+    hash = Column(String, comment='Patient hash')
+
+    collection = relationship("WSI_Collection", back_populates="patients")
+    studies = relationship("WSI_Study", back_populates="patient", order_by="WSI_Study.study_instance_uid", cascade="all, delete")
+    # studies = relationship("Study", backref="patient")
+
+class WSI_Study(Base):
+    __tablename__ = 'wsi_study'
+    study_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
+    submitter_case_id = Column(ForeignKey('wsi_patient.submitter_case_id'), comment="Submitter's patient ID")
+    hash = Column(String, comment='Study hash')
+
+    patient = relationship("WSI_Patient", back_populates="studies")
+    seriess = relationship("WSI_Series", back_populates="study", order_by="WSI_Series.series_instance_uid", cascade="all, delete")
+    # series = relationship("Study", backref="study")
+
+class WSI_Series(Base):
+    __tablename__ = 'wsi_series'
+    series_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
+    study_instance_uid = Column(ForeignKey('wsi_study.study_instance_uid'), comment="Containing object")
+    hash = Column(String, comment='Series hash')
+
+    study = relationship("WSI_Study", back_populates="seriess")
+    instances = relationship("WSI_Instance", back_populates="seriess", order_by="WSI_Instance.sop_instance_uid", cascade="all, delete")
+    # instances = relationship("Study", backref="series")
+
+class WSI_Instance(Base):
+    __tablename__ = 'wsi_instance'
+    sop_instance_uid = Column(String, primary_key=True, nullable=False)
+    series_instance_uid = Column(ForeignKey('wsi_series.series_instance_uid'), comment="Containing object")
+    hash = Column(String, comment='Instance hash')
+    url = Column(String, comment='GCS URL of instance')
+
+    seriess = relationship("WSI_Series", back_populates="instances")
+
+class CR_Collections(Base):
+    __tablename__ = 'cr_collections'
+    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
+    dev_url = Column(String, comment="Dev bucket name")
+    pub_url = Column(String, comment="Public bucket name")
+    access = Column(String, comment="Access: Public or Limited")
+    v1 = Column(Boolean, comment='True if collection is in v1')
+    v2 = Column(Boolean, comment='True if collection is in v2')
+    idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+
+class Defaced_Collections(Base):
+    __tablename__ = 'defaced_collections'
+    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
+    dev_url = Column(String, comment="Dev bucket name")
+    pub_url = Column(String, comment="Public bucket name")
+    access = Column(String, comment="Access: Public or Limited")
+    v1 = Column(Boolean, comment='True if collection is in v1')
+    v2 = Column(Boolean, comment='True if collection is in v2')
+    idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+
+class Excluded_Collections(Base):
+    __tablename__ = 'excluded_collections'
+    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
+    access = Column(String, comment="Access: Public or Limited")
+    idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+
+class Open_Collections(Base):
+    __tablename__ = 'open_collections'
+    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
+    dev_url = Column(String, comment="Dev bucket name")
+    pub_url = Column(String, comment="Public bucket name")
+    access = Column(String, comment="Access: Public or Limited")
+    idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+
+class Redacted_Collections(Base):
+    __tablename__ = 'redacted_collections'
+    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
+    dev_url = Column(String, comment="Dev bucket name")
+    pub_url = Column(String, comment="Public bucket name")
+    access = Column(String, comment="Access: Public or Limited")
+    v1 = Column(Boolean, comment='True if collection is in v1')
+    v2 = Column(Boolean, comment='True if collection is in v2')
+    idc_collection_id = Column(String, comment="idc_collection_id of this collection")
 

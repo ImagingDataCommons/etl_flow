@@ -18,12 +18,12 @@
 
 import os
 import logging
-from logging import INFO
+from logging import INFO, DEBUG
 from datetime import datetime, timedelta
 import shutil
-from multiprocessing import Lock
+from multiprocessing import Lock, shared_memory
 from idc.models import Base, Version, Collection
-from sqlalchemy.orm import Session
+from utilities.tcia_helpers import get_access_token
 
 from ingestion.version import clone_version, build_version
 
@@ -31,38 +31,45 @@ from python_settings import settings
 
 from sqlalchemy import create_engine
 from sqlalchemy_utils import register_composites
+from sqlalchemy.orm import Session
 
-from ingestion.sources import All
-from ingestion.sources_mtm import All_mtm
+from ingestion.all_sources import All
+from ingestion.mtm.sources_mtm import All_mtm
+from http.client import HTTPConnection
+HTTPConnection.debuglevel = 0
+
+
 
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
 
-def test_source(args, all_sources):
-    from types import  SimpleNamespace
-    metadata = all_sources.collections()
-
-    d = {'collection_id':list(metadata.values())[0]['collection_id']}
-    object = SimpleNamespace(**d)
-    metadata = all_sources.patients(object)
-
-    d = {'submitter_case_id':list(metadata.keys())[0]}
-    object = SimpleNamespace(**d)
-    metadata = all_sources.studies(object)
-
-    d = {'study_instance_uid':list(metadata.keys())[0]}
-    object = SimpleNamespace(**d)
-    metadata = all_sources.series(object)
-
-    d = {'series_instance_uid':list(metadata.keys())[0]}
-    object = SimpleNamespace(**d)
-    metadata = all_sources.instances(object)
-
-    pass
-
+# def test_source(args, all_sources):
+#     from types import  SimpleNamespace
+#     metadata = all_sources.collections()
+#
+#     d = {'collection_id':list(metadata.values())[0]['collection_id']}
+#     object = SimpleNamespace(**d)
+#     metadata = all_sources.patients(object)
+#
+#     d = {'submitter_case_id':list(metadata.keys())[0]}
+#     object = SimpleNamespace(**d)
+#     metadata = all_sources.studies(object)
+#
+#     d = {'study_instance_uid':list(metadata.keys())[0]}
+#     object = SimpleNamespace(**d)
+#     metadata = all_sources.series(object)
+#
+#     d = {'series_instance_uid':list(metadata.keys())[0]}
+#     object = SimpleNamespace(**d)
+#     metadata = all_sources.instances(object)
+#
+#     pass
 
 
 def ingest(args):
+    HTTPConnection.debuglevel = 0
+    logging.getLogger("urllib3").setLevel(logging.ERROR)
+
     # rootlogger = logging.getLogger('root')
     root_fh = logging.FileHandler('{}/logs/v{}_log.log'.format(os.environ['PWD'], args.version))
     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
@@ -86,8 +93,8 @@ def ingest(args):
 
 
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
-    sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
-    # sql_engine = create_engine(sql_uri)
+    # sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
+    sql_engine = create_engine(sql_uri)
     args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
 
     # Create the tables if they do not already exist
@@ -99,6 +106,25 @@ def ingest(args):
 
     with Session(sql_engine) as sess:
         # Get the target version, if it exists
+        if args.build_mtm_db:
+            # When building the many-to-many DB, we mine some existing one to many DB
+            sql_uri_mtm = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/idc_v{args.version}'
+            sql_engine_mtm = create_engine(sql_uri_mtm)
+            # sql_engine_mtm = create_engine(sql_uri_mtm, echo=True)
+            conn_mtm = sql_engine_mtm.connect()
+
+            register_composites(conn_mtm)
+
+            # Use this to see the SQL being sent to PSQL
+            all_sources = All_mtm(sess, Session(sql_engine_mtm), args.version)
+            # test_source(args, all_sources)
+
+        else:
+            access = shared_memory.ShareableList(get_access_token())
+            args.access = access
+            all_sources = All(args.id, sess, args.version, args.access, Lock())
+        # all_sources.lock = Lock()
+
         version = sess.query(Version).filter(Version.version == args.version).first()
         if not version:
             previous_version = sess.query(Version).filter(Version.version == args.previous_version).first()
@@ -129,29 +155,21 @@ def ingest(args):
                     version.done = False
                     version.is_new = False
                     version.revised = False
-                    version.hashes = ("","","")
-                    version.sources= (False,False)
-                    version.min_timestamp = None
-                    version.max_timestamp = None
+                    if args.build_mtm_db:
+                        version_metadata = all_sources.versions(args.version)
+                        version.hashes = version_metadata[args.version]['hashes']
+                        version.sources = (True, True)
+                        version.min_timestamp = version_metadata[args.version]['min_timestamp']
+                        version.max_timestamp = version_metadata[args.version]['max_timestamp']
+                    else:
+                        version.hashes = ("","","")
+                        version.revised = [True, True] # Assume something has changed
+                        version.sources= [False,False]
+                        version.min_timestamp = datetime.utcnow()
+                        version.max_timestamp = None
                     sess.commit()
 
         if not version.done:
-
-            if args.build_mtm_db:
-                # When building the many-to-many DB, we mine some existing one to many DB
-                sql_uri_mtm = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/idc_v{args.version}'
-                sql_engine_mtm = create_engine(sql_uri_mtm, echo=True)
-                conn_mtm = sql_engine_mtm.connect()
-
-                register_composites(conn_mtm)
-
-                # Use this to see the SQL being sent to PSQL
-                all_sources = All_mtm(sess, Session(sql_engine_mtm), args.version)
-                # test_source(args, all_sources)
-
-            else:
-                all_sources = All(sess, args.version)
-            all_sources.lock = Lock()
             build_version(sess, args, all_sources, version)
         else:
             rootlogger.info("    version %s previously built", args.version)

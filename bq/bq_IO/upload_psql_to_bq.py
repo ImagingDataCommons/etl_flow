@@ -14,454 +14,242 @@
 # limitations under the License.
 #
 
-# Duplicate psql version, collection, patient, study, series and instance metadata tables in BQ. These are
-# essentially a normalization of an auxilliary_metadata table
-# The BQ dataset containing the tables to be duplicated is specified in the .env file (maybe not the best place).
-# The bigquery_uri engine is configured to access that dataset.
+# Upload tables from Cloud SQL to BQ
 
-
-import os
-import json
-import logging
-from logging import INFO
-import argparse
 from google.cloud import bigquery
-from utilities.bq_helpers import BQ_table_exists, create_BQ_table, delete_BQ_Table, load_BQ_from_CSV, load_BQ_from_json
+from utilities.bq_helpers import BQ_table_exists, create_BQ_table, delete_BQ_Table, query_BQ, load_BQ_from_json
+from time import time, sleep
 
-from python_settings import settings
-
-import psycopg2
-from psycopg2.extras import DictCursor, RealDictCursor
-
-# psql to bq type name conversions:
-type_name_conversion = {
-    "integer": "INTEGER",
-    "bigint": "INT64",
-    "boolean": "BOOLEAN",
-    "character varying": "STRING",
-    "nextval('instance_id_seq'::regclass)": "INTEGER",
-    "text": "STRING",
-    "timestamp without time zone": "DATETIME",
-    "USER-DEFINED": "ARRAY"
-}
-
-record_type_name_conversion = {
-    "hashes": "STRING",
-    "sources": "BOOLEAN",
-    "versions": "INTEGER"
-}
-
-def get_schema(cur, args, table):
-    # Get the psql schema fields
-    query = f"""
-        SELECT column_name, data_type, character_maximum_length, column_default, is_nullable
-        FROM INFORMATION_SCHEMA.COLUMNS 
-        WHERE table_name = '{table}'
-        ORDER BY ordinal_position
+def upload_version(client, args, table, order_by):
+    sql = f"""
+    SELECT
+      CAST(version AS INT) AS version,
+      CAST(previous_version AS INT) AS previous_version,
+      min_timestamp,
+      max_timestamp,
+      done,
+      is_new,
+      expanded,
+      STRUCT(tcia,
+        path,
+        all_sources) AS hashes,
+      STRUCT(tcia_src AS src,
+        path_src AS path) AS sources,
+      STRUCT(tcia_revised AS tcia,
+        path_revised AS path) AS revised
+    FROM
+      EXTERNAL_QUERY ( 'idc-dev-etl.us-central1.etl_federated_query_idc_v{args.version}',
+        '''SELECT version, previous_version, min_timestamp, max_timestamp, done, 
+            is_new, expanded, (hashes).tcia, (hashes).path, (hashes).all_sources, 
+            (sources).tcia AS tcia_src, (sources).path AS path_src, (revised).tcia AS tcia_revised, 
+            (revised).path AS path_revised 
+        FROM {table}''')
+    ORDER BY {order_by}
     """
-    cur.execute(query)
-    column_data = cur.fetchall()
+    result=query_BQ(client, args.bqdataset_name, table, sql, write_disposition='WRITE_TRUNCATE')
+    return result
 
-    # Separate query for the descriptions
-    query = f"""
-        SELECT cols.column_name, (
-            SELECT
-                pg_catalog.col_description(c.oid, cols.ordinal_position::int)
-            FROM
-                pg_catalog.pg_class c
-            WHERE
-                c.oid = (SELECT ('"' || cols.table_name || '"')::regclass::oid)
-                AND c.relname = cols.table_name
-        ) AS column_comment
-        FROM information_schema.columns cols
-        WHERE
-            cols.table_catalog    = '{args.db}'
-            AND cols.table_name   = '{table}'
-            AND cols.table_schema = 'public'
-        ORDER BY ordinal_position
+
+def upload_collection(client, args, table, order_by):
+    sql = f"""
+    SELECT
+      collection_id,
+      idc_collection_id,
+      uuid,
+      min_timestamp,
+      max_timestamp,
+      CAST(init_idc_version AS INT) AS init_idc_version,
+      CAST(rev_idc_version AS INT) AS rev_idc_version,
+      CAST(final_idc_version AS INT) AS final_idc_version,
+      done,
+      is_new,
+      expanded,
+      STRUCT(tcia_hash,
+        path_hash,
+        all_hash) AS hashes,
+      STRUCT(tcia_src AS src,
+        path_src AS path) AS sources,
+      STRUCT(tcia_rev AS tcia,
+        path_rev AS path) AS revised
+    FROM
+      EXTERNAL_QUERY ( 'idc-dev-etl.us-central1.etl_federated_query_idc_v{args.version}',
+        '''SELECT collection_id, idc_collection_id, uuid, min_timestamp, max_timestamp, 
+            init_idc_version, rev_idc_version, final_idc_version, done, is_new, expanded, 
+            (hashes).tcia AS tcia_hash, (hashes).path AS path_hash, (hashes).all_sources AS all_hash, 
+            (sources).tcia AS tcia_src, (sources).path AS path_src, (revised).tcia AS tcia_rev, 
+            (revised).path AS path_rev 
+        FROM {table}''')
+    ORDER BY {order_by}
     """
-    cur.execute(query)
-    descriptions = cur.fetchall()
-    schema = []
-    for col,desc in zip(column_data, descriptions):
-        type = "RECORD" if col["data_type"] == "USER-DEFINED" else type_name_conversion[col["data_type"]]
-        mode = "NULLABLE" if col["is_nullable"] == "YES" else "REQUIRED"
-        #### Hack alert ####
-        if col["column_name"] == 'source':
-            type="STRING"
-            mode="NULLABLE"
+    result=query_BQ(client, args.bqdataset_name, table, sql, write_disposition='WRITE_TRUNCATE')
+    return result
 
-        try:
-            s = {
-                "name": col["column_name"],
-                "description": desc['column_comment'],
-                "mode": mode,
-                "type": type,
-            }
-            if type == "RECORD":
-                if col['column_name'] == 'sources':
-                    s['fields'] = [
-                        {
-                            "name": 'tcia',
-                            "type": record_type_name_conversion[col["column_name"]],
-                            "mode": "NULLABLE"
-                        },
-                        {
-                            "name": 'path',
-                            "type": record_type_name_conversion[col["column_name"]],
-                            "mode": "NULLABLE"
-                        }
-                    ]
-                elif col['column_name'] == 'hashes':
-                    s['fields'] = [
-                        {
-                            "name": 'tcia',
-                            "type": record_type_name_conversion[col["column_name"]],
-                            "mode": "NULLABLE"
-                        },
-                        {
-                            "name": 'path',
-                            "type": record_type_name_conversion[col["column_name"]],
-                            "mode": "NULLABLE"
-                        },
-                        {
-                            "name": 'all_sources',
-                            "type": record_type_name_conversion[col["column_name"]],
-                            "mode": "NULLABLE"
-                        }
-                    ]
-                elif col['column_name'] == 'source_statuses':
-                    s['fields'] = [
-                        {
-                            "name": 'tcia',
-                            "type": 'RECORD',
-                            "mode": "NULLABLE",
-                            "fields": [
-                                {
-                                    "name": 'min_timestamp',
-                                    "type": 'DateTime',
-                                    "mode": "NULLABLE",
-                                },
-                                {
-                                    "name": 'max_timestamp',
-                                    "type": 'DateTime',
-                                    "mode": "NULLABLE",
-                                },
-                                {
-                                    "name": 'revised',
-                                    "type": 'BOOLEAN',
-                                    "mode": "NULLABLE",
-                                },
-                                {
-                                    "name": 'done',
-                                    "type": 'BOOLEAN',
-                                    "mode": "NULLABLE",
-                                },
-                                {
-                                    "name": 'is_new',
-                                    "type": 'BOOLEAN',
-                                    "mode": "NULLABLE",
-                                },
-                                {
-                                    "name": 'expanded',
-                                    "type": 'BOOLEAN',
-                                    "mode": "NULLABLE",
-                                },
-                                {
-                                    "name": 'version',
-                                    "type": 'INTEGER',
-                                    "mode": "NULLABLE",
-                                }
-                            ]
-                        },
-                        {
-                            "name": 'path',
-                            "type": 'RECORD',
-                            "mode": "NULLABLE",
-                            "fields": [
-                                {
-                                    "name": 'min_timestamp',
-                                    "type": 'DateTime',
-                                    "mode": "NULLABLE",
-                                },
-                                {
-                                    "name": 'max_timestamp',
-                                    "type": 'DateTime',
-                                    "mode": "NULLABLE",
-                                },
-                                {
-                                    "name": 'revised',
-                                    "type": 'BOOLEAN',
-                                    "mode": "NULLABLE",
-                                },
-                                {
-                                    "name": 'done',
-                                    "type": 'BOOLEAN',
-                                    "mode": "NULLABLE",
-                                },
-                                {
-                                    "name": 'is_new',
-                                    "type": 'BOOLEAN',
-                                    "mode": "NULLABLE",
-                                },
-                                {
-                                    "name": 'expanded',
-                                    "type": 'BOOLEAN',
-                                    "mode": "NULLABLE",
-                                },
-                                {
-                                    "name": 'version',
-                                    "type": 'INTEGER',
-                                    "mode": "NULLABLE",
-                                }
-                            ]
-                        }
-                    ]
+def upload_patient(client, args, table, order_by):
 
-            schema.append(s)
-        except Exception as exc:
-            errlogger.error("Error creating schema: %s", exc)
-            raise exc
+    sql = f"""
+    SELECT
+      submitter_case_id,
+      idc_case_id,
+      uuid,
+      min_timestamp,
+      max_timestamp,
+      CAST(init_idc_version AS INT) AS init_idc_version,
+      CAST(rev_idc_version AS INT) AS rev_idc_version,
+      CAST(final_idc_version AS INT) AS final_idc_version,
+      done,
+      is_new,
+      expanded,
+      STRUCT(tcia_hash,
+        path_hash,
+        all_hash) AS hashes,
+      STRUCT(tcia_src AS src,
+        path_src AS path) AS sources,
+      STRUCT(tcia_rev AS tcia,
+        path_rev AS path) AS revised
+    FROM
+      EXTERNAL_QUERY ( 'idc-dev-etl.us-central1.etl_federated_query_idc_v{args.version}',
+        '''SELECT submitter_case_id, idc_case_id, uuid, min_timestamp, max_timestamp, 
+            init_idc_version, rev_idc_version, final_idc_version, done, is_new, expanded, 
+            (hashes).tcia AS tcia_hash, (hashes).path AS path_hash, (hashes).all_sources AS all_hash, 
+            (sources).tcia AS tcia_src, (sources).path AS path_src, (revised).tcia AS tcia_rev, 
+            (revised).path AS path_rev 
+        FROM {table}''')
+    ORDER BY {order_by}
+    """
+    result=query_BQ(client, args.bqdataset_name, table, sql, write_disposition='WRITE_TRUNCATE')
+    return result
+
+def upload_study(client, args, table, order_by):
+    sql = f"""
+    SELECT
+      study_instance_uid,
+      uuid,
+      CAST(study_instances AS INT) AS study_instances,
+      min_timestamp,
+      max_timestamp,
+      CAST(init_idc_version AS INT) AS init_idc_version,
+      CAST(rev_idc_version AS INT) AS rev_idc_version,
+      CAST(final_idc_version AS INT) AS final_idc_version,
+      done,
+      is_new,
+      expanded,
+      STRUCT(tcia_hash,
+        path_hash,
+        all_hash) AS hashes,
+      STRUCT(tcia_src AS src,
+        path_src AS path) AS sources,
+      STRUCT(tcia_rev AS tcia,
+        path_rev AS path) AS revised
+    FROM
+      EXTERNAL_QUERY ( 'idc-dev-etl.us-central1.etl_federated_query_idc_v{args.version}',
+        '''SELECT study_instance_uid, uuid, study_instances, min_timestamp, 
+            max_timestamp, init_idc_version, rev_idc_version, final_idc_version, 
+            done, is_new, expanded, (hashes).tcia AS tcia_hash, (hashes).path AS path_hash, 
+            (hashes).all_sources AS all_hash, (sources).tcia AS tcia_src, 
+            (sources).path AS path_src, (revised).tcia AS tcia_rev, (revised).path AS path_rev 
+        FROM {table}''')
+    ORDER BY {order_by}
+    """
+    result=query_BQ(client, args.bqdataset_name, table, sql, write_disposition='WRITE_TRUNCATE')
+    return result
 
 
-    return schema
+def upload_series(client, args, table, order_by):
+    sql = f"""
+    SELECT
+      series_instance_uid,
+      uuid,
+      CAST(series_instances AS INT) AS series_instances,
+      source_doi,
+      min_timestamp,
+      max_timestamp,
+      CAST(init_idc_version AS INT) AS init_idc_version,
+      CAST(rev_idc_version AS INT) AS rev_idc_version,
+      CAST(final_idc_version AS INT) AS final_idc_version,
+      done,
+      is_new,
+      expanded,
+      STRUCT(tcia_hash,
+        path_hash,
+        all_hash) AS hashes,
+      STRUCT(tcia_src AS src,
+        path_src AS path) AS sources,
+      STRUCT(tcia_rev AS tcia,
+        path_rev AS path) AS revised
+    FROM
+      EXTERNAL_QUERY ( 'idc-dev-etl.us-central1.etl_federated_query_idc_v{args.version}',
+        '''SELECT series_instance_uid, uuid, series_instances, source_doi, 
+            min_timestamp, max_timestamp, init_idc_version, rev_idc_version, 
+            final_idc_version, done, is_new, expanded, (hashes).tcia AS tcia_hash, 
+            (hashes).path AS path_hash, (hashes).all_sources AS all_hash, 
+            (sources).tcia AS tcia_src, (sources).path AS path_src, 
+            (revised).tcia AS tcia_rev, (revised).path AS path_rev 
+        FROM {table}''')
+    ORDER BY {order_by}
+    """
+    result=query_BQ(client, args.bqdataset_name, table, sql, write_disposition='WRITE_TRUNCATE')
+    return result
 
 
-def upload_version(cur, args):
-    table = "version"
-    print(f'Populating table {table}')
-    schema = get_schema(cur, args, table)
-    client = bigquery.Client(project=args.project)
-
-    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
-        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
-    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
-
-    cur.execute("""
-        SELECT json_agg(json)
-        FROM (
-            SELECT * from version
-        )  as json
-        """)
-    rows = cur.fetchall()
-    json_rows = [json.dumps(row) for row in rows[0][0]]
-    data = "\n".join(json_rows)
-    load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
-
-
-def upload_program(cur, args):
-    table = "program"
-    print(f'Populating table {table}')
-    schema = get_schema(cur, args, table)
-    client = bigquery.Client(project=args.project)
-
-    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
-        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
-    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
-
-    cur.execute("""
-        SELECT json_agg(json)
-        FROM (
-            SELECT * from program
-        )  as json
-        """)
-    rows = cur.fetchall()
-    json_rows = [json.dumps(row) for row in rows[0][0]]
-    data = "\n".join(json_rows)
-    load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
+def upload_instance(client, args, table, order_by):
+    sql = f"""SELECT
+      sop_instance_uid,
+      uuid,
+      `hash`,  
+      CAST(size AS INT) AS size,
+      revised,
+      done,
+      is_new,
+      expanded,
+      CAST(init_idc_version AS INT) AS init_idc_version,
+      CAST(rev_idc_version AS INT) AS rev_idc_version,
+      CAST(final_idc_version AS INT) AS final_idc_version,
+      source,
+      timestamp,
+      excluded
+    FROM
+      EXTERNAL_QUERY ( 'idc-dev-etl.us-central1.etl_federated_query_idc_v7',
+        '''SELECT sop_instance_uid, uuid, hash, size, revised, done, is_new, 
+            expanded, init_idc_version, rev_idc_version, final_idc_version, 
+            cast(source AS varchar) AS source, timestamp, excluded
+        FROM {table}''')
+    ORDER BY {order_by}
+    """
+    result=query_BQ(client, args.bqdataset_name, table, sql, write_disposition='WRITE_TRUNCATE')
+    return result
 
 
-def upload_collection(cur, args):
-    table = "collection"
-    print(f'Populating table {table}')
-    schema = get_schema(cur, args, table)
-    client = bigquery.Client(project=args.project)
-
-    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
-        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
-    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
-
-    cur.execute("""
-        SELECT json_agg(json)
-        FROM (
-            SELECT * from collection
-        )  as json
-        """)
-    rows = cur.fetchall()
-    json_rows = [json.dumps(row) for row in rows[0][0]]
-    data = "\n".join(json_rows)
-    load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
-
-
-
-
-def upload_patient(cur, args):
-    table = "patient"
-    print(f'Populating table {table}')
-    schema = get_schema(cur, args, table)
-    client = bigquery.Client(project=args.project)
-
-    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
-        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
-    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
-
-    cur.execute("""
-        SELECT json_agg(json)
-        FROM (
-            SELECT * from patient
-        )  as json
-        """)
-    rows = cur.fetchall()
-    json_rows = [json.dumps(row) for row in rows[0][0]]
-    data = "\n".join(json_rows)
-    load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
-
-
-def upload_study(cur, args):
-    table = "study"
-    print(f'Populating table {table}')
-    schema = get_schema(cur, args, table)
-    client = bigquery.Client(project=args.project)
-
-    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
-        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
-    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
-
-    cur.execute("""
-        SELECT json_agg(json)
-        FROM (
-            SELECT * from study
-        )  as json
-        """)
-    rows = cur.fetchall()
-    json_rows = [json.dumps(row) for row in rows[0][0]]
-    data = "\n".join(json_rows)
-    load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
-
-
-def upload_series(cur, args):
-    table = "series"
-    print(f'Populating table {table}')
-    schema = get_schema(cur, args, table)
-    client = bigquery.Client(project=args.project)
-
-    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
-        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
-    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
-
-    count =0
-    increment = 50000
-    cur.execute("""
-            SELECT row_to_json(json)
-            FROM (
-                SELECT * from series
-            )  as json
-            """)
-
-    while True:
-        rows = cur.fetchmany(increment)
-        if len(rows) == 0:
-            break
-        json_rows = [json.dumps(row[0]) for row in rows]
-        data = "\n".join(json_rows)
-        load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
-        count += len(rows)
-        print(f'Uploaded {count} series')
-
-
-def upload_instance(cur, args):
-    table = "instance"
-    print(f'Populating table {table}')
-    schema = get_schema(cur, args, table)
-    client = bigquery.Client(project=args.project)
-
-    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
-        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
-    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
-
-    count =0
-    increment = 250000
-    cur.execute("""
-            SELECT row_to_json(json)
-            FROM (
-                SELECT * from instance
-            )  as json
-            """)
-
-    while True:
-        rows = cur.fetchmany(increment)
-        if len(rows) == 0:
-            break
-        json_rows = [json.dumps(row[0]) for row in rows]
-        data = "\n".join(json_rows)
-        load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
-        count += len(rows)
-        print(f'Uploaded {count} series')
-
-def upload_retired(cur, args):
-    table = "retired"
-    print(f'Populating table {table}')
-    schema = get_schema(cur, args, table)
-    client = bigquery.Client(project=args.project)
-
-    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
-        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
-    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
-
-    cur.execute("""
-        SELECT json_agg(json)
-        FROM (
-            SELECT * from retired
-        )  as json
-        """)
-    rows = cur.fetchall()
-    json_rows = [json.dumps(row) for row in rows[0][0]]
-    data = "\n".join(json_rows)
-    load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
-
-
-def upload_table(cur, args, table):
-    print(f'Populating table {table}')
-    schema = get_schema(cur, args, table)
-    client = bigquery.Client(project=args.project)
-
-    if BQ_table_exists(client, args.project, args.bqdataset_name, table):
-        delete_BQ_Table(client, args.project, args.bqdataset_name, table)
-    result = create_BQ_table(client, args.project, args.bqdataset_name, table, schema)
-
-    count =0
-    increment = 250000
-    query = f"""
-            SELECT row_to_json(json)
-            FROM (
-                SELECT * from {table}
-            )  as json
-            """
-    cur.execute(query)
-
-    while True:
-        rows = cur.fetchmany(increment)
-        if len(rows) == 0:
-            break
-        json_rows = [json.dumps(row[0]) for row in rows]
-        data = "\n".join(json_rows)
-        load_BQ_from_json(client, args.project, args.bqdataset_name, table, data, schema)
-        count += len(rows)
-        print(f'Uploaded {count} {table}s')
-
-
+def upload_table(client, args, table, order_by):
+    sql = f"""
+    SELECT
+        *
+    FROM
+      EXTERNAL_QUERY ( 'idc-dev-etl.us-central1.etl_federated_query_idc_v{args.version}',
+        '''SELECT * from {table}''')
+    ORDER BY {order_by}
+    """
+    result=query_BQ(client, args.bqdataset_name, table, sql, write_disposition='WRITE_TRUNCATE')
+    return result
 
 
 def upload_to_bq(args):
-    conn = psycopg2.connect(dbname=args.db, user=args.user, port=args.port,
-                            password=args.password, host=args.host)
-    with conn:
-        with conn.cursor(cursor_factory=DictCursor) as cur:
-            for table in args.tables:
-                upload_table(cur, args, table)
-            pass
-
-
+    client = bigquery.Client(project=args.project)
+    for table, vals in args.tables.items():
+        print(f'Uploading table {table}')
+        b = time()
+        if BQ_table_exists(client, args.project, args.bqdataset_name, table):
+            delete_BQ_Table(client, args.project, args.bqdataset_name, table)
+        result = vals['func'](client, args, table, vals['order_by'])
+        job_id = result.path.split('/')[-1]
+        job = client.get_job(job_id, location='US')
+        while job.state != 'DONE':
+            print('Waiting...')
+            sleep(15)
+            job = client.get_job(job_id, location='US')
+        if not job.error_result==None:
+            print(f'{table} upload failed')
+        else:
+            print(f'{table} upload completed in {time()-b:.2f}s')
 
 
 

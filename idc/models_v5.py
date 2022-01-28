@@ -279,7 +279,7 @@ class Series(Base):
 #     series = relationship("Series", back_populates="instances")
 
 class Instance(Base):
-    __tablename__ = 'instance_view'
+    __tablename__ = 'instance'
     timestamp = Column(DateTime, nullable=True, comment="Time when this object was last built")
     sop_instance_uid = Column(String, primary_key=True, nullable=False)
     uuid = Column(String, nullable=False, unique=True, comment="IDC assigned UUID of this object")

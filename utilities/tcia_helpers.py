@@ -18,14 +18,16 @@ import os
 import json
 import sys
 from subprocess import run, PIPE
-import time, datetime
-from io import StringIO
+from time import sleep
 import requests
 import logging
 import zipfile
 
-rootlogger = logging.getLogger('root')
-errlogger = logging.getLogger('root.err')
+from http.client import HTTPConnection
+HTTPConnection.debuglevel = 0
+
+# rootlogger = logging.getLogger('root')
+# errlogger = logging.getLogger('root.err')
 
 from python_settings import settings
 
@@ -120,11 +122,18 @@ def get_hash_nlst(request_data, access_token=None):
 def get_hash(request_data, access_token=None):
     # if not access_token:
     #     access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
-    headers = dict(
-        Authorization=f'Bearer {access_token}'
-    )
-    url = f"{NBIA_URL}/getMD5Hierarchy"
-    result = requests.post(url, headers=headers, data=request_data)
+    retries = 4
+    while retries:
+        headers = dict(
+            Authorization=f'Bearer {access_token}'
+        )
+        url = f"{NBIA_URL}/getMD5Hierarchy"
+        result = requests.post(url, headers=headers, data=request_data)
+        if result.status_code == 200:
+            break
+        else:
+            sleep( 2**(5-retries))
+            retries -= 1
     return result
 
 
@@ -179,7 +188,7 @@ def get_TCIA_patients_per_collection(collection_id, server=NBIA_V1_URL):
         headers = ''
     url = f'{server_url}/getPatient?Collection={collection_id}'
     results = get_url(url, headers)
-    patients = results.json()
+    patients = results.json() if results.content else []
     return patients
 
 
@@ -198,7 +207,7 @@ def get_TCIA_studies_per_patient(collection, patientID, server=NBIA_V1_URL):
         headers = ''
     url = f'{server_url}/getPatientStudy?Collection={collection}&PatientID={patientID}'
     results = get_url(url, headers)
-    studies = results.json()
+    studies = results.json() if results.content else []
     return studies
 
 
@@ -241,7 +250,7 @@ def get_TCIA_series_per_study(collection, patientID, studyInstanceUID, server=NB
         headers = ''
     url = f'{server_url}/getSeries?Collection ={collection}&PatientID={patientID}&StudyInstanceUID={studyInstanceUID}'
     results = get_url(url, headers)
-    series = results.json()
+    series = results.json() if results.content else []
     return series
 
 def get_TCIA_instance_uids_per_series(seriesInstanceUID, server=NBIA_V1_URL):
@@ -259,8 +268,27 @@ def get_TCIA_instance_uids_per_series(seriesInstanceUID, server=NBIA_V1_URL):
         headers = ''
     url = f'{server_url}/getSOPInstanceUIDs?SeriesInstanceUID={seriesInstanceUID}'
     results = get_url(url, headers)
-    instance_uids = results.json()
+    instance_uids = results.json() if results.content else []
     return instance_uids
+
+
+def get_TCIA_single_instance(seriesInstanceUID, sopInstanceUID, server=NBIA_V1_URL):
+    if server == "NLST":
+        server_url = NLST_V2_URL
+        access_token, refresh_token = get_access_token(NLST_AUTH_URL)
+        headers = dict(
+            Authorization=f'Bearer {access_token}'
+        )
+    elif server == "NBIA":
+        server_url = NBIA_V1_URL
+        headers = ''
+    else:
+        server_url = server
+        headers = ''
+    url = f'{server_url}/getSingleImage?SeriesInstanceUID={seriesInstanceUID}&SOPInstanceUID={sopInstanceUID}'
+    results = get_url(url, headers)
+    return results
+
 
 def get_TCIA_instances_per_series_with_hashes(dicom, series_instance_uid):
     filename = "{}/{}.zip".format(dicom, series_instance_uid)
@@ -473,11 +501,25 @@ def get_collection_license_info():
                 longName = license_info[licenseId]["longName"],
                 shortName = license_info[licenseId]["shortName"]
             )
+        elif collection_id == 'Pediatric-CT-SEG':
+                licenses[collection_id] = dict(
+                    licenseURL="https://creativecommons.org/licenses/by-nc/4.0/",
+                    longName="Creative Commons Attribution-NonCommercial 4.0 International License",
+                    shortName="CC BY-NC 4.0"
+                )
         else:
             licenses[collection_id] = dict(
                 licenseURL = "None",
                 longName = "None",
                 shortName = "None"
+            )
+    # These collections are pathology only. NBIA server doesn't know about them
+    for collection_id in ['CPTAC-AML', 'CPTAC-BRCA', 'CPTAC-COAD', 'CPTAC-OV']:
+        if not collection_id in table:
+            licenses[collection_id] = dict(
+                licenseURL="http://creativecommons.org/licenses/by/3.0/",
+                longName="Creative Commons Attribution 3.0 Unported License",
+                shortName="CC BY 3.0"
             )
 
     return licenses
@@ -512,27 +554,27 @@ if __name__ == "__main__":
 
     # p = get_TCIA_patients_per_collection('Training-Pseudo')
     # p = get_TCIA_patients_per_collection('NLST', server="NLST")
-    token= get_access_token()[0]
-    hash = get_hash({'Collection':'LDCT-and-Projection-data'}, token)
-    hash=get_instance_hash('1.3.6.1.4.1.14519.5.2.1.1239.1759.816520824397947445116098544516', access_token=token)
-    token= get_access_token(auth_server=NLST_AUTH_URL)[0]
-    hash=get_instance_hash_nlst('1.2.840.113654.2.55.41416806874377832798981746093165948327', access_token=token)
-
-    hash = get_hash_nlst({'SeriesInstanceUID':f'1.2.840.113654.2.55.97114726565566537928831413367474015470'}, token)
-    hash = get_images_with_md5_hash_nlst('1.2.840.113654.2.55.97114726565566537928831413367474015470', token)
+    # token= get_access_token()[0]
+    # hash = get_hash({'Collection':'LDCT-and-Projection-data'}, token)
+    # hash=get_instance_hash('1.3.6.1.4.1.14519.5.2.1.1239.1759.816520824397947445116098544516', access_token=token)
+    # token= get_access_token(auth_server=NLST_AUTH_URL)[0]
+    # hash=get_instance_hash_nlst('1.2.840.113654.2.55.41416806874377832798981746093165948327', access_token=token)
+    #
+    # hash = get_hash_nlst({'SeriesInstanceUID':f'1.2.840.113654.2.55.97114726565566537928831413367474015470'}, token)
+    # hash = get_images_with_md5_hash_nlst('1.2.840.113654.2.55.97114726565566537928831413367474015470', token)
+    # b =get_collection_license_info()
     d = get_collection_descriptions_and_licenses()
     c = get_collection_values_and_counts()
-    s = get_updated_series('01/06/2020')
+    # s = get_updated_series('13/01/2021')
     # studies = get_TCIA_studies_per_patient("PROSTATE-DIAGNOSIS", "ProstateDx-01-0035", server=NBIA_V1_URL)
     # result = get_access_token()
     # access_token, refresh_token = get_access_token()
     # access_token, refresh_token = refresh_access_token(refresh_token)
     # result=get_TCIA_instances_per_series('.', '1.3.6.1.4.1.14519.5.2.1.7009.9004.180224303090109944523368212991', 'NLST')
-    table = get_collection_license_info()
+    # table = get_collection_license_info()
     results = get_collection_values_and_counts()
     # result = get_TCIA_series_per_study('TCGA-GBM', 'TCGA-02-0006', '1.3.6.1.4.1.14519.5.2.1.1706.4001.149500105036523046215258942545' )
     # result = get_TCIA_patients_per_collection('APOLLO-5-LSCC', server=NBIA_V1_URL)
     collections = [key for key in table.keys()]
 
-    pass
 
