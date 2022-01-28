@@ -45,7 +45,7 @@ class All:
 
     def idc_version_hashes(self, version):
         objects = version.collections
-        hashes = {'tcia': [], 'path': []}
+        hashes = {'tcia': [], 'path': [], 'all_sources': []}
         for object in objects:
             for source in instance_source:
                 if object.hashes[source.value]:
@@ -53,6 +53,7 @@ class All:
         version_hashes = ['','','']
         version_hashes[0] = get_merkle_hash(hashes['tcia']) if len(hashes['tcia']) else ''
         version_hashes[1] = get_merkle_hash(hashes['path']) if len(hashes['path']) else ''
+        version_hashes[-1] = get_merkle_hash(hashes['all_sources']) if len(hashes['all_sources']) else ''
 
         # Now compute the hash of all sources
         version_hashes[-1] = get_merkle_hash([hash for hash in version_hashes[:-1]if hash])
@@ -123,7 +124,7 @@ class All:
     # Get objects per-source hashes from DB
     def idc_collection_hashes(self, collection):
         objects = collection.patients
-        hashes = {'tcia': [], 'path': []}
+        hashes = {'tcia': [], 'path': [], 'all_sources': []}
         for object in objects:
             for source in instance_source:
                 if object.hashes[source.value]:
@@ -131,6 +132,7 @@ class All:
         collection_hashes = ['','','']
         collection_hashes[0] = get_merkle_hash(hashes['tcia']) if len(hashes['tcia']) else ''
         collection_hashes[1] = get_merkle_hash(hashes['path']) if len(hashes['path']) else ''
+        collection_hashes[-1] = get_merkle_hash(hashes['all_sources']) if len(hashes['all_sources']) else ''
 
         # Now compute the hash of all sources
         collection_hashes[-1] = get_merkle_hash([hash for hash in collection_hashes[:-1]if hash])
@@ -168,7 +170,7 @@ class All:
     # Get objects per-source hashes from DB
     def idc_patient_hashes(self, patient):
         objects = patient.studies
-        hashes = {'tcia': [], 'path': []}
+        hashes = {'tcia': [], 'path': [], 'all_sources': []}
         for object in objects:
             for source in instance_source:
                 if object.hashes[source.value]:
@@ -176,9 +178,10 @@ class All:
         patient_hashes = ['','','']
         patient_hashes[0] = get_merkle_hash(hashes['tcia']) if len(hashes['tcia']) else ''
         patient_hashes[1] = get_merkle_hash(hashes['path']) if len(hashes['path']) else ''
+        patient_hashes[-1] = get_merkle_hash(hashes['all_sources']) if len(hashes['all_sources']) else ''
 
-        # Now compute the hash of all sources
-        patient_hashes[-1] = get_merkle_hash([hash for hash in patient_hashes[:-1]if hash])
+        # # Now compute the hash of all sources
+        # patient_hashes[-1] = get_merkle_hash([hash for hash in patient_hashes[:-1]if hash])
         return patient_hashes
 
     # Compute object's hashes according to sources
@@ -212,7 +215,7 @@ class All:
     # Get objects per-source hashes from DB
     def idc_study_hashes(self, study):
         objects = study.seriess
-        hashes = {'tcia': [], 'path': []}
+        hashes = {'tcia': [], 'path': [], 'all_sources': []}
         for object in objects:
             for source in instance_source:
                 if object.hashes[source.value]:
@@ -220,9 +223,10 @@ class All:
         study_hashes = ['','','']
         study_hashes[0] = get_merkle_hash(hashes['tcia']) if len(hashes['tcia']) else ''
         study_hashes[1] = get_merkle_hash(hashes['path']) if len(hashes['path']) else ''
+        study_hashes[-1] = get_merkle_hash(hashes['all_sources']) if len(hashes['all_sources']) else ''
 
-        # Now compute the hash of all sources
-        study_hashes[-1] = get_merkle_hash([hash for hash in study_hashes[:-1]if hash])
+        # # Now compute the hash of all sources
+        # study_hashes[-1] = get_merkle_hash([hash for hash in study_hashes[:-1]if hash])
         return study_hashes
 
     # Compute object's hashes according to sources
@@ -255,16 +259,17 @@ class All:
     # Get objects per-source hashes from DB
     def idc_series_hashes(self, series):
         objects = series.instances
-        hashes = {'tcia': [], 'path': []}
+        hashes = {'tcia': [], 'path': [], 'all_sources': []}
         for object in objects:
             if object.hash:
                 hashes[object.source.name].append(object.hash)
         series_hashes = ['', '', '']
         series_hashes[0] = get_merkle_hash(hashes['tcia']) if len(hashes['tcia']) else ''
         series_hashes[1] = get_merkle_hash(hashes['path']) if len(hashes['path']) else ''
+        series_hashes[-1] = get_merkle_hash(hashes['all_sources']) if len(hashes['all_sources']) else ''
 
-        # Now compute the hash of all sources
-        series_hashes[-1] = get_merkle_hash([hash for hash in series_hashes[:-1] if hash])
+        # # Only one or the other t
+        # series_hashes[-1] = get_merkle_hash([hash for hash in series_hashes[:-1] if hash])
         return series_hashes
 
 

@@ -501,11 +501,25 @@ def get_collection_license_info():
                 longName = license_info[licenseId]["longName"],
                 shortName = license_info[licenseId]["shortName"]
             )
+        elif collection_id == 'Pediatric-CT-SEG':
+                licenses[collection_id] = dict(
+                    licenseURL="https://creativecommons.org/licenses/by-nc/4.0/",
+                    longName="Creative Commons Attribution-NonCommercial 4.0 International License",
+                    shortName="CC BY-NC 4.0"
+                )
         else:
             licenses[collection_id] = dict(
                 licenseURL = "None",
                 longName = "None",
                 shortName = "None"
+            )
+    # These collections are pathology only. NBIA server doesn't know about them
+    for collection_id in ['CPTAC-AML', 'CPTAC-BRCA', 'CPTAC-COAD', 'CPTAC-OV']:
+        if not collection_id in table:
+            licenses[collection_id] = dict(
+                licenseURL="http://creativecommons.org/licenses/by/3.0/",
+                longName="Creative Commons Attribution 3.0 Unported License",
+                shortName="CC BY 3.0"
             )
 
     return licenses
@@ -548,9 +562,10 @@ if __name__ == "__main__":
     #
     # hash = get_hash_nlst({'SeriesInstanceUID':f'1.2.840.113654.2.55.97114726565566537928831413367474015470'}, token)
     # hash = get_images_with_md5_hash_nlst('1.2.840.113654.2.55.97114726565566537928831413367474015470', token)
-    # d = get_collection_descriptions_and_licenses()
-    # c = get_collection_values_and_counts()
-    s = get_updated_series('13/01/2021')
+    # b =get_collection_license_info()
+    d = get_collection_descriptions_and_licenses()
+    c = get_collection_values_and_counts()
+    # s = get_updated_series('13/01/2021')
     # studies = get_TCIA_studies_per_patient("PROSTATE-DIAGNOSIS", "ProstateDx-01-0035", server=NBIA_V1_URL)
     # result = get_access_token()
     # access_token, refresh_token = get_access_token()

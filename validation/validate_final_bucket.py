@@ -49,7 +49,7 @@ def val_collection(cur, args, dones, collection_index, tcia_api_collection_id):
 
         # Get the set of instances that have already been validated
         try:
-            done_instances = set(open(f'./logs/rvfb_{tcia_api_collection_id}_success.log').read().splitlines())
+            done_instances = set(open(f'{args.log_dir}/{tcia_api_collection_id}_success.log').read().splitlines())
         except:
             done_instances = []
 
@@ -69,19 +69,19 @@ def val_collection(cur, args, dones, collection_index, tcia_api_collection_id):
         # order by sop_instance_uid
         # """
 
-        # Get all the instances that from the all_table table
+        # Get all the instances that are from the all_table table
         query= f"""
-        SELECT *
+        SELECT instance_uuid, instance_hash
         FROM {args.all_table}
-        WHERE tcia_api_collection_id = '{tcia_api_collection_id}'
+        WHERE collection_id = '{tcia_api_collection_id}'
         order by sop_instance_uid
         """
         cur.execute(query)
         rowcount=cur.rowcount
         # Record successes here
-        successes = open(f'./logs/rvfb_{tcia_api_collection_id}_success.log', 'a')
+        successes = open(f'{args.log_dir}/{tcia_api_collection_id}_success.log', 'a')
         # Record failures here
-        failures = open(f'./logs/rvfb_{tcia_api_collection_id}_failures.log', 'a')
+        failures = open(f'{args.log_dir}/{tcia_api_collection_id}_failures.log', 'a')
         failure_count=0
         while True:
             # get a batch of instances to validate
@@ -97,20 +97,23 @@ def val_collection(cur, args, dones, collection_index, tcia_api_collection_id):
                         try:
                             blob = storage.Blob(bucket=bucket, name=blob_name)
                             if blob.exists(client):
-                                blob.reload()
-                                if row["instance_hash"] == b64decode(blob.md5_hash).hex():
-                                    rootlogger.info('%s %s: %s: blob exists %s', args.id, index, tcia_api_collection_id, blob_name)
-                                    successes.write(f'{blob_name}\n')
-                                    break
-                                else:
-                                    errlogger.error('%s %s: %s: blob hash mismatch %', args.id, index,
-                                                    tcia_api_collection_id, blob_name)
-                                    failures.write(f'{blob_name} hash mismatch\n')
-                                    failure_count += 1
+                                rootlogger.info('%s %s: %s: blob exists %s', args.id, index, tcia_api_collection_id, blob_name)
+                                successes.write(f'{blob_name}\n')
+                                break
+                                # blob.reload()
+                                # if row["instance_hash"] == b64decode(blob.md5_hash).hex():
+                                #     rootlogger.info('%s %s: %s: blob exists %s', args.id, index, tcia_api_collection_id, blob_name)
+                                #     successes.write(f'{blob_name}\n')
+                                #     break
+                                # else:
+                                #     errlogger.error('%s %s: %s: blob hash mismatch %', args.id, index,
+                                #                     tcia_api_collection_id, blob_name)
+                                #     failures.write(f'{blob_name} hash mismatch\n')
+                                #     failure_count += 1
                             else:
                                 errlogger.error('%s %s: %s: blob not found %', args.id, index, tcia_api_collection_id, blob_name)
                                 failures.write(f'{blob_name} not found\n')
-                                failure_count += 1
+                                break
                         except Exception as exc:
                             errlogger.error('%s %s: %s: error checking if blob %s exists %s\n, retry %s; %s', args.id,
                                             index, tcia_api_collection_id,
@@ -140,8 +143,8 @@ def val_collection(cur, args, dones, collection_index, tcia_api_collection_id):
 
 def worker(input, output, args, dones):
     rootlogger.debug('p%s: Worker starting: args: %s', args.id, args)
-    conn = psycopg2.connect(dbname=args.db, user=settings.DATABASE_USERNAME,
-                            password=settings.DATABASE_PASSWORD, host=settings.DATABASE_HOST)
+    conn = psycopg2.connect(dbname=args.db, user=settings.CLOUD_USERNAME, port=settings.CLOUD_PORT,
+                            password=settings.CLOUD_PASSWORD, host=settings.CLOUD_HOST)
     with conn:
         with conn.cursor(cursor_factory=DictCursor) as cur:
 
@@ -163,30 +166,31 @@ def worker(input, output, args, dones):
 
                 output.put((tcia_api_collection_id))
 
-def copy_collections(cur, args, version):
+def val_collections(cur, args, version):
     # Session = sessionmaker(bind= sql_engine)
     # version = version_is_done(sess, args.version)
     try:
-        skips = open(args.skips).read().splitlines()
+        todos = open(args.todos).read().splitlines()
     except:
-        skips = []
+        todos = []
     try:
         dones = open(args.dones).read().splitlines()
     except:
         dones = []
     begin = time.time()
-    cur.execute("""
-        SELECT * FROM collection
-        WHERE version_id = (%s)""", (version['id'],))
-    collections = cur.fetchall()
+        # cur.execute("""
+        #     SELECT * FROM collection
+        #     WHERE version_id = (%s)""", (version['id'],))
+        # collections = cur.fetchall()
+    collections = todos
 
-    rootlogger.info("Version %s; %s collections", version['idc_version_number'], len(collections))
+    rootlogger.info("Version %s; %s collections", version, len(collections))
     if args.processes == 0:
         args.id=0
         for collection in collections:
-            if not collection['tcia_api_collection_id'] in skips:
-                collection_index = f'{collections.index(collection)+1} of {len(collections)}'
-                val_collection(cur, args, dones, collection_index,  collection['tcia_api_collection_id'])
+            # if collection['tcia_api_collection_id'] in todos:
+            collection_index = f'{collections.index(collection)+1} of {len(collections)}'
+            val_collection(cur, args, dones, collection_index,  collection)
 
     else:
         processes = []
@@ -204,14 +208,17 @@ def copy_collections(cur, args, version):
                 Process(target=worker, args=(task_queue, done_queue, args, dones)))
             processes[-1].start()
 
-        # Enqueue each patient in the the task queue
+        # Enqueue each collection
         for collection in collections:
-            if not collection['tcia_api_collection_id'] in skips:
-                collection_index = f'{collections.index(collection) + 1} of {len(collections)}'
-                task_queue.put((collection_index, collection['tcia_api_collection_id']))
-                enqueued_collections.append(collection['tcia_api_collection_id'])
+            collection_index = f'{collections.index(collection) + 1} of {len(collections)}'
+            if not collection in dones:
+                task_queue.put((collection_index, collection))
+                enqueued_collections.append(collection)
+            else:
+                rootlogger.info("Collection %s, %s, previously completed", collection,
+                                collection_index)
 
-        # Collect the results for each patient
+        # Collect the results for each collection
         try:
             while not enqueued_collections == []:
                 # Timeout if waiting too long
@@ -227,7 +234,7 @@ def copy_collections(cur, args, version):
                 process.join()
 
             duration = str(timedelta(seconds=(time.time() - begin)))
-            rootlogger.info("Collection %s, %s, completed in %s", collection['tcia_api_collection_id'], collection_index,
+            rootlogger.info("Collection %s, %s, completed in %s", collection, collection_index,
                             duration)
 
 
@@ -241,34 +248,36 @@ def copy_collections(cur, args, version):
 
 
 def prereval(args):
-    conn = psycopg2.connect(dbname=args.db, user=settings.DATABASE_USERNAME,
-                            password=settings.DATABASE_PASSWORD, host=settings.DATABASE_HOST)
+    conn = psycopg2.connect(dbname=args.db, user=settings.CLOUD_USERNAME, port = settings.CLOUD_PORT,
+                            password=settings.CLOUD_PASSWORD, host=settings.CLOUD_HOST)
     with conn:
         with conn.cursor(cursor_factory=DictCursor) as cur:
-            cur.execute("""
-            SELECT * 
-            FROM version
-            WHERE idc_version_number = (%s)""", (args.version,))
-
-            version = cur.fetchone()
-            copy_collections(cur, args, version)
+            # cur.execute("""
+            # SELECT *
+            # FROM version
+            # WHERE idc_version_number = (%s)""", (args.version,))
+            #
+            # version = cur.fetchone()
+            version = args.version
+            val_collections(cur, args, version)
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=2, help='Next version to generate')
-    parser.add_argument('--final_bucket', default='idc_dev', help='Bucket to validate')
+    parser.add_argument('--version', default=7, help='Next version to generate')
+    parser.add_argument('--final_bucket', default='idc-dev-open', help='Bucket to validate')
     args = parser.parse_args()
-    parser.add_argument('--all_table', default=f'all_v{args.version}', )
-    parser.add_argument('--db', default=f'idc', help='PSQL database to access')
-    parser.add_argument('--processes', default=32, help="Number of concurrent processes")
+    parser.add_argument('--all_table', default=f'all_open', )
+    parser.add_argument('--db', default=f'idc_v7', help='PSQL database to access')
+    parser.add_argument('--processes', default=16, help="Number of concurrent processes")
     parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--skips', default='./logs/revalidate_final_bucket_skips.log' )
+    parser.add_argument('--todos', default='./logs/revalidate_final_bucket_todos.log' )
     parser.add_argument('--dones', default='./logs/revalidate_final_bucket_dones.log' )
+    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/validate_open_collections')
     args = parser.parse_args()
 
     rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/revalidate_final_bucket_log.log'.format(os.environ['PWD']))
+    root_fh = logging.FileHandler(f'{args.log_dir}/log.log')
     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
     rootlogger.addHandler(root_fh)
     root_fh.setFormatter(rootformatter)
@@ -282,7 +291,7 @@ if __name__ == '__main__':
     donelogger.setLevel(INFO)
 
     errlogger = logging.getLogger('root.err')
-    err_fh = logging.FileHandler('{}/logs/revalidate_final_bucket_err.log'.format(os.environ['PWD']))
+    err_fh = logging.FileHandler(f'{args.log_dir}/err.log')
     errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)

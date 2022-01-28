@@ -25,8 +25,8 @@ from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json, query_BQ, create_BQ_dataset, delete_BQ_dataset
 
 
-def delete_all_views_in_target_dataset(target_client, args):
-    views = [views for views in target_client.list_tables (f'{args.trg_project}.{args.trg_bqdataset}')]
+def delete_all_views_in_target_dataset(target_client, args,):
+    views = [views for views in target_client.list_tables (f'{args.trg_project}.{args.current_bqdataset}')]
     for view in views:
         # pass
         target_client.delete_table(view)
@@ -36,7 +36,7 @@ def gen_idc_current_dataset(args):
     trg_client = bigquery.Client(project=args.trg_project)
 
     try:
-        trg_dataset = create_BQ_dataset(trg_client, args.current_bqdataset)
+        create_BQ_dataset(trg_client, args.current_bqdataset)
     except Exception as exc:
         print("Target dataset already exists")
 
@@ -52,7 +52,7 @@ def gen_idc_current_dataset(args):
         table_id = table.table_id
 
         # Create the view object
-        trg_view = bigquery.Table(f'{args.trg_project}.{args.trg_bqdataset}.{table_id}')
+        trg_view = bigquery.Table(f'{args.trg_project}.{args.current_bqdataset}.{table_id}')
         # Form the view SQL
         view_sql = f"""
             select * from `{args.src_project}.{args.src_bqdataset}.{table_id}`"""
@@ -64,10 +64,11 @@ def gen_idc_current_dataset(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=0, help='Current IDC version')
+    parser.add_argument('--version', default=7, help='Current IDC version')
     args = parser.parse_args()
-    parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--bqdataset', default=f'idc_v{args.version}', help='BQ dataset name')
+    parser.add_argument('--src_project', default='idc-dev-etl')
+    parser.add_argument('--trg_project', default='idc-dev-etl')
+    parser.add_argument('--src_bqdataset', default=f'idc_v{args.version}', help='BQ dataset name')
     parser.add_argument('--current_bqdataset', default=f'idc_current_whc', help='current dataset name')
 
     args = parser.parse_args()

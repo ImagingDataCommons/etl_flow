@@ -124,7 +124,7 @@ def upload_study(client, args, table, order_by):
     SELECT
       study_instance_uid,
       uuid,
-      CAST(study_instances AS INT),
+      CAST(study_instances AS INT) AS study_instances,
       min_timestamp,
       max_timestamp,
       CAST(init_idc_version AS INT) AS init_idc_version,
@@ -159,7 +159,7 @@ def upload_series(client, args, table, order_by):
     SELECT
       series_instance_uid,
       uuid,
-      CAST(series_instances AS INT),
+      CAST(series_instances AS INT) AS series_instances,
       source_doi,
       min_timestamp,
       max_timestamp,

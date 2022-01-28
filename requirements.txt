@@ -14,8 +14,9 @@
 # limitations under the License.
 #
 
-
+backoff
 google
+google-api-python-client
 google-auth-httplib2
 google-cloud-bigquery
 google-cloud-bigquery-storage

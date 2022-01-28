@@ -25,15 +25,10 @@ from bq.gen_original_data_collections_table.schema import data_collections_metad
 from utilities.tcia_helpers import get_collection_descriptions_and_licenses, get_collection_license_info
 from utilities.tcia_scrapers import scrape_tcia_data_collections_page
 
-from python_settings import settings
-
-import psycopg2
-from psycopg2.extras import DictCursor, RealDictCursor
-
 def get_collections_programs(client, args):
     query = f"""
         SELECT * 
-        FROM `{args.src_project}.{args.bqdataset_name}.{args.bq_program_table}`"""
+        FROM `{args.src_project}.{args.bqdataset_name}.program`"""
     programs = {row['tcia_wiki_collection_id']: row['program'] for row in client.query(query).result()}
 
     return programs
@@ -43,20 +38,30 @@ def get_collections_in_version(client, args):
     if args.gen_excluded:
         # Only excluded collections
         query = f"""
-        SELECT c.* 
-        FROM `{args.src_project}.{args.bqdataset_name}.{args.bq_collection_table}` as c
-        JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_excluded_collections}` as ex
+        SELECT DISTINCT c.collection_id 
+        FROM `{args.src_project}.{args.bqdataset_name}.version` AS v
+        JOIN `{args.src_project}.{args.bqdataset_name}.version_collection` as vc
+        ON v.version = vc.version
+        JOIN `{args.src_project}.{args.bqdataset_name}.collection` AS c
+        ON vc.collection_uuid = c.uuid
+        JOIN `{args.src_project}.{args.bqdataset_name}.excluded_collections` as ex
         ON LOWER(c.collection_id) = LOWER(ex.tcia_api_collection_id)
+        WHERE v.version = {args.version}
         ORDER BY c.collection_id
         """
     else:
         # Only included collections
         query = f"""
-        SELECT c.* 
-        FROM `{args.src_project}.{args.bqdataset_name}.{args.bq_collection_table}` as c
-        LEFT JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_excluded_collections}` as ex
+        SELECT DISTINCT c.collection_id 
+        FROM `{args.src_project}.{args.bqdataset_name}.version` AS v
+        JOIN `{args.src_project}.{args.bqdataset_name}.version_collection` as vc
+        ON v.version = vc.version
+        JOIN `{args.src_project}.{args.bqdataset_name}.collection` AS c
+        ON vc.collection_uuid = c.uuid
+        LEFT JOIN `{args.src_project}.{args.bqdataset_name}.excluded_collections` as ex
         ON LOWER(c.collection_id) = LOWER(ex.tcia_api_collection_id)
         WHERE ex.tcia_api_collection_id IS NULL
+        AND v.version = {args.version}
         ORDER BY c.collection_id
         """
     result = client.query(query).result()
@@ -68,11 +73,16 @@ def get_cases_per_collection(client, args):
     SELECT
       c.collection_id,
       COUNT(DISTINCT p.submitter_case_id ),
-    FROM
-      `{args.src_project}.{args.bqdataset_name}.collection` as c
-    JOIN
-      `{args.src_project}.{args.bqdataset_name}.patient` as p 
-    ON c.collection_id = p.collection_id
+    FROM `{args.src_project}.{args.bqdataset_name}.version` AS v
+    JOIN `{args.src_project}.{args.bqdataset_name}.version_collection` as vc
+    ON v.version = vc.version
+    JOIN `{args.src_project}.{args.bqdataset_name}.collection` AS c
+    ON vc.collection_uuid = c.uuid
+    JOIN `{args.src_project}.{args.bqdataset_name}.collection_patient` AS cp
+    ON c.uuid = cp.collection_uuid
+    JOIN `{args.src_project}.{args.bqdataset_name}.patient` AS p
+    ON cp.patient_uuid = p.uuid
+    WHERE v.version = {args.version}
     GROUP BY
         c.collection_id
     """
@@ -214,3 +224,16 @@ def gen_collections_table(args):
         time.sleep(args.period * 60)
     print("{}: Completed collections metatdata upload \n".format(time.asctime()))
 
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--version', default=7, help='IDC version for which to build the table')
+    args = parser.parse_args()
+    parser.add_argument('--src_project', default='idc-dev-etl')
+    parser.add_argument('--dst_project', default='idc-dev-etl')
+    parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
+    parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
+    parser.add_argument('--gen_excluded', default=False, help="Generate excluded_original_collections_metadata if True")
+
+    args = parser.parse_args()
+    print("{}".format(args), file=sys.stdout)
+    gen_collections_table(args)

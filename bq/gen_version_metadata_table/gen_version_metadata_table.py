@@ -39,13 +39,21 @@ def version_hash(client, args, version):
             FROM `{args.src_project}.idc_v{version}.version`
             """
         version_hash = [row['version_hash'] for row in client.query(query).result()][0]
-    else:
+    elif version <7:
         query = f"""
             SELECT distinct collection_hash
             FROM `{args.src_project}.idc_v{version}.auxiliary_metadata`
             """
         hashes = [row['collection_hash'] for row in client.query(query).result()]
         version_hash = get_merkle_hash(hashes)
+    else:
+        query = f"""
+            SELECT hashes.all_sources as version_hash
+            FROM `{args.src_project}.idc_v{args.version}.version` v
+            WHERE v.version = {version}
+             """
+        version_hash = list(client.query(query).result())[0]['version_hash']
+
     return version_hash
 
 def version_timestamp(client, args, version):
@@ -54,10 +62,16 @@ def version_timestamp(client, args, version):
             SELECT max(collection_timestamp) as max_timestamp
             FROM `{args.src_project}.idc_v{version}.collection`
             """
-    else:
+    elif version < 7:
         query = f"""
             SELECT max_timestamp
             FROM `{args.src_project}.idc_v{version}.version`
+            """
+    else:
+        query = f"""
+            SELECT max_timestamp
+            FROM `{args.src_project}.idc_v{args.version}.version`
+            WHERE version = {version}
             """
     version_timestamp = [row['max_timestamp'] for row in client.query(query).result()][0].date()
     return version_timestamp
@@ -75,3 +89,15 @@ def gen_version_metadata_table(args):
     job = load_BQ_from_json(client, args.dst_project, args.bqdataset_name, args.bqtable_name, metadata,
                             version_metadata_schema, write_disposition='WRITE_TRUNCATE')
 
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--version', default=7, help='Max IDC version for which to build the table')
+    args = parser.parse_args()
+    parser.add_argument('--src_project', default='idc-dev-etl')
+    parser.add_argument('--dst_project', default='idc-dev-etl')
+    parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
+    parser.add_argument('--bqtable_name', default='version_metadata', help='BQ table name')
+
+    args = parser.parse_args()
+    print("{}".format(args), file=sys.stdout)
+    gen_version_metadata_table(args)

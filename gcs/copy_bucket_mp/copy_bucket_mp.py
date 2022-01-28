@@ -26,8 +26,8 @@ import argparse
 import os
 import logging
 from logging import INFO
-rootlogger = logging.getLogger('root')
-successlogger = logging.getLogger('success')
+proglogger = logging.getLogger('root.prog')
+successlogger = logging.getLogger('root.success')
 errlogger = logging.getLogger('root.err')
 
 import time
@@ -38,7 +38,8 @@ from google.api_core.exceptions import ServiceUnavailable, GoogleAPICallError
 from python_settings import settings
 import settings as etl_settings
 
-settings.configure(etl_settings)
+if not settings.configured:
+    settings.configure(etl_settings)
 assert settings.configured
 
 TRIES = 3
@@ -67,11 +68,11 @@ def copy_instances(args, client, src_bucket, dst_bucket, blob_names, n):
             time.sleep(retries)
             retries += 1
 
-    rootlogger.info('p%s Copied blobs %s:%s ', args.id, n, n+len(blob_names)-1)
+    proglogger.info('p%s Copied blobs %s:%s ', args.id, n, n+len(blob_names)-1)
 
 
 def worker(input, args):
-    # rootlogger.info('p%s: Worker starting: args: %s', args.id, args )
+    # proglogger.info('p%s: Worker starting: args: %s', args.id, args )
     # print(f'p{args.id}: Worker starting: args: {args}')
 
     RETRIES=3
@@ -106,7 +107,7 @@ def copy_all_instances(args):
     print(f"{len(done_instances)} previously copied")
     done_instances = set(done_instances)
 
-    print(f'Copying bucket {args.src_bucket}')
+    print(f'Copying bucket {args.src_bucket}, ')
 
     num_processes = args.processes
     processes = []
@@ -123,21 +124,16 @@ def copy_all_instances(args):
             Process(group=None, target=worker, args=(task_queue, args)))
         processes[-1].start()
 
-
     # Distribute the work across the task_queues
     n = 0
-    # iterator = client.list_blobs(bucket, page_token=page_token, max_results=args.batch)
     iterator = client.list_blobs(src_bucket,  page_size=args.batch)
     for page in iterator.pages:
         blobs = [blob.name for blob in page if blob.name not in done_instances]
-        # if len(blobs) == 0:
-        #     break
         if len(blobs):
             task_queue.put((blobs, n))
             print(f'Queued {n}:{n+len(blobs)-1}')
         else:
             print(f'Skipped blobs {n}:{n+args.batch-1}')
-        # task_queue.put((page, n))
 
         n += page.num_items
     print('Primary work distribution complete; {} blobs'.format(n))
@@ -160,8 +156,12 @@ def copy_all_instances(args):
 def pre_copy(args):
 
     bucket = args.src_bucket
-    if os.path.exists('{}/logs/{}_error.log'.format(args.log_dir, bucket)):
-        os.remove('{}/logs/{}_error.log'.format(args.log_dir, bucket))
+    # if os.path.exists('{}/logs/{}_error.log'.format(args.log_dir, bucket)):
+    #     os.remove('{}/logs/{}_error.log'.format(args.log_dir, bucket))
+    if not os.path.exists('{}'.format(args.log_dir)):
+        os.mkdir('{}'.format(args.log_dir))
+        st = os.stat('{}'.format(args.log_dir))
+        os.chmod('{}'.format(args.log_dir), st.st_mode | 0o222)
 
     # Change logging file. File name includes bucket ID.
     for hdlr in successlogger.handlers[:]:
@@ -183,28 +183,28 @@ def pre_copy(args):
 
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--src_bucket', default='idc-dev-open')
-    parser.add_argument('--dst_project', default='idc-pdp-staging')
-    parser.add_argument('--dst_bucket', default=f'idc-open-pdp-staging')
-    parser.add_argument('--processes', default=1, help="Number of concurrent processes")
-    parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/copy_bucket_mp')
-
-    args = parser.parse_args()
-
-    rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler(f'{os.environ["PWD"]}/logs/bucket.log')
-    rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
-    rootlogger.addHandler(root_fh)
-    root_fh.setFormatter(rootformatter)
-    rootlogger.setLevel(INFO)
-
-    successlogger = logging.getLogger('success')
-    successlogger.setLevel(INFO)
-
-    errlogger = logging.getLogger('root.err')
-
-    pre_copy(args)
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--src_project', default='idc-dev-etl')
+#     parser.add_argument('--src_bucket', default='idc-dev-open')
+#     parser.add_argument('--dst_project', default='idc-pdp-staging')
+#     parser.add_argument('--dst_bucket', default=f'idc-open-pdp-staging')
+#     parser.add_argument('--processes', default=1, help="Number of concurrent processes")
+#     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
+#     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/copy_bucket_mp')
+#
+#     args = parser.parse_args()
+#
+#     proglogger = logging.getLogger('prog')
+#     prog_fh = logging.FileHandler(f'{os.environ["PWD"]}/logs/bucket.log')
+#     progformatter = logging.Formatter('%(levelname)s:prog:%(message)s')
+#     proglogger.addHandler(prog_fh)
+#     prog_fh.setFormatter(progformatter)
+#     proglogger.setLevel(INFO)
+#
+#     successlogger = logging.getLogger('success')
+#     successlogger.setLevel(INFO)
+#
+#     errlogger = logging.getLogger('prog.err')
+#
+#     pre_copy(args)
