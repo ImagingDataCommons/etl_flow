@@ -70,21 +70,12 @@ def expand_patient(sess, args, all_sources, patient):
     for study in sorted(new_objects):
         new_study = Study()
         new_study.study_instance_uid=study
-        if args.build_mtm_db:
-            new_study.uuid = studies[study]['uuid']
-            new_study.min_timestamp = studies[study]['min_timestamp']
-            new_study.max_timestamp = studies[study]['max_timestamp']
-            new_study.study_instances = studies[study]['study_instances']
-            new_study.sources = studies[study]['sources']
-            new_study.revised = False
-            new_study.hashes = studies[study]['hashes']
-        else:
-            new_study.uuid = str(uuid4())
-            new_study.min_timestamp = datetime.utcnow()
-            new_study.study_instances = 0
-            new_study.revised = studies[study]
-            new_study.hashes = None
-            new_study.max_timestamp = new_study.min_timestamp
+        new_study.uuid = str(uuid4())
+        new_study.min_timestamp = datetime.utcnow()
+        new_study.study_instances = 0
+        new_study.revised = studies[study]
+        new_study.hashes = None
+        new_study.max_timestamp = new_study.min_timestamp
         new_study.init_idc_version=args.version
         new_study.rev_idc_version=args.version
         new_study.final_idc_version=0
@@ -101,22 +92,15 @@ def expand_patient(sess, args, all_sources, patient):
         revised = [x != y for x, y in zip(idc_hashes[:-1], src_hashes)]
         if any(revised):
             # rootlogger.debug  ('**Patient %s needs revision', patient.submitter_case_id)
-            rev_study = clone_study(study, studies[study.study_instance_uid]['uuid'] if args.build_mtm_db else str(uuid4()))
+            rev_study = clone_study(study, str(uuid4()))
             assert args.version == studies[study.study_instance_uid]['rev_idc_version']
             rev_study.revised = True
             rev_study.done = False
             rev_study.is_new = False
             rev_study.expanded = False
-            if args.build_mtm_db:
-                rev_study.min_timestamp = studies[study.study_instance_uid]['min_timestamp']
-                rev_study.max_timestamp = studies[study.study_instance_uid]['max_timestamp']
-                rev_study.sources = studies[study.study_instance_uid]['sources']
-                rev_study.hashes = studies[study.study_instance_uid]['hashes']
-                rev_study.rev_idc_version = studies[study.study_instance_uid]['rev_idc_version']
-            else:
-                rev_study.revised = revised
-                rev_study.hashes = None
-                rev_study.rev_idc_version = args.version
+            rev_study.revised = revised
+            rev_study.hashes = None
+            rev_study.rev_idc_version = args.version
             patient.studies.append(rev_study)
             rootlogger.debug  ('    p%s: Study %s is revised',  args.id, rev_study.study_instance_uid)
 
@@ -126,14 +110,13 @@ def expand_patient(sess, args, all_sources, patient):
             patient.studies.remove(study)
         else:
             # The study is unchanged. Just add it to the patient
-            if not args.build_mtm_db:
-                # Stamp this study showing when it was checked
-                study.min_timestamp = datetime.utcnow()
-                study.max_timestamp = datetime.utcnow()
-                # Make sure the collection is marked as done and expanded
-                # Shouldn't be needed if the previous version is done
-                study.done = True
-                study.expanded = True
+            # Stamp this study showing when it was checked
+            study.min_timestamp = datetime.utcnow()
+            study.max_timestamp = datetime.utcnow()
+            # Make sure the collection is marked as done and expanded
+            # Shouldn't be needed if the previous version is done
+            study.done = True
+            study.expanded = True
             rootlogger.debug  ('    p%s: Study %s unchanged',  args.id, study.study_instance_uid)
 
     for study in retired_objects:
@@ -161,26 +144,19 @@ def build_patient(sess, args, all_sources, patient_index, data_collection_doi, a
     if all([study.done for study in patient.studies]):
         patient.max_timestamp = max([study.max_timestamp for study in patient.studies if study.max_timestamp != None])
 
-        if args.build_mtm_db:
+         # Get a list of what DB thinks are the patient's hashes
+        idc_hashes = all_sources.idc_patient_hashes(patient)
+        # Get a list of what the sources think are the patient's hashes
+        src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id)
+        # They must be the same
+        if  src_hashes != idc_hashes[:-1]:
+            # errlogger.error('Hash match failed for patient %s', patient.submitter_case_id)
+            raise Exception('Hash match failed for patient %s', patient.submitter_case_id)
+        else:
+            patient.hashes = idc_hashes
+            patient.sources = accum_sources(patient, patient.studies)
+
             patient.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
-            rootlogger.info("  p%s: Completed Patient %s, %s, in %s, %s", args.id, patient.submitter_case_id,
-                            patient_index, duration, time.asctime())
-        else:
-            # Get a list of what DB thinks are the patient's hashes
-            idc_hashes = all_sources.idc_patient_hashes(patient)
-            # Get a list of what the sources think are the patient's hashes
-            src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id)
-            # They must be the same
-            if  src_hashes != idc_hashes[:-1]:
-                # errlogger.error('Hash match failed for patient %s', patient.submitter_case_id)
-                raise Exception('Hash match failed for patient %s', patient.submitter_case_id)
-            else:
-                patient.hashes = idc_hashes
-                patient.sources = accum_sources(patient, patient.studies)
-
-                patient.done = True
-                sess.commit()
-                duration = str(timedelta(seconds=(time.time() - begin)))
-                rootlogger.info("  p%s: Completed Patient %s, %s, in %s, %s", args.id, patient.submitter_case_id, patient_index, duration, time.asctime())
+            rootlogger.info("  p%s: Completed Patient %s, %s, in %s, %s", args.id, patient.submitter_case_id, patient_index, duration, time.asctime())

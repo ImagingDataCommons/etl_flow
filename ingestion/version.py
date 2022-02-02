@@ -69,17 +69,10 @@ def expand_version(sess, args, all_sources, version, skips):
             new_collection.collection_id = collections[idc_collection_id]['collection_id']
             new_collection.idc_collection_id = idc_collection_id
             new_collection.uuid = str(uuid4())
-            if args.build_mtm_db:
-                new_collection.min_timestamp = collections[idc_collection_id]['min_timestamp']
-                new_collection.max_timestamp = collections[idc_collection_id]['max_timestamp']
-                new_collection.sources = collections[idc_collection_id]['sources']
-                new_collection.hashes = collections[idc_collection_id]['hashes']
-                new_collection.revised = False
-            else:
-                new_collection.min_timestamp = datetime.utcnow()
-                new_collection.revised = collections[idc_collection_id]['sources']
-                new_collection.sources = [False, False]
-                new_collection.hashes = None
+            new_collection.min_timestamp = datetime.utcnow()
+            new_collection.revised = collections[idc_collection_id]['sources']
+            new_collection.sources = [False, False]
+            new_collection.hashes = None
             new_collection.init_idc_version=args.version
             new_collection.rev_idc_version=args.version
             new_collection.final_idc_version=0
@@ -108,18 +101,9 @@ def expand_version(sess, args, all_sources, version, skips):
                 rev_collection.done = False
                 rev_collection.is_new = False
                 rev_collection.expanded = False
-                if args.build_mtm_db:
-                    rev_collection.min_timestamp = collections[collection.idc_collection_id]['min_timestamp']
-                    rev_collection.max_timestamp = collections[collection.idc_collection_id]['max_timestamp']
-                    rev_collection.sources = collections[collection.idc_collection_id]['sources']
-                    rev_collection.hashes = collections[collection.idc_collection_id]['hashes']
-                    rev_collection.rev_idc_version = collections[collection.idc_collection_id]['rev_idc_version']
-                else:
-                    # new_collection.hashes = src_hashes
-                    # new_collection.hashes.append(get_merkle_hash([hash for hash in src_hashes if hash]))
-                    rev_collection.hashes = None
-                    rev_collection.revised = revised
-                    rev_collection.rev_idc_version = args.version
+                rev_collection.hashes = None
+                rev_collection.revised = revised
+                rev_collection.rev_idc_version = args.version
                 version.collections.append(rev_collection)
                 rootlogger.debug('p%s: Collection %s is revised',  args.id, rev_collection.collection_id)
 
@@ -134,9 +118,6 @@ def expand_version(sess, args, all_sources, version, skips):
 
                 # Here is where we update the collecton ID in case it has changed
                 rev_collection.collection_id = collections[collection.idc_collection_id]['collection_id']
-                if args.build_mtm_db:
-                    rev_collection.min_timestamp = collections[collection.idc_collection_id]['min_timestamp']
-                    rev_collection.max_timestamp = collections[collection.idc_collection_id]['max_timestamp']
                 rev_collection.rev_idc_version = args.version
 
                 # The collection is otherwise done
@@ -153,13 +134,12 @@ def expand_version(sess, args, all_sources, version, skips):
 
             else:
                 # The collection is unchanged. Just add it to the version
-                if not args.build_mtm_db:
-                    collection.min_timestamp = datetime.utcnow()
-                    collection.max_timestamp = datetime.utcnow()
-                    # Make sure the collection is marked as done and expanded
-                    # Shouldn't be needed if the previous version is done
-                    collection.done = True
-                    collection.expanded = True
+                collection.min_timestamp = datetime.utcnow()
+                collection.max_timestamp = datetime.utcnow()
+                # Make sure the collection is marked as done and expanded
+                # Shouldn't be needed if the previous version is done
+                collection.done = True
+                collection.expanded = True
                 rootlogger.debug('p%s: Collection %s unchanged', args.id, collection.collection_id)
 
     for collection in retired_objects:
@@ -197,31 +177,23 @@ def build_version(sess, args, all_sources, version):
     if all([collection.done for collection in idc_collections]):
         version.max_timestamp = max([collection.max_timestamp for collection in version.collections if collection.max_timestamp != None])
 
-        if args.build_mtm_db:
-            version.hashes = all_sources.src_version_hashes(version)
-            # hashes = version.hashes
+        # Get the new version's hashes
+        idc_hashes = all_sources.idc_version_hashes(version)
+        # Check whether the hashes have changed. If so then declare this a new version
+        # otherwise revert the version number
+        previous_hashes = list(sess.query(Version).filter(Version.version == args.previous_version).first().hashes)
+        if idc_hashes != previous_hashes:
+            version.hashes = idc_hashes
+            version.sources = accum_sources(version, version.collections)
             version.done = True
-            sess.commit()
-            duration = str(timedelta(seconds=(time.time() - begin)))
-            rootlogger.info("Completed Version %s, in %s", version.version, duration)
+            version.revised = [True, True]
         else:
-            # Get the new version's hashes
-            idc_hashes = all_sources.idc_version_hashes(version)
-            # Check whether the hashes have changed. If so then declare this a new version
-            # otherwise revert the version number
-            previous_hashes = list(sess.query(Version).filter(Version.version == args.previous_version).first().hashes)
-            if idc_hashes != previous_hashes:
-                version.hashes = idc_hashes
-                version.sources = accum_sources(version, version.collections)
-                version.done = True
-                version.revised = [True, True]
-            else:
-                # Revert the version
-                egest_version(sess, args, version)
-                rootlogger.info("Version unchanged, remains at %s", args.previous_version)
-            sess.commit()
-            duration = str(timedelta(seconds=(time.time() - begin)))
-            rootlogger.info("Completed Version %s, in %s", version.version, duration)
+            # Revert the version
+            egest_version(sess, args, version)
+            rootlogger.info("Version unchanged, remains at %s", args.previous_version)
+        sess.commit()
+        duration = str(timedelta(seconds=(time.time() - begin)))
+        rootlogger.info("Completed Version %s, in %s", version.version, duration)
 
     else:
         rootlogger.info("Not all collections are done. Rerun.")

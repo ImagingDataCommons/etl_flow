@@ -17,6 +17,7 @@
 # Populate the DB with data for the next IDC version
 
 import os
+import argparse
 import logging
 from logging import INFO, DEBUG
 from datetime import datetime, timedelta
@@ -29,12 +30,13 @@ from ingestion.version import clone_version, build_version
 
 from python_settings import settings
 
+from google.cloud import storage
+
 from sqlalchemy import create_engine
 from sqlalchemy_utils import register_composites
 from sqlalchemy.orm import Session
 
 from ingestion.all_sources import All
-from ingestion.mtm.sources_mtm import All_mtm
 from http.client import HTTPConnection
 HTTPConnection.debuglevel = 0
 
@@ -42,29 +44,6 @@ HTTPConnection.debuglevel = 0
 
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
-
-# def test_source(args, all_sources):
-#     from types import  SimpleNamespace
-#     metadata = all_sources.collections()
-#
-#     d = {'collection_id':list(metadata.values())[0]['collection_id']}
-#     object = SimpleNamespace(**d)
-#     metadata = all_sources.patients(object)
-#
-#     d = {'submitter_case_id':list(metadata.keys())[0]}
-#     object = SimpleNamespace(**d)
-#     metadata = all_sources.studies(object)
-#
-#     d = {'study_instance_uid':list(metadata.keys())[0]}
-#     object = SimpleNamespace(**d)
-#     metadata = all_sources.series(object)
-#
-#     d = {'series_instance_uid':list(metadata.keys())[0]}
-#     object = SimpleNamespace(**d)
-#     metadata = all_sources.instances(object)
-#
-#     pass
-
 
 def ingest(args):
     HTTPConnection.debuglevel = 0
@@ -106,24 +85,9 @@ def ingest(args):
 
     with Session(sql_engine) as sess:
         # Get the target version, if it exists
-        if args.build_mtm_db:
-            # When building the many-to-many DB, we mine some existing one to many DB
-            sql_uri_mtm = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/idc_v{args.version}'
-            sql_engine_mtm = create_engine(sql_uri_mtm)
-            # sql_engine_mtm = create_engine(sql_uri_mtm, echo=True)
-            conn_mtm = sql_engine_mtm.connect()
-
-            register_composites(conn_mtm)
-
-            # Use this to see the SQL being sent to PSQL
-            all_sources = All_mtm(sess, Session(sql_engine_mtm), args.version)
-            # test_source(args, all_sources)
-
-        else:
-            access = shared_memory.ShareableList(get_access_token())
-            args.access = access
-            all_sources = All(args.id, sess, args.version, args.access, Lock())
-        # all_sources.lock = Lock()
+        access = shared_memory.ShareableList(get_access_token())
+        args.access = access
+        all_sources = All(args.id, sess, args.version, args.access, Lock())
 
         version = sess.query(Version).filter(Version.version == args.version).first()
         if not version:
@@ -155,18 +119,11 @@ def ingest(args):
                     version.done = False
                     version.is_new = False
                     version.revised = False
-                    if args.build_mtm_db:
-                        version_metadata = all_sources.versions(args.version)
-                        version.hashes = version_metadata[args.version]['hashes']
-                        version.sources = (True, True)
-                        version.min_timestamp = version_metadata[args.version]['min_timestamp']
-                        version.max_timestamp = version_metadata[args.version]['max_timestamp']
-                    else:
-                        version.hashes = ("","","")
-                        version.revised = [True, True] # Assume something has changed
-                        version.sources= [False,False]
-                        version.min_timestamp = datetime.utcnow()
-                        version.max_timestamp = None
+                    version.hashes = ("","","")
+                    version.revised = [True, True] # Assume something has changed
+                    version.sources= [False,False]
+                    version.min_timestamp = datetime.utcnow()
+                    version.max_timestamp = None
                     sess.commit()
 
         if not version.done:
@@ -174,3 +131,29 @@ def ingest(args):
         else:
             rootlogger.info("    version %s previously built", args.version)
         return
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--previous_version', default=7, help='Previous version')
+    parser.add_argument('--version', default=8, help='Version to work on')
+    parser.add_argument('--client', default=storage.Client())
+    args = parser.parse_args()
+    parser.add_argument('--db', default=f'idc_v7', help='Database on which to operate')
+    parser.add_argument('--project', default='idc-dev-etl')
+    parser.add_argument('--wsi_src_bucket', default=storage.Bucket(args.client,'af-dac-wsi-conversion-results'), help='Bucket in which to find WSI DICOMs')
+    parser.add_argument('--prestaging_bucket_prefix', default=f'idc_v{args.version}_', help='Copy instances here before forwarding to --staging_bucket')
+    parser.add_argument('--num_processes', default=0, help="Number of concurrent processes")
+    # parser.add_argument('--todos', default='{}/logs/path_ingest_v{}_todos.txt'.format(os.environ['PWD'], args.version ), help="Collections to include")
+    parser.add_argument('--skips', default=f"{os.environ['PWD']}/logs/ingest_v{args.version}_skips.txt", help="Collections to skip")
+    parser.add_argument('--server', default="", help="NBIA server to access. Set to NLST for NLST ingestion")
+    parser.add_argument('--dicom', default='/mnt/disks/idc-etl/dicom', help='Directory in which to expand downloaded zip files')
+    args = parser.parse_args()
+    args.id = 0 # Default process ID
+
+    print("{}".format(args), file=sys.stdout)
+
+    rootlogger = logging.getLogger('root')
+
+    errlogger = logging.getLogger('root.err')
+
+    ingest(args)
