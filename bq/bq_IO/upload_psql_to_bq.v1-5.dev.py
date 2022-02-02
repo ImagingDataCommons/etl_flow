@@ -31,13 +31,14 @@ from bq.bq_IO.upload_psql_to_bq import upload_to_bq
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--version', help='Version being built')
     parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--tables', default= [
-                    # 'excluded_collections',
-                    # 'redacted_collections',
-                    # 'cr_collections',
+                    'excluded_collections',
+                    'redacted_collections',
+                    'cr_collections',
                     'defaced_collections',
-                    # 'open_collections'
+                    'open_collections'
                     ], help="Tables to upload")
     parser.add_argument('--server', default='CLOUD')
     parser.add_argument('--user', default=settings.CLOUD_USERNAME)
@@ -47,7 +48,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     print('args: {}'.format(args))
-
 
     rootlogger = logging.getLogger('root')
     root_fh = logging.FileHandler('{}/logs/copy_staging_log.log'.format(os.environ['PWD']))
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
 
-    for version in range(1,6):
+    for version in range(1,args.version-1):
         print(f"Version {version}")
         args.version=version
         args.db = 'idc_v5' # Currently these tables are only in idc_v5

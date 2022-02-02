@@ -14,8 +14,7 @@
 # limitations under the License.
 #
 
-# Duplicate psql version, collection, patient, study, series and instance metadata tables in BQ. These are
-# essentially a normalization of an auxilliary_metadata table
+# Upload those DB tables used in subsequent BQ table generate]ion to BQ
 
 import os
 import logging
@@ -35,25 +34,25 @@ if __name__ == '__main__':
     args = parser.parse_args()
     parser.add_argument('--bqdataset_name', default=f"idc_v{args.version}", help="BQ dataset of table")
     parser.add_argument('--tables', default= {
-        # 'analysis_id_map': {"func": upload_table, "order_by": "collection_id"},
-        # 'collection_id_map': {"func": upload_table, "order_by": "collection_id"},
-        # 'version': {"func":upload_version, "order_by":"version"},
-        # 'version_collection': {"func": upload_table, "order_by": "version"},
-        # 'collection': {"func":upload_collection, "order_by":"collection_id"},
-        # 'collection_patient': {"func": upload_table, "order_by": "collection_uuid"},
-        # 'patient': {"func":upload_patient, "order_by":"submitter_case_id"},
-        # 'patient_study': {"func": upload_table, "order_by": "patient_uuid"},
-        # 'study': {"func":upload_study, "order_by":"study_instance_uid"},
-        # 'study_series': {"func": upload_table, "order_by": "study_uuid"},
+        'analysis_id_map': {"func": upload_table, "order_by": "collection_id"},
+        'collection_id_map': {"func": upload_table, "order_by": "collection_id"},
+        'version': {"func":upload_version, "order_by":"version"},
+        'version_collection': {"func": upload_table, "order_by": "version"},
+        'collection': {"func":upload_collection, "order_by":"collection_id"},
+        'collection_patient': {"func": upload_table, "order_by": "collection_uuid"},
+        'patient': {"func":upload_patient, "order_by":"submitter_case_id"},
+        'patient_study': {"func": upload_table, "order_by": "patient_uuid"},
+        'study': {"func":upload_study, "order_by":"study_instance_uid"},
+        'study_series': {"func": upload_table, "order_by": "study_uuid"},
         'series': {"func":upload_series, "order_by":"series_instance_uid"},
-        # 'series_instance': {"func": upload_table, "order_by": "series_uuid"},
-        # 'instance': {"func":upload_instance, "order_by":"sop_instance_uid"},
-        # 'cr_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
-        # 'defaced_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
-        # 'excluded_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
-        # 'open_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
-        # 'redacted_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
-        # 'program': {"func": upload_table, "order_by": "tcia_wiki_collection_id"},
+        'series_instance': {"func": upload_table, "order_by": "series_uuid"},
+        'instance': {"func":upload_instance, "order_by":"sop_instance_uid"},
+        'cr_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
+        'defaced_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
+        'excluded_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
+        'open_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
+        'redacted_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
+        'program': {"func": upload_table, "order_by": "tcia_wiki_collection_id"},
     }, help="Tables to upload")
     parser.add_argument('--server', default='CLOUD')
     parser.add_argument('--user', default=settings.CLOUD_USERNAME)

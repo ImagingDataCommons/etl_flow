@@ -34,12 +34,12 @@ if __name__ == '__main__':
     parser.add_argument('--dataset_description', default = f'IDC V{args.version} BQ tables and views')
     parser.add_argument('--bqtables', \
         default=[
-            # 'analysis_results_metadata', \
+            'analysis_results_metadata', \
             'dicom_metadata', \
-            # 'nlst_canc', 'nlst_ctab', 'nlst_ctabc', 'nlst_prsn', 'nlst_screen', \
-            # 'original_collections_metadata', \
-            # 'tcga_biospecimen_rel9', 'tcga_clinical_rel9', \
-            # 'version_metadata'
+            'nlst_canc', 'nlst_ctab', 'nlst_ctabc', 'nlst_prsn', 'nlst_screen', \
+            'original_collections_metadata', \
+            'tcga_biospecimen_rel9', 'tcga_clinical_rel9', \
+            'version_metadata'
         ], help='BQ tables to be copied')
 
     args = parser.parse_args()
