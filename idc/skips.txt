@@ -1,3 +1,0 @@
-CMMD
-Duke-Breast-Cancer-MRI
-NSCLC-Radiomics-Interobserver1

@@ -35,13 +35,14 @@ class Source:
 
 
 class TCIA(Source):
-    def __init__(self, pid, sess, access, lock):
+    def __init__(self, pid, sess, access, skipped_collections, lock):
         super().__init__(instance_source['tcia'].value)
         self.source = instance_source.tcia
         # self.access_token, self.refresh_token = get_access_token()
         self.pid = pid
         self.sess = sess
         self.access = access
+        self.skipped_collections = skipped_collections
         self.lock = lock
 
     def get_hash(self, request_data, access_token=None, refresh_token=None):
@@ -78,7 +79,7 @@ class TCIA(Source):
 
 
     def src_version_hash(self):
-        collections = self.sess.execute(select(WSI_metadata.collection_id).distinct())
+        collections = self.sess.execute(select(WSI_Collection.collection_id).distinct())
         hashes = []
         for collection in collections:
             hashes.append(self.src_collection_hash(collection['collection_id']))
@@ -91,6 +92,11 @@ class TCIA(Source):
 
     def collections(self):
         collections = get_collection_values_and_counts(self.nbia_server)
+        for collection in self.skipped_collections:
+            try:
+                collections.remove(collection)
+            except:
+                continue
         return collections
 
 
@@ -141,7 +147,7 @@ class TCIA(Source):
         return studies
 
 
-    def src_study_hash(self, study_instance_uid):
+    def src_study_hash(self, collection_id, study_instance_uid):
         try:
             result = self.get_hash({'StudyInstanceUID': study_instance_uid})
         except Exception as exc:
@@ -176,8 +182,8 @@ class TCIA(Source):
 
     ###-------------------Instance-----------------###
 
-    def instances(self, series):
-        instances = [instance['SOPInstanceUID'] for instance in get_TCIA_instance_uids_per_series(series.series_instance_uid, self.nbia_server)]
+    def instances(self, collection, series):
+        instances = [instance['SOPInstanceUID'] for instance in get_TCIA_instance_uids_per_series(collection.collection_id, series.series_instance_uid, self.nbia_server)]
         return instances
 
 
@@ -219,10 +225,11 @@ class TCIA(Source):
 
 
 class Pathology(Source):
-    def __init__(self, sess):
+    def __init__(self, sess, skipped_collections):
         super().__init__(instance_source['path'].value)
         self.source = instance_source.path
         self.sess = sess
+        self.skipped_collections = skipped_collections
 
     ###-------------------Versions-----------------###
 
@@ -236,6 +243,11 @@ class Pathology(Source):
     def collections(self):
         query = select(WSI_Collection.collection_id)
         collections = [row.collection_id for row in self.sess.execute(query).fetchall()]
+        for collection in self.skipped_collections:
+            try:
+                collections.remove(collection)
+            except:
+                continue
         return collections
 
 
@@ -265,7 +277,7 @@ class Pathology(Source):
         return studies
 
 
-    def src_study_hash(self, study_instance_uid):
+    def src_study_hash(self, collection_id, study_instance_uid):
         query = select(WSI_Study.hash).where(WSI_Study.study_instance_uid == study_instance_uid)
         hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
         return hash
@@ -285,7 +297,7 @@ class Pathology(Source):
 
     ###-------------------Instances-----------------###
 
-    def instances(self, series):
+    def instances(self, collection, series):
         query = select(WSI_Instance.sop_instance_uid).where(WSI_Instance.series_instance_uid == series.series_instance_uid)
         instances = [row.sop_instance_uid for row in self.sess.execute(query).fetchall()]
         return instances

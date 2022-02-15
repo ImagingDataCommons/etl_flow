@@ -33,7 +33,7 @@ def get_data_collection_doi(collection, server=""):
 
     dois = []
     count = 0
-    # This will get us doi's for a one or all patients in a collection
+    # This will get us doi's for one or all patients in a collection
     if server:
         internal_ids = get_internal_series_ids(collection, patient="", third_party="no", size=1, server=server)
     else:

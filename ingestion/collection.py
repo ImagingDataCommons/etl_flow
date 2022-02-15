@@ -22,7 +22,6 @@ from idc.models import Version, Collection, Patient
 from ingestion.utils import accum_sources, empty_bucket, create_prestaging_bucket
 from ingestion.patient import clone_patient, build_patient, retire_patient
 from ingestion.all_sources import All
-from ingestion.mtm.sources_mtm import All_mtm
 from utilities.get_collection_dois import get_data_collection_doi, get_analysis_collection_dois
 from utilities.tcia_helpers import get_access_token
 
@@ -63,19 +62,9 @@ def worker(input, output, args, data_collection_doi, analysis_collection_dois, a
     sql_engine = create_engine(args.sql_uri)
     with Session(sql_engine) as sess:
 
-        if args.build_mtm_db:
-            # When build the many-to-many DB, we mine some existing one to many DB
-            sql_uri_mtm = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/idc_v{args.version}'
-            sql_engine_mtm = create_engine(sql_uri_mtm)
-            conn_mtm = sql_engine_mtm.connect()
-            register_composites(conn_mtm)
-            # Use this to see the SQL being sent to PSQL
-            all_sources = All_mtm(sess, Session(sql_engine_mtm), args.version)
-        else:
-            all_sources = All(args.id, sess, args.version, access, lock)
-        # all_sources.lock = lock
-        # rootlogger.info('p%s: Lock: _rand %s, _sem_lock: %s', args.id, list(all_sources.sources.values())[0].lock._rand, list(all_sources.sources.values())[0].lock._semlock)
-        # rootlogger.info('p%s: access token: %s, refresh token: %s', args.id, list(all_sources.sources.values())[0].access_token, list(all_sources.sources.values())[0].refresh_token)
+        # all_sources = All(args.id, sess, args.version, access, lock)
+        all_sources = All(args.id, sess, args.version, args.access,
+                          args.skipped_tcia_collections, args.skipped_path_collections, Lock())
 
         for more_args in iter(input.get, 'STOP'):
             for attempt in range(PATIENT_TRIES):
@@ -99,19 +88,20 @@ def worker(input, output, args, data_collection_doi, analysis_collection_dois, a
 
 
 def expand_collection(sess, args, all_sources, collection):
-    if not args.build_mtm_db:
-        # Since we are starting, delete everything from the prestaging bucket.
-        rootlogger.info("Emptying prestaging bucket")
-        begin = time.time()
-        create_prestaging_bucket(args)
-        empty_bucket(args.prestaging_bucket)
-        # Since we are starting, delete everything from the prestaging bucket.
-        duration = str(timedelta(seconds=(time.time() - begin)))
-        rootlogger.info("Emptying prestaging bucket completed in %s", duration)
-
     # Get the patients that the sources know about
     # Returned data includes a sources vector for each patient
     patients = all_sources.patients(collection)
+
+    # Since we are starting, delete everything from the prestaging bucket.
+    if collection.revised.tcia:
+        rootlogger.info("Emptying tcia prestaging buckets")
+        create_prestaging_bucket(args, args.prestaging_tcia_bucket)
+        empty_bucket(args.prestaging_tcia_bucket)
+    if collection.revised.path:
+        rootlogger.info("Emptying path prestaging buckets")
+        create_prestaging_bucket(args, args.prestaging_path_bucket)
+        empty_bucket(args.prestaging_path_bucket)
+
 
     # Check for duplicates
     if len(patients) != len(set(patients)):
@@ -136,19 +126,11 @@ def expand_collection(sess, args, all_sources, collection):
         new_patient = Patient()
 
         new_patient.submitter_case_id = patient
-        if args.build_mtm_db:
-            new_patient.idc_case_id = patients[patient]['idc_case_id']
-            new_patient.min_timestamp = patients[patient]['min_timestamp']
-            new_patient.max_timestamp = patients[patient]['max_timestamp']
-            new_patient.sources = patients[patient]['sources']
-            new_patient.hashes = patients[patient]['hashes']
-            new_patient.revised = False
-        else:
-            new_patient.idc_case_id = str(uuid4())
-            new_patient.min_timestamp = datetime.utcnow()
-            new_patient.revised = patients[patient]
-            new_patient.sources = (False, False)
-            new_patient.hashes = None
+        new_patient.idc_case_id = str(uuid4())
+        new_patient.min_timestamp = datetime.utcnow()
+        new_patient.revised = patients[patient]
+        new_patient.sources = (False, False)
+        new_patient.hashes = None
         new_patient.uuid = str(uuid4())
         new_patient.max_timestamp = new_patient.min_timestamp
         new_patient.init_idc_version=args.version
@@ -163,8 +145,14 @@ def expand_collection(sess, args, all_sources, collection):
 
     for patient in existing_objects:
         idc_hashes = patient.hashes
-        src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id)
-        revised = [x != y for x, y in zip(idc_hashes[:-1], src_hashes)]
+        if collection.collection_id in args.skipped_collections:
+            skips = args.skipped_collections[collection.collection_id]
+        else:
+            skips = (False, False)
+            # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+        src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id, skips)
+        revised = [(x != y) and  not z for x, y, z in \
+                zip(idc_hashes[:-1], src_hashes, skips)]
         if any(revised):
             # rootlogger.debug('p%s **Revising patient %s', args.id, patient.submitter_case_id)
             # Mark when we started work on this patient
@@ -173,17 +161,10 @@ def expand_collection(sess, args, all_sources, collection):
             rev_patient.done = False
             rev_patient.is_new = False
             rev_patient.expanded = False
-            if args.build_mtm_db:
-                rev_patient.min_timestamp = patients[patient.submitter_case_id]['min_timestamp']
-                rev_patient.max_timestamp = patients[patient.submitter_case_id]['max_timestamp']
-                rev_patient.hashes = patients[patient.submitter_case_id]['hashes']
-                rev_patient.rev_idc_version = patients[patient.submitter_case_id]['rev_idc_version']
-                rev_patient.revised = True
-            else:
-                rev_patient.revised = revised
-                rev_patient.hashes = None
-                rev_patient.sources = [False, False]
-                rev_patient.rev_idc_version = args.version
+            rev_patient.revised = revised
+            rev_patient.hashes = None
+            rev_patient.sources = [False, False]
+            rev_patient.rev_idc_version = args.version
             collection.patients.append(rev_patient)
             rootlogger.debug('  p%s: Patient %s is revised',  args.id, rev_patient.submitter_case_id)
 
@@ -194,15 +175,14 @@ def expand_collection(sess, args, all_sources, collection):
 
         else:
             # The patient is unchanged. Just add it to the collection
-            if not args.build_mtm_db:
-                # Stamp this series showing when it was checked
-                patient.min_timestamp = datetime.utcnow()
-                patient.max_timestamp = datetime.utcnow()
-                # Make sure the collection is marked as done and expanded
-                # Shouldn't be needed if the previous version is done
+            # Stamp this series showing when it was checked
+            patient.min_timestamp = datetime.utcnow()
+            patient.max_timestamp = datetime.utcnow()
+            # Make sure the collection is marked as done and expanded
+            # Shouldn't be needed if the previous version is done
 
-                patient.done = True
-                patient.expanded = True
+            patient.done = True
+            patient.expanded = True
             rootlogger.debug('  p%s: Patient %s unchanged',  args.id, patient.submitter_case_id)
 
     for patient in retired_objects:
@@ -221,42 +201,53 @@ def expand_collection(sess, args, all_sources, collection):
 def build_collection(sess, args, all_sources, collection_index, version, collection):
     begin = time.time()
     rootlogger.debug("p%s: Expand Collection %s, %s", args.id, collection.collection_id, collection_index)
-    args.prestaging_bucket = f"{args.prestaging_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
+    args.prestaging_tcia_bucket = f"{args.prestaging_tcia_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
+    args.prestaging_path_bucket = f"{args.prestaging_path_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
     if not collection.expanded:
         expand_collection(sess, args, all_sources, collection)
     rootlogger.info("p%s: Expanded Collection %s, %s, %s patients", args.id, collection.collection_id, collection_index, len(collection.patients))
-    if not args.build_mtm_db:
-        # Get the lists of data and analyis series for this collection
-        data_collection_doi = get_data_collection_doi(collection.collection_id, server=args.server)
-        if data_collection_doi=="":
-            if collection.collection_id=='NLST':
-                data_collection_doi = '10.7937/TCIA.hmq8-j677'
-            elif collection.collection_id == 'Pancreatic-CT-CBCT-SEG':
-                data_collection_doi = '10.7937/TCIA.ESHQ-4D90'
-            elif collection.collection_id == 'CPTAC-LSCC':
-                data_collection_doi = '10.7937/K9/TCIA.2018.6EMUB5L2'
-            elif collection.collection_id == 'CPTAC-AML':
-                data_collection_doi = '10.7937/tcia.2019.b6foe619'
-            elif collection.collection_id == 'CPTAC-BRCA':
-                data_collection_doi = '10.7937/TCIA.CAEM-YS80'
-            elif collection.collection_id == 'CPTAC-COAD':
-                data_collection_doi = '10.7937/TCIA.YZWQ-ZZ63'
-            elif collection.collection_id == 'CPTAC-OV':
-                data_collection_doi = '10.7937/TCIA.ZS4A-JD58'
-            else:
-                errlogger.error('No DOI for collection %s', collection.collection_id)
-                pass
-                # return
-        pre_analysis_collection_dois = get_analysis_collection_dois(collection.collection_id, server=args.server)
-        analysis_collection_dois = {x['SeriesInstanceUID']: x['SourceDOI'] for x in pre_analysis_collection_dois}
-    else:
-        data_collection_doi = ""
-        analysis_collection_dois = {}
+    # Get the lists of data and analyis series for this collection
+    data_collection_doi = get_data_collection_doi(collection.collection_id, server=args.server)
+    if data_collection_doi=="":
+        if collection.collection_id=='NLST':
+            data_collection_doi = '10.7937/TCIA.hmq8-j677'
+        elif collection.collection_id == 'Pancreatic-CT-CBCT-SEG':
+            data_collection_doi = '10.7937/TCIA.ESHQ-4D90'
+        elif collection.collection_id == 'CPTAC-LSCC':
+            data_collection_doi = '10.7937/K9/TCIA.2018.6EMUB5L2'
+        elif collection.collection_id == 'CPTAC-AML':
+            data_collection_doi = '10.7937/tcia.2019.b6foe619'
+        elif collection.collection_id == 'CPTAC-BRCA':
+            data_collection_doi = '10.7937/TCIA.CAEM-YS80'
+        elif collection.collection_id == 'CPTAC-COAD':
+            data_collection_doi = '10.7937/TCIA.YZWQ-ZZ63'
+        elif collection.collection_id == 'CPTAC-OV':
+            data_collection_doi = '10.7937/TCIA.ZS4A-JD58'
+        elif collection.collection_id in [
+            'TCGA-ACC',
+            'TCGA-CHOL',
+            'TCGA-DLBC',
+            'TCGA-MESO',
+            'TCGA-PAAD',
+            'TCGA-PCPG',
+            'TCGA-SKCM',
+            'TCGA-TGCT',
+            'TCGA-THYM',
+            'TCGA-UCS',
+            'TCGA-UVM']:
+            data_collection_doi = f'{collection.collection_id}-DOI'
+        else:
+            errlogger.error('No DOI for collection %s', collection.collection_id)
+            pass
+            # return
+    pre_analysis_collection_dois = get_analysis_collection_dois(collection.collection_id, server=args.server)
+    analysis_collection_dois = {x['SeriesInstanceUID']: x['SourceDOI'] for x in pre_analysis_collection_dois}
 
     if args.num_processes==0:
         # for series in sorted_seriess:
-        for patient in collection.patients:
-            patient_index = f'{collection.patients.index(patient) + 1} of {len(collection.patients)}'
+        patients = sorted(collection.patients, key=lambda patient: patient.done, reverse=True)
+        for patient in patients:
+            patient_index = f'{patients.index(patient) + 1} of {len(patients)}'
             if not patient.done:
                 build_patient(sess, args, all_sources, patient_index, data_collection_doi, analysis_collection_dois, version, collection, patient)
             else:
@@ -326,33 +317,33 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
 
     if all([patient.done for patient in collection.patients]):
         collection.max_timestamp = max([patient.max_timestamp for patient in collection.patients if patient.max_timestamp != None])
-
-        if args.build_mtm_db:
-            collection.done = True
-            sess.commit()
+        try:
+            # Get a list of what DB thinks are the collection's hashes
+            idc_hashes = all_sources.idc_collection_hashes(collection)
+            # # Get a list of what the sources think are the collection's hashes
+            # src_hashes = all_sources.src_collection_hashes(collection.collection_id)
+            # # They must be the same
+            # if src_hashes != idc_hashes[:-1]:
+            if collection.collection_id in args.skipped_collections:
+                skips = args.skipped_collections[collection.collection_id]
+            else:
+                skips = (False, False)
+                # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+            src_hashes = all_sources.src_collection_hashes(collection.collection_id, skips)
+            revised = [(x != y) and not z for x, y, z in \
+                       zip(idc_hashes[:-1], src_hashes, skips)]
+            if any(revised):
+                errlogger.error('Hash match failed for collection %s', collection.collection_id)
+            else:
+                collection.hashes = idc_hashes
+                collection.sources = accum_sources(collection, collection.patients)
+                collection.done = True
+                sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
             rootlogger.info("Completed Collection %s, %s, in %s", collection.collection_id, collection_index,
-                        duration)
-        else:
-
-            try:
-                # Get a list of what DB thinks are the collection's hashes
-                idc_hashes = all_sources.idc_collection_hashes(collection)
-                # Get a list of what the sources think are the collection's hashes
-                src_hashes = all_sources.src_collection_hashes(collection.collection_id)
-                # They must be the same
-                if src_hashes != idc_hashes[:-1]:
-                    errlogger.error('Hash match failed for collection %s', collection.collection_id)
-                else:
-                    collection.hashes = idc_hashes
-                    collection.sources = accum_sources(collection, collection.patients)
-                    collection.done = True
-                    sess.commit()
-                duration = str(timedelta(seconds=(time.time() - begin)))
-                rootlogger.info("Completed Collection %s, %s, in %s", collection.collection_id, collection_index,
-                                duration)
-            except Exception as exc:
-                errlogger.error('Could not validate collection hash for %s: %s', collection.collection_id, exc)
+                            duration)
+        except Exception as exc:
+            errlogger.error('Could not validate collection hash for %s: %s', collection.collection_id, exc)
 
     else:
         duration = str(timedelta(seconds=(time.time() - begin)))

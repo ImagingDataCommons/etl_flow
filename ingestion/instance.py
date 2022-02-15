@@ -104,7 +104,9 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         except InvalidDicomError:
             errlogger.error("       p%s: Invalid DICOM file for %s/%s/%s/%s", args.id,
                 collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
-            if args.server == 'NLST':
+            # if args.server == 'NLST':
+            if collection.collection_id == 'NLST':
+                breakpoint()
                 # For NLST only, just delete the invalid file
                 os.remove("{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm))
                 continue
@@ -131,7 +133,9 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         if os.path.exists(blob_name):
             errlogger.error("       p%s: Duplicate DICOM files for %s/%s/%s/%s/%s", args.id,
                 collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid, SOPInstanceUID)
-            if args.server == 'NLST':
+            # if args.server == 'NLST':
+            if collection.collection_id == 'NLST':
+                breakpoint()
                 # For NLST only, just delete the duplicate
                 os.remove("{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm))
                 continue
@@ -148,7 +152,9 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         instance.timestamp = datetime.utcnow()
         metadata_times.append(time.time_ns())
 
-    if args.server == 'NLST':
+    # if args.server == 'NLST':
+    if collection.collection_id == 'NLST':
+        breakpoint()
         # For NLST only, delete any instances for which there is not a corresponding file
         for instance in series.instances:
             if not os.path.exists("{}/{}/{}.dcm".format(args.dicom, series.series_instance_uid, instance.uuid)):
@@ -211,7 +217,7 @@ def build_instances_path(sess, args, collection, patient, study, series):
     for instance in series.instances:
         if not instance.done:
             instance.hash = src_instance_metadata[instance.sop_instance_uid]['hash']
-            instance.size, hash = copy_gcs_to_gcs(args, instance, src_instance_metadata[instance.sop_instance_uid]['gcs_url'])
+            instance.size, hash = copy_gcs_to_gcs(args, args.prestaging_path_bucket, instance, src_instance_metadata[instance.sop_instance_uid]['gcs_url'])
             if hash != instance.hash:
                 errlogger.error("       p%s: Copy files to GCS failed for %s/%s/%s/%s/%s", args.id,
                                 collection.collection_id, patient.submitter_case_id, study.study_instance_uid,

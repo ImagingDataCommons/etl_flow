@@ -44,9 +44,10 @@ def retire_series(args, series):
     series.final_idc_version = args.previous_version
 
 
-def expand_series(sess, args, all_sources, series):
+def expand_series(sess, args, all_sources, version, collection, patient, study, series):
     # Get the instances that the sources know about
-    instances = all_sources.instances(series)
+    # All sources should be from a single source
+    instances = all_sources.instances(collection, series)
     if len(instances) != len(set(instances)):
         errlogger.error("\tp%s: Duplicate instance in expansion of series %s", args.id,
                         series.series_instance_uid)
@@ -69,32 +70,18 @@ def expand_series(sess, args, all_sources, series):
 
     for instance in sorted(new_objects):
         new_instance = Instance()
-        if args.build_mtm_db:
-            new_instance.sop_instance_uid=instance
-            new_instance.uuid=instances[instance]['uuid']
-            new_instance.hash=instances[instance]['hash']
-            new_instance.size=instances[instance]['size']
-            new_instance.revised=False
-            new_instance.done=True
-            new_instance.is_new=True
-            new_instance.expanded=False
-            new_instance.init_idc_version=args.version
-            new_instance.rev_idc_version=args.version
-            new_instance.source=instances[instance]['source']
-            new_instance.timestamp = instances[instance]['timestamp']
-        else:
-            new_instance.sop_instance_uid=instance
-            new_instance.uuid=str(uuid4())
-            new_instance.size=0
-            new_instance.revised=True
-            new_instance.done=False
-            new_instance.is_new=True
-            new_instance.expanded=False
-            new_instance.init_idc_version=args.version
-            new_instance.rev_idc_version=args.version
-            new_instance.source = instances[instance]
-            new_instance.hash = None
-            new_instance.timestamp = datetime.utcnow()
+        new_instance.sop_instance_uid=instance
+        new_instance.uuid=str(uuid4())
+        new_instance.size=0
+        new_instance.revised=True
+        new_instance.done=False
+        new_instance.is_new=True
+        new_instance.expanded=False
+        new_instance.init_idc_version=args.version
+        new_instance.rev_idc_version=args.version
+        new_instance.source = instances[instance]
+        new_instance.hash = None
+        new_instance.timestamp = datetime.utcnow()
         new_instance.final_idc_version = 0
         series.instances.append(new_instance)
         rootlogger.debug('        p%s: Instance %s is new', args.id, new_instance.sop_instance_uid)
@@ -106,25 +93,18 @@ def expand_series(sess, args, all_sources, series):
         # if all_sources.instance_was_revised(instance):
         if revised:
             # rootlogger.debug('**Instance %s needs revision', instance.sop_instance_uid)
-            rev_instance = clone_instance(instance, instances[instance.sop_instance_uid]['uuid'] if args.build_mtm_db else str(uuid4()))
+            rev_instance = clone_instance(instance, str(uuid4()))
             assert args.version == instances[instance.sop_instance_uid]['rev_idc_version']
             rev_instance.revised = True
             rev_instance.done = True
             rev_instance.is_new = False
             rev_instance.expanded = True
-            if args.build_mtm_db:
-                rev_instance.timestamp = instances[instance.sop_instance_uid]['timestamp']
-                rev_instance.source = instances[instance.sop_instance_uid]['source']
-                rev_instance.hash =instances[instance.sop_instance_uid]['hash']
-                rev_instance.size =instances[instance.sop_instance_uid]['size']
-                rev_instance.rev_idc_version = instances[instance.sop_instance_uid]['rev_idc_version']
-            else:
-                rev_instance.timestamp = datetime.utcnow()
-                rev_instance.source = instances[instance]
-                new_instance.hash = None
+            rev_instance.timestamp = datetime.utcnow()
+            rev_instance.source = instances[instance]
+            new_instance.hash = None
 
-                rev_instance.size = 0
-                rev_instance.rev_idc_version = args.version
+            rev_instance.size = 0
+            rev_instance.rev_idc_version = args.version
             series.instances.append(rev_instance)
             rootlogger.debug('        p%s: Instance %s is revised', args.id, rev_instance.sop_instance_uid)
 
@@ -135,12 +115,11 @@ def expand_series(sess, args, all_sources, series):
             series.instances.remove(instance)
 
         else:
-            if not args.build_mtm_db:
-                instance.timestamp = datetime.utcnow()
-                # Make sure the collection is marked as done and expanded
-                # Shouldn't be needed if the previous version is done
-                instance.done = True
-                instance.expanded = True
+            instance.timestamp = datetime.utcnow()
+            # Make sure the collection is marked as done and expanded
+            # Shouldn't be needed if the previous version is done
+            instance.done = True
+            instance.expanded = True
             rootlogger.debug('        p%s: Instance %s unchanged', args.id, instance.sop_instance_uid)
             # series.instances.append(instance)
 
@@ -150,8 +129,6 @@ def expand_series(sess, args, all_sources, series):
         series.instances.remove(instance)
 
     series.expanded = True
-    if args.build_mtm_db:
-        series.done = True
     sess.commit()
     return 0
     # rootlogger.debug("      p%s: Expanded series %s", args.id, series.series_instance_uid)
@@ -161,7 +138,7 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
     begin = time.time()
     rootlogger.debug("      p%s: Expand Series %s; %s", args.id, series.series_instance_uid, series_index)
     if not series.expanded:
-        failed = expand_series(sess, args, all_sources, series)
+        failed = expand_series(sess, args, all_sources, version, collection, patient, study, series)
         if failed:
             return
     rootlogger.info("      p%s: Expanded Series %s; %s; %s instances, expand: %s", args.id, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
@@ -177,26 +154,30 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
     if all(instance.done for instance in series.instances):
         # series.min_timestamp = min(instance.timestamp for instance in series.instances)
         series.max_timestamp = max(instance.timestamp for instance in series.instances)
-        if args.build_mtm_db:
+        # Get a list of what DB thinks are the series's hashes
+        idc_hashes = all_sources.idc_series_hashes(series)
+        # # Get a list of what the sources think are the series's hashes
+        # src_hashes = all_sources.src_series_hashes(series.series_instance_uid)
+        # # They must be the same
+        # if  src_hashes != idc_hashes[:-1]:
+
+        if collection.collection_id in args.skipped_collections:
+            skips = args.skipped_collections[collection.collection_id]
+        else:
+            skips = (False, False)
+            # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+        src_hashes = all_sources.src_series_hashes(collection.collection_id, series.series_instance_uid, skips)
+        revised = [(x != y) and not z for x, y, z in \
+                   zip(idc_hashes[:-1], src_hashes, skips)]
+        if any(revised):
+            # errlogger.error('Hash match failed for series %s', series.series_instance_uid)
+            raise Exception('Hash match failed for series %s', series.series_instance_uid)
+        else:
+            series.hashes = idc_hashes
+            series.series_instances = len(series.instances)
+
             series.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
             rootlogger.info("      p%s: Completed Series %s, %s, in %s", args.id, series.series_instance_uid, series_index, duration)
-        else:
-            # Get a list of what DB thinks are the series's hashes
-            idc_hashes = all_sources.idc_series_hashes(series)
-            # Get a list of what the sources think are the series's hashes
-            src_hashes = all_sources.src_series_hashes(series.series_instance_uid)
-            # They must be the same
-            if  src_hashes != idc_hashes[:-1]:
-                # errlogger.error('Hash match failed for series %s', series.series_instance_uid)
-                raise Exception('Hash match failed for series %s', series.series_instance_uid)
-            else:
-                series.hashes = idc_hashes
-                series.series_instances = len(series.instances)
-
-                series.done = True
-                sess.commit()
-                duration = str(timedelta(seconds=(time.time() - begin)))
-                rootlogger.info("      p%s: Completed Series %s, %s, in %s", args.id, series.series_instance_uid, series_index, duration)
 

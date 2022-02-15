@@ -38,7 +38,7 @@ def upload_version(client, args, table, order_by):
       STRUCT(tcia_revised AS tcia,
         path_revised AS path) AS revised
     FROM
-      EXTERNAL_QUERY ( 'idc-dev-etl.us-central1.etl_federated_query_idc_v{args.version}',
+      EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT version, previous_version, min_timestamp, max_timestamp, done, 
             is_new, expanded, (hashes).tcia, (hashes).path, (hashes).all_sources, 
             (sources).tcia AS tcia_src, (sources).path AS path_src, (revised).tcia AS tcia_revised, 
@@ -72,7 +72,7 @@ def upload_collection(client, args, table, order_by):
       STRUCT(tcia_rev AS tcia,
         path_rev AS path) AS revised
     FROM
-      EXTERNAL_QUERY ( 'idc-dev-etl.us-central1.etl_federated_query_idc_v{args.version}',
+      EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT collection_id, idc_collection_id, uuid, min_timestamp, max_timestamp, 
             init_idc_version, rev_idc_version, final_idc_version, done, is_new, expanded, 
             (hashes).tcia AS tcia_hash, (hashes).path AS path_hash, (hashes).all_sources AS all_hash, 
@@ -107,7 +107,7 @@ def upload_patient(client, args, table, order_by):
       STRUCT(tcia_rev AS tcia,
         path_rev AS path) AS revised
     FROM
-      EXTERNAL_QUERY ( 'idc-dev-etl.us-central1.etl_federated_query_idc_v{args.version}',
+      EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT submitter_case_id, idc_case_id, uuid, min_timestamp, max_timestamp, 
             init_idc_version, rev_idc_version, final_idc_version, done, is_new, expanded, 
             (hashes).tcia AS tcia_hash, (hashes).path AS path_hash, (hashes).all_sources AS all_hash, 
@@ -141,7 +141,7 @@ def upload_study(client, args, table, order_by):
       STRUCT(tcia_rev AS tcia,
         path_rev AS path) AS revised
     FROM
-      EXTERNAL_QUERY ( 'idc-dev-etl.us-central1.etl_federated_query_idc_v{args.version}',
+      EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT study_instance_uid, uuid, study_instances, min_timestamp, 
             max_timestamp, init_idc_version, rev_idc_version, final_idc_version, 
             done, is_new, expanded, (hashes).tcia AS tcia_hash, (hashes).path AS path_hash, 
@@ -177,7 +177,7 @@ def upload_series(client, args, table, order_by):
       STRUCT(tcia_rev AS tcia,
         path_rev AS path) AS revised
     FROM
-      EXTERNAL_QUERY ( 'idc-dev-etl.us-central1.etl_federated_query_idc_v{args.version}',
+      EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT series_instance_uid, uuid, series_instances, source_doi, 
             min_timestamp, max_timestamp, init_idc_version, rev_idc_version, 
             final_idc_version, done, is_new, expanded, (hashes).tcia AS tcia_hash, 
@@ -208,7 +208,7 @@ def upload_instance(client, args, table, order_by):
       timestamp,
       excluded
     FROM
-      EXTERNAL_QUERY ( 'idc-dev-etl.us-central1.etl_federated_query_idc_v7',
+      EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT sop_instance_uid, uuid, hash, size, revised, done, is_new, 
             expanded, init_idc_version, rev_idc_version, final_idc_version, 
             cast(source AS varchar) AS source, timestamp, excluded
@@ -224,7 +224,7 @@ def upload_table(client, args, table, order_by):
     SELECT
         *
     FROM
-      EXTERNAL_QUERY ( 'idc-dev-etl.us-central1.etl_federated_query_idc_v{args.version}',
+      EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT * from {table}''')
     ORDER BY {order_by}
     """

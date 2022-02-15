@@ -176,6 +176,5 @@ if __name__ == "__main__":
     # s = get_collection_id('https://wiki.cancerimagingarchive.net/x/N4NyAQ')
     # url, longName, shortName = get_license_from_wiki('10.7937/tcia.2019.of2w8lxr')
     # table = scrape_tcia_analysis_collections_page()
-    table = scrape_tcia_analysis_collections_page()
     table = scrape_tcia_data_collections_page()
     pass

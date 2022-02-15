@@ -30,14 +30,14 @@ errlogger = logging.getLogger('root.err')
 
 class All:
 
-    def __init__(self, pid, sess, version, access, lock):
+    def __init__(self, pid, sess, version, access, skipped_tcia_collections, skipped_path_collections, lock):
         self.sess = sess
         self.idc_version = version
         self.client = bigquery.Client()
         self.sources = {}
         try:
-            self.sources[instance_source.tcia] = TCIA(pid, sess, access, lock)
-            self.sources[instance_source.path] = Pathology(sess)
+            self.sources[instance_source.tcia] = TCIA(pid, sess, access, skipped_tcia_collections, lock)
+            self.sources[instance_source.path] = Pathology(sess, skipped_path_collections)
         except Exception as exc:
             print(exc)
 
@@ -72,18 +72,18 @@ class All:
     def collections(self):
         collections = {}
         for source in instance_source:
-            # Ideally, we would only collect collections from a source
-            # we know that the version is revised in that source.
-            # Because we cannot know this, at least for TCIA, we
-            # have to assume that the version is revised in all sources.
-            objects = self.sources[source].collections()
-            for object in objects:
-                if not object in collections:
-                    collections[object] = [False, False]
-                collections[object][source.value] = True
+            if source.name != 'all_sources':# Ideally, we would only collect collections from a source
+                # we know that the version is revised in that source.
+                # Because we cannot know this, at least for TCIA, we
+                # have to assume that the version is revised in all sources.
+                objects = self.sources[source].collections()
+                for object in objects:
+                    if not object in collections:
+                        collections[object] = [False, False]
+                    collections[object][source.value] = True
 
-        # We explicitly add NLST, because it is not returned the above
-        collections['NLST'] = [True, False]
+        # # We explicitly add NLST, because it is not returned the above
+        # collections['NLST'] = [True, False]
 
         # Get a map from collection IDs to idc_collection_ids
         map = {row.collection_id: row.idc_collection_id for row in self.sess.query(Collection_id_map).all()}
@@ -103,7 +103,7 @@ class All:
                 # If we didn't find a similar collection id, assume this is a new collection
                 if not collection in map:
                     print(f'New collection {collection}')
-                    idc_collection_id = uuid4()
+                    idc_collection_id = str(uuid4())
                     row = Collection_id_map(collection_id=collection, idc_collection_id=idc_collection_id)
                     self.sess.add(row)
                     map[collection] = idc_collection_id
@@ -140,10 +140,13 @@ class All:
 
 
     # Compute object's hashes according to sources
-    def src_collection_hashes(self, collection_id):
+    def src_collection_hashes(self, collection_id, skipped_sources):
         collection_hashes = ['','']
         for source in self.sources:
-            collection_hashes[source.value] = self.sources[source].src_collection_hash(collection_id)
+            if skipped_sources[source.value]:
+                collection_hashes[source.value] = ""
+            else:
+                collection_hashes[source.value] = self.sources[source].src_collection_hash(collection_id)
         return collection_hashes
 
     ###-------------------Patients-----------------###
@@ -152,15 +155,16 @@ class All:
     def patients(self, collection):
         patients = {}
         for source in instance_source:
-            # # Only collect patients from a source if the collection is in the source
-            # # and is revised
-            # if collection.revised[source.value]:
-            if True:
-                patient_ids = self.sources[source].patients(collection)
-                for patient_id in patient_ids:
-                    if not patient_id in patients:
-                        patients[patient_id] = [False, False]
-                    patients[patient_id][source.value] = True
+            if source.name != 'all_sources':# Ideally, we would only collect collections from a source
+                # # Only collect patients from a source if the collection is in the source
+                # # and is revised
+                # if collection.revised[source.value]:
+                if True:
+                    patient_ids = self.sources[source].patients(collection)
+                    for patient_id in patient_ids:
+                        if not patient_id in patients:
+                            patients[patient_id] = [False, False]
+                        patients[patient_id][source.value] = True
 
         # Make a copy for subsequent access by other sources functions
         self.patient_metadata = patients
@@ -185,10 +189,13 @@ class All:
         return patient_hashes
 
     # Compute object's hashes according to sources
-    def src_patient_hashes(self, collection_id, submitter_case_id):
+    def src_patient_hashes(self, collection_id, submitter_case_id, skipped_sources):
         patient_hashes = ['','']
         for source in self.sources:
-            patient_hashes[source.value] = self.sources[source].src_patient_hash(collection_id,
+            if skipped_sources[source.value]:
+                patient_hashes[source.value] = ""
+            else:
+                patient_hashes[source.value] = self.sources[source].src_patient_hash(collection_id,
                                                                              submitter_case_id)
         return patient_hashes
 
@@ -198,15 +205,16 @@ class All:
     def studies(self, patient):
         studies = {}
         for source in instance_source:
-            # # Only collect patients from a source if the collection is in the source
-            # # and is revised
-            # if patient.revised[source.value]:
-            if True:
-                study_ids = self.sources[source].studies(patient)
-                for study_id in study_ids:
-                    if not study_id in studies:
-                        studies[study_id] = [False, False]
-                    studies[study_id][source.value] = True
+            if source.name != 'all_sources':# Ideally, we would only collect collections from a source
+                # # Only collect patients from a source if the collection is in the source
+                # # and is revised
+                # if patient.revised[source.value]:
+                if True:
+                    study_ids = self.sources[source].studies(patient)
+                    for study_id in study_ids:
+                        if not study_id in studies:
+                            studies[study_id] = [False, False]
+                        studies[study_id][source.value] = True
 
         # Make a copy for subsequent access by other sources functions
         self.study_metadata = studies
@@ -230,10 +238,13 @@ class All:
         return study_hashes
 
     # Compute object's hashes according to sources
-    def src_study_hashes(self, study_instance_uid):
+    def src_study_hashes(self, collection_id, study_instance_uid, skipped_sources):
         study_hashes = ['','']
         for source in self.sources:
-            study_hashes[source.value] = self.sources[source].src_study_hash(study_instance_uid)
+            if skipped_sources[source.value]:
+                study_hashes[source.value] = ""
+            else:
+                study_hashes[source.value] = self.sources[source].src_study_hash(collection_id, study_instance_uid)
         return study_hashes
 
     ###-------------------Series-----------------###
@@ -242,15 +253,16 @@ class All:
     def series(self, study):
         seriess = {}
         for source in instance_source:
-            # # Only collect series from a source if the collection is in the source
-            # # and is revised
-            # if study.revised[source.value]:
-            if True:
-                series_ids = self.sources[source].series(study)
-                for series_id in series_ids:
-                    if not series_id in seriess:
-                        seriess[series_id] = [False, False]
-                    seriess[series_id][source.value] = True
+            if source.name != 'all_sources':# Ideally, we would only collect collections from a source
+                # # Only collect series from a source if the collection is in the source
+                # # and is revised
+                # if study.revised[source.value]:
+                if True:
+                    series_ids = self.sources[source].series(study)
+                    for series_id in series_ids:
+                        if not series_id in seriess:
+                            seriess[series_id] = [False, False]
+                        seriess[series_id][source.value] = True
 
         # Make a copy for subsequent access by other sources functions
         self.series_metadata = seriess
@@ -274,26 +286,30 @@ class All:
 
 
     # Compute object's hashes according to sources
-    def src_series_hashes(self, series_instance_uid):
+    def src_series_hashes(self, collection_id, series_instance_uid, skipped_sources):
         series_hashes = ['', '']
         for source in self.sources:
-            series_hashes[source.value] = self.sources[source].src_series_hash(series_instance_uid)
+            if skipped_sources[source.value]:
+                series_hashes[source.value] = ""
+            else:
+                series_hashes[source.value] = self.sources[source].src_series_hash(series_instance_uid)
 
         return series_hashes
 
     ###-------------------Instances-----------------###
 
     # Get the instances in some series from all sources
-    def instances(self, series):
+    def instances(self, collection, series):
         instances = {}
         for source in instance_source:
-            instance_ids = self.sources[source].instances(series)
-            for instance_id in instance_ids:
-                instances[instance_id] = source.name
-            # We assume that all instances in a series are from a
-            # a single source. Therefore we only return a scalar
-            if instances:
-                break
+            if source.name != 'all_sources':# Ideally, we would only collect collections from a source
+                instance_ids = self.sources[source].instances(collection, series)
+                for instance_id in instance_ids:
+                    instances[instance_id] = source.name
+                # We assume that all instances in a series are from a
+                # a single source. Therefore we only return a scalar
+                if instances:
+                    break
 
         # Make a copy for subsequent access by other sources functions
         self.instance_metadata = instances

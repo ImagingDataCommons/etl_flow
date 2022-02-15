@@ -30,7 +30,7 @@ from utilities.tcia_scrapers import scrape_tcia_analysis_collections_page
 def get_redacted_collections(client,args):
     query = f"""
     SELECT tcia_api_collection_id, access
-    FROM `{args.src_project}.{args.bqdataset_name}.redacted_collections` 
+    FROM `{args.src_project}.{args.dev_bqdataset_name}.redacted_collections` 
     """
     redacted_collection_access = {c.values()[0].lower().replace(' ','_').replace('-','_'): c.values()[1] for c in client.query(query).result()}
     return redacted_collection_access
@@ -39,41 +39,27 @@ def get_redacted_collections(client,args):
 def get_all_idc_dois(client, args):
     query = f"""
         SELECT DISTINCT c.collection_id AS collection_id, se.source_doi AS source_doi 
-        FROM `{args.src_project}.{args.bqdataset_name}.version` AS v
-        JOIN `{args.src_project}.{args.bqdataset_name}.version_collection` as vc
+        FROM `{args.src_project}.{args.dev_bqdataset_name}.version` AS v
+        JOIN `{args.src_project}.{args.dev_bqdataset_name}.version_collection` as vc
         ON v.version = vc.version
-        JOIN `{args.src_project}.{args.bqdataset_name}.collection` AS c
+        JOIN `{args.src_project}.{args.dev_bqdataset_name}.collection` AS c
         ON vc.collection_uuid = c.uuid
-        JOIN `{args.src_project}.{args.bqdataset_name}.collection_patient` AS cp
+        JOIN `{args.src_project}.{args.dev_bqdataset_name}.collection_patient` AS cp
         ON c.uuid = cp.collection_uuid
-        JOIN `{args.src_project}.{args.bqdataset_name}.patient` AS p
+        JOIN `{args.src_project}.{args.dev_bqdataset_name}.patient` AS p
         ON cp.patient_uuid = p.uuid
-        JOIN `{args.src_project}.{args.bqdataset_name}.patient_study` AS ps
+        JOIN `{args.src_project}.{args.dev_bqdataset_name}.patient_study` AS ps
         ON p.uuid = ps.patient_uuid
-        JOIN `{args.src_project}.{args.bqdataset_name}.study` AS st
+        JOIN `{args.src_project}.{args.dev_bqdataset_name}.study` AS st
         ON ps.study_uuid = st.uuid
-        JOIN `{args.src_project}.{args.bqdataset_name}.study_series` AS ss
+        JOIN `{args.src_project}.{args.dev_bqdataset_name}.study_series` AS ss
         ON st.uuid = ss.study_uuid
-        JOIN `{args.src_project}.{args.bqdataset_name}.series` AS se
+        JOIN `{args.src_project}.{args.dev_bqdataset_name}.series` AS se
         ON ss.series_uuid = se.uuid
-        LEFT JOIN `{args.src_project}.{args.bqdataset_name}.excluded_collections` AS ex
+        LEFT JOIN `{args.src_project}.{args.dev_bqdataset_name}.excluded_collections` AS ex
         ON LOWER (c.collection_id) = LOWER(ex.tcia_api_collection_id)
         WHERE ex.tcia_api_collection_id IS NULL AND v.version = {args.version}
         """
-
-    # query = f"""
-    #     SELECT DISTINCT c.collection_id AS collection_id, se.source_doi AS source_doi
-    #     FROM `{args.src_project}.{args.bqdataset_name}.{args.bq_collection_table}` AS c
-    #     JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_patient_table}` AS p
-    #     ON c.collection_id = p.collection_id
-    #     JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_study_table}` AS st
-    #     ON p.submitter_case_id = st.submitter_case_id
-    #     JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_series_table}` AS se
-    #     ON st.study_instance_uid = se.study_instance_uid
-    #     LEFT JOIN `{args.src_project}.{args.bqdataset_name}.{args.bq_excluded_collections}` AS ex
-    #     ON LOWER (c.collection_id) = LOWER(ex.tcia_api_collection_id)
-    #     WHERE ex.tcia_api_collection_id IS NULL
-    #     """
 
     result = client.query(query).result()
     source_dois = {}
@@ -126,7 +112,7 @@ def build_metadata(args, BQ_client):
 def gen_collections_table(args):
     BQ_client = bigquery.Client(project=args.src_project)
     metadata = build_metadata(args, BQ_client)
-    job = load_BQ_from_json(BQ_client, args.dst_project, args.bqdataset_name, args.bqtable_name, metadata, analysis_results_metadata_schema,
+    job = load_BQ_from_json(BQ_client, args.dst_project, args.pub_bqdataset_name, args.bqtable_name, metadata, analysis_results_metadata_schema,
                             write_disposition='WRITE_TRUNCATE')
     while not job.state == 'DONE':
         print('Status: {}'.format(job.state))
@@ -136,17 +122,13 @@ def gen_collections_table(args):
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
 
-    parser.add_argument('--version', default=7, help='IDC version for which to build the table')
+    parser.add_argument('--version', default=8, help='IDC version for which to build the table')
     args = parser.parse_args()
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
+    parser.add_argument('--dev_bqdataset_name', default=f'idc_v{args.version}_dev', help='BQ dataset of dev tables')
+    parser.add_argument('--pub_bqdataset_name', default=f'idc_v{args.version}_pub', help='BQ dataset of public tables')
     parser.add_argument('--bqtable_name', default='analysis_results_metadata', help='BQ table name')
-    # parser.add_argument('--bq_collection_table', default='collection', help='BQ table from which to get collections in version')
-    # parser.add_argument('--bq_patient_table', default='patient', help='BQ table from which to get patients in version')
-    # parser.add_argument('--bq_study_table', default='study', help='BQ table from which to get study in version')
-    # parser.add_argument('--bq_series_table', default='series', help='BQ table from which to get series in version')
-    # parser.add_argument('--bq_excluded_collections', default='excluded_collections', help='BQ table from which to get collections to exclude')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

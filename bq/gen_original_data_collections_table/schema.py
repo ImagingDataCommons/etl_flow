@@ -28,6 +28,7 @@ data_collections_metadata_schema = [
     bigquery.SchemaField('ImageTypes', 'STRING', mode='NULLABLE', description='Enumeration of image type/modality'),
     bigquery.SchemaField('Subjects', 'INTEGER', mode='NULLABLE', description='Number of subjects in collection'),
     bigquery.SchemaField('DOI','STRING', mode='NULLABLE', description='DOI that can be resolved at doi.org to a wiki page'),
+    bigquery.SchemaField('URL','STRING', mode='NULLABLE', description='URL of collection information page'),
     bigquery.SchemaField('CancerType','STRING', mode='NULLABLE', description='TCIA assigned cancer type'),
     bigquery.SchemaField('SupportingData', 'STRING', mode='NULLABLE', description='Type(s) of addional available data'),
     bigquery.SchemaField('Species', 'STRING', mode='NULLABLE', description=" Species of collection subjects"),

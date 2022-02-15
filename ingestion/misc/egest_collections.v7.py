@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Remove versions of one or more collection
+# Remove vs of one or more collection
 
 import os
 import sys
@@ -52,7 +52,6 @@ if __name__ == '__main__':
     # parser.add_argument('--source', default=TCIA, help="Source (type of data) from which to ingest: 'Pathology' or 'TCIA'")
     parser.add_argument('--server', default="", help="NBIA server to access. Set to NLST for NLST ingestion")
     parser.add_argument('--dicom', default='/mnt/disks/idc-etl/dicom', help='Directory in which to expand downloaded zip files')
-    parser.add_argument('--build_mtm_db', default=False, help='True if we are building many-to-many DB')
     args = parser.parse_args()
     args.id = 0 # Default process ID
 

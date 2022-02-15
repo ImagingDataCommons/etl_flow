@@ -45,7 +45,7 @@ def retire_study(args, study ):
     study.final_idc_version = args.previous_version
 
 
-def expand_study(sess, args, all_sources, study, data_collection_doi, analysis_collection_dois):
+def expand_study(sess, args, all_sources, version, collection, patient, study, data_collection_doi, analysis_collection_dois):
     # Get the series that the sources know about
     seriess = all_sources.series(study)
 
@@ -71,25 +71,15 @@ def expand_study(sess, args, all_sources, study, data_collection_doi, analysis_c
     for series in sorted(new_objects):
         new_series = Series()
         new_series.series_instance_uid = series
-        if args.build_mtm_db:
-            new_series.uuid = seriess[series]['uuid']
-            new_series.min_timestamp = seriess[series]['min_timestamp']
-            new_series.max_timestamp = seriess[series]['max_timestamp']
-            new_series.source_doi = seriess[series]['source_doi']
-            new_series.series_instances = seriess[series]['series_instances']
-            new_series.sources = seriess[series]['sources']
-            new_series.hashes = seriess[series]['hashes']
-            new_series.revised = False
-        else:
-            new_series.uuid = str(uuid4())
-            new_series.min_timestamp = datetime.utcnow()
-            new_series.source_doi=analysis_collection_dois[series] \
-                if series in analysis_collection_dois \
-                else data_collection_doi
-            new_series.series_instances = 0
-            new_series.revised = seriess[series]
-            new_series.sources = seriess[series]
-            new_series.hashes = None
+        new_series.uuid = str(uuid4())
+        new_series.min_timestamp = datetime.utcnow()
+        new_series.source_doi=analysis_collection_dois[series] \
+            if series in analysis_collection_dois \
+            else data_collection_doi
+        new_series.series_instances = 0
+        new_series.revised = seriess[series]
+        new_series.sources = seriess[series]
+        new_series.hashes = None
         new_series.max_timestamp = new_series.min_timestamp
         new_series.init_idc_version=args.version
         new_series.rev_idc_version=args.version
@@ -102,29 +92,35 @@ def expand_study(sess, args, all_sources, study, data_collection_doi, analysis_c
 
     for series in existing_objects:
         idc_hashes = series.hashes
-        src_hashes = all_sources.src_series_hashes(series.series_instance_uid)
-        revised = [x != y for x, y in zip(idc_hashes[:-1], src_hashes)]
+        # src_hashes = all_sources.src_series_hashes(series.series_instance_uid)
+        # if collection.collection_id in args.skipped_collections:
+        #     # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+        #     revised = [(x != y) and  not z for x, y, z in \
+        #             zip(idc_hashes[:-1], src_hashes, args.skipped_collections[collection.collection_id])]
+        # else:
+        #     revised = [(x != y) for x, y in \
+        #                zip(idc_hashes[:-1], src_hashes)]
+        if collection.collection_id in args.skipped_collections:
+            skips = args.skipped_collections[collection.collection_id]
+        else:
+            skips = (False, False)
+            # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+        src_hashes = all_sources.src_series_hashes(collection.collection_id, series.series_instance_uid, skips)
+        revised = [(x != y) and not z for x, y, z in \
+                   zip(idc_hashes[:-1], src_hashes, skips)]
         if revised:
             rootlogger.debug('**Series %s needs revision', series.series_instance_uid)
-            rev_series = clone_series(series,seriess[series.series_instance_uid]['uuid'] if args.build_mtm_db else str(uuid4()))
+            rev_series = clone_series(series, str(uuid4()))
             assert args.version == seriess[series.series_instance_uid]['rev_idc_version']
             rev_series.rev_idc_version = args.version
             rev_series.revised = True
             rev_series.done = False
             rev_series.is_new = False
             rev_series.expanded = False
-            if args.build_mtm_db:
-                rev_series.min_timestamp = seriess[series.series_instance_uid]['min_timestamp']
-                rev_series.max_timestamp = seriess[series.series_instance_uid]['max_timestamp']
-                rev_series.source_doi = seriess[series.series_instance_uid]['source_doi']
-                rev_series.sources = seriess[series.series_instance_uid]['sources']
-                rev_series.hashes = seriess[series.series_instance_uid]['hashes']
-                rev_series.rev_idc_version = seriess[series.series_instance_uid]['rev_idc_version']
-            else:
-                rev_series.revised = revised
-                rev_series.hashes = None
-                rev_series.sources = [False, False]
-                rev_series.rev_idc_version = args.version
+            rev_series.revised = revised
+            rev_series.hashes = None
+            rev_series.sources = [False, False]
+            rev_series.rev_idc_version = args.version
             study.seriess.append(rev_series)
             rootlogger.debug('      p%s:Series %s revised',  args.id, rev_series.series_instance_uid)
 
@@ -135,14 +131,13 @@ def expand_study(sess, args, all_sources, study, data_collection_doi, analysis_c
             study.seriess.remove(series)
         else:
             # The series is unchanged. Just add it to the study.
-            if not args.build_mtm_db:
-                # Stamp this series showing when it was checked
-                series.min_timestamp = datetime.utcnow()
-                series.max_timestamp = datetime.utcnow()
-                # Make sure the collection is marked as done and expanded
-                # Shouldn't be needed if the previous version is done
-                series.done = True
-                series.expanded = True
+            # Stamp this series showing when it was checked
+            series.min_timestamp = datetime.utcnow()
+            series.max_timestamp = datetime.utcnow()
+            # Make sure the collection is marked as done and expanded
+            # Shouldn't be needed if the previous version is done
+            series.done = True
+            series.expanded = True
             rootlogger.debug('      p%s: Series %s unchanged',  args.id, series.series_instance_uid)
 
     for series in retired_objects:
@@ -159,7 +154,7 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
     begin = time.time()
     rootlogger.debug("    p%s: Expand Study %s, %s", args.id, study.study_instance_uid, study_index)
     if not study.expanded:
-        expand_study(sess, args, all_sources, study, data_collection_doi, analysis_collection_dois)
+        expand_study(sess, args, all_sources, version, collection, patient, study, data_collection_doi, analysis_collection_dois)
     rootlogger.info("    p%s: Expanded Study %s, %s, %s series, expand time: %s", args.id, study.study_instance_uid, study_index, len(study.seriess), time.time()-begin)
     for series in study.seriess:
         series_index = f'{study.seriess.index(series) + 1} of {len(study.seriess)}'
@@ -170,28 +165,31 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
 
     if all([series.done for series in study.seriess]):
         study.max_timestamp = max([series.max_timestamp for series in study.seriess if series.max_timestamp != None])
-        if args.build_mtm_db:
+        # Get a list of what DB thinks are the study's hashes
+        idc_hashes = all_sources.idc_study_hashes(study)
+        # # Get a list of what the sources think are the study's hashes
+        # src_hashes = all_sources.src_study_hashes(study.study_instance_uid)
+        # # They must be the same
+        # if src_hashes != idc_hashes[:-1]:
+        if collection.collection_id in args.skipped_collections:
+            skips = args.skipped_collections[collection.collection_id]
+        else:
+            skips = (False, False)
+            # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+        src_hashes = all_sources.src_study_hashes(collection.collection_id, study.study_instance_uid, skips)
+        revised = [(x != y) and not z for x, y, z in \
+                   zip(idc_hashes[:-1], src_hashes, skips)]
+        if any(revised):
+            # errlogger.error('Hash match failed for study %s', study.study_instance_uid)
+            raise Exception('Hash match failed for study %s', study.study_instance_uid)
+        else:
+            study.hashes = idc_hashes
+            study.sources = accum_sources(study, study.seriess)
+            study.study_instances = sum([series.series_instances for series in study.seriess])
+
             study.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
             rootlogger.info("    p%s: Completed Study %s, %s,  in %s", args.id, study.study_instance_uid, study_index, duration)
-        else:
-            # Get a list of what DB thinks are the study's hashes
-            idc_hashes = all_sources.idc_study_hashes(study)
-            # Get a list of what the sources think are the study's hashes
-            src_hashes = all_sources.src_study_hashes(study.study_instance_uid)
-            # They must be the same
-            if src_hashes != idc_hashes[:-1]:
-                # errlogger.error('Hash match failed for study %s', study.study_instance_uid)
-                raise Exception('Hash match failed for study %s', study.study_instance_uid)
-            else:
-                study.hashes = idc_hashes
-                study.sources = accum_sources(study, study.seriess)
-                study.study_instances = sum([series.series_instances for series in study.seriess])
-
-                study.done = True
-                sess.commit()
-                duration = str(timedelta(seconds=(time.time() - begin)))
-                rootlogger.info("    p%s: Completed Study %s, %s,  in %s", args.id, study.study_instance_uid, study_index, duration)
 
 

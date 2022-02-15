@@ -14,8 +14,7 @@
 # limitations under the License.
 #
 
-# Load data in some GCS buckets into a DICOM store.
-
+# Monitor progress of a GCH operation
 
 import sys
 import argparse
