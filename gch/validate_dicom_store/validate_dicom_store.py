@@ -126,15 +126,15 @@ def validate_patients(args):
 
 
 if __name__ == '__main__':
-    version = 5
+    version = 8
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default = version)
     parser.add_argument('--project', default = 'idc-dev-etl')
-    parser.add_argument('--dataset_location', default='us-central1')
+    parser.add_argument('--dataset_location', default='us')
     parser.add_argument('--gch_dataset_id', default='idc')
     parser.add_argument('--dicom_store_id', default=f'v{version}')
-    parser.add_argument('--bqdataset', default=f'idc_v{version}')
+    parser.add_argument('--bqdataset', default=f'idc_v{version}_dev')
     parser.add_argument('--collection_table', default='redacted_collections', help='BQ table containing list of collections')
     parser.add_argument('--patient_ids', default='./logs/patient_ids.txt', help='List of patient_ids in above collections')
     parser.add_argument('--included', default=False, help='If True, test whether patients are included, otherwise if excluded')

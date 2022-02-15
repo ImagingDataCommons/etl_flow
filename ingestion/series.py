@@ -44,9 +44,10 @@ def retire_series(args, series):
     series.final_idc_version = args.previous_version
 
 
-def expand_series(sess, args, all_sources, series):
+def expand_series(sess, args, all_sources, version, collection, patient, study, series):
     # Get the instances that the sources know about
-    instances = all_sources.instances(series)
+    # All sources should be from a single source
+    instances = all_sources.instances(collection, series)
     if len(instances) != len(set(instances)):
         errlogger.error("\tp%s: Duplicate instance in expansion of series %s", args.id,
                         series.series_instance_uid)
@@ -137,7 +138,7 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
     begin = time.time()
     rootlogger.debug("      p%s: Expand Series %s; %s", args.id, series.series_instance_uid, series_index)
     if not series.expanded:
-        failed = expand_series(sess, args, all_sources, series)
+        failed = expand_series(sess, args, all_sources, version, collection, patient, study, series)
         if failed:
             return
     rootlogger.info("      p%s: Expanded Series %s; %s; %s instances, expand: %s", args.id, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
@@ -155,10 +156,20 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
         series.max_timestamp = max(instance.timestamp for instance in series.instances)
         # Get a list of what DB thinks are the series's hashes
         idc_hashes = all_sources.idc_series_hashes(series)
-        # Get a list of what the sources think are the series's hashes
-        src_hashes = all_sources.src_series_hashes(series.series_instance_uid)
-        # They must be the same
-        if  src_hashes != idc_hashes[:-1]:
+        # # Get a list of what the sources think are the series's hashes
+        # src_hashes = all_sources.src_series_hashes(series.series_instance_uid)
+        # # They must be the same
+        # if  src_hashes != idc_hashes[:-1]:
+
+        if collection.collection_id in args.skipped_collections:
+            skips = args.skipped_collections[collection.collection_id]
+        else:
+            skips = (False, False)
+            # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+        src_hashes = all_sources.src_series_hashes(collection.collection_id, series.series_instance_uid, skips)
+        revised = [(x != y) and not z for x, y, z in \
+                   zip(idc_hashes[:-1], src_hashes, skips)]
+        if any(revised):
             # errlogger.error('Hash match failed for series %s', series.series_instance_uid)
             raise Exception('Hash match failed for series %s', series.series_instance_uid)
         else:

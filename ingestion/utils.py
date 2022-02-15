@@ -115,11 +115,11 @@ def empty_bucket(bucket):
         raise RuntimeError("Failed to empty bucket %s", bucket) from exc
 
 
-def create_prestaging_bucket(args):
+def create_prestaging_bucket(args, bucket):
     client = storage.Client(project='idc-dev-etl')
 
     # Try to create the destination bucket
-    new_bucket = client.bucket(args.prestaging_bucket)
+    new_bucket = client.bucket(bucket)
     new_bucket.iam_configuration.uniform_bucket_level_access_enabled = True
     new_bucket.versioning_enabled = False
     try:
@@ -130,7 +130,7 @@ def create_prestaging_bucket(args):
         pass
     except Exception as e:
         # Bucket creation failed somehow
-        errlogger.error("Error creating bucket %s: %s",args.prestaging_bucket, e)
+        errlogger.error("Error creating bucket %s: %s",bucket, e)
         return(-1)
 
 
@@ -152,11 +152,11 @@ def copy_disk_to_gcs(args, collection, patient, study, series):
 
 # Copy an instance from a source bucket to a destination bucket. Currently used when ingesting pathology
 # which is placed in some bucket after conversion from svs, etc. to DICOM WSI format
-def copy_gcs_to_gcs(args, instance, gcs_url):
+def copy_gcs_to_gcs(args, dst_bucket_name, instance, gcs_url):
     storage_client = args.client
     wsi_src_bucket = storage_client.bucket(gcs_url.split('gs://')[1].split('/',1)[0])
     blob_id = gcs_url.split('gs://')[1].split('/',1)[1]
-    dst_bucket = storage_client.bucket((args.prestaging_bucket))
+    dst_bucket = storage_client.bucket(dst_bucket_name)
     src_blob = wsi_src_bucket.blob(blob_id)
     dst_blob = dst_bucket.blob(f'{instance.uuid}.dcm')
     token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob)
@@ -172,3 +172,14 @@ def accum_sources(parent, children):
     for child in children[1:]:
         sources = [x | y for (x, y) in zip(sources, child.sources)]
     return sources
+
+
+def list_skips(sess, Base, skipped_groups, skipped_collections):
+    tables_dict = {table.__tablename__: table for table in Base.__subclasses__()}
+    skips = [collection for collection in skipped_collections]
+    for group in skipped_groups:
+        collections = sess.query(tables_dict[group].tcia_api_collection_id).all()
+        for collection in collections:
+            skips.append(collection.tcia_api_collection_id)
+    skips.sort()
+    return skips

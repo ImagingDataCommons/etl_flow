@@ -44,7 +44,7 @@ def retire_patient(args, patient):
     patient.final_idc_version = args.previous_version
 
 
-def expand_patient(sess, args, all_sources, patient):
+def expand_patient(sess, args, all_sources, version, collection, patient):
     # Get the studies that the sources know about
     studies = all_sources.studies(patient)    # patient_ids = [patient['PatientId'] for patient in patients]
 
@@ -88,8 +88,15 @@ def expand_patient(sess, args, all_sources, patient):
 
     for study in existing_objects:
         idc_hashes = study.hashes
-        src_hashes = all_sources.src_study_hashes(study.study_instance_uid)
-        revised = [x != y for x, y in zip(idc_hashes[:-1], src_hashes)]
+        # src_hashes = all_sources.src_study_hashes(study.study_instance_uid)
+        if collection.collection_id in args.skipped_collections:
+            skips = args.skipped_collections[collection.collection_id]
+        else:
+            skips = (False, False)
+            # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+        src_hashes = all_sources.src_study_hashes(collection.collection_id, study.study_instance_uid, skips)
+        revised = [(x != y) and not z for x, y, z in \
+                   zip(idc_hashes[:-1], src_hashes, skips)]
         if any(revised):
             # rootlogger.debug  ('**Patient %s needs revision', patient.submitter_case_id)
             rev_study = clone_study(study, str(uuid4()))
@@ -133,7 +140,7 @@ def build_patient(sess, args, all_sources, patient_index, data_collection_doi, a
     begin = time.time()
     rootlogger.debug("  p%s: Expand Patient %s, %s", args.id, patient.submitter_case_id, patient_index)
     if not patient.expanded:
-        expand_patient(sess, args, all_sources, patient)
+        expand_patient(sess, args, all_sources, version, collection, patient)
     rootlogger.info("  p%s: Expanded Patient %s, %s, %s studies, expand_time: %s, %s", args.id, patient.submitter_case_id, patient_index, len(patient.studies), time.time()-begin, time.asctime())
     for study in patient.studies:
         study_index = f'{patient.studies.index(study) + 1} of {len(patient.studies)}'
@@ -146,10 +153,19 @@ def build_patient(sess, args, all_sources, patient_index, data_collection_doi, a
 
          # Get a list of what DB thinks are the patient's hashes
         idc_hashes = all_sources.idc_patient_hashes(patient)
-        # Get a list of what the sources think are the patient's hashes
-        src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id)
-        # They must be the same
-        if  src_hashes != idc_hashes[:-1]:
+        # # Get a list of what the sources think are the patient's hashes
+        # src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id)
+        # # They must be the same
+        # if  src_hashes != idc_hashes[:-1]:
+        if collection.collection_id in args.skipped_collections:
+            skips = args.skipped_collections[collection.collection_id]
+        else:
+            skips = (False, False)
+            # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+        src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id, skips)
+        revised = [(x != y) and  not z for x, y, z in \
+                zip(idc_hashes[:-1], src_hashes, skips)]
+        if any(revised):
             # errlogger.error('Hash match failed for patient %s', patient.submitter_case_id)
             raise Exception('Hash match failed for patient %s', patient.submitter_case_id)
         else:

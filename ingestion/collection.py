@@ -62,7 +62,9 @@ def worker(input, output, args, data_collection_doi, analysis_collection_dois, a
     sql_engine = create_engine(args.sql_uri)
     with Session(sql_engine) as sess:
 
-        all_sources = All(args.id, sess, args.version, access, lock)
+        # all_sources = All(args.id, sess, args.version, access, lock)
+        all_sources = All(args.id, sess, args.version, args.access,
+                          args.skipped_tcia_collections, args.skipped_path_collections, Lock())
 
         for more_args in iter(input.get, 'STOP'):
             for attempt in range(PATIENT_TRIES):
@@ -86,18 +88,20 @@ def worker(input, output, args, data_collection_doi, analysis_collection_dois, a
 
 
 def expand_collection(sess, args, all_sources, collection):
-    # Since we are starting, delete everything from the prestaging bucket.
-    rootlogger.info("Emptying prestaging bucket")
-    begin = time.time()
-    create_prestaging_bucket(args)
-    empty_bucket(args.prestaging_bucket)
-    # Since we are starting, delete everything from the prestaging bucket.
-    duration = str(timedelta(seconds=(time.time() - begin)))
-    rootlogger.info("Emptying prestaging bucket completed in %s", duration)
-
     # Get the patients that the sources know about
     # Returned data includes a sources vector for each patient
     patients = all_sources.patients(collection)
+
+    # Since we are starting, delete everything from the prestaging bucket.
+    if collection.revised.tcia:
+        rootlogger.info("Emptying tcia prestaging buckets")
+        create_prestaging_bucket(args, args.prestaging_tcia_bucket)
+        empty_bucket(args.prestaging_tcia_bucket)
+    if collection.revised.path:
+        rootlogger.info("Emptying path prestaging buckets")
+        create_prestaging_bucket(args, args.prestaging_path_bucket)
+        empty_bucket(args.prestaging_path_bucket)
+
 
     # Check for duplicates
     if len(patients) != len(set(patients)):
@@ -141,8 +145,14 @@ def expand_collection(sess, args, all_sources, collection):
 
     for patient in existing_objects:
         idc_hashes = patient.hashes
-        src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id)
-        revised = [x != y for x, y in zip(idc_hashes[:-1], src_hashes)]
+        if collection.collection_id in args.skipped_collections:
+            skips = args.skipped_collections[collection.collection_id]
+        else:
+            skips = (False, False)
+            # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+        src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id, skips)
+        revised = [(x != y) and  not z for x, y, z in \
+                zip(idc_hashes[:-1], src_hashes, skips)]
         if any(revised):
             # rootlogger.debug('p%s **Revising patient %s', args.id, patient.submitter_case_id)
             # Mark when we started work on this patient
@@ -191,7 +201,8 @@ def expand_collection(sess, args, all_sources, collection):
 def build_collection(sess, args, all_sources, collection_index, version, collection):
     begin = time.time()
     rootlogger.debug("p%s: Expand Collection %s, %s", args.id, collection.collection_id, collection_index)
-    args.prestaging_bucket = f"{args.prestaging_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
+    args.prestaging_tcia_bucket = f"{args.prestaging_tcia_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
+    args.prestaging_path_bucket = f"{args.prestaging_path_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
     if not collection.expanded:
         expand_collection(sess, args, all_sources, collection)
     rootlogger.info("p%s: Expanded Collection %s, %s, %s patients", args.id, collection.collection_id, collection_index, len(collection.patients))
@@ -212,6 +223,19 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
             data_collection_doi = '10.7937/TCIA.YZWQ-ZZ63'
         elif collection.collection_id == 'CPTAC-OV':
             data_collection_doi = '10.7937/TCIA.ZS4A-JD58'
+        elif collection.collection_id in [
+            'TCGA-ACC',
+            'TCGA-CHOL',
+            'TCGA-DLBC',
+            'TCGA-MESO',
+            'TCGA-PAAD',
+            'TCGA-PCPG',
+            'TCGA-SKCM',
+            'TCGA-TGCT',
+            'TCGA-THYM',
+            'TCGA-UCS',
+            'TCGA-UVM']:
+            data_collection_doi = f'{collection.collection_id}-DOI'
         else:
             errlogger.error('No DOI for collection %s', collection.collection_id)
             pass
@@ -221,8 +245,9 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
 
     if args.num_processes==0:
         # for series in sorted_seriess:
-        for patient in collection.patients:
-            patient_index = f'{collection.patients.index(patient) + 1} of {len(collection.patients)}'
+        patients = sorted(collection.patients, key=lambda patient: patient.done, reverse=True)
+        for patient in patients:
+            patient_index = f'{patients.index(patient) + 1} of {len(patients)}'
             if not patient.done:
                 build_patient(sess, args, all_sources, patient_index, data_collection_doi, analysis_collection_dois, version, collection, patient)
             else:
@@ -292,14 +317,22 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
 
     if all([patient.done for patient in collection.patients]):
         collection.max_timestamp = max([patient.max_timestamp for patient in collection.patients if patient.max_timestamp != None])
-
         try:
             # Get a list of what DB thinks are the collection's hashes
             idc_hashes = all_sources.idc_collection_hashes(collection)
-            # Get a list of what the sources think are the collection's hashes
-            src_hashes = all_sources.src_collection_hashes(collection.collection_id)
-            # They must be the same
-            if src_hashes != idc_hashes[:-1]:
+            # # Get a list of what the sources think are the collection's hashes
+            # src_hashes = all_sources.src_collection_hashes(collection.collection_id)
+            # # They must be the same
+            # if src_hashes != idc_hashes[:-1]:
+            if collection.collection_id in args.skipped_collections:
+                skips = args.skipped_collections[collection.collection_id]
+            else:
+                skips = (False, False)
+                # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+            src_hashes = all_sources.src_collection_hashes(collection.collection_id, skips)
+            revised = [(x != y) and not z for x, y, z in \
+                       zip(idc_hashes[:-1], src_hashes, skips)]
+            if any(revised):
                 errlogger.error('Hash match failed for collection %s', collection.collection_id)
             else:
                 collection.hashes = idc_hashes

@@ -37,6 +37,161 @@ Base = declarative_base()
 # These tables define the ETL database. There is a separate DB for each IDC version.
 # Note that earlier IDC versions used a one-to-many schema.
 
+# Flattened hierarchy. The underlying PSQL is a view.
+class All_Joined(Base):
+    __tablename__ = 'all_joined'
+    idc_version = Column(Integer, nullable=False, comment="Target version of revision")
+    previous_idc_version = Column(Integer, nullable=False, comment="ID of the previous version")
+    v_hashes = Column(
+        CompositeType(
+            'hashes',
+            [
+                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
+                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('all_sources', String, default="", comment="Hash of all data")
+            ]
+        ),
+        comment="Source specific hierarchical hash"
+    )
+    v_sources = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False),
+                Column('path', Boolean, default=False)
+            ]
+        ),
+        nullable=True,
+        comment="True if this objects includes instances from the corresponding source"
+    )
+
+    collection_id = Column(String, nullable=False, comment='TCIA/NBIA collection ID')
+    idc_collection_id = Column(String, nullable=False, comment="IDC assigned collection ID")
+    c_uuid = Column(String, nullable=False, comment="IDC assigned UUID of a version of this object")
+    c_hashes = Column(
+        CompositeType(
+            'hashes',
+            [
+                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
+                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('all_sources', String, default="", comment="Hash of all data")
+            ]
+        ),
+        comment="Source specific hierarchical hash"
+    )
+    c_sources = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False),
+                Column('path', Boolean, default=False)
+            ]
+        ),
+        nullable=True,
+        comment="True if this objects includes instances from the corresponding source"
+    )
+    c_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
+    c_rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
+    c_final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
+
+    submitter_case_id = Column(String, nullable=False, comment="Submitter's patient ID")
+    idc_case_id = Column(String, nullable=False, comment="IDC assigned patient ID")
+    p_uuid = Column(String, nullable=False, comment="IDC assigned UUID of a version of this object")
+    p_hashes = Column(
+        CompositeType(
+            'hashes',
+            [
+                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
+                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('all_sources', String, default="", comment="Hash of all data")
+            ]
+        ),
+        comment="Source specific hierarchical hash"
+    )
+    p_sources = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False),
+                Column('path', Boolean, default=False)
+            ]
+        ),
+        nullable=True,
+        comment="True if this objects includes instances from the corresponding source"
+    )
+    p_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
+    p_rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
+    p_final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
+
+    study_instance_uid = Column(String, nullable=False, comment="DICOM StudyInstanceUID")
+    st_uuid = Column(String, nullable=False, comment="IDC assigned UUID of a version of this object")
+    study_instances = Column(Integer, nullable=True, comment="Instances in this study")
+    st_hashes = Column(
+        CompositeType(
+            'hashes',
+            [
+                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
+                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('all_sources', String, default="", comment="Hash of all data")
+            ]
+        ),
+        comment="Source specific hierarchical hash"
+    )
+    st_sources = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False),
+                Column('path', Boolean, default=False)
+            ]
+        ),
+        nullable=True,
+        comment="True if this objects includes instances from the corresponding source"
+    )
+    st_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
+    st_rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
+    st_final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
+
+    series_instance_uid = Column(String, nullable=False, comment="DICOM SeriesInstanceUID")
+    se_uuid = Column(String, nullable=False, comment="IDC assigned UUID of a version of this object")
+    series_instances = Column(Integer, nullable=True, comment="Instances in this series")
+    source_doi = Column(String, nullable=True, comment="A doi to the wiki page of this source of this series")
+    se_hashes = Column(
+        CompositeType(
+            'hashes',
+            [
+                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
+                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('all_sources', String, default="", comment="Hash of all data")
+            ]
+        ),
+        comment="Source specific hierarchical hash"
+    )
+    se_sources = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False),
+                Column('path', Boolean, default=False)
+            ]
+        ),
+        nullable=True,
+        comment="True if this objects includes instances from the corresponding source"
+    )
+    se_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
+    se_rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
+    se_final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
+
+    sop_instance_uid = Column(String, nullable=False, unique=False, comment='DICOM SOPInstanceUID')
+    i_uuid = Column(String, primary_key=True, comment="IDC assigned UUID of a version of this object")
+    i_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of TCIA data at this level")
+    i_size = Column(BigInteger, nullable=True, comment='Instance blob size (bytes)')
+    i_excluded = Column(Boolean, default=False, comment="True if instance should be excluded from auxiliary_metacata, etc.")
+    i_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
+    i_rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
+    i_final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
+
+
 version_collection = Table('version_collection', Base.metadata,
                            Column('version', ForeignKey('version.version'), primary_key=True),
                            Column('collection_uuid', ForeignKey('collection.uuid'), primary_key=True))
@@ -45,6 +200,29 @@ class Version(Base):
     __tablename__ = 'version'
     version = Column(Integer, primary_key=True, comment="Target version of revision")
     previous_version = Column(Integer, nullable=False, comment="ID of the previous version")
+    hashes = Column(
+        CompositeType(
+            'hashes',
+            [
+                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
+                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('all_sources', String, default="", comment="Hash of all data")
+            ]
+        ),
+        comment="Source specific hierarchical hash"
+    )
+    sources = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False),
+                Column('path', Boolean, default=False)
+            ]
+        ),
+        nullable=True,
+        comment="True if this objects includes instances from the corresponding source"
+    )
+
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
     # revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
@@ -94,8 +272,8 @@ collection_patient = Table('collection_patient', Base.metadata,
 
 class Collection(Base):
     __tablename__ = 'collection'
-    collection_id = Column(String, nullable=False, unique=False, comment='TCIA/NBIA collection ID')
-    idc_collection_id = Column(String, nullable=False, unique=False, comment="IDC assigned collection ID")
+    collection_id = Column(String, nullable=False, comment='TCIA/NBIA collection ID')
+    idc_collection_id = Column(String, nullable=False, comment="IDC assigned collection ID")
     uuid = Column(String, nullable=False, primary_key=True, comment="IDC assigned UUID of a version of this object")
 
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
@@ -155,8 +333,8 @@ patient_study = Table('patient_study', Base.metadata,
 
 class Patient(Base):
     __tablename__ = 'patient'
-    submitter_case_id = Column(String, nullable=False, unique=False, comment="Submitter's patient ID")
-    idc_case_id = Column(String, nullable=False, unique=False, comment="IDC assigned patient ID")
+    submitter_case_id = Column(String, nullable=False, comment="Submitter's patient ID")
+    idc_case_id = Column(String, nullable=False, comment="IDC assigned patient ID")
     uuid = Column(String, nullable=False, primary_key=True, comment="IDC assigned UUID of a version of this object")
 
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
@@ -216,9 +394,9 @@ study_series = Table('study_series', Base.metadata,
 
 class Study(Base):
     __tablename__ = 'study'
-    study_instance_uid = Column(String, nullable=False, unique=False, comment="DICOM StudyInstanceUID")
+    study_instance_uid = Column(String, nullable=False, comment="DICOM StudyInstanceUID")
     uuid = Column(String, nullable=False, unique=True, primary_key=True, comment="IDC assigned UUID of a version of this object")
-    study_instances = Column(Integer, nullable=True, unique=False, comment="Instances in this study")
+    study_instances = Column(Integer, nullable=True, comment="Instances in this study")
 
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
@@ -276,7 +454,7 @@ series_instance = Table('series_instance', Base.metadata,
 
 class Series(Base):
     __tablename__ = 'series'
-    series_instance_uid = Column(String, unique=False, nullable=False, comment="DICOM SeriesInstanceUID")
+    series_instance_uid = Column(String, nullable=False, comment="DICOM SeriesInstanceUID")
     uuid = Column(String, primary_key=True, comment="IDC assigned UUID of a version of this object")
     series_instances = Column(Integer, nullable=True, comment="Instances in this series")
     source_doi = Column(String, nullable=True, comment="A doi to the wiki page of this source of this series")
@@ -332,7 +510,7 @@ class Series(Base):
 
 class Instance(Base):
     __tablename__ = 'instance'
-    sop_instance_uid = Column(String, nullable=False, unique=False, comment='DICOM SOPInstanceUID')
+    sop_instance_uid = Column(String, nullable=False, comment='DICOM SOPInstanceUID')
     uuid = Column(String, primary_key=True, comment="IDC assigned UUID of a version of this object")
     hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of TCIA data at this level")
     size = Column(BigInteger, nullable=True, comment='Instance blob size (bytes)')
@@ -413,8 +591,26 @@ class WSI_Instance(Base):
     series_instance_uid = Column(ForeignKey('wsi_series.series_instance_uid'), comment="Containing object")
     hash = Column(String, comment='Instance hash')
     url = Column(String, comment='GCS URL of instance')
+    size = Column(BigInteger, comment='Instance size in bytes')
 
     seriess = relationship("WSI_Series", back_populates="instances")
+
+class All_WSI_Joined(Base):
+    __tablename__ = "all_wsi_joined"
+    version = Column(Integer, unique=True, primary_key=True, comment='NBIA collection ID')
+    v_hash = Column(String, comment='Version hash')
+    collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
+    c_hash = Column(String, comment='Collection hash')
+    submitter_case_id = Column(String, nullable=False, unique=True, primary_key=True, comment="Submitter's patient ID")
+    p_hash = Column(String, comment='Patient hash')
+    study_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
+    st_hash = Column(String, comment='Study hash')
+    series_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
+    se_hash = Column(String, comment='Series hash')
+    sop_instance_uid = Column(String, primary_key=True, nullable=False)
+    i_hash = Column(String, comment='Instance hash')
+    size = Column(Integer, comment='Instance size in bytes  ')
+    url = Column(String, comment='GCS URL of instance')
 
 class CR_Collections(Base):
     __tablename__ = 'cr_collections'

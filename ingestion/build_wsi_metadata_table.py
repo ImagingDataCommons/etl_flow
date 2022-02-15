@@ -37,6 +37,8 @@ import settings as etl_settings
 from python_settings import settings
 settings.configure(etl_settings)
 
+from ingestion.utils import list_skips
+
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, update
 from google.cloud import storage
@@ -51,6 +53,7 @@ def list_blobs_with_prefix(bucket, prefix, delimiter=None):
     ids.sort()
     return blobs, ids
 
+
 def build_instances(client, args, sess, series, prefix):
     blobs = client.list_blobs(args.src_bucket, prefix=prefix, delimiter=None)
     for blob in blobs:
@@ -64,6 +67,7 @@ def build_instances(client, args, sess, series, prefix):
             series.instances.append(instance)
             # sess.commit()
         instance.hash = b64decode(blob.md5_hash).hex()
+        instance.size = blob.size
 
 
 def build_series(client, args, sess, study, prefix):
@@ -114,42 +118,43 @@ def build_patients(client, args, sess, collection, prefix):
         patient.hash = get_merkle_hash(hashes)
 
 
-def build_collections(client, args, sess, version):
+def build_collections(client, args, sess, version, skips):
     try:
         dones = open(args.dones).read().splitlines()
     except:
         dones = []
-
     try:
         included = open(args.included).read().splitlines()
     except:
         included = ["*"]
     _, collection_ids = list_blobs_with_prefix(args.src_bucket, prefix=None, delimiter='/')
+    collection_ids = list(set(collection_ids) - set(skips) - set(dones))
+    collection_ids.sort()
     for collection_id in collection_ids:
-        if not collection_id in dones:
-            if any([fnmatch(collection_id, include) for include in included]):
-                rootlogger.info('Collecting metadata from collection %s', collection_id)
-                collection = sess.query(WSI_Collection).filter(WSI_Collection.collection_id == collection_id).first()
-                if not collection:
-                    collection = WSI_Collection()
-                    collection.collection_id = collection_id
-                    version.collections.append(collection)
-                    # sess.commit()
-                build_patients(client, args, sess, collection, f'{collection_id}/')
-                hashes = [patient.hash for patient in collection.patients]
-                collection.hash = get_merkle_hash(hashes)
-                sess.commit()
+        if any([fnmatch(collection_id, include) for include in included]):
+            rootlogger.info('Collecting metadata from collection %s', collection_id)
+            collection = sess.query(WSI_Collection).filter(WSI_Collection.collection_id == collection_id).first()
+            if not collection:
+                collection = WSI_Collection()
+                collection.collection_id = collection_id
+                version.collections.append(collection)
+                # sess.commit()
+            build_patients(client, args, sess, collection, f'{collection_id}/')
+            hashes = [patient.hash for patient in collection.patients]
+            collection.hash = get_merkle_hash(hashes)
+            sess.commit()
 
-                with open(args.dones, 'a') as f:
-                    f.write(f'{collection_id}\n')
+            with open(args.dones, 'a') as f:
+                f.write(f'{collection_id}\n')
 
-def build_version(client, args, sess):
+
+def build_version(client, args, sess, skips):
     version = sess.query(WSI_Version).filter(WSI_Version.version == args.version).first()
     if not version:
         version = WSI_Version()
         version.version = args.version
         sess.add(version)
-    build_collections(client, args, sess, version)
+    build_collections(client, args, sess, version, skips)
     hashes = [collection.hash for collection in version.collections]
     version.hash = get_merkle_hash(hashes)
     sess.commit()
@@ -166,20 +171,30 @@ def prebuild(args):
 
     with Session(sql_engine) as sess:
         client = storage.Client()
-        build_version(client, args, sess)
+        skips = list_skips(sess, Base, args.skipped_groups, args.skipped_collections)
+        build_version(client, args, sess, skips)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=7, help='Version to work on')
+    parser.add_argument('--version', default=8, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())
     args = parser.parse_args()
     parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
     parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--gcsfuse_dir', default='/mnt/disks/idc-etl/wsi_bucket')
     parser.add_argument('--src_bucket', default=storage.Bucket(args.client,'dac-wsi-conversion-results-v2-sorted'))
-    parser.add_argument('--num_processes', default=0, help="Number of concurrent processes")
-    parser.add_argument('--included', default='{}/logs/wsi_build_included.txt'.format(os.environ['PWD']), help="Collections to include. ")
+    parser.add_argument('--skipped_groups', default=['redacted_collections', 'excluded_collections'])
+    parser.add_argument('--skipped_collections', default=['CPTAC-CCRCC',
+     'CPTAC-CM',
+     'CPTAC-LSCC',
+     'CPTAC-LUAD',
+     'CPTAC-PDA',
+     'CPTAC-SAR',
+     'CPTAC-UCEC',
+     'CPTAC-AML',
+     'CPTAC-BRCA',
+     'CPTAC-COAD',
+     'CPTAC-OV'])
     parser.add_argument('--dones', default='{}/logs/wsi_build_dones.txt'.format(os.environ['PWD']), help="Completed collections")
     args = parser.parse_args()
 
@@ -190,7 +205,7 @@ if __name__ == '__main__':
     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
     rootlogger.addHandler(root_fh)
     root_fh.setFormatter(rootformatter)
-    rootlogger.setLevel(DEBUG)
+    rootlogger.setLevel(INFO)
 
     errlogger = logging.getLogger('root.err')
     err_fh = logging.FileHandler('{}/logs/wsi_metadata_err.log'.format(os.environ['PWD'], args.version))

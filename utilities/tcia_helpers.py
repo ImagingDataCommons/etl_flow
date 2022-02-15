@@ -109,7 +109,7 @@ def get_instance_hash(sop_instance_uid, access_token=None):
     result = requests.get(url, headers=headers)
     return result
 
-def get_hash_nlst(request_data, access_token=None):
+def get_hash_nlst(request_data, access_token):
     # if not access_token:
     #     access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
     headers = dict(
@@ -119,7 +119,7 @@ def get_hash_nlst(request_data, access_token=None):
     result = requests.post(url, headers=headers, data=request_data)
     return result
 
-def get_hash(request_data, access_token=None):
+def get_hash(request_data, access_token):
     # if not access_token:
     #     access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
     retries = 4
@@ -174,7 +174,7 @@ def get_collection_values_and_counts(server=NBIA_URL):
 
 
 def get_TCIA_patients_per_collection(collection_id, server=NBIA_V1_URL):
-    if server == "NLST":
+    if collection_id == "NLST":
         server_url = NLST_V2_URL
         access_token, refresh_token = get_access_token(NLST_AUTH_URL)
         headers = dict(
@@ -192,8 +192,8 @@ def get_TCIA_patients_per_collection(collection_id, server=NBIA_V1_URL):
     return patients
 
 
-def get_TCIA_studies_per_patient(collection, patientID, server=NBIA_V1_URL):
-    if server == "NLST":
+def get_TCIA_studies_per_patient(collection_id, patientID, server=NBIA_V1_URL):
+    if collection_id == "NLST":
         server_url = NLST_V2_URL
         access_token, refresh_token = get_access_token(NLST_AUTH_URL)
         headers = dict(
@@ -205,19 +205,19 @@ def get_TCIA_studies_per_patient(collection, patientID, server=NBIA_V1_URL):
     else:
         server_url = server
         headers = ''
-    url = f'{server_url}/getPatientStudy?Collection={collection}&PatientID={patientID}'
+    url = f'{server_url}/getPatientStudy?Collection={collection_id}&PatientID={patientID}'
     results = get_url(url, headers)
     studies = results.json() if results.content else []
     return studies
 
 
-def get_TCIA_studies_per_collection(collection, server=NBIA_V1_URL):
+def get_TCIA_studies_per_collection(collection_id, server=NBIA_V1_URL):
     # server_url = NBIA_V1_URL if nbia_server else TCIA_URL
     # url = f'{server_url}/getPatientStudy?Collection={collection}'
     # results = get_url(url)
     # studies = results.json()
     # return studies
-    if server == "NLST":
+    if collection_id == "NLST":
         server_url = NLST_V2_URL
         access_token, refresh_token = get_access_token(NLST_AUTH_URL)
         headers = dict(
@@ -229,14 +229,14 @@ def get_TCIA_studies_per_collection(collection, server=NBIA_V1_URL):
     else:
         server_url = server
         headers = ''
-    url = f'{server_url}/getPatientStudy?Collection={collection}'
+    url = f'{server_url}/getPatientStudy?Collection={collection_id}'
     results = get_url(url)
     studies = results.json()
     return studies
 
 
-def get_TCIA_series_per_study(collection, patientID, studyInstanceUID, server=NBIA_V1_URL):
-    if server == "NLST":
+def get_TCIA_series_per_study(collection_id, patientID, studyInstanceUID, server=NBIA_V1_URL):
+    if collection_id == "NLST":
         server_url = NLST_V2_URL
         access_token, refresh_token = get_access_token(NLST_AUTH_URL)
         headers = dict(
@@ -248,13 +248,13 @@ def get_TCIA_series_per_study(collection, patientID, studyInstanceUID, server=NB
     else:
         server_url = server
         headers = ''
-    url = f'{server_url}/getSeries?Collection ={collection}&PatientID={patientID}&StudyInstanceUID={studyInstanceUID}'
+    url = f'{server_url}/getSeries?Collection ={collection_id}&PatientID={patientID}&StudyInstanceUID={studyInstanceUID}'
     results = get_url(url, headers)
     series = results.json() if results.content else []
     return series
 
-def get_TCIA_instance_uids_per_series(seriesInstanceUID, server=NBIA_V1_URL):
-    if server == "NLST":
+def get_TCIA_instance_uids_per_series(collection_id, seriesInstanceUID, server=NBIA_V1_URL):
+    if collection_id == "NLST":
         server_url = NLST_V2_URL
         access_token, refresh_token = get_access_token(NLST_AUTH_URL)
         headers = dict(
@@ -464,12 +464,54 @@ def get_collection_descriptions_and_licenses(collection=None):
         headers=headers
     )
     descriptions = result.json()
-    # collection_descriptions = {description['collectionName']: {'description': description['description'], 'licenseId':description['licenseId']} for description in descriptions}
+
     collection_descriptions = {description['collectionName']: description for description in descriptions}
-    # Now, if we are getting descriptions of all collections, get the NLST description
+
     if not collection:
+        # Now, if we are getting descriptions of all collections, get the NLST description
         nlst_description = get_collection_descriptions_and_licenses('NLST')
         collection_descriptions['NLST'] = nlst_description['NLST']
+
+        if not 'CPTAC-AML' in collection_descriptions:
+            # Also descriptions for TCIA collections that don't have descriptions.
+            collection_descriptions['CPTAC-AML'] = {
+                'licenseId': 1,
+                'description': """
+<p>
+    <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> Acute Myeloid Leukemia (CPTAC-AML) cohort.&nbsp;<span style="color: rgb(33,37,41);">CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics.</span></p>
+<p>
+    Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-AML" target="_blank">CPTAC-AML</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
+            }
+
+        if not 'CPTAC-BRCA' in collection_descriptions:
+            collection_descriptions['CPTAC-BRCA'] = {
+                'licenseId': 1,
+                'description': """
+<p>
+    <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> CPTAC Breast Invasive Carcinoma cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics. Radiology and pathology images from CPTAC patients are being collected and made publicly available by The Cancer Imaging Archive to enable researchers to investigate cancer phenotypes which may correlate to corresponding proteomic, genomic and clinical data.</span></p>
+<p>
+    Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-BRCA" target="_blank">CPTAC-BRCA</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
+            }
+
+        if not 'CPTAC-COAD' in collection_descriptions:
+            collection_descriptions['CPTAC-COAD'] = {
+                'licenseId': 1,
+                'description': """
+<p>
+    <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> CPTAC&nbsp;Colon Adenocarcinoma cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics.</span></p>
+<p>
+    Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-COAD" target="_blank">CPTAC-COAD</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
+                }
+
+        if not 'CPTAC-OV' in collection_descriptions:
+            collection_descriptions['CPTAC-OV'] = {
+                'licenseId': 1,
+                'description': """
+<p>
+    <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> CPTAC&nbsp;Ovarian Serous Cystadenocarcinoma cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics.</span></p>
+<p>
+    Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-OV" target="_blank">CPTAC-OV</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
+                }
 
     return collection_descriptions
 
@@ -493,8 +535,11 @@ def get_collection_license_info():
     license_info = {license['id']: license for license in get_collection_licenses()}
     licenses = {}
     for collection_id, data in table.items():
-        print(collection_id, data['licenseId'])
-        licenseId = data['licenseId']
+        # print(collection_id, data['licenseId'])
+        try:
+            licenseId = data['licenseId']
+        except Exception as exc:
+            print(exc)
         if licenseId:
             licenses[collection_id] = dict(
                 licenseURL = license_info[licenseId]["licenseURL"],
@@ -513,14 +558,14 @@ def get_collection_license_info():
                 longName = "None",
                 shortName = "None"
             )
-    # These collections are pathology only. NBIA server doesn't know about them
-    for collection_id in ['CPTAC-AML', 'CPTAC-BRCA', 'CPTAC-COAD', 'CPTAC-OV']:
-        if not collection_id in table:
-            licenses[collection_id] = dict(
-                licenseURL="http://creativecommons.org/licenses/by/3.0/",
-                longName="Creative Commons Attribution 3.0 Unported License",
-                shortName="CC BY 3.0"
-            )
+    # # These collections are pathology only. NBIA server doesn't know about them
+    # for collection_id in ['CPTAC-AML', 'CPTAC-BRCA', 'CPTAC-COAD', 'CPTAC-OV']:
+    #     if not collection_id in table:
+    #         licenses[collection_id] = dict(
+    #             licenseURL="http://creativecommons.org/licenses/by/3.0/",
+    #             longName="Creative Commons Attribution 3.0 Unported License",
+    #             shortName="CC BY 3.0"
+    #         )
 
     return licenses
 
@@ -553,16 +598,15 @@ if __name__ == "__main__":
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
 
     # p = get_TCIA_patients_per_collection('Training-Pseudo')
-    # p = get_TCIA_patients_per_collection('NLST', server="NLST")
+    p = get_TCIA_patients_per_collection('HCC-TACE-Seg')
     # token= get_access_token()[0]
     # hash = get_hash({'Collection':'LDCT-and-Projection-data'}, token)
     # hash=get_instance_hash('1.3.6.1.4.1.14519.5.2.1.1239.1759.816520824397947445116098544516', access_token=token)
-    # token= get_access_token(auth_server=NLST_AUTH_URL)[0]
-    # hash=get_instance_hash_nlst('1.2.840.113654.2.55.41416806874377832798981746093165948327', access_token=token)
-    #
+    # token = get_access_token(auth_server = NLST_AUTH_URL)[0]
     # hash = get_hash_nlst({'SeriesInstanceUID':f'1.2.840.113654.2.55.97114726565566537928831413367474015470'}, token)
     # hash = get_images_with_md5_hash_nlst('1.2.840.113654.2.55.97114726565566537928831413367474015470', token)
     # b =get_collection_license_info()
+    # results = get_collection_values_and_counts()
     d = get_collection_descriptions_and_licenses()
     c = get_collection_values_and_counts()
     # s = get_updated_series('13/01/2021')
@@ -572,7 +616,6 @@ if __name__ == "__main__":
     # access_token, refresh_token = refresh_access_token(refresh_token)
     # result=get_TCIA_instances_per_series('.', '1.3.6.1.4.1.14519.5.2.1.7009.9004.180224303090109944523368212991', 'NLST')
     # table = get_collection_license_info()
-    results = get_collection_values_and_counts()
     # result = get_TCIA_series_per_study('TCGA-GBM', 'TCGA-02-0006', '1.3.6.1.4.1.14519.5.2.1.1706.4001.149500105036523046215258942545' )
     # result = get_TCIA_patients_per_collection('APOLLO-5-LSCC', server=NBIA_V1_URL)
     collections = [key for key in table.keys()]

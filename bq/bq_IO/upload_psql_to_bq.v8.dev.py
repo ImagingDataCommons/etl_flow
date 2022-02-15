@@ -14,7 +14,10 @@
 # limitations under the License.
 #
 
-# Upload those DB tables used in subsequent BQ table generate]ion to BQ
+# Upload DB tables used in to generated subsequent BQ tables.
+# Beginning with idc v8, the per version BQ datasets are split
+# into idc_v<version>_dev and idc_v<version>_pub. These tables
+# go into the former, generated tables into the latter.
 
 import os
 import logging
@@ -27,32 +30,34 @@ from bq.bq_IO.upload_psql_to_bq import upload_to_bq, upload_version, upload_coll
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=7, help='Version to upload')
+    parser.add_argument('--version', default=8, help='Version to upload')
     args = parser.parse_args()
     parser.add_argument('--db', default=f'idc_v{args.version}', help="Database to access")
     parser.add_argument('--project', default='idc-dev-etl')
     args = parser.parse_args()
-    parser.add_argument('--bqdataset_name', default=f"idc_v{args.version}", help="BQ dataset of table")
+    parser.add_argument('--bqdataset_name', default=f"idc_v{args.version}_dev", help="BQ dataset of table")
+    parser.add_argument('--federated_query', default=f'idc-dev-etl.us.etl_federated_query_idc_v{args.version}')
     parser.add_argument('--tables', default= {
-        'analysis_id_map': {"func": upload_table, "order_by": "collection_id"},
-        'collection_id_map': {"func": upload_table, "order_by": "collection_id"},
-        'version': {"func":upload_version, "order_by":"version"},
-        'version_collection': {"func": upload_table, "order_by": "version"},
-        'collection': {"func":upload_collection, "order_by":"collection_id"},
-        'collection_patient': {"func": upload_table, "order_by": "collection_uuid"},
-        'patient': {"func":upload_patient, "order_by":"submitter_case_id"},
-        'patient_study': {"func": upload_table, "order_by": "patient_uuid"},
-        'study': {"func":upload_study, "order_by":"study_instance_uid"},
-        'study_series': {"func": upload_table, "order_by": "study_uuid"},
-        'series': {"func":upload_series, "order_by":"series_instance_uid"},
-        'series_instance': {"func": upload_table, "order_by": "series_uuid"},
-        'instance': {"func":upload_instance, "order_by":"sop_instance_uid"},
-        'cr_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
-        'defaced_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
-        'excluded_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
-        'open_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
+        # 'analysis_id_map': {"func": upload_table, "order_by": "collection_id"},
+        # 'collection_id_map': {"func": upload_table, "order_by": "collection_id"},
+        # 'version': {"func":upload_version, "order_by":"version"},
+        # 'version_collection': {"func": upload_table, "order_by": "version"},
+        # 'collection': {"func":upload_collection, "order_by":"collection_id"},
+        # 'collection_patient': {"func": upload_table, "order_by": "collection_uuid"},
+        # 'patient': {"func":upload_patient, "order_by":"submitter_case_id"},
+        # 'patient_study': {"func": upload_table, "order_by": "patient_uuid"},
+        # 'study': {"func":upload_study, "order_by":"study_instance_uid"},
+        # 'study_series': {"func": upload_table, "order_by": "study_uuid"},
+        # 'series': {"func":upload_series, "order_by":"series_instance_uid"},
+        # 'series_instance': {"func": upload_table, "order_by": "series_uuid"},
+        # 'instance': {"func":upload_instance, "order_by":"sop_instance_uid"},
+        # 'cr_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
+        # 'defaced_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
+        # 'excluded_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
+        # 'open_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
         'redacted_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
-        'program': {"func": upload_table, "order_by": "tcia_wiki_collection_id"},
+        # 'program': {"func": upload_table, "order_by": "tcia_wiki_collection_id"},
+        # 'non_tcia_collection_metadata':{"func": upload_table, "order_by": "idc_webapp_collection_id"},
     }, help="Tables to upload")
     parser.add_argument('--server', default='CLOUD')
     parser.add_argument('--user', default=settings.CLOUD_USERNAME)

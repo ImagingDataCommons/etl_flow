@@ -27,21 +27,21 @@ def gen_aux_table(args):
     query = f"""
 WITH
   collection_access AS (
-  SELECT o.tcia_api_collection_id, o.{args.target}_url as url, o.access
+  SELECT o.tcia_api_collection_id, o.premerge_tcia_url, o.premerge_path_url, o.{args.target}_url as url, o.access
   FROM
-    `idc-dev-etl.idc_v{args.version}.open_collections` as o
+    `idc-dev-etl.{args.dev_bqdataset_name}.open_collections` as o
   UNION ALL
-  SELECT cr.tcia_api_collection_id, cr.{args.target}_url as url, cr.access
+  SELECT cr.tcia_api_collection_id, cr.premerge_tcia_url, cr.premerge_path_url, cr.{args.target}_url as url, cr.access
   FROM
-    `idc-dev-etl.idc_v{args.version}.cr_collections` as cr
+    `idc-dev-etl.{args.dev_bqdataset_name}.cr_collections` as cr
   UNION ALL
-  SELECT r.tcia_api_collection_id, r.{args.target}_url as url, r.access
+  SELECT r.tcia_api_collection_id, r.premerge_tcia_url, r.premerge_path_url, r.{args.target}_url as url, r.access
   FROM
-    `idc-dev-etl.idc_v{args.version}.redacted_collections` as r
+    `idc-dev-etl.{args.dev_bqdataset_name}.redacted_collections` as r
   UNION ALL
-  SELECT d.tcia_api_collection_id, d.{args.target}_url as url, d.access
+  SELECT d.tcia_api_collection_id, d.premerge_tcia_url, d.premerge_path_url, d.{args.target}_url as url, d.access
   FROM
-    `idc-dev-etl.idc_v{args.version}.defaced_collections` as d),
+    `idc-dev-etl.{args.dev_bqdataset_name}.defaced_collections` as d),
   license_info AS (
   SELECT
     DOI,
@@ -49,7 +49,7 @@ WITH
     license_long_name,
     license_short_name
   FROM
-    `idc-dev-etl.idc_v{args.version}.original_collections_metadata`
+    `idc-dev-etl.{args.pub_bqdataset_name}.original_collections_metadata`
   UNION ALL
   SELECT
     DOI,
@@ -57,7 +57,7 @@ WITH
     license_long_name,
     license_short_name
   FROM
-    `idc-dev-etl.idc_v{args.version}.analysis_results_metadata` )
+    `idc-dev-etl.{args.pub_bqdataset_name}.analysis_results_metadata` )
 SELECT
   c.collection_id AS tcia_api_collection_id,
   REPLACE(REPLACE(LOWER(c.collection_id),'-','_'), ' ','_') AS idc_webapp_collection_id,
@@ -91,58 +91,59 @@ SELECT
 --
   i.sop_instance_uid AS SOPInstanceUID,
   i.uuid AS instance_uuid,
-  CONCAT('gs://', collection_access.url, '/', i.uuid, '.dcm') as gcs_url,
   i.size AS instance_size,
   i.hash AS instance_hash,
   i.init_idc_version AS instance_init_idc_version,
   i.rev_idc_version AS instance_revised_idc_version,
   li.license_url AS license_url,
   li.license_long_name AS license_long_name,
-  li.license_short_name AS license_short_name
+  li.license_short_name AS license_short_name,
+  CONCAT('gs://', if(i.rev_idc_version = {args.version}, if(i.source = 'tcia', collection_access.premerge_tcia_url, collection_access.premerge_path_url), collection_access.url), '/', i.uuid, '.dcm') as gcs_url,
+
   FROM
-    `{args.src_project}.{args.bqdataset_name}.version` AS v
+    `{args.src_project}.{args.dev_bqdataset_name}.version` AS v
   JOIN
-    `{args.src_project}.{args.bqdataset_name}.version_collection` AS vc
+    `{args.src_project}.{args.dev_bqdataset_name}.version_collection` AS vc
   ON
     v.version = vc.version
   JOIN
-    `{args.src_project}.{args.bqdataset_name}.collection` AS c
+    `{args.src_project}.{args.dev_bqdataset_name}.collection` AS c
   ON
     vc.collection_uuid = c.uuid
   JOIN
-    `{args.src_project}.{args.bqdataset_name}.collection_patient` AS cp
+    `{args.src_project}.{args.dev_bqdataset_name}.collection_patient` AS cp
   ON
     c.uuid = cp.collection_uuid
   JOIN
-    `{args.src_project}.{args.bqdataset_name}.patient` AS p
+    `{args.src_project}.{args.dev_bqdataset_name}.patient` AS p
   ON
     cp.patient_uuid = p.uuid
   JOIN
-    `{args.src_project}.{args.bqdataset_name}.patient_study` AS ps
+    `{args.src_project}.{args.dev_bqdataset_name}.patient_study` AS ps
   ON
     p.uuid = ps.patient_uuid
   JOIN
-    `{args.src_project}.{args.bqdataset_name}.study` AS st
+    `{args.src_project}.{args.dev_bqdataset_name}.study` AS st
   ON
     ps.study_uuid = st.uuid
   JOIN
-    `{args.src_project}.{args.bqdataset_name}.study_series` AS ss
+    `{args.src_project}.{args.dev_bqdataset_name}.study_series` AS ss
   ON
     st.uuid = ss.study_uuid
   JOIN
-    `{args.src_project}.{args.bqdataset_name}.series` AS se
+    `{args.src_project}.{args.dev_bqdataset_name}.series` AS se
   ON
     ss.series_uuid = se.uuid
   JOIN
-    `{args.src_project}.{args.bqdataset_name}.series_instance` si
+    `{args.src_project}.{args.dev_bqdataset_name}.series_instance` si
   ON
     se.uuid = si.series_uuid
   JOIN
-    `{args.src_project}.{args.bqdataset_name}.instance` i
+    `{args.src_project}.{args.dev_bqdataset_name}.instance` i
   ON
     si.instance_uuid = i.uuid
   LEFT JOIN
-    `{args.src_project}.{args.bqdataset_name}.excluded_collections` ex
+    `{args.src_project}.{args.dev_bqdataset_name}.excluded_collections` ex
   ON
     c.collection_id = ex.tcia_api_collection_id
   JOIN
@@ -163,4 +164,4 @@ SELECT
 
 
     client = bigquery.Client(project=args.dst_project)
-    result=query_BQ(client, args.bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
+    result=query_BQ(client, args.pub_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')

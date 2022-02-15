@@ -45,7 +45,7 @@ def retire_study(args, study ):
     study.final_idc_version = args.previous_version
 
 
-def expand_study(sess, args, all_sources, study, data_collection_doi, analysis_collection_dois):
+def expand_study(sess, args, all_sources, version, collection, patient, study, data_collection_doi, analysis_collection_dois):
     # Get the series that the sources know about
     seriess = all_sources.series(study)
 
@@ -92,8 +92,22 @@ def expand_study(sess, args, all_sources, study, data_collection_doi, analysis_c
 
     for series in existing_objects:
         idc_hashes = series.hashes
-        src_hashes = all_sources.src_series_hashes(series.series_instance_uid)
-        revised = [x != y for x, y in zip(idc_hashes[:-1], src_hashes)]
+        # src_hashes = all_sources.src_series_hashes(series.series_instance_uid)
+        # if collection.collection_id in args.skipped_collections:
+        #     # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+        #     revised = [(x != y) and  not z for x, y, z in \
+        #             zip(idc_hashes[:-1], src_hashes, args.skipped_collections[collection.collection_id])]
+        # else:
+        #     revised = [(x != y) for x, y in \
+        #                zip(idc_hashes[:-1], src_hashes)]
+        if collection.collection_id in args.skipped_collections:
+            skips = args.skipped_collections[collection.collection_id]
+        else:
+            skips = (False, False)
+            # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+        src_hashes = all_sources.src_series_hashes(collection.collection_id, series.series_instance_uid, skips)
+        revised = [(x != y) and not z for x, y, z in \
+                   zip(idc_hashes[:-1], src_hashes, skips)]
         if revised:
             rootlogger.debug('**Series %s needs revision', series.series_instance_uid)
             rev_series = clone_series(series, str(uuid4()))
@@ -140,7 +154,7 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
     begin = time.time()
     rootlogger.debug("    p%s: Expand Study %s, %s", args.id, study.study_instance_uid, study_index)
     if not study.expanded:
-        expand_study(sess, args, all_sources, study, data_collection_doi, analysis_collection_dois)
+        expand_study(sess, args, all_sources, version, collection, patient, study, data_collection_doi, analysis_collection_dois)
     rootlogger.info("    p%s: Expanded Study %s, %s, %s series, expand time: %s", args.id, study.study_instance_uid, study_index, len(study.seriess), time.time()-begin)
     for series in study.seriess:
         series_index = f'{study.seriess.index(series) + 1} of {len(study.seriess)}'
@@ -153,10 +167,19 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
         study.max_timestamp = max([series.max_timestamp for series in study.seriess if series.max_timestamp != None])
         # Get a list of what DB thinks are the study's hashes
         idc_hashes = all_sources.idc_study_hashes(study)
-        # Get a list of what the sources think are the study's hashes
-        src_hashes = all_sources.src_study_hashes(study.study_instance_uid)
-        # They must be the same
-        if src_hashes != idc_hashes[:-1]:
+        # # Get a list of what the sources think are the study's hashes
+        # src_hashes = all_sources.src_study_hashes(study.study_instance_uid)
+        # # They must be the same
+        # if src_hashes != idc_hashes[:-1]:
+        if collection.collection_id in args.skipped_collections:
+            skips = args.skipped_collections[collection.collection_id]
+        else:
+            skips = (False, False)
+            # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+        src_hashes = all_sources.src_study_hashes(collection.collection_id, study.study_instance_uid, skips)
+        revised = [(x != y) and not z for x, y, z in \
+                   zip(idc_hashes[:-1], src_hashes, skips)]
+        if any(revised):
             # errlogger.error('Hash match failed for study %s', study.study_instance_uid)
             raise Exception('Hash match failed for study %s', study.study_instance_uid)
         else:

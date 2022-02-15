@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Remove versions of one or more collection
+# Remove vs of one or more collection
 
 import os
 import sys

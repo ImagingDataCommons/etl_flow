@@ -28,8 +28,8 @@ from utilities.tcia_scrapers import scrape_tcia_data_collections_page
 def get_collections_programs(client, args):
     query = f"""
         SELECT * 
-        FROM `{args.src_project}.{args.bqdataset_name}.program`"""
-    programs = {row['tcia_wiki_collection_id']: row['program'] for row in client.query(query).result()}
+        FROM `{args.src_project}.{args.dev_bqdataset_name}.program`"""
+    programs = {row['tcia_wiki_collection_id'].lower().replace(' ','_').replace('-','_'): row['program'] for row in client.query(query).result()}
 
     return programs
     # programs = {collection: program for cur.fetchall()
@@ -39,12 +39,12 @@ def get_collections_in_version(client, args):
         # Only excluded collections
         query = f"""
         SELECT DISTINCT c.collection_id 
-        FROM `{args.src_project}.{args.bqdataset_name}.version` AS v
-        JOIN `{args.src_project}.{args.bqdataset_name}.version_collection` as vc
+        FROM `{args.src_project}.{args.dev_bqdataset_name}.version` AS v
+        JOIN `{args.src_project}.{args.dev_bqdataset_name}.version_collection` as vc
         ON v.version = vc.version
-        JOIN `{args.src_project}.{args.bqdataset_name}.collection` AS c
+        JOIN `{args.src_project}.{args.dev_bqdataset_name}.collection` AS c
         ON vc.collection_uuid = c.uuid
-        JOIN `{args.src_project}.{args.bqdataset_name}.excluded_collections` as ex
+        JOIN `{args.src_project}.{args.dev_bqdataset_name}.excluded_collections` as ex
         ON LOWER(c.collection_id) = LOWER(ex.tcia_api_collection_id)
         WHERE v.version = {args.version}
         ORDER BY c.collection_id
@@ -53,67 +53,158 @@ def get_collections_in_version(client, args):
         # Only included collections
         query = f"""
         SELECT DISTINCT c.collection_id 
-        FROM `{args.src_project}.{args.bqdataset_name}.version` AS v
-        JOIN `{args.src_project}.{args.bqdataset_name}.version_collection` as vc
+        FROM `{args.src_project}.{args.dev_bqdataset_name}.version` AS v
+        JOIN `{args.src_project}.{args.dev_bqdataset_name}.version_collection` as vc
         ON v.version = vc.version
-        JOIN `{args.src_project}.{args.bqdataset_name}.collection` AS c
+        JOIN `{args.src_project}.{args.dev_bqdataset_name}.collection` AS c
         ON vc.collection_uuid = c.uuid
-        LEFT JOIN `{args.src_project}.{args.bqdataset_name}.excluded_collections` as ex
+        LEFT JOIN `{args.src_project}.{args.dev_bqdataset_name}.excluded_collections` as ex
         ON LOWER(c.collection_id) = LOWER(ex.tcia_api_collection_id)
         WHERE ex.tcia_api_collection_id IS NULL
         AND v.version = {args.version}
         ORDER BY c.collection_id
         """
     result = client.query(query).result()
-    collection_ids = [collection['collection_id'] for collection in result]
+    collection_ids = {collection['collection_id'].lower().replace(' ','_').replace('-','_'): collection['collection_id'] for collection in result}
     return collection_ids
 
 def get_cases_per_collection(client, args):
     query = f"""
     SELECT
-      c.collection_id,
-      COUNT(DISTINCT p.submitter_case_id ),
-    FROM `{args.src_project}.{args.bqdataset_name}.version` AS v
-    JOIN `{args.src_project}.{args.bqdataset_name}.version_collection` as vc
+      c.collection_id as collection_id,
+      COUNT(DISTINCT p.submitter_case_id ) as cases,
+    FROM `{args.src_project}.{args.dev_bqdataset_name}.version` AS v
+    JOIN `{args.src_project}.{args.dev_bqdataset_name}.version_collection` as vc
     ON v.version = vc.version
-    JOIN `{args.src_project}.{args.bqdataset_name}.collection` AS c
+    JOIN `{args.src_project}.{args.dev_bqdataset_name}.collection` AS c
     ON vc.collection_uuid = c.uuid
-    JOIN `{args.src_project}.{args.bqdataset_name}.collection_patient` AS cp
+    JOIN `{args.src_project}.{args.dev_bqdataset_name}.collection_patient` AS cp
     ON c.uuid = cp.collection_uuid
-    JOIN `{args.src_project}.{args.bqdataset_name}.patient` AS p
+    JOIN `{args.src_project}.{args.dev_bqdataset_name}.patient` AS p
     ON cp.patient_uuid = p.uuid
     WHERE v.version = {args.version}
     GROUP BY
         c.collection_id
     """
 
-    case_counts = {c.values()[0].lower(): c.values()[1] for c in client.query(query).result()}
+    case_counts = {c['collection_id'].lower().replace(' ','_').replace('-','_'): c['cases'] for c in client.query(query).result()}
     return case_counts
 
 def get_access_status(client, args):
     query = f"""
-    SELECT o.tcia_api_collection_id, o.access
-    FROM `{args.src_project}.{args.bqdataset_name}.open_collections` o
+    SELECT o.tcia_api_collection_id as collection_id, o.access as access
+    FROM `{args.src_project}.{args.dev_bqdataset_name}.open_collections` o
     UNION ALL
     SELECT cr.tcia_api_collection_id, cr .access
-    FROM `{args.src_project}.{args.bqdataset_name}.cr_collections` cr
+    FROM `{args.src_project}.{args.dev_bqdataset_name}.cr_collections` cr
     UNION ALL
     SELECT r.tcia_api_collection_id, r.access
-    FROM `{args.src_project}.{args.bqdataset_name}.redacted_collections` r
+    FROM `{args.src_project}.{args.dev_bqdataset_name}.redacted_collections` r
     UNION ALL
     SELECT ex.tcia_api_collection_id, ex.access
-    FROM `{args.src_project}.{args.bqdataset_name}.excluded_collections` ex
+    FROM `{args.src_project}.{args.dev_bqdataset_name}.excluded_collections` ex
     UNION ALL
     SELECT de.tcia_api_collection_id, de.access
-    FROM `{args.src_project}.{args.bqdataset_name}.defaced_collections` de
+    FROM `{args.src_project}.{args.dev_bqdataset_name}.defaced_collections` de
     """
 
-    access_status = {c.values()[0]: c.values()[1] for c in client.query(query).result()}
+    access_status = {c['collection_id'].lower().replace(' ','_').replace('-','_'): c['access'] for c in client.query(query).result()}
     return access_status
 
-def build_metadata(client, args, idc_collection_ids, programs):
+#
+def get_non_tcia_collection_metadata(client, args):
+    query = f"""
+    SELECT * 
+    FROM `{args.src_project}.{args.dev_bqdataset_name}.non_tcia_collection_metadata`
+    ORDER BY idc_webapp_collection_id
+    """
+
+    metadata = {}
+    for row in client.query(query).result():
+        metadata[row['idc_webapp_collection_id']] = dict(
+            tcia_wiki_collection_id = "",
+            DOI = row['DOI'],
+            URL = row['URL'],
+            CancerType = row['CancerType'],
+            Location = row['Location'],
+            Subjects = 0,
+            Species = row['Species'],
+            ImageTypes = row['ImageTypes'],
+            SupportingData = row['SupportingData'],
+            Access = "",
+            Status = row['Status'],
+            Updated = row['Updated']
+        )
+    return metadata
+
+def get_collection_metadata(client, args):
+    collection_metadata = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_non_tcia_collection_metadata(client, args).items()}
+    collection_metadata |= {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in scrape_tcia_data_collections_page().items()}
+    return collection_metadata
+
+def get_non_tcia_license_info(client, args):
+    query = f"""
+    SELECT * 
+    FROM `{args.src_project}.{args.dev_bqdataset_name}.non_tcia_collection_metadata`
+    ORDER BY idc_webapp_collection_id
+    """
+
+    licenses = {}
+    for row in client.query(query).result():
+        licenses[row['idc_webapp_collection_id'].lower().replace(' ','_').replace('-','_')] = dict(
+            licenseURL = row['license_url'],
+            longName = row['license_long_name'],
+            shortName = row['license_short_name']
+        )
+    return licenses
+
+
+def get_all_license_info(client, args):
+    licenses = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_collection_license_info().items()}
+    licenses |= get_non_tcia_license_info(client, args)
+    return licenses
+
+
+def get_non_tcia_descriptions(client, args):
+    query = f"""
+    SELECT * 
+    FROM `{args.src_project}.{args.dev_bqdataset_name}.non_tcia_collection_metadata`
+    ORDER BY idc_webapp_collection_id
+    """
+
+    descriptions = {}
+    for row in client.query(query).result():
+        # row['idc_webapp_collection_id'] = dict(
+        #     description = row['Description']
+        # )
+        descriptions[row['idc_webapp_collection_id']] = dict(
+            description = row['Description']
+        )
+    return descriptions
+
+
+def get_all_descriptions(client, args):
+    collection_descriptions = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_collection_descriptions_and_licenses().items()}
+    collection_descriptions |=get_non_tcia_descriptions(client, args)
+    return collection_descriptions
+
+
+def build_metadata(client, args):
+    BQ_client = bigquery.Client(project=args.src_project)
+    programs = get_collections_programs(BQ_client, args)
+
+    if args.use_cached_metadata:
+        with open(args.cached_metadata_file) as f:
+            collection_metadata = json.load(f)
+    else:
+        collection_metadata = get_collection_metadata(client, args)
+    with open(args.cached_metadata_file, 'w') as f:
+        json.dump(collection_metadata,f)
+
+    collection_ids = get_collections_in_version(BQ_client, args)
+
     # Get collection descriptions and license IDs from TCIA
-    collection_descriptions = get_collection_descriptions_and_licenses()
+    collection_descriptions = get_all_descriptions(client, args)
 
     # We report our case count rather than counts from the TCIA wiki pages.
     case_counts = get_cases_per_collection(client, args)
@@ -122,67 +213,72 @@ def build_metadata(client, args, idc_collection_ids, programs):
     access_status = get_access_status(client,args)
 
     # Get a list of the licenses used by data collections
-    licenses = get_collection_license_info()
-
-    # try:
-    #     # a=1/0
-    #     collection_metadata = json.load(open('collection_metadata.txt'))
-    # except:
-    #     # Scrape the TCIA Data Collections page for collection metadata
-    #     collection_metadata = scrape_tcia_data_collections_page()
-    #     with open('collection_metadata.txt', 'w') as f:
-    #         json.dump(collection_metadata, f)
-    collection_metadata = scrape_tcia_data_collections_page()
+    licenses = get_all_license_info(client, args)
 
     rows = []
     found_ids = []
     # lowered_idc_collection_ids = {collection_id.lower():collection_id for collection_id in collection_ids}
-    lowered_collection_description_ids = {collection_id.lower():collection_id for collection_id in collection_descriptions}
-    lowered_license_ids = {collection_id.lower():collection_id for collection_id in licenses}
-    lowered_collection_metadata_ids = {collection_id.lower():collection_id for collection_id in collection_metadata}
+    common_collection_description_ids = {collection_id.lower().replace(' ','_').replace('-','_'):collection_id for collection_id in collection_descriptions}
+    common_license_ids = {collection_id.lower().replace(' ','_').replace('-','_'):collection_id for collection_id in licenses}
+    common_collection_metadata_ids = {collection_id.lower().replace(' ','_').replace('-','_'):collection_id for collection_id in collection_metadata}
 
     # for collection_id, collection_data in collection_metadata.items():
     #     if collection_id.lower() in lowered_collection_ids:
-    for idc_collection_id in idc_collection_ids:
-        if idc_collection_id.lower() in lowered_collection_metadata_ids:
-            try:
-                tcia_collection_id = lowered_collection_metadata_ids[idc_collection_id.lower()]
-                found_ids.append(idc_collection_id)
-                collection_data = collection_metadata[tcia_collection_id]
-                collection_data['tcia_api_collection_id'] = idc_collection_id
-                collection_data['idc_webapp_collection_id'] = collection_data['tcia_api_collection_id'].lower().replace(' ','_').replace('-','_')
-                collection_data['Program'] = programs[collection_data['tcia_wiki_collection_id']]
-                collection_data['Access'] = access_status[collection_data['tcia_api_collection_id']]
-                # if collection_id.lower() in lowered_collection_description_ids:
-                # mapped_collection_id = lowered_collection_ids[collection_id.lower()]
+    for idc_collection_id in collection_ids:
+        # if idc_collection_id.lower().replace(' ','_').replace('-','_') in common_collection_metadata_ids:
+        if idc_collection_id in collection_metadata:
                 try:
-                    collection_description_id = lowered_collection_description_ids[idc_collection_id.lower()]
-                    collection_data['Description'] = collection_descriptions[collection_description_id]['description']
-                except:
-                    collection_data['Description'] = ""
-                collection_data['Subjects'] = case_counts[idc_collection_id.lower()]
-                # mapped_license_id = lowered_license_ids[collection_id.lower()]
-                try:
-                    license_id = lowered_license_ids[idc_collection_id.lower()]
-                    collection_data['license_url'] = licenses[license_id]['licenseURL']
-                    collection_data['license_long_name'] = licenses[license_id]['longName']
-                    collection_data['license_short_name'] = licenses[license_id]['shortName']
-                except:
-                    collection_data['license_url'] = ''
-                    collection_data['license_long_name'] = ''
-                    collection_data['license_short_name'] = ''
-            except Exception as exc:
-                print(f'Exception building metadata {exc}')
+                    # tcia_collection_id = common_collection_metadata_ids[
+                    #     idc_collection_id.lower().replace(' ', '_').replace('-', '_')]
+                    found_ids.append(idc_collection_id)
+                    collection_data = collection_metadata[idc_collection_id]
+                    if not 'URL' in collection_data:
+                        # TCIA collections have an empty URL
+                        collection_data['URL'] = ""
+                    if collection_data['tcia_wiki_collection_id']:
+                        # Only tcia collections have a tcia_api_collection_id
+                        collection_data['tcia_api_collection_id'] = collection_ids[idc_collection_id]
+                    else:
+                        collection_data['tcia_api_collection_id'] = ""
+                    collection_data['idc_webapp_collection_id'] = idc_collection_id
+                    if collection_data['tcia_wiki_collection_id']:
+                       collection_data['Program'] = programs[collection_data['tcia_wiki_collection_id'].lower().replace(' ','_').replace('-','_')]
+                    else:
+                        collection_data['Program'] = programs[idc_collection_id]
 
-            rows.append(json.dumps(collection_data))
+                    collection_data['Access'] = access_status[idc_collection_id]
+                    # if collection_id.lower() in common_collection_description_ids:
+                    # mapped_collection_id = lowered_collection_ids[collection_id.lower()]
+                    try:
+                        # collection_description_id = common_collection_description_ids[idc_collection_id]
+                        collection_data['Description'] = collection_descriptions[idc_collection_id][
+                            'description']
+                    except:
+                        collection_data['Description'] = ""
+                    collection_data['Subjects'] = case_counts[idc_collection_id]
+                    # mapped_license_id = common_license_ids[collection_id.lower()]
+                    try:
+                        # license_id = common_license_ids[idc_collection_id.lower()]
+                        collection_data['license_url'] = licenses[idc_collection_id]['licenseURL']
+                        collection_data['license_long_name'] = licenses[idc_collection_id]['longName']
+                        collection_data['license_short_name'] = licenses[idc_collection_id]['shortName']
+                    except:
+                        collection_data['license_url'] = ''
+                        collection_data['license_long_name'] = ''
+                        collection_data['license_short_name'] = ''
+                    rows.append(json.dumps(collection_data))
+
+                except Exception as exc:
+                    print(f'Exception building metadata {exc}')
+
         else:
             print(f'{idc_collection_id} not in collection metadata')
 
     # Make sure we found metadata for all our collections
-    for idc_collection in idc_collection_ids:
+    for idc_collection in collection_ids:
         if not idc_collection in found_ids:
             print(f'****No metadata for {idc_collection}')
-            if idc_collection == 'APOLLO':
+            if idc_collection == 'apollo':
                 collection_data = {
                     "tcia_wiki_collection_id": "APOLLO-1-VA",
                     "DOI": "",
@@ -213,11 +309,9 @@ def build_metadata(client, args, idc_collection_ids, programs):
 
 def gen_collections_table(args):
     BQ_client = bigquery.Client(project=args.src_project)
-    programs = get_collections_programs(BQ_client, args)
-    collection_ids = get_collections_in_version(BQ_client, args)
 
-    metadata = build_metadata(BQ_client, args, collection_ids, programs)
-    job = load_BQ_from_json(BQ_client, args.dst_project, args.bqdataset_name, args.bqtable_name, metadata,
+    metadata = build_metadata(BQ_client, args)
+    job = load_BQ_from_json(BQ_client, args.dst_project, args.pub_bqdataset_name, args.bqtable_name, metadata,
                             data_collections_metadata_schema, write_disposition='WRITE_TRUNCATE')
     while not job.state == 'DONE':
         print('Status: {}'.format(job.state))
@@ -226,13 +320,16 @@ def gen_collections_table(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=7, help='IDC version for which to build the table')
+    parser.add_argument('--version', default=8, help='IDC version for which to build the table')
     args = parser.parse_args()
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
+    parser.add_argument('--dev_bqdataset_name', default=f'idc_v{args.version}_dev', help='BQ dataset of dev tables')
+    parser.add_argument('--pub_bqdataset_name', default=f'idc_v{args.version}_pub', help='BQ dataset of public tables')
     parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
     parser.add_argument('--gen_excluded', default=False, help="Generate excluded_original_collections_metadata if True")
+    parser.add_argument('--use_cached_metadata', default=True)
+    parser.add_argument('--cached_metadata_file', default='cached_metadata.json', help='Where to cache metadata')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

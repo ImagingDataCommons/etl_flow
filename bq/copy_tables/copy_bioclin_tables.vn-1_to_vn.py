@@ -24,12 +24,12 @@ from bq.copy_tables.copy_tables import copy_tables
 if __name__ == '__main__':
 
     parser =argparse.ArgumentParser()
-    parser.add_argument('--version', default=7, help='IDC version for which to build the table')
+    parser.add_argument('--version', default=0, help='IDC version for which to build the table')
     args = parser.parse_args()
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--src_bqdataset', default=f'idc_v{args.version-1}', help='Source BQ dataset')
-    parser.add_argument('--dst_bqdataset', default=f'idc_v{args.version}', help='Destination BQ dataset')
+    parser.add_argument('--src_bqdataset', default=f'idc_v{args.version-1}_pub', help='Source BQ dataset')
+    parser.add_argument('--dst_bqdataset', default=f'idc_v{args.version}_pub', help='Destination BQ dataset')
     parser.add_argument('--dataset_description', default = f'IDC V{args.version} BQ tables and views')
     parser.add_argument('--bqtables', \
         default=['nlst_canc', 'nlst_ctab', 'nlst_ctabc', 'nlst_prsn', 'nlst_screen', \

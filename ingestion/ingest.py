@@ -17,6 +17,7 @@
 # Populate the DB with data for the next IDC version
 
 import os
+import sys
 import argparse
 import logging
 from logging import INFO, DEBUG
@@ -26,7 +27,9 @@ from multiprocessing import Lock, shared_memory
 from idc.models import Base, Version, Collection
 from utilities.tcia_helpers import get_access_token
 
+from ingestion.utils import list_skips
 from ingestion.version import clone_version, build_version
+
 
 from python_settings import settings
 
@@ -54,7 +57,7 @@ def ingest(args):
     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
     rootlogger.addHandler(root_fh)
     root_fh.setFormatter(rootformatter)
-    rootlogger.setLevel(INFO)
+    rootlogger.setLevel(DEBUG)
 
     # errlogger = logging.getLogger('root.err')
     err_fh = logging.FileHandler('{}/logs/v{}_err.log'.format(os.environ['PWD'], args.version))
@@ -87,7 +90,19 @@ def ingest(args):
         # Get the target version, if it exists
         access = shared_memory.ShareableList(get_access_token())
         args.access = access
-        all_sources = All(args.id, sess, args.version, args.access, Lock())
+
+        args.skipped_tcia_collections = list_skips(sess, Base, args.skipped_tcia_groups, args.skipped_tcia_collections)
+        args.skipped_path_collections = list_skips(sess, Base, args.skipped_path_groups, args.skipped_path_collections)
+        skipped_collections = \
+            {collection_id:[True, False] for collection_id in args.skipped_tcia_collections}
+        for collection_id in args.skipped_path_collections:
+            if collection_id in skipped_collections:
+                skipped_collections[collection_id][1] = True
+            else:
+                skipped_collections[collection_id] = [False, True]
+        args.skipped_collections = skipped_collections
+        all_sources = All(args.id, sess, args.version, args.access,
+                          args.skipped_tcia_collections, args.skipped_path_collections, Lock())
 
         version = sess.query(Version).filter(Version.version == args.version).first()
         if not version:
@@ -138,14 +153,21 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=8, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())
     args = parser.parse_args()
-    parser.add_argument('--db', default=f'idc_v7', help='Database on which to operate')
+    parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
     parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--wsi_src_bucket', default=storage.Bucket(args.client,'af-dac-wsi-conversion-results'), help='Bucket in which to find WSI DICOMs')
-    parser.add_argument('--prestaging_bucket_prefix', default=f'idc_v{args.version}_', help='Copy instances here before forwarding to --staging_bucket')
-    parser.add_argument('--num_processes', default=0, help="Number of concurrent processes")
-    # parser.add_argument('--todos', default='{}/logs/path_ingest_v{}_todos.txt'.format(os.environ['PWD'], args.version ), help="Collections to include")
-    parser.add_argument('--skips', default=f"{os.environ['PWD']}/logs/ingest_v{args.version}_skips.txt", help="Collections to skip")
+    parser.add_argument('--num_processes', default=32, help="Number of concurrent processes")
+
+    parser.add_argument('--skipped_tcia_groups', default=['redacted_collections', 'excluded_collections'],\
+                        help="List of tables containing tcia_api_collection_ids of tcia collections to be skipped")
+    parser.add_argument('--skipped_tcia_collections', default=['NLST', 'HCC-TACE-Seg'], help='List of additional tcia collections to be skipped')
+    parser.add_argument('--prestaging_tcia_bucket_prefix', default=f'idc_v{args.version}_tcia_', help='Copy tcia instances here before forwarding to --staging_bucket')
+
+    parser.add_argument('--skipped_path_groups', default=['redacted_collections', 'excluded_collections'],\
+                        help="List of tables containind tcia_api_collection_ids of path collections to be skipped")
+    parser.add_argument('--skipped_path_collections', default=['HCC-TACE-Seg'], help='List of additional path collections to be skipped')
     parser.add_argument('--server', default="", help="NBIA server to access. Set to NLST for NLST ingestion")
+    parser.add_argument('--prestaging_path_bucket_prefix', default=f'idc_v{args.version}_path_', help='Copy path instances here before forwarding to --staging_bucket')
+
     parser.add_argument('--dicom', default='/mnt/disks/idc-etl/dicom', help='Directory in which to expand downloaded zip files')
     args = parser.parse_args()
     args.id = 0 # Default process ID

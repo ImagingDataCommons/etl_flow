@@ -25,38 +25,14 @@ from utilities.bq_helpers import query_BQ, export_BQ_to_GCS, delete_BQ_Table
 def gen_revision_manifest(args):
     BQ_client = bigquery.Client(project=args.project)
     query= f"""
-        with collection_urls as (
-            SELECT tcia_api_collection_id, pub_url as gcs_url
-            FROM `idc-dev-etl.{args.bqdataset}.open_collections`
-            UNION ALL
-            SELECT tcia_api_collection_id, pub_url as gcs_url
-            FROM `idc-dev-etl.{args.bqdataset}.cr_collections`
-            UNION ALL
-            SELECT tcia_api_collection_id, pub_url as gcs_url
-            FROM `idc-dev-etl.{args.bqdataset}.redacted_collections`
-            UNION ALL
-            SELECT tcia_api_collection_id, pub_url as gcs_url
-            FROM `idc-dev-etl.{args.bqdataset}.defaced_collections`)
-        SELECT concat('dg.4DFC/', a.instance_uuid) as GUID, 
-            a.instance_hash as md5, 
-            a.instance_size as size, 
+        SELECT concat('dg.4DFC/', instance_uuid) as GUID, 
+            instance_hash as md5, 
+            instance_size as size, 
             '*' as acl, 
-            CONCAT('gs://', u.gcs_url, '/', a.instance_uuid, '.dcm') as url
-        FROM `idc-dev-etl.{args.bqdataset}.auxiliary_metadata` as a
-        JOIN collection_urls AS u
-        ON a.tcia_api_collection_id = u.tcia_api_collection_id
-        WHERE a.instance_revised_idc_version in {args.versions}
-
-        UNION ALL 
-        SELECT concat('dg.4DFC/', r.instance_uuid) as GUID, 
-            r.hash as md5, 
-            r.size as size, 
-            '*' as acl, 
-            CONCAT('gs://', u.gcs_url, '/', r.instance_uuid, '.dcm') as url
-        FROM `idc-dev-etl.{args.bqdataset}.retired` AS r
-        JOIN collection_urls AS u
-        ON r.collection_id = u.tcia_api_collection_id
-        WHERE r.rev_idc_version in {args.versions}
+            gcs_url as url
+        FROM `idc-pdp-staging.{args.bqdataset}.auxiliary_metadata` 
+        WHERE instance_revised_idc_version in {args.versions}
+        ORDER BY GUID
     """
 
     # Run a query that generates the manifest data
