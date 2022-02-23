@@ -14,9 +14,8 @@
 # limitations under the License.
 #
 
-
-
-# Export metadata from a DICOM store to BQ
+# Export metadata from a DICOM store to BQ. Instance whose metadata os to be exported are listed in a
+# "filter file"; see https://cloud.google.com/healthcare-api/docs/how-tos/dicom-export-bigquery#exporting_dicom_metadata_using_filters
 
 import argparse
 import sys
@@ -43,15 +42,20 @@ def export_dicom_metadata(args):
     data = {
         'bigqueryDestination': {
             'tableUri': destination,
-            'writeDisposition': 'WRITE_TRUNCATE'
-        }
+            'writeDisposition': 'WRITE_APPEND',
+        },
+        'filterConfig': {
+            'resourcePathsGcsUri': f'{args.filter}'
+        },
+
     }
+
 
     headers = {
         'Authorization': f'Bearer {bearer}',
         'Content-Type': 'application/json; charset=utf-8'
     }
-    url = f'https://healthcare.googleapis.com/v1/projects/{args.src_project}/locations/{args.src_region}/datasets/{args.dcmdataset_name}/dicomStores/{args.dcmdatastore_name}:export'
+    url = f'https://healthcare.googleapis.com/v1beta1/projects/{args.src_project}/locations/{args.src_region}/datasets/{args.dcmdataset_name}/dicomStores/{args.dcmdatastore_name}:export'
     results = requests.post(url, headers=headers, json=data)
 
     # Get the operation ID so we can track progress
@@ -80,7 +84,7 @@ def export_dicom_metadata(args):
             break
         else:
             print(details)
-            time.sleep(5*60)
+            time.sleep(args.period)
 
 def get_job(args):
     results = subprocess.run(['gcloud', 'auth', 'application-default', 'print-access-token'], stdout=PIPE, stderr=PIPE)
@@ -138,32 +142,27 @@ def export_metadata(args):
         err=json.loads(e.content)
         print(f'Error {e}')
 
-    # # We now copy the resulting table if
-    # src_dataset = client.dataset(args.src_bqdataset, args.src_project)
-    # # dst_dataset = client.dataset(args.dst_bqdataset, args.dst_project)
-    # for table in args.bqtables:
-    #     src_table = src_dataset.table(table)
-    #     dst_table = dst_dataset.table(table)
-    #     result = copy_BQ_table(client, src_table, dst_table)
-
-
-
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--version', default=7, help="IDC version")
+    parser.add_argument('--version', default=8, help="IDC version")
     args = parser.parse_args()
-    parser.add_argument('--src_project', default='idc-dev-etl', help='Project of the DICOM store')
-    parser.add_argument('--dst_project', default='idc-dev-etl', help='BQ dataset project')
-    parser.add_argument('--src_region', default='us', help='Dataset region')
-    parser.add_argument('--dst_region', default='us', help='Dataset region')
+    # DICOM store parameters
+    parser.add_argument('--src_project', default='canceridc-data', help='Project of the DICOM store')
+    parser.add_argument('--src_region', default='us', help='DICOM dataset region')
     parser.add_argument('--dcmdataset_name', default='idc', help='DICOM dataset name')
-    parser.add_argument('--dcmdatastore_name', default=f'v{args.version}-with-redacted', help='DICOM datastore name')
-    parser.add_argument('--bqdataset', default=f'idc_v{args.version}', help="BQ dataset name")
+    parser.add_argument('--dcmdatastore_name', default=f'v{args.version}', help='DICOM datastore name')
+    # BQ target dataset
+    parser.add_argument('--dst_project', default='idc-dev-etl', help='BQ dataset project')
+    parser.add_argument('--dst_region', default='us', help='Dataset region')
+    parser.add_argument('--bqdataset', default=f'idc_v{args.version}_pub', help="BQ dataset name")
+    # parser.add_argument('--bqdataset', default=f'whc_dev', help="BQ dataset name")
+    parser.add_argument('--bqtable', default='dicom_metadata', help="BQ table name")
+    parser.add_argument('--filter', default='gs://whc_dev/tcga_brca_filter.csv', help='List of instances to export')
     parser.add_argument('--dataset_description', default = f'IDC V{args.version} BQ tables and views')
-    parser.add_argument('--bqtable', default='dicom_metadata_without', help="BQ table name")
+    parser.add_argument('--period', default=60)
+
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     # get_job(args)
     export_metadata(args)
-

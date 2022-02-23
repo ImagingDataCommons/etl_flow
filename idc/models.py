@@ -457,7 +457,7 @@ class Series(Base):
     series_instance_uid = Column(String, nullable=False, comment="DICOM SeriesInstanceUID")
     uuid = Column(String, primary_key=True, comment="IDC assigned UUID of a version of this object")
     series_instances = Column(Integer, nullable=True, comment="Instances in this series")
-    source_doi = Column(String, nullable=True, comment="A doi to the wiki page of this source of this series")
+    source_doi = Column(String, nullable=True, comment="A doi to the wiki page of this series")
 
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
@@ -501,6 +501,9 @@ class Series(Base):
         ),
         nullable=True,
     )
+    source_url = Column(String, nullable=True, comment="A url to the wiki page of this series")
+    excluded = Column(Boolean, default=False, comment="True if object should be excluded from auxiliary_metadata, etc.")
+
     studies = relationship('Study',
                            secondary=study_series,
                            back_populates='seriess')
@@ -525,7 +528,7 @@ class Instance(Base):
     source = Column(Enum(instance_source), nullable=True, comment='Source of this object; "tcia", "path"')
     timestamp = Column(DateTime, nullable=True, comment="Time when this object was last built")
     # Excluded instances are somehow invalid, but are included in the DB to maintain the hash
-    excluded = Column(Boolean, default=False, comment="True if instance should be excluded from auxiliary_metacata, etc.")
+    excluded = Column(Boolean, default=False, comment="True if object should be excluded from auxiliary_metadata, etc.")
 
     seriess = relationship('Series',
                           secondary=series_instance,

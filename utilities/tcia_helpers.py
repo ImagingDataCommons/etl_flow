@@ -597,16 +597,7 @@ if __name__ == "__main__":
 
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
 
-    # p = get_TCIA_patients_per_collection('Training-Pseudo')
-    p = get_TCIA_patients_per_collection('HCC-TACE-Seg')
-    # token= get_access_token()[0]
-    # hash = get_hash({'Collection':'LDCT-and-Projection-data'}, token)
-    # hash=get_instance_hash('1.3.6.1.4.1.14519.5.2.1.1239.1759.816520824397947445116098544516', access_token=token)
-    # token = get_access_token(auth_server = NLST_AUTH_URL)[0]
-    # hash = get_hash_nlst({'SeriesInstanceUID':f'1.2.840.113654.2.55.97114726565566537928831413367474015470'}, token)
-    # hash = get_images_with_md5_hash_nlst('1.2.840.113654.2.55.97114726565566537928831413367474015470', token)
-    # b =get_collection_license_info()
-    # results = get_collection_values_and_counts()
+    p = get_collection_descriptions_and_licenses()
     d = get_collection_descriptions_and_licenses()
     c = get_collection_values_and_counts()
     # s = get_updated_series('13/01/2021')

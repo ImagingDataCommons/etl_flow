@@ -23,9 +23,10 @@ import argparse
 import logging
 import json
 from logging import INFO
+from googleapiclient import discovery
 from google.api_core.exceptions import Conflict
 from idc.models import Base, Version, Patient, Study, Series, Instance, Collection, CR_Collections, Defaced_Collections, Open_Collections, Redacted_Collections
-from gch.populate_dicom_store.with_redacted.import_buckets_with_redacted import import_dicom_instances, wait_done
+# from gch.obsolete.with_redacted.import_buckets_with_redacted import import_dicom_instances, wait_done
 from ingestion.utils import empty_bucket
 import settings as etl_settings
 from python_settings import settings
@@ -34,11 +35,74 @@ if not settings.configured:
 import google
 from google.cloud import storage
 from google.auth.transport import requests
-from googleapiclient.errors import HttpError
 
-from sqlalchemy import create_engine, distinct
+from sqlalchemy import create_engine
 from sqlalchemy_utils import register_composites
 from sqlalchemy.orm import Session
+
+def get_gch_client():
+    """Returns an authorized API client by discovering the Healthcare API and
+    creating a service object using the service account credentials in the
+    GOOGLE_APPLICATION_CREDENTIALS environment variable."""
+    api_version = "v1"
+    service_name = "healthcare"
+
+    return discovery.build(service_name, api_version)
+
+
+def get_dataset_operation(
+        project_id,
+        cloud_region,
+        dataset_id,
+        operation):
+    client = get_gch_client()
+    op_parent = "projects/{}/locations/{}/datasets/{}".format(project_id, cloud_region, dataset_id)
+    op_name = "{}/operations/{}".format(op_parent, operation)
+    request = client.projects().locations().datasets().operations().get(name=op_name)
+    response = request.execute()
+    return response
+
+
+def wait_done(response, args, sleep_time, verbose=True):
+    operation = response['name'].split('/')[-1]
+    while True:
+        result = get_dataset_operation(args.dst_project, args.dataset_region, args.gch_dataset_name, operation)
+        if verbose:
+            print("{}".format(result))
+
+        if 'done' in result:
+            if not verbose:
+                print("{}".format(result))
+            break
+        sleep(sleep_time)
+    return result
+
+
+def import_dicom_instances(project_id, cloud_region, dataset_id, dicom_store_id, content_uri):
+    """Import data into the DICOM store by copying it from the specified
+    source.
+    """
+    client = get_gch_client()
+    dicom_store_parent = "projects/{}/locations/{}/datasets/{}".format(
+        project_id, cloud_region, dataset_id
+    )
+    dicom_store_name = "{}/dicomStores/{}".format(dicom_store_parent, dicom_store_id)
+
+    body = {"gcsSource": {"uri": "gs://{}".format(content_uri)}}
+
+    request = (
+        client.projects()
+        .locations()
+        .datasets()
+        .dicomStores()
+        .import_(name=dicom_store_name, body=body)
+    )
+
+    response = request.execute()
+    print("Initiated DICOM import,response: {}".format(response))
+
+    return response
+
 
 def get_collection_groups(sess):
     dev_staging_buckets = {}

@@ -207,6 +207,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         expand_collection(sess, args, all_sources, collection)
     rootlogger.info("p%s: Expanded Collection %s, %s, %s patients", args.id, collection.collection_id, collection_index, len(collection.patients))
     # Get the lists of data and analyis series for this collection
+    breakpoint() # Get URLs
     data_collection_doi = get_data_collection_doi(collection.collection_id, server=args.server)
     if data_collection_doi=="":
         if collection.collection_id=='NLST':

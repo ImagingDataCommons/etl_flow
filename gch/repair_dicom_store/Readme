@@ -1,0 +1,8 @@
+
+Scripts in this directory are intended to recover from a DICOM store import that encountered errors.
+Specifically, some known set of instances were not imported, while at the same time one or more instances
+cannot be import for whatever reason. The result is that the DICOM store and, possibly dicom_metadata BQ
+table contain partial series/studies.
+So we first remove the instance in the series from dicom_metadata, and then from the DICOM store itself.
+We can then upload the previously excluded instance to the DICOM store and then export the metadata of those
+instances to BQ.

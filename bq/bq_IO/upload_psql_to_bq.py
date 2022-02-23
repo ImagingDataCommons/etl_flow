@@ -175,7 +175,9 @@ def upload_series(client, args, table, order_by):
       STRUCT(tcia_src AS src,
         path_src AS path) AS sources,
       STRUCT(tcia_rev AS tcia,
-        path_rev AS path) AS revised
+        path_rev AS path) AS revised,
+      source_url,
+      excluded
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT series_instance_uid, uuid, series_instances, source_doi, 
@@ -183,7 +185,8 @@ def upload_series(client, args, table, order_by):
             final_idc_version, done, is_new, expanded, (hashes).tcia AS tcia_hash, 
             (hashes).path AS path_hash, (hashes).all_sources AS all_hash, 
             (sources).tcia AS tcia_src, (sources).path AS path_src, 
-            (revised).tcia AS tcia_rev, (revised).path AS path_rev 
+            (revised).tcia AS tcia_rev, (revised).path AS path_rev,
+            source_url, excluded
         FROM {table}''')
     ORDER BY {order_by}
     """

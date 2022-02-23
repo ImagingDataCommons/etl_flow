@@ -24,8 +24,8 @@ import logging
 import json
 from logging import INFO
 from google.api_core.exceptions import Conflict
-from idc.models import Base, Version, Patient, Study, Series, Instance, Collection, CR_Collections, Defaced_Collections, Open_Collections, Redacted_Collections
-from gch.populate_dicom_store.with_redacted.import_buckets_with_redacted import import_dicom_instances, wait_done
+from idc.models import Base, Version, Patient, Study, Series, Instance, Collection, CR_Collections, Defaced_Collections, Open_Collections
+from gch.obsolete.without_redacted.import_buckets_without_redacted import import_dicom_instances, wait_done
 from ingestion.utils import empty_bucket
 import settings as etl_settings
 from python_settings import settings
@@ -34,9 +34,8 @@ if not settings.configured:
 import google
 from google.cloud import storage
 from google.auth.transport import requests
-from googleapiclient.errors import HttpError
 
-from sqlalchemy import create_engine, distinct
+from sqlalchemy import create_engine
 from sqlalchemy_utils import register_composites
 from sqlalchemy.orm import Session
 
@@ -52,10 +51,6 @@ def get_collection_groups(sess):
         dev_staging_buckets[collection.tcia_api_collection_id] = collection.dev_url
         pub_staging_buckets[collection.tcia_api_collection_id] = collection.pub_url
     collections = sess.query(Open_Collections.tcia_api_collection_id, Open_Collections.dev_url, Open_Collections.pub_url)
-    for collection in  collections:
-        dev_staging_buckets[collection.tcia_api_collection_id] = collection.dev_url
-        pub_staging_buckets[collection.tcia_api_collection_id] = collection.pub_url
-    collections = sess.query(Redacted_Collections.tcia_api_collection_id, Redacted_Collections.dev_url, Redacted_Collections.pub_url)
     for collection in  collections:
         dev_staging_buckets[collection.tcia_api_collection_id] = collection.dev_url
         pub_staging_buckets[collection.tcia_api_collection_id] = collection.pub_url
@@ -116,12 +111,11 @@ def insert_instances(args, sess, dicomweb_sess):
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
 
-    # Collections that are included in the DICOM store are in one of four groups
+    # Collections that are included in the DICOM store are in one of three groups
     collections = sorted(
         [row.tcia_api_collection_id for row in sess.query(Open_Collections.tcia_api_collection_id).union(
             sess.query(Defaced_Collections.tcia_api_collection_id),
-            sess.query(CR_Collections.tcia_api_collection_id),
-            sess.query(Redacted_Collections.tcia_api_collection_id)).all()])
+            sess.query(CR_Collections.tcia_api_collection_id)).all()])
 
     # dev_staging_buckets tells us which staging bucket has a collection's instances
     dev_staging_buckets, _ = get_collection_groups(sess)
@@ -141,7 +135,7 @@ def insert_instances(args, sess, dicomweb_sess):
             json.dump(uids,f)
 
     # We import instances from a bucket
-    # populate_staging_bucket(args, uids)
+    populate_staging_bucket(args, uids)
 
     print('Importing {}'.format(args.staging_bucket))
     content_uri = '{}/*'.format(args.staging_bucket)
@@ -180,11 +174,11 @@ if __name__ == '__main__':
     parser.add_argument('--client', default=storage.Client())
     args = parser.parse_args()
     parser.add_argument('--db', default=f'idc_v7', help='Database on which to operate')
-    parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--dataset_region', default='us-central1')
+    parser.add_argument('--dst_project', default='canceridc-data')
+    parser.add_argument('--dataset_region', default='us')
     parser.add_argument('--gch_dataset_name', default='idc')
-    parser.add_argument('--dicomstore', default=f'v{args.version}-with-redacted')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/repair_dicom_store_with_redacted')
+    parser.add_argument('--dicomstore', default=f'v{args.version}')
+    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/repair_dicom_store_without_redacted')
     parser.add_argument('--period',default=60)
     parser.add_argument('--staging_bucket', default='dicom_store_insert_staging_bucket')
     args = parser.parse_args()
