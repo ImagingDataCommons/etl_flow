@@ -27,24 +27,95 @@ def gen_aux_table(args):
     query = f"""
 WITH
   collection_access AS (
-  SELECT o.tcia_api_collection_id, o.premerge_tcia_url, o.premerge_path_url, o.{args.target}_url as url, o.access
+  SELECT DISTINCT m.idc_collection_id, o.premerge_tcia_url, o.premerge_path_url, o.{args.target}_url as url, o.access
   FROM
+    `idc-dev-etl.{args.dev_bqdataset_name}.version` as v
+  JOIN 
+    `idc-dev-etl.{args.dev_bqdataset_name}.version_collection` vc
+  ON
+    v.version = vc.version
+  JOIN
+    `idc-dev-etl.{args.dev_bqdataset_name}.collection` c
+  ON
+    vc.collection_uuid = c.uuid
+  JOIN
     `idc-dev-etl.{args.dev_bqdataset_name}.open_collections` as o
+  ON
+    REPLACE(REPLACE(LOWER(c.collection_id),' ','_'),'-','_') = REPLACE(REPLACE(LOWER(o.tcia_api_collection_id ),' ','_'),'-','_') 
+  JOIN
+    `idc-dev-etl.{args.dev_bqdataset_name}.collection_id_map` as m
+  ON REPLACE(REPLACE(LOWER(o.tcia_api_collection_id),'-','_'), ' ','_') = REPLACE(REPLACE(LOWER(m.collection_id),'-','_'), ' ','_')
+  WHERE v.version = 8
+
   UNION ALL
-  SELECT cr.tcia_api_collection_id, cr.premerge_tcia_url, cr.premerge_path_url, cr.{args.target}_url as url, cr.access
+
+  SELECT DISTINCT m.idc_collection_id, cr.premerge_tcia_url, cr.premerge_path_url, cr.{args.target}_url as url, cr.access
   FROM
+    `idc-dev-etl.{args.dev_bqdataset_name}.version` as v
+  JOIN 
+    `idc-dev-etl.{args.dev_bqdataset_name}.version_collection` vc
+  ON
+    v.version = vc.version
+  JOIN
+    `idc-dev-etl.{args.dev_bqdataset_name}.collection` c
+  ON
+    vc.collection_uuid = c.uuid
+  JOIN
     `idc-dev-etl.{args.dev_bqdataset_name}.cr_collections` as cr
+  ON
+    REPLACE(REPLACE(LOWER(c.collection_id),' ','_'),'-','_') = REPLACE(REPLACE(LOWER(cr.tcia_api_collection_id ),' ','_'),'-','_') 
+  JOIN
+    `idc-dev-etl.{args.dev_bqdataset_name}.collection_id_map` as m
+  ON REPLACE(REPLACE(LOWER(cr.tcia_api_collection_id),'-','_'), ' ','_') = REPLACE(REPLACE(LOWER(m.collection_id),'-','_'), ' ','_')
+  WHERE v.version = 8
+
   UNION ALL
-  SELECT r.tcia_api_collection_id, r.premerge_tcia_url, r.premerge_path_url, r.{args.target}_url as url, r.access
+
+  SELECT DISTINCT m.idc_collection_id, r.premerge_tcia_url, r.premerge_path_url, r.{args.target}_url as url, r.access
   FROM
+    `idc-dev-etl.{args.dev_bqdataset_name}.version` as v
+  JOIN 
+    `idc-dev-etl.{args.dev_bqdataset_name}.version_collection` vc
+  ON
+    v.version = vc.version
+  JOIN
+    `idc-dev-etl.{args.dev_bqdataset_name}.collection` c
+  ON
+    vc.collection_uuid = c.uuid
+  JOIN
     `idc-dev-etl.{args.dev_bqdataset_name}.redacted_collections` as r
+  ON
+    REPLACE(REPLACE(LOWER(c.collection_id),' ','_'),'-','_') = REPLACE(REPLACE(LOWER(r.tcia_api_collection_id ),' ','_'),'-','_') 
+  JOIN
+    `idc-dev-etl.{args.dev_bqdataset_name}.collection_id_map` as m
+  ON REPLACE(REPLACE(LOWER(r.tcia_api_collection_id),'-','_'), ' ','_') = REPLACE(REPLACE(LOWER(m.collection_id),'-','_'), ' ','_')
+  WHERE v.version = 8
+ 
   UNION ALL
-  SELECT d.tcia_api_collection_id, d.premerge_tcia_url, d.premerge_path_url, d.{args.target}_url as url, d.access
+
+  SELECT DISTINCT m.idc_collection_id, d.premerge_tcia_url, d.premerge_path_url, d.{args.target}_url as url, d.access
   FROM
-    `idc-dev-etl.{args.dev_bqdataset_name}.defaced_collections` as d),
+    `idc-dev-etl.{args.dev_bqdataset_name}.version` as v
+  JOIN 
+    `idc-dev-etl.{args.dev_bqdataset_name}.version_collection` vc
+  ON
+    v.version = vc.version
+  JOIN
+    `idc-dev-etl.{args.dev_bqdataset_name}.collection` c
+  ON
+    vc.collection_uuid = c.uuid
+  JOIN
+    `idc-dev-etl.{args.dev_bqdataset_name}.defaced_collections` as d
+  ON
+    REPLACE(REPLACE(LOWER(c.collection_id),' ','_'),'-','_') = REPLACE(REPLACE(LOWER(d.tcia_api_collection_id ),' ','_'),'-','_') 
+  JOIN
+    `idc-dev-etl.{args.dev_bqdataset_name}.collection_id_map` as m
+  ON REPLACE(REPLACE(LOWER(d.tcia_api_collection_id),'-','_'), ' ','_') = REPLACE(REPLACE(LOWER(m.collection_id),'-','_'), ' ','_')
+  WHERE v.version = 8
+  ),
   license_info AS (
   SELECT
-    DOI,
+    DOI, URL,
     license_url,
     license_long_name,
     license_short_name
@@ -52,7 +123,7 @@ WITH
     `idc-dev-etl.{args.pub_bqdataset_name}.original_collections_metadata`
   UNION ALL
   SELECT
-    DOI,
+    DOI, "" AS URL,
     license_url,
     license_long_name,
     license_short_name
@@ -84,6 +155,7 @@ SELECT
   se.series_instance_uid AS SeriesInstanceUID,
   se.uuid AS series_uuid,
   IF(c.collection_id='APOLLO', '', se.source_doi) AS source_doi,
+  se.source_url AS source_url,
   se.series_instances AS series_instances,
   se.hashes.all_hash AS series_hash,
   se.init_idc_version AS series_init_idc_version,
@@ -91,14 +163,14 @@ SELECT
 --
   i.sop_instance_uid AS SOPInstanceUID,
   i.uuid AS instance_uuid,
+  CONCAT('gs://', if(i.rev_idc_version = {args.version}, if(i.source = 'tcia', collection_access.premerge_tcia_url, collection_access.premerge_path_url), collection_access.url), '/', i.uuid, '.dcm') as gcs_url,
   i.size AS instance_size,
   i.hash AS instance_hash,
   i.init_idc_version AS instance_init_idc_version,
   i.rev_idc_version AS instance_revised_idc_version,
   li.license_url AS license_url,
   li.license_long_name AS license_long_name,
-  li.license_short_name AS license_short_name,
-  CONCAT('gs://', if(i.rev_idc_version = {args.version}, if(i.source = 'tcia', collection_access.premerge_tcia_url, collection_access.premerge_path_url), collection_access.url), '/', i.uuid, '.dcm') as gcs_url,
+  li.license_short_name AS license_short_name
 
   FROM
     `{args.src_project}.{args.dev_bqdataset_name}.version` AS v
@@ -149,13 +221,15 @@ SELECT
   JOIN
     collection_access
   ON
-    c.collection_id = collection_access.tcia_api_collection_id
-  JOIN
+    c.idc_collection_id = collection_access.idc_collection_id
+  LEFT JOIN
     license_info AS li
   ON
-    se.source_doi = li.DOI
+    se.source_doi = li.DOI AND se.source_url = li.URL
   WHERE
-    ex.tcia_api_collection_id IS NULL
+    ex.tcia_api_collection_id IS NULL 
+  AND 
+    i.excluded is False
   AND
     v.version = {args.version}
   ORDER BY
