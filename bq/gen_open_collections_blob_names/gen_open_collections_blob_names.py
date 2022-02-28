@@ -91,23 +91,23 @@ def gen_blob_table(args):
       ON
         pubs.tcia_api_collection_id = c.collection_id
       WHERE
-        v.version = {args.version}
+        v.version = {args.version} and i.excluded = False
       ORDER BY
         blob_name
     """
 
     client = bigquery.Client(project=args.dst_project)
     # query = args.sql.format(version=args.version)
-    result=query_BQ(client, args.dst_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
+    result=query_BQ(client, args.trg_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=7, help='IDC version for which to build the table')
+    parser.add_argument('--version', default=8, help='IDC version for which to build the table')
     args = parser.parse_args()
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-pdp-staging')
-    parser.add_argument('--src_bqdataset_name', default=f'idc_v{args.version}', help='BQ dataset name')
-    parser.add_argument('--dst_bqdataset_name', default=f'idc_metadata', help='BQ dataset name')
+    parser.add_argument('--src_bqdataset_name', default=f'idc_v{args.version}_dev', help='BQ dataset name')
+    parser.add_argument('--trg_bqdataset_name', default=f'idc_metadata', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default=f'open_collections_blob_names_v{args.version}', help='BQ table name')
     # parser.add_argument('--sql', default=f'./gen_open_collections_blob_names.sql')
     args = parser.parse_args()
