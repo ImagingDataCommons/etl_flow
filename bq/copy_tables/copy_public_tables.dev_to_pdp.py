@@ -25,11 +25,11 @@ from bq.copy_tables.copy_tables import copy_tables
 if __name__ == '__main__':
 
     parser =argparse.ArgumentParser()
-    parser.add_argument('--version', default=7, help='IDC version of dataset to which to copy tables')
+    parser.add_argument('--version', default=8, help='IDC version of dataset to which to copy tables')
     args = parser.parse_args()
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-pdp-staging')
-    parser.add_argument('--src_bqdataset', default=f'idc_v{args.version}', help='Source BQ dataset')
+    parser.add_argument('--src_bqdataset', default=f'idc_v{args.version}_pub', help='Source BQ dataset')
     parser.add_argument('--dst_bqdataset', default=f'idc_v{args.version}', help='Destination BQ dataset')
     parser.add_argument('--dataset_description', default = f'IDC V{args.version} BQ tables and views')
     parser.add_argument('--bqtables', \
