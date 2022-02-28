@@ -13,10 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#### This is the third and final step in populating a DICOM store ####
+
+#### This is the third step in populating a DICOM store ####
 # We now insert the version of an instance if the instance has been
 # revised but is not retired. This will replace the revised instances
 # which we deleted in the previous step.
+# For this purpose we populate a bucket with those instance, and then
+# import the entire bucket. This is much faster than storing each
+# instance individually.
 
 import os
 import argparse

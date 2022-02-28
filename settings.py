@@ -59,5 +59,32 @@ TCIA_PASSWORD =          os.environ.get('TCIA_PASSWORD')
 TCIA_CLIENT_ID =         os.environ.get('TCIA_CLIENT_ID')
 TCIA_CLIENT_SECRET=     os.environ.get('TCIA_CLIENT_SECRET')
 
+CURRENT_VERSION=8
+PREVIOUS_VERSION=7
+
+DEV_PROJECT='idc-dev-etl'
+PDP_PROJECT='idc-pdp-staging'
+PUB_PROJECT='canceridc-staging'
+
+GCH_PROJECT=PUB_PROJECT
+GCH_REGION='us'
+GCH_DATASET='idc'
+GCH_DICOMSTORE=f'v{CURRENT_VERSION}'
+
+GCS_DEV_OPEN='idc-dev-open'
+GCS_DEV_CR='idc-dev-cr'
+GCS_DEV_MASKABLE='idc-dev-defaced'
+GCS_DEV_REDACTED='idc-dev-redacted'
+GCS_DEV_EXCLUDED='idc-dev-excluded'
+
+GCS_PUB_OPEN='idc-open-pdp-staging'
+GCS_DEV_CR='idc-open-cr'
+GCS_DEV_MASKABLE='idc-open-idc1'
+
+BQ_DEV_INT_DATASET=f'idc_v{CURRENT_VERSION}_dev'
+BQ_DEV_EXT_DATASET=f'idc_v{CURRENT_VERSION}_dev'
+BQ_PUB_DATASET=f'idc_v{CURRENT_VERSION}'
+
+
 
 
