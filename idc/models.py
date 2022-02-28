@@ -22,7 +22,6 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy_utils import CompositeType
 
 import enum
-# from idc.config import sql_uri
 
 
 class instance_source(enum.Enum):

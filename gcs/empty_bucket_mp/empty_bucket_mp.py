@@ -16,7 +16,7 @@
 
 """
 Multiprocess bucket emptier. Does not delete the bucket.
-May saturate a small VM, dwpwnding on the number of processes.
+May saturate a small VM, depending on the number of processes.
 """
 
 import argparse

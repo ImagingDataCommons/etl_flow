@@ -23,7 +23,6 @@ from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json, query_BQ
 
 def gen_aux_table(args):
-
     query = f"""
 WITH
   collection_access AS (
@@ -136,7 +135,6 @@ SELECT
   c.hashes.all_hash AS collection_hash,
   c.init_idc_version AS collection_init_idc_version,
   c.rev_idc_version AS collection_revised_idc_version,
---   c.Access As access,
   collection_access.access AS access,
 --
   p.submitter_case_id AS submitter_case_id,
@@ -163,7 +161,23 @@ SELECT
 --
   i.sop_instance_uid AS SOPInstanceUID,
   i.uuid AS instance_uuid,
-  CONCAT('gs://', if(i.rev_idc_version = {args.version}, if(i.source = 'tcia', collection_access.premerge_tcia_url, collection_access.premerge_path_url), collection_access.url), '/', i.uuid, '.dcm') as gcs_url,
+  CONCAT('gs://',
+    # If we are generating gcs_url for the public auciliary_metadata table 
+    if('{args.target}' = 'pub', 
+        collection_access.url, 
+    #else 
+        # We are generating the dev auxiliary_metadata
+        # If this instance is new in this version:
+        if(i.rev_idc_version = {args.version},
+            # We use the premerge url prefix
+            if(i.source = 'tcia', 
+                collection_access.premerge_tcia_url, 
+            #else 
+                collection_access.premerge_path_url), 
+        #else
+            # This instance is not new so use the staging bucket prefix
+            collection_access.url)), 
+    '/', i.uuid, '.dcm') as gcs_url,
   i.size AS instance_size,
   i.hash AS instance_hash,
   i.init_idc_version AS instance_init_idc_version,
@@ -238,4 +252,4 @@ SELECT
 
 
     client = bigquery.Client(project=args.dst_project)
-    result=query_BQ(client, args.pub_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
+    result=query_BQ(client, args.trg_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
