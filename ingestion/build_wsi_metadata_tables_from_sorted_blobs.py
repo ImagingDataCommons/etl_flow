@@ -23,6 +23,7 @@ import os
 import sys
 import argparse
 from fnmatch import fnmatch
+import csv
 
 from idc.models import Base, WSI_Version, WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance
 from ingestion.utils import get_merkle_hash
@@ -33,9 +34,9 @@ from google.cloud import storage
 import logging
 from logging import INFO, DEBUG
 from base64 import b64decode
-import settings as etl_settings
+# import settings as etl_settings
 from python_settings import settings
-settings.configure(etl_settings)
+# settings.configure(etl_settings)
 
 from ingestion.utils import list_skips
 
@@ -44,10 +45,10 @@ from sqlalchemy import create_engine, update
 from google.cloud import storage
 
 
-def list_blobs_with_prefix(bucket, prefix, delimiter=None):
+def list_blobs_with_prefix(client, bucket, prefix, delimiter=None):
     # storage_client = storage.Client()
     # bucket = storage_client.bucket(args.src_bucket)
-    blobs = args.client.list_blobs(bucket, prefix=prefix, delimiter=delimiter)
+    blobs = client.list_blobs(bucket, prefix=prefix, delimiter=delimiter)
     names = [blob.name for blob in blobs]
     ids = [ prefix.split('/')[-2] for prefix in blobs.prefixes]
     ids.sort()
@@ -127,14 +128,31 @@ def build_collections(client, args, sess, version, skips):
         included = open(args.included).read().splitlines()
     except:
         included = ["*"]
-    _, collection_ids = list_blobs_with_prefix(args.src_bucket, prefix=None, delimiter='/')
-    collection_ids = list(set(collection_ids) - set(skips) - set(dones))
-    collection_ids.sort()
-    for collection_id in collection_ids:
-        if any([fnmatch(collection_id, include) for include in included]):
-            rootlogger.info('Collecting metadata from collection %s', collection_id)
-            collection = sess.query(WSI_Collection).filter(WSI_Collection.collection_id == collection_id).first()
-            if not collection:
+    # _, collection_ids = list_blobs_with_prefix(client, args.src_bucket, prefix=None, delimiter='/')
+    # collection_ids = list(set(collection_ids) - set(skips) - set(dones))
+    # collection_ids.sort()
+    # for collection_id in collection_ids:
+    #     if any([fnmatch(collection_id, include) for include in included]):
+    #         rootlogger.info('Collecting metadata from collection %s', collection_id)
+    #         collection = sess.query(WSI_Collection).filter(WSI_Collection.collection_id == collection_id).first()
+    #         if not collection:
+    #             collection = WSI_Collection()
+    #             collection.collection_id = collection_id
+    #             version.collections.append(collection)
+    #             # sess.commit()
+    #         build_patients(client, args, sess, collection, f'{collection_id}/')
+    #         hashes = [patient.hash for patient in collection.patients]
+    #         collection.hash = get_merkle_hash(hashes)
+    #         sess.commit()
+    #
+    #         with open(args.dones, 'a') as f:
+    #             f.write(f'{collection_id}\n')
+
+    with open(args.tsv_file, newline='', delimiter='\t') as tsv:
+        reader = csv.DictReader(tsv)
+        for row in reader:
+            collection_id = row['collection_id']
+            if not row.collection  in [collection.collection_id for collection in version.collections]:
                 collection = WSI_Collection()
                 collection.collection_id = collection_id
                 version.collections.append(collection)
@@ -144,15 +162,21 @@ def build_collections(client, args, sess, version, skips):
             collection.hash = get_merkle_hash(hashes)
             sess.commit()
 
-            with open(args.dones, 'a') as f:
-                f.write(f'{collection_id}\n')
+
 
 
 def build_version(client, args, sess, skips):
-    version = sess.query(WSI_Version).filter(WSI_Version.version == args.version).first()
+    # The WSI metadata is not actually version. It is really a snapshot
+    # of WSI data that is expected to be in the current/next IDC version.
+    # It is only versioned to the extent that it is associated with a
+    # particular version of the DB
+    # There should be only single "version", having version=0
+    version = sess.query(WSI_Version).filter(WSI_Version.version == 0).first()
+    # version = sess.query(WSI_Version).filter(WSI_Version.version == settings.CURRENT_VERSION).first()
     if not version:
         version = WSI_Version()
-        version.version = args.version
+        version.version = 0
+        # version.version = settings.CURRENT_VERSION
         sess.add(version)
     build_collections(client, args, sess, version, skips)
     hashes = [collection.hash for collection in version.collections]
@@ -161,11 +185,11 @@ def build_version(client, args, sess, skips):
 
 
 def prebuild(args):
-    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
+    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
     # sql_engine = create_engine(sql_uri, echo=True)
     sql_engine = create_engine(sql_uri)
     # Create the tables if they do not already exist
-    Base.metadata.create_all(sql_engine)
+    # Base.metadata.create_all(sql_engine)
 
     # todos = open(args.todos).read().splitlines()
 
@@ -177,14 +201,17 @@ def prebuild(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=8, help='Version to work on')
+    # parser.add_argument('--version', default=8, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())
-    args = parser.parse_args()
-    parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
-    parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--src_bucket', default=storage.Bucket(args.client,'dac-wsi-conversion-results-v2-sorted'))
-    parser.add_argument('--skipped_groups', default=['redacted_collections', 'excluded_collections'])
-    parser.add_argument('--skipped_collections', default=['CPTAC-CCRCC',
+    # parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
+    # parser.add_argument('--project', default='idc-dev-etl')
+    # parser.add_argument('--src_bucket', default=storage.Bucket(args.client,'dac-wsi-conversion-results-v2-sorted'))
+    parser.add_argument('--tsv_file', default = 'gs://idc-htan-transfer/HTAN-V1-Converted/Converted_20220228',\
+                        help='A GCS blob that contains a TSV manifest of WSI DICOMs to be ingested')
+    parser.add_argument('--skipped_groups', default=['redacted_collections', 'excluded_collections'], \
+                        help="Collection groups that should not be ingested")
+    parser.add_argument('--skipped_collections', default=[
+     'CPTAC-CCRCC',
      'CPTAC-CM',
      'CPTAC-LSCC',
      'CPTAC-LUAD',
@@ -194,21 +221,22 @@ if __name__ == '__main__':
      'CPTAC-AML',
      'CPTAC-BRCA',
      'CPTAC-COAD',
-     'CPTAC-OV'])
+     'CPTAC-OV'],\
+      help='Additional collections that should not be ingested.')
     parser.add_argument('--dones', default='{}/logs/wsi_build_dones.txt'.format(os.environ['PWD']), help="Completed collections")
     args = parser.parse_args()
 
     print("{}".format(args), file=sys.stdout)
 
     rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/wsi_metadata_log.log'.format(os.environ['PWD'], args.version))
+    root_fh = logging.FileHandler('{}/logs/wsi_metadata_log.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
     rootlogger.addHandler(root_fh)
     root_fh.setFormatter(rootformatter)
     rootlogger.setLevel(INFO)
 
     errlogger = logging.getLogger('root.err')
-    err_fh = logging.FileHandler('{}/logs/wsi_metadata_err.log'.format(os.environ['PWD'], args.version))
+    err_fh = logging.FileHandler('{}/logs/wsi_metadata_err.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
     errformatter = logging.Formatter('{%(pathname)s:%(lineno)d} %(levelname)s:err:%(message)s')
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
