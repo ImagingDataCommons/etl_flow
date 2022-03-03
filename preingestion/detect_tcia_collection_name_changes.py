@@ -45,7 +45,7 @@ def compare_dois():
         rows = sess.query(Collection.collection_id,Series.source_doi).distinct(). \
             join(Version.collections).join(Collection.patients).join(Patient.studies).join(\
             Study.seriess).filter(Version.version == settings.PREVIOUS_VERSION).all()
-        idc_dois = {row.source_doi: row.collection_id for row in rows }
+        idc_dois = {row.source_doi: row.collection_id for row in rows if row.source_doi }
 
         tcia_original_dois = {item['DOI']: collection_id for collection_id, item in scrape_tcia_data_collections_page().items()}
         tcia_analysis_dois = {item['DOI']: collection_id for collection_id, item in scrape_tcia_analysis_collections_page().items()}
