@@ -535,8 +535,9 @@ class Instance(Base):
 
 class Collection_id_map(Base):
     __tablename__ = 'collection_id_map'
-    collection_id = Column(String, primary_key=True)
+    tcia_api_collection_id = Column(String, nullable=True)
     idc_collection_id = Column(String, nullable=False)
+    idc_webapp_collection_id = Column(String, nullable=False)
 
 
 class WSI_Version(Base):

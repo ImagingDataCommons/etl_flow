@@ -39,7 +39,7 @@ if __name__ == '__main__':
     parser.add_argument('--federated_query', default=f'idc-dev-etl.us.etl_federated_query_idc_v{args.version}')
     parser.add_argument('--tables', default= {
         'analysis_id_map': {"func": upload_table, "order_by": "collection_id"},
-        'collection_id_map': {"func": upload_table, "order_by": "collection_id"},
+        'collection_id_map': {"func": upload_table, "order_by": "idc_webapp_collection_id"},
         'version': {"func":upload_version, "order_by":"version"},
         'version_collection': {"func": upload_table, "order_by": "version"},
         'collection': {"func":upload_collection, "order_by":"collection_id"},
