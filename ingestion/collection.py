@@ -253,7 +253,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
                 build_patient(sess, args, all_sources, patient_index, data_collection_doi, analysis_collection_dois, version, collection, patient)
             else:
                 if True:
-                    rootlogger.info("  p%s: Patient %s, %s, previously built", args.id, patient.submitter_case_id,
+                    rootlogger.info("  p0: Patient %s, %s, previously built", patient.submitter_case_id,
                                 patient_index)
 
     else:
