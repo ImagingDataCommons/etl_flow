@@ -33,9 +33,9 @@ from google.cloud import storage
 import logging
 from logging import INFO, DEBUG
 from base64 import b64decode
-import settings as etl_settings
+# import settings as etl_settings
 from python_settings import settings
-settings.configure(etl_settings)
+# settings.configure(etl_settings)
 
 from ingestion.utils import list_skips
 
@@ -182,7 +182,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
     parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--src_bucket', default=storage.Bucket(args.client,'dac-wsi-conversion-results-v2-sorted'))
+    # parser.add_argument('--src_bucket', default=storage.Bucket(args.client,'htan_transfer'))
+    parser.add_argument('--src_bucket', default='htan_transfer')
+    parser.add_argument('--tsv', default='gs://htan-transfer/HTAN-V1-Converted/Converted_20220228/identifiers.txt')
     parser.add_argument('--skipped_groups', default=['redacted_collections', 'excluded_collections'])
     parser.add_argument('--skipped_collections', default=[
      'CPTAC-CCRCC',
