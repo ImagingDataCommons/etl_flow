@@ -535,9 +535,9 @@ class Instance(Base):
 
 class Collection_id_map(Base):
     __tablename__ = 'collection_id_map'
-    tcia_api_collection_id = Column(String, nullable=True)
-    idc_collection_id = Column(String, nullable=False)
-    idc_webapp_collection_id = Column(string, nullable=False)
+    tcia_api_collection_id = Column(String, primary_key=True)
+    idc_collection_id = Column(String, primary_key=True)
+    idc_webapp_collection_id = Column(String, primary_key=True)
 
 class WSI_Version(Base):
     __tablename__ = 'wsi_version'
@@ -555,7 +555,6 @@ class WSI_Collection(Base):
 
     vers = relationship("WSI_Version", back_populates="collections")
     patients = relationship("WSI_Patient", back_populates="collection", order_by="WSI_Patient.submitter_case_id", cascade="all, delete")
-    # patients = relationship("Patient", backref="the_collection")
 
 class WSI_Patient(Base):
     __tablename__ = 'wsi_patient'
@@ -565,7 +564,6 @@ class WSI_Patient(Base):
 
     collection = relationship("WSI_Collection", back_populates="patients")
     studies = relationship("WSI_Study", back_populates="patient", order_by="WSI_Study.study_instance_uid", cascade="all, delete")
-    # studies = relationship("Study", backref="patient")
 
 class WSI_Study(Base):
     __tablename__ = 'wsi_study'
@@ -575,7 +573,6 @@ class WSI_Study(Base):
 
     patient = relationship("WSI_Patient", back_populates="studies")
     seriess = relationship("WSI_Series", back_populates="study", order_by="WSI_Series.series_instance_uid", cascade="all, delete")
-    # series = relationship("Study", backref="study")
 
 class WSI_Series(Base):
     __tablename__ = 'wsi_series'
@@ -585,7 +582,6 @@ class WSI_Series(Base):
 
     study = relationship("WSI_Study", back_populates="seriess")
     instances = relationship("WSI_Instance", back_populates="seriess", order_by="WSI_Instance.sop_instance_uid", cascade="all, delete")
-    # instances = relationship("Study", backref="series")
 
 class WSI_Instance(Base):
     __tablename__ = 'wsi_instance'
