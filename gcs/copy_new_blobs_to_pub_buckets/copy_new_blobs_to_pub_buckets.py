@@ -32,7 +32,7 @@ def get_urls(args):
       dev.gcs_url as dev_url,
       pub.gcs_url as pub_url
     FROM
-      `idc-dev-etl.idc_v{args.version}.auxiliary_metadata` dev
+      `idc-dev-etl.idc_v{args.version}_pub.auxiliary_metadata` dev
     JOIN
       `idc-pdp-staging.idc_v{args.version}.auxiliary_metadata` pub
     ON
@@ -138,8 +138,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=8, help='Version to work on')
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/copy_new_blobs_to_pub_buckets')
-    parser.add_argument('--batch', default=1000)
-    parser.add_argument('--processes', default=1)
+    parser.add_argument('--batch', default=100)
+    parser.add_argument('--processes', default=32)
     args = parser.parse_args()
     args.id = 0 # Default process ID
 
