@@ -14,10 +14,13 @@
 # limitations under the License.
 #
 
-# Build a table of collection/patient/study/series/instance metadata for the WSIs
-# Assumes that bucket containing the pathology WSI blobs is gcsfuse mounted (the
-# mount point is a paramater). This allows pydicom that extract DICOM UIDs
-# from each blob without having to import the entire (large) blob.
+# Removes data from the wsi_collection/_patient/_study/_series/_instance DB tables.
+# Metadata is extracted from a TSV file having columns Filename, "SOP Instance UID",
+# "Patient ID", "Clinical Trial Protocol ID", "Study Instance UID", and "Series Instance UID".
+# "Clinical Trial Protocol ID" is considered to be the collection ID.
+#
+# The expectation is that the TSV file will contain metadata on non-TCIA instances that
+# are to be removed from a subsequent IDC version.
 
 import os
 import sys
@@ -62,6 +65,7 @@ def remove_series_from_study(client, args, sess, study, row):
         series = next(series for series in study.seriess if series.series_instance_uid == series_id)
         remove_instance_from_series(client, args, sess, series, row)
         if series.instances:
+            # Series is not empty. Keep it.
             hashes = [instance.hash for instance in series.instances]
             series.hash = get_merkle_hash(hashes)
         else:
@@ -80,7 +84,7 @@ def remove_study_from_patient(client, args, sess, patient, row):
         study = next(study for study in patient.studies if study.study_instance_uid == study_id)
         remove_series_from_study(client, args, sess, study, row)
         if study.seriess:
-            # Study is not empty.
+            # Study is not empty. Keep it.
             hashes = [series.hash for series in study.seriess]
             study.hash = get_merkle_hash(hashes)
         else:
@@ -99,7 +103,7 @@ def remove_patient_from_collection(client, args, sess, collection, row):
         patient = next(patient for patient in collection.patients if patient.submitter_case_id == patient_id)
         remove_study_from_patient(client, args, sess, patient, row)
         if patient.studies:
-            # Patient not empty
+            # Patient not empty. Keep it.
             hashes = [study.hash for study in patient.studies]
             patient.hash = get_merkle_hash(hashes)
         else:
@@ -118,11 +122,11 @@ def remove_collection_from_version(client, args, sess, version, row):
         collection = next(collection for collection in version.collections if collection.collection_id == collection_id)
         remove_patient_from_collection(client, args, sess, collection, row)
         if collection.patients:
-            # Collection is not empty.
+            # Collection is not empty. Keep it.
             hashes = [patient.hash for patient in collection.patients]
             collection.hash = get_merkle_hash(hashes)
         else:
-            # Collection is empy. Remove it from the version.
+            # Collection is empty. Remove it from the version.
             version.collections.remove(collection)
             sess.delete(collection)
         return

@@ -22,8 +22,8 @@ from google.cloud import bigquery, storage
 import time
 from multiprocessing import Process, Queue
 
-# Copy the blobs that are new to a version from dev staging buckets
-# to pub buckets.
+# Copy the blobs that are new to a version from dev pre-staging buckets
+# to dev staging buckets.
 
 def get_urls(args):
     client = bigquery.Client()
@@ -59,6 +59,9 @@ def copy_some_blobs(args, client, urls, n):
             dev_bucket = client.bucket(blob['dev_url'].split('/')[2])
             dev_blob = dev_bucket.blob(blob_name)
             pub_bucket_name = blob['pub_url'].split('/')[2]
+
+            # We don't copy directly yo the public-datasets-idc bucket.
+            # We copy to a staging bucket and Google copies to the public bucket
             if 'public-datasets-idc' in pub_bucket_name:
                 pub_bucket_name = 'idc-open-pdp-staging'
             pub_bucket = client.bucket(pub_bucket_name)
@@ -133,10 +136,10 @@ def copy_all_blobs(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=7, help='Version to work on')
+    parser.add_argument('--version', default=8, help='Version to work on')
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/copy_new_blobs_to_pub_buckets')
     parser.add_argument('--batch', default=1000)
-    parser.add_argument('--processes', default=48)
+    parser.add_argument('--processes', default=1)
     args = parser.parse_args()
     args.id = 0 # Default process ID
 

@@ -15,8 +15,10 @@
 #
 
 """
-One time script to empty the idc-open-pdp-staging bucket as part
-of transitioning from fully populated to delta populated.
+Script to empty the PDP staging bucket, which is a "delta" bucket
+containing only the instances that are new to a version. Therefore
+it must be emptied before the instances for the next version are
+copied to it.
 """
 
 import argparse

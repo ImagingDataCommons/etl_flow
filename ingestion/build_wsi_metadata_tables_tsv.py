@@ -14,10 +14,14 @@
 # limitations under the License.
 #
 
-# Build a table of collection/patient/study/series/instance metadata for the WSIs
-# Assumes that bucket containing the pathology WSI blobs is gcsfuse mounted (the
-# mount point is a paramater). This allows pydicom that extract DICOM UIDs
-# from each blob without having to import the entire (large) blob.
+# Adds/replaces data to the wsi_collection/_patient/_study/_series/_instance DB tables.
+# Metadata is extracted from a TSV file having columns Filename, "SOP Instance UID",
+# "Patient ID", "Clinical Trial Protocol ID", "Study Instance UID", and "Series Instance UID".
+# "Clinical Trial Protocol ID" is considered to be the collection ID.
+#
+# The expectation is that the TSV file will contain metadata of non-TCIA instances that is to
+# to be in the next IDC version. The  wsi_collection/_patient/_study/_series/_instance tables
+# are always a snapshot of non-TCIA data in IDC.
 
 import os
 import sys
