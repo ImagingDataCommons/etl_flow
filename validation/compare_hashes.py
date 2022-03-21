@@ -222,11 +222,10 @@ def compare_study_hashes(access_token, refresh_token, sess, args, collection, pa
 def compare_patient_hashes(access_token, refresh_token, sess, args, collection):
     patients = collection.patients
 #    access_token = get_access_token(auth_server=NBIA_AUTH_URL)
-
-    # tcia_patients = get_TCIA_patients_per_collection(collection.collection_id)
-
-    # if len(patients) == len(tcia_patients):
-    # tcia_patients = sorted(tcia_patients, key=lambda id: id['PatientId'])
+    tcia_patients = get_TCIA_patients_per_collection(collection.collection_id)
+    if not set([patient.submitter_case_id for patient in patients]) == set([patient['PatientId'] for patient in tcia_patients]):
+        errlogger.info("\tPatients are different")
+        return
     for patient in patients:
         try:
             if collection.collection_id == 'NLST':
@@ -235,8 +234,6 @@ def compare_patient_hashes(access_token, refresh_token, sess, args, collection):
             else:
                 result = get_hash(
                 {'Collection': collection.collection_id, 'PatientID': patient.submitter_case_id}, access_token=access_token)
-
-
             if result.status_code == 504:
                 print('\t{:32} error: {}, reason: {}'.format(patient.submitter_case_id, result.status_code,
                                                                       result.reason))
@@ -273,7 +270,7 @@ def compare_collection_hashes(sess, args):
       """
     version = sess.query(Version).filter(Version.version == args.version).first()
     collections = version.collections
-
+    collections = sorted(version.collections, key=lambda collection: collection.collection_id)
 
     skips = open(args.skips).read().splitlines()
 
@@ -312,7 +309,10 @@ def compare_collection_hashes(sess, args):
                 idc_hash = collection.hashes.tcia
                 if 'collection' in args.log_level:
                     print('{:32} IDC: {}, NBIA: {}; {}'.format(collection_id, collection.hashes.tcia, nbia_hash, idc_hash==nbia_hash))
-                    rootlogger.info('%-32s IDC: %s, NBIA: %s; %s', collection_id, collection.hashes.tcia, nbia_hash, idc_hash==nbia_hash)
+                    if idc_hash==nbia_hash:
+                        rootlogger.info('%-32s IDC: %s, NBIA: %s; %s', collection_id, collection.hashes.tcia, nbia_hash, idc_hash==nbia_hash)
+                    else:
+                        errlogger.info('%-32s IDC: %s, NBIA: %s; %s', collection_id, collection.hashes.tcia, nbia_hash, idc_hash==nbia_hash)
                 if not args.stop_expansion == 'collection':
                     if idc_hash != nbia_hash or args.expand_all:
                         if args.stop and (nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == ""):
@@ -377,11 +377,11 @@ if __name__ == '__main__':
     parser.add_argument('--db', default=f'idc_v8', help='Database to compare against')
     parser.add_argument('--suffix', default="")
     parser.add_argument('--stop_expansion', default="", help="Level at which to stop expansion")
-    parser.add_argument('--stop', default=True, help='Stop expansion if no hash returned by NBIA')
-    parser.add_argument('--expand_all', default=True, help="Expand regardless of whether hashes match.")
+    parser.add_argument('--stop', default=False, help='Stop expansion if no hash returned by NBIA')
+    parser.add_argument('--expand_all', default=False, help="Expand regardless of whether hashes match.")
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
                         help='Levels at which to log')
-    parser.add_argument('--collections', default=['NLST'], \
+    parser.add_argument('--collections', default=['NSCLC Radiogenomics'], \
         help='List of collections to compare. If empty, compare all collections')
     parser.add_argument('--skips', default='./logs/compare_hashes_skips')
 
