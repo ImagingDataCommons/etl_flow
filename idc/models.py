@@ -535,9 +535,9 @@ class Instance(Base):
 
 class Collection_id_map(Base):
     __tablename__ = 'collection_id_map'
-    tcia_api_collection_id = Column(String, nullable=True)
-    idc_collection_id = Column(String, nullable=False)
-    idc_webapp_collection_id = Column(String, nullable=False)
+    tcia_api_collection_id = Column(String, primary_key=True)
+    idc_collection_id = Column(String, primary_key=True)
+    idc_webapp_collection_id = Column(String, primary_key=True)
 
 
 class WSI_Version(Base):
@@ -624,6 +624,9 @@ class CR_Collections(Base):
     v1 = Column(Boolean, comment='True if collection is in v1')
     v2 = Column(Boolean, comment='True if collection is in v2')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    premerge_tcia_url = Column(String, comment="Premerge tcia bucket name")
+    premerge_path_url = Column(String, comment="Premerge path bucket name")
+
 
 class Defaced_Collections(Base):
     __tablename__ = 'defaced_collections'
@@ -634,6 +637,8 @@ class Defaced_Collections(Base):
     v1 = Column(Boolean, comment='True if collection is in v1')
     v2 = Column(Boolean, comment='True if collection is in v2')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    premerge_tcia_url = Column(String, comment="Premerge tcia bucket name")
+    premerge_path_url = Column(String, comment="Premerge path bucket name")
 
 class Excluded_Collections(Base):
     __tablename__ = 'excluded_collections'
@@ -644,6 +649,8 @@ class Excluded_Collections(Base):
 class Open_Collections(Base):
     __tablename__ = 'open_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
+    premerge_tcia_url = Column(String, comment="Premerge tcia bucket name")
+    premerge_path_url = Column(String, comment="Premerge path bucket name")
     dev_url = Column(String, comment="Dev bucket name")
     pub_url = Column(String, comment="Public bucket name")
     access = Column(String, comment="Access: Public or Limited")
@@ -658,4 +665,6 @@ class Redacted_Collections(Base):
     v1 = Column(Boolean, comment='True if collection is in v1')
     v2 = Column(Boolean, comment='True if collection is in v2')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    premerge_tcia_url = Column(String, comment="Premerge tcia bucket name")
+    premerge_path_url = Column(String, comment="Premerge path bucket name")
 
