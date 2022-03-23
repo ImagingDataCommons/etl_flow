@@ -43,7 +43,7 @@ WITH
     REPLACE(REPLACE(LOWER(c.collection_id),' ','_'),'-','_') = REPLACE(REPLACE(LOWER(o.tcia_api_collection_id ),' ','_'),'-','_') 
   JOIN
     `idc-dev-etl.{args.dev_bqdataset_name}.collection_id_map` as m
-  ON REPLACE(REPLACE(LOWER(o.tcia_api_collection_id),'-','_'), ' ','_') = REPLACE(REPLACE(LOWER(m.collection_id),'-','_'), ' ','_')
+  ON REPLACE(REPLACE(LOWER(o.tcia_api_collection_id),'-','_'), ' ','_') = REPLACE(REPLACE(LOWER(m.idc_webapp_collection_id),'-','_'), ' ','_')
   WHERE v.version = 8
 
   UNION ALL
@@ -65,7 +65,7 @@ WITH
     REPLACE(REPLACE(LOWER(c.collection_id),' ','_'),'-','_') = REPLACE(REPLACE(LOWER(cr.tcia_api_collection_id ),' ','_'),'-','_') 
   JOIN
     `idc-dev-etl.{args.dev_bqdataset_name}.collection_id_map` as m
-  ON REPLACE(REPLACE(LOWER(cr.tcia_api_collection_id),'-','_'), ' ','_') = REPLACE(REPLACE(LOWER(m.collection_id),'-','_'), ' ','_')
+  ON REPLACE(REPLACE(LOWER(cr.tcia_api_collection_id),'-','_'), ' ','_') = REPLACE(REPLACE(LOWER(m.idc_webapp_collection_id),'-','_'), ' ','_')
   WHERE v.version = 8
 
   UNION ALL
@@ -87,7 +87,7 @@ WITH
     REPLACE(REPLACE(LOWER(c.collection_id),' ','_'),'-','_') = REPLACE(REPLACE(LOWER(r.tcia_api_collection_id ),' ','_'),'-','_') 
   JOIN
     `idc-dev-etl.{args.dev_bqdataset_name}.collection_id_map` as m
-  ON REPLACE(REPLACE(LOWER(r.tcia_api_collection_id),'-','_'), ' ','_') = REPLACE(REPLACE(LOWER(m.collection_id),'-','_'), ' ','_')
+  ON REPLACE(REPLACE(LOWER(r.tcia_api_collection_id),'-','_'), ' ','_') = REPLACE(REPLACE(LOWER(m.idc_webapp_collection_id),'-','_'), ' ','_')
   WHERE v.version = 8
  
   UNION ALL
@@ -109,7 +109,7 @@ WITH
     REPLACE(REPLACE(LOWER(c.collection_id),' ','_'),'-','_') = REPLACE(REPLACE(LOWER(d.tcia_api_collection_id ),' ','_'),'-','_') 
   JOIN
     `idc-dev-etl.{args.dev_bqdataset_name}.collection_id_map` as m
-  ON REPLACE(REPLACE(LOWER(d.tcia_api_collection_id),'-','_'), ' ','_') = REPLACE(REPLACE(LOWER(m.collection_id),'-','_'), ' ','_')
+  ON REPLACE(REPLACE(LOWER(d.tcia_api_collection_id),'-','_'), ' ','_') = REPLACE(REPLACE(LOWER(m.idc_webapp_collection_id),'-','_'), ' ','_')
   WHERE v.version = 8
   ),
   license_info AS (
@@ -162,13 +162,14 @@ SELECT
   i.sop_instance_uid AS SOPInstanceUID,
   i.uuid AS instance_uuid,
   CONCAT('gs://',
-    # If we are generating gcs_url for the public auciliary_metadata table 
+    # If we are generating gcs_url for the public auxiliary_metadata table 
     if('{args.target}' = 'pub', 
         collection_access.url, 
     #else 
         # We are generating the dev auxiliary_metadata
-        # If this instance is new in this version:
-        if(i.rev_idc_version = {args.version},
+        # If this instance is new in this version and we 
+        # have not merged new instances into dev buckets
+        if(i.rev_idc_version = {args.version} and not {args.merged},
             # We use the premerge url prefix
             if(i.source = 'tcia', 
                 collection_access.premerge_tcia_url, 
