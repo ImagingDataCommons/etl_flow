@@ -107,7 +107,7 @@ def copy_all_instances(args):
     print(f"{len(done_instances)} previously copied")
     done_instances = set(done_instances)
 
-    print(f'Copying bucket {args.src_bucket}, ')
+    print(f'Copying bucket {args.src_bucket} to {args.dst_bucket}, ')
 
     num_processes = args.processes
     processes = []
@@ -128,13 +128,13 @@ def copy_all_instances(args):
     n = 0
     iterator = client.list_blobs(src_bucket,  page_size=args.batch)
     for page in iterator.pages:
-        blobs = [blob.name for blob in page if blob.name not in done_instances]
-        if len(blobs):
+        if page.num_items:
+            blobs = set([blob.name for blob in page])
+            blobs = blobs - done_instances
             task_queue.put((blobs, n))
-            print(f'Queued {n}:{n+len(blobs)-1}')
+            # print(f'Queued {n}:{n+len(blobs)-1}')
         else:
-            print(f'Skipped blobs {n}:{n+args.batch-1}')
-
+            break
         n += page.num_items
     print('Primary work distribution complete; {} blobs'.format(n))
 
@@ -161,7 +161,7 @@ def pre_copy(args):
     if not os.path.exists('{}'.format(args.log_dir)):
         os.mkdir('{}'.format(args.log_dir))
         st = os.stat('{}'.format(args.log_dir))
-        os.chmod('{}'.format(args.log_dir), st.st_mode | 0o222)
+        # os.chmod('{}'.format(args.log_dir), st.st_mode | 0o222)
 
     # Change logging file. File name includes bucket ID.
     for hdlr in successlogger.handlers[:]:
