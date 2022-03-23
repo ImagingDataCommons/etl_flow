@@ -75,9 +75,6 @@ def copy_dev_buckets(args):
     sql_engine = create_engine(sql_uri)
     args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
 
-    # Create the tables if they do not already exist
-    Base.metadata.create_all(sql_engine)
-
     # Enable the underlying psycopg2 to deal with composites
     conn = sql_engine.connect()
     register_composites(conn)
@@ -95,15 +92,15 @@ def copy_dev_buckets(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=7, help='Version to work on')
+    parser.add_argument('--version', default=8, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())
     args = parser.parse_args()
-    parser.add_argument('--db', default=f'idc_v7', help='Database on which to operate')
+    parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--prestaging_bucket_prefix', default=f'idc_v{args.version}_', help='Copy instances here before forwarding to --staging_bucket')
+    parser.add_argument('--prestaging_bucket_prefixes', default=f'idc_v{args.version}_', help='Copy instances here before forwarding to --staging_bucket')
     parser.add_argument('--staging_bucket_prefix', default=f'', help='Copy instances here before forwarding to --staging_bucket')
-    parser.add_argument('--processes', default=8, help="Number of concurrent processes")
+    parser.add_argument('--processes', default=1, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/copy_prestaging_to_staging_bucket_mp')
     args = parser.parse_args()
