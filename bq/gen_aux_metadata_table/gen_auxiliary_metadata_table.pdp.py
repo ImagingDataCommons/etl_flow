@@ -27,6 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=8, help='IDC version for which to build the table')
     args = parser.parse_args()
     parser.add_argument('--target', default='pub', help="dev or pub")
+    parser.add_argument('--merged', default=True, help='True if premerge buckets have been merged in dev buckets')
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-pdp-staging')
     parser.add_argument('--dev_bqdataset_name', default=f'idc_v{args.version}_dev', help='BQ dataset containing development tables')
