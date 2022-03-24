@@ -18,6 +18,7 @@
 # It uses the source DOI to map between TCIA collections and IDC
 # collections names. Collection IDs that are only different in casing
 # are ignored
+# If there is no output, then no name changes were detected.
 
 from idc.models import Base, Version, Patient, Study, Series, Collection
 from utilities.tcia_scrapers import scrape_tcia_data_collections_page, scrape_tcia_analysis_collections_page
@@ -42,13 +43,18 @@ def compare_dois():
 
 
     with Session(sql_engine) as sess:
+        # Get the source_dois across all series in each collection. This can
+        # include both original collection dois and analysis results dois
         rows = sess.query(Collection.collection_id,Series.source_doi).distinct(). \
             join(Version.collections).join(Collection.patients).join(Patient.studies).join(\
             Study.seriess).filter(Version.version == settings.PREVIOUS_VERSION).all()
         idc_dois = {row.source_doi: row.collection_id for row in rows if row.source_doi }
 
+        # Scrape TCIA pages to get a list of dois mapped to IDs
         tcia_original_dois = {item['DOI']: collection_id for collection_id, item in scrape_tcia_data_collections_page().items()}
         tcia_analysis_dois = {item['DOI']: collection_id for collection_id, item in scrape_tcia_analysis_collections_page().items()}
+
+        # Looks for each doi that have in the latter two lists, if found compare IDs.
         for doi in idc_dois:
             if doi in tcia_original_dois:
                 if idc_dois[doi].lower() != tcia_original_dois[doi].lower():

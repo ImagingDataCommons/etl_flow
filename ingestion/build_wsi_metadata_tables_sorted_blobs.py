@@ -43,7 +43,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, update
 from google.cloud import storage
 
-
+# Return a list of blobs that have the specified prefix
 def list_blobs_with_prefix(bucket, prefix, delimiter=None):
     # storage_client = storage.Client()
     # bucket = storage_client.bucket(args.src_bucket)
@@ -127,6 +127,7 @@ def build_collections(client, args, sess, version, skips):
         included = open(args.included).read().splitlines()
     except:
         included = ["*"]
+    # Get the collection IDs in the src bucket
     _, collection_ids = list_blobs_with_prefix(args.src_bucket, prefix=None, delimiter='/')
     collection_ids = list(set(collection_ids) - set(skips) - set(dones))
     collection_ids.sort()
@@ -149,11 +150,22 @@ def build_collections(client, args, sess, version, skips):
 
 
 def build_version(client, args, sess, skips):
-    version = sess.query(WSI_Version).filter(WSI_Version.version == args.version).first()
+    # The WSI metadata is not actually versioned. It is really a snapshot
+    # of WSI data that is expected to be in the current/next IDC version.
+    # It is only versioned to the extent that it is associated with a
+    # particular version of the DB
+    # There should be only a single "version", having version=0
+    version = sess.query(WSI_Version).filter(WSI_Version.version == 0).first()
+    # version = sess.query(WSI_Version).filter(WSI_Version.version == settings.CURRENT_VERSION).first()
     if not version:
         version = WSI_Version()
-        version.version = args.version
+        version.version = 0
         sess.add(version)
+    # version = sess.query(WSI_Version).filter(WSI_Version.version == args.version).first()
+    # if not version:
+    #     version = WSI_Version()
+    #     version.version = args.version
+    #     sess.add(version)
     build_collections(client, args, sess, version, skips)
     hashes = [collection.hash for collection in version.collections]
     version.hash = get_merkle_hash(hashes)
@@ -161,7 +173,7 @@ def build_version(client, args, sess, skips):
 
 
 def prebuild(args):
-    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
+    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
     # sql_engine = create_engine(sql_uri, echo=True)
     sql_engine = create_engine(sql_uri)
     # Create the tables if they do not already exist
@@ -177,13 +189,13 @@ def prebuild(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=8, help='Version to work on')
+    parser.add_argument('--version', default=9, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())
     args = parser.parse_args()
-    parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
-    parser.add_argument('--project', default='idc-dev-etl')
+    # parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
+    # parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--src_bucket', default=storage.Bucket(args.client,'dac-wsi-conversion-results-v2-sorted'))
-    parser.add_argument('--skipped_groups', default=['redacted_collections', 'excluded_collections'])
+    parser.add_argument('--skipped_groups', default=['open_collections', 'redacted_collections', 'excluded_collections'])
     parser.add_argument('--skipped_collections', default=[
      'CPTAC-CCRCC',
      'CPTAC-CM',

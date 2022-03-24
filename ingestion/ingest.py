@@ -93,8 +93,12 @@ def ingest(args):
 
         args.skipped_tcia_collections = list_skips(sess, Base, args.skipped_tcia_groups, args.skipped_tcia_collections)
         args.skipped_path_collections = list_skips(sess, Base, args.skipped_path_groups, args.skipped_path_collections)
+
+        # Now create a table of collections for which tcia or path ingestion or both, are to be skipped.
+        # Populate with tcia skips
         skipped_collections = \
             {collection_id:[True, False] for collection_id in args.skipped_tcia_collections}
+        # Now add path skips
         for collection_id in args.skipped_path_collections:
             if collection_id in skipped_collections:
                 skipped_collections[collection_id][1] = True
@@ -149,12 +153,12 @@ def ingest(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--previous_version', default=7, help='Previous version')
-    parser.add_argument('--version', default=8, help='Version to work on')
-    parser.add_argument('--client', default=storage.Client())
-    args = parser.parse_args()
-    parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
-    parser.add_argument('--project', default='idc-dev-etl')
+    # parser.add_argument('--previous_version', default=8, help='Previous version')
+    # parser.add_argument('--version', default=9, help='Version to work on')
+    # parser.add_argument('--client', default=storage.Client())
+    # args = parser.parse_args()
+    # parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
+    # parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--num_processes', default=32, help="Number of concurrent processes")
 
     parser.add_argument('--skipped_tcia_groups', default=['redacted_collections', 'excluded_collections'],\
@@ -162,7 +166,7 @@ if __name__ == '__main__':
     parser.add_argument('--skipped_tcia_collections', default=['NLST', 'HCC-TACE-Seg'], help='List of additional tcia collections to be skipped')
     parser.add_argument('--prestaging_tcia_bucket_prefix', default=f'idc_v{args.version}_tcia_', help='Copy tcia instances here before forwarding to --staging_bucket')
 
-    parser.add_argument('--skipped_path_groups', default=['redacted_collections', 'excluded_collections'],\
+    parser.add_argument('--skipped_path_groups', default=['excluded_collections'],\
                         help="List of tables containind tcia_api_collection_ids of path collections to be skipped")
     parser.add_argument('--skipped_path_collections', default=['HCC-TACE-Seg'], help='List of additional path collections to be skipped')
     parser.add_argument('--server', default="", help="NBIA server to access. Set to NLST for NLST ingestion")

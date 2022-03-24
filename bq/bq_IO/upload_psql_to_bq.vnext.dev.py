@@ -30,16 +30,17 @@ from bq.bq_IO.upload_psql_to_bq import upload_to_bq, upload_version, upload_coll
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=8, help='Version to upload')
+    parser.add_argument('--version', default=9, help='Version to upload')
     args = parser.parse_args()
     parser.add_argument('--db', default=f'idc_v{args.version}', help="Database to access")
     parser.add_argument('--project', default='idc-dev-etl')
     args = parser.parse_args()
-    parser.add_argument('--bqdataset_name', default=f"idc_v{args.version}_dev", help="BQ dataset of table")
+    # parser.add_argument('--bqdataset_name', default=f"idc_v{args.version}_dev", help="BQ dataset of table")
+    parser.add_argument('--bqdataset_name', default=f"whc_dev", help="BQ dataset of table")
     parser.add_argument('--federated_query', default=f'idc-dev-etl.us.etl_federated_query_idc_v{args.version}')
     parser.add_argument('--tables', default= {
         # 'analysis_id_map': {"func": upload_table, "order_by": "collection_id"},
-        'collection_id_map': {"func": upload_table, "order_by": "idc_webapp_collection_id"},
+        # 'collection_id_map': {"func": upload_table, "order_by": "idc_webapp_collection_id"},
         # 'version': {"func":upload_version, "order_by":"version"},
         # 'version_collection': {"func": upload_table, "order_by": "version"},
         # 'collection': {"func":upload_collection, "order_by":"collection_id"},
@@ -57,7 +58,7 @@ if __name__ == '__main__':
         # 'open_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
         # 'redacted_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
         # 'program': {"func": upload_table, "order_by": "tcia_wiki_collection_id"},
-        # 'non_tcia_collection_metadata':{"func": upload_table, "order_by": "idc_webapp_collection_id"},
+        'non_tcia_collection_metadata':{"func": upload_table, "order_by": "idc_webapp_collection_id"},
     }, help="Tables to upload")
     parser.add_argument('--server', default='CLOUD')
     parser.add_argument('--user', default=settings.CLOUD_USERNAME)

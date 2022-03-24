@@ -91,7 +91,9 @@ class TCIA(Source):
 
 
     def collections(self):
+        # Get TCIAs list of collections
         collections = get_collection_values_and_counts(self.nbia_server)
+        # Remove any collections to be skipped
         for collection in self.skipped_collections:
             try:
                 collections.remove(collection)

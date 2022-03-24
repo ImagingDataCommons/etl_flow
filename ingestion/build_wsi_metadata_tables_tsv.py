@@ -139,7 +139,7 @@ def build_version(client, args, sess, skips):
         included = ["*"]
 
 
-    # The WSI metadata is not actually version. It is really a snapshot
+    # The WSI metadata is not actually versioned. It is really a snapshot
     # of WSI data that is expected to be in the current/next IDC version.
     # It is only versioned to the extent that it is associated with a
     # particular version of the DB

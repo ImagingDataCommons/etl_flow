@@ -32,28 +32,11 @@ def gen_blob_table(args):
         DISTINCT tcia_api_collection_id
       FROM
         `{args.src_project}.{args.src_bqdataset_name}.open_collections`
-      UNION ALL
-      SELECT
-        tcia_api_collection_id
-      FROM
-        `{args.src_project}.{args.src_bqdataset_name}.cr_collections`
-      UNION ALL
-      SELECT
-        tcia_api_collection_id
-      FROM
-        `{args.src_project}.{args.src_bqdataset_name}.defaced_collections` )
+      )
     SELECT
       DISTINCT CONCAT(i.uuid, '.dcm') as blob_name
       FROM
-        `{args.src_project}.{args.src_bqdataset_name}.version` AS v
-      JOIN
-        `{args.src_project}.{args.src_bqdataset_name}.version_collection` AS vc
-      ON
-        v.version = vc.version
-      JOIN
         `{args.src_project}.{args.src_bqdataset_name}.collection` AS c
-      ON
-        vc.collection_uuid = c.uuid
       JOIN
         `{args.src_project}.{args.src_bqdataset_name}.collection_patient` AS cp
       ON
@@ -91,7 +74,7 @@ def gen_blob_table(args):
       ON
         pubs.tcia_api_collection_id = c.collection_id
       WHERE
-        v.version = {args.version} and i.excluded = False
+        i.excluded = False
       ORDER BY
         blob_name
     """
