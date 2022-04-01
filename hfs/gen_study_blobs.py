@@ -20,26 +20,30 @@ import logging
 from logging import INFO
 from google.cloud import bigquery, storage
 import json
+from hfs.gen_series_blobs import gen_series_object
 
 
 # Copy the blobs that are new to a version from dev pre-staging buckets
 # to dev staging buckets.
 
-def get_studies_in_patient(args, uuid):
+def get_series_in_study(args, uuid):
     client = bigquery.Client()
     query = f"""
     SELECT
       distinct
-      study_instance_uid,
-      st_uuid uuid,
-      st_hashes['all_source'] mds_hash,
-      st_init_idc_version init_idc_version,
-      st_rev_idc_version rev_idc_version,
-      st_final_idc_version final_idc_version
+      series_instance_uid,
+      source_doi,
+      source_url,
+      se_uuid uuid,
+      se_hashes.all_hash md5_hash,
+      se_init_idc_version init_idc_version,
+      se_rev_idc_version rev_idc_version,
+      se_final_idc_version final_idc_version
     FROM
-      `idc-dev-etl.idc_v{args.version}_dev.all_joined`
+      `idc-dev-etl.whc_dev.hfs_all_joined`
     WHERE
-      uuid = {uuid} 
+      st_uuid = '{uuid}' 
+    ORDER BY series_instance_uid
     """
     # urls = list(client.query(query))
     query_job = client.query(query)  # Make an API request.
@@ -48,78 +52,83 @@ def get_studies_in_patient(args, uuid):
     destination = client.get_table(destination)
     return destination
 
-def get_parents_of_patient(args, uuid):
-    client = bigquery.Client()
-    query = f"""
-    SELECT
-      distinct
-      c_uuid uuid
-    FROM
-      `idc-dev-etl.idc_v{args.version}_dev.all_joined`
-    WHERE
-      p_uuid = {uuid} 
-    """
-    # urls = list(client.query(query))
-    query_job = client.query(query)  # Make an API request.
-    query_job.result()  # Wait for the query to complete.
-    destination = query_job.destination
-    destination = client.get_table(destination)
-    return destination
+# def get_parents_of_patient(args, uuid):
+#     client = bigquery.Client()
+#     query = f"""
+#     SELECT
+#       distinct
+#       c_uuid uuid
+#     FROM
+#       `idc-dev-etl.whc_dev.hfs_all_joined`
+#     WHERE
+#       p_uuid = {uuid}
+#     """
+#     # urls = list(client.query(query))
+#     query_job = client.query(query)  # Make an API request.
+#     query_job.result()  # Wait for the query to complete.
+#     destination = query_job.destination
+#     destination = client.get_table(destination)
+#     return destination
 
 
 def gen_study_object(args,
-            submitter_case_id,
-            idc_case_id,
-            p_uuid,
+            study_instance_uid,
+            st_uuid,
             md5_hash,
             init_idc_version,
             rev_idc_version,
             final_idc_version):
     bq_client = bigquery.Client()
-    destination = get_studies_in_patient(args, p_uuid)
-    studies = [study for page in bq_client.list_rows(destination, page_size=args.batch).pages for study in page ]
-    destination = get_parents_of_patient(args, p_uuid)
-    collections = [collection for page in bq_client.list_rows(destination, page_size=args.batch).pages for collection in page ]
+    destination = get_series_in_study(args, st_uuid)
+    seriess = [series for page in bq_client.list_rows(destination, page_size=args.batch).pages for series in page ]
+    # destination = get_parents_of_patient(args, st_uuid)
+    # collections = [collection for page in bq_client.list_rows(destination, page_size=args.batch).pages for collection in page ]
 
-    patient = {
+    study = {
         "encoding": "v1",
-        "object_type": "patient",
-        "submitter_case_id": submitter_case_id,
-        "idc_case_id": idc_case_id,
-        "uuid": p_uuid,
+        "object_type": "study",
+        "StudyInstanceUID": study_instance_uid,
+        "uuid": st_uuid,
         "md5_hash": md5_hash,
         "init_idc_version": init_idc_version,
         "rev_idc_version": rev_idc_version,
         "final_idc_version": final_idc_version,
-        "self_uri": f"gs://{args.dst_bucket.name}/{p_uuid}.idc",
-        "children": {
+        "self_uri": f"gs://{args.dst_bucket.name}/{st_uuid}.idc",
+        "drs_object_id": f"dg.4DFC/{st_uuid}",
+        "series": {
             "gs":{
                 "region": "us-central1",
-                "collections":{
-                    f"gs://{args.dst_bucket}": [
-                        study.uuid for study in studies
-                    ]
+                "urls":
+                    {
+                        "bucket": f"{args.dst_bucket.name}",
+                        "blobs":
+                            [
+                                {"SeriesInstanceUID": f"{series.series_instance_uid}",
+                                 "blob_name": f"{series.uuid}.idc"} for series in seriess
+                            ]
+                    }
+                },
+            "drs":{
+                "urls":
+                    {
+                        "server": "drs://nci-crdc.datacommons.io",
+                        "object_ids":
+                            [f"dg.4DFC/{series.uuid}" for series in seriess]
+                    }
                 }
             }
-        },
-        "parents": {
-            "gs": {
-                "region": "us-central1",
-                "roots": [
-                    f"gs://{args.dst_bucket}/{collection.uuid}.idc" for collection in collections
-                ]
-            }
         }
-    }
-    blob = args.dst_bucket.blob(f"{p_uuid}.idc").upload_from_string(json.dumps(patient))
-    for study in studies:
-        if not args.dev_bucket.blob(f'{study.uuid}.dcm').exists():
-            gen_study_object(args,
-                study.study_instance_uid,
-                study.uuid,
-                study.md5_hash,
-                study.init_idc_version,
-                study.rev_idc_version,
-                study.final_idc_version)
+    blob = args.dst_bucket.blob(f"{st_uuid}.idc").upload_from_string(json.dumps(study))
+    for series in seriess:
+        gen_series_object(args,
+            series.series_instance_uid,
+            series.source_doi,
+            series.source_url,
+            series.uuid,
+            series.md5_hash,
+            series.init_idc_version,
+            series.rev_idc_version,
+            series.final_idc_version)
+    print(f'\t\t\t\tStudy {study_instance_uid}')
 
     return

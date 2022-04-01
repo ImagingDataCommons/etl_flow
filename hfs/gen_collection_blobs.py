@@ -31,14 +31,15 @@ def get_patients_in_collection(args, uuid):
       submitter_case_id,
       idc_case_id,
       p_uuid uuid,
-      p_hashes['all_source'] mds_hash,
+      p_hashes.all_hash md5_hash,
       p_init_idc_version init_idc_version,
       p_rev_idc_version rev_idc_version,
       p_final_idc_version final_idc_version
     FROM
-      `idc-dev-etl.idc_v{args.version}_dev.all_joined`
+      `idc-dev-etl.whc_dev.hfs_all_joined`
     WHERE
-      uuid = {uuid} 
+      c_uuid = '{uuid}'
+    ORDER BY submitter_case_id
     """
     # urls = list(client.query(query))
     query_job = client.query(query)  # Make an API request.
@@ -47,23 +48,23 @@ def get_patients_in_collection(args, uuid):
     destination = client.get_table(destination)
     return destination
 
-def get_parents_of_collection(args, uuid):
-    client = bigquery.Client()
-    query = f"""
-    SELECT
-      distinct
-      idc_version
-    FROM
-      `idc-dev-etl.idc_v{args.version}_dev.all_joined`
-    WHERE
-      c_uuid = {uuid} 
-    """
-    # urls = list(client.query(query))
-    query_job = client.query(query)  # Make an API request.
-    query_job.result()  # Wait for the query to complete.
-    destination = query_job.destination
-    destination = client.get_table(destination)
-    return destination
+# def get_parents_of_collection(args, uuid):
+#     client = bigquery.Client()
+#     query = f"""
+#     SELECT
+#       distinct
+#       idc_version
+#     FROM
+#       `idc-dev-etl.whc_dev.hfs_all_joined`
+#     WHERE
+#       c_uuid = {uuid}
+#     """
+#     # urls = list(client.query(query))
+#     query_job = client.query(query)  # Make an API request.
+#     query_job.result()  # Wait for the query to complete.
+#     destination = query_job.destination
+#     destination = client.get_table(destination)
+#     return destination
 
 
 def gen_collection_object(args,
@@ -76,8 +77,8 @@ def gen_collection_object(args,
     bq_client = bigquery.Client()
     destination = get_patients_in_collection(args, c_uuid)
     patients = [patient for page in bq_client.list_rows(destination, page_size=args.batch).pages for patient in page ]
-    destination = get_parents_of_collection(args, c_uuid)
-    versions = [version for page in bq_client.list_rows(destination, page_size=args.batch).pages for version in page ]
+    # destination = get_parents_of_collection(args, c_uuid)
+    # versions = [version for page in bq_client.list_rows(destination, page_size=args.batch).pages for version in page ]
 
     collection = {
         "encoding": "v1",
@@ -90,35 +91,31 @@ def gen_collection_object(args,
         "rev_idc_version": rev_idc_version,
         "final_idc_version": final_idc_version,
         "self_uri": f"gs://{args.dst_bucket.name}/{c_uuid}.idc",
-        "children": {
+        "patients": {
             "gs":{
                 "region": "us-central1",
-                "collections":{
-                    f"gs://{args.dst_bucket}": [
-                        patient.uuid for patient in patients
-                    ]
+                "urls":
+                    {
+                        "bucket": f"{args.dst_bucket.name}",
+                        "blobs":
+                            [
+                                {"submitter_case_id": f"{patient.submitter_case_id}",
+                                 "blob_name": f"{patient.uuid}.idc"} for patient in patients
+                            ]
+                    }
                 }
-            }
-        },
-        "parents": {
-            "gs": {
-                "region": "us-central1",
-                "roots": [
-                    f"gs://{args.dst_bucket}/v{version}.idc" for version in versions
-                ]
-            }
+             }
         }
-    }
     blob = args.dst_bucket.blob(f"{c_uuid}.idc").upload_from_string(json.dumps(collection))
     for patient in patients:
-        if not args.dev_bucket.blob(f'{collection.uuid}.dcm').exists():
-            gen_patient_object(args,
-                patient.submitter_case_id,
-                patient.idc_case_idc,
-                patient.uuid,
-                patient.md5_hash,
-                patient.init_idc_version,
-                patient.rev_idc_version,
-                patient.final_idc_version)
+        gen_patient_object(args,
+            patient.submitter_case_id,
+            patient.idc_case_id,
+            patient.uuid,
+            patient.md5_hash,
+            patient.init_idc_version,
+            patient.rev_idc_version,
+            patient.final_idc_version)
+    print(f'\t\tCollection {collection_id}')
 
     return

@@ -18,7 +18,12 @@ import os
 import argparse
 import logging
 from logging import INFO
-from google.cloud import bigquery, storage
+from idc.models import Base, Version, Collection, Patient, Study, Series, Instance
+from google.cloud import storage
+from sqlalchemy.orm import Session
+from python_settings import settings
+from sqlalchemy import create_engine, update
+
 import json
 from ingestion.utils import get_merkle_hash
 from hfs.gen_version_blobs import gen_version_object
@@ -36,7 +41,8 @@ def get_versions_in_root(args):
       previous_idc_version,
       v_hashes.all_sources as md5_hash
     FROM
-      `idc-dev-etl.idc_v{args.version}_dev.all_joined`
+      `idc-dev-etl.whc_dev.hfs_all_joined`
+    ORDER BY idc_version
     """
     # urls = list(client.query(query))
     query_job = client.query(query)  # Make an API request.
@@ -47,32 +53,47 @@ def get_versions_in_root(args):
 
 
 def gen_root_obj(args):
-    bq_client = bigquery.Client()
-    destination = get_versions_in_root(args)
-    versions = [version for page in bq_client.list_rows(destination, page_size=args.batch).pages for version in page ]
-    # for page in bq_client.list_rows(versions, page_size=args.batch).pages:
-    #     for version in page:
-    root = {
-        "encoding": "v1",
-        "object_type": "root",
-        "md5_hash": get_merkle_hash([version.md5_hash for version in versions]),
-        "self_uri": f"gs://{args.dst_bucket.name}/idc.idc",
-        "children": {
-            "gs": {
-                "region": "us-central1",
-                "versions": {
-                    f"gs://{args.dst_bucket.name}": sorted([
-                        f"{version.idc_version}.idc" for version in versions
-                    ])
-                }
-            }
-        }
-    }
-    blob=args.dst_bucket.blob("idc.idc").upload_from_string(json.dumps(root))
-    for version in versions:
-        gen_version_object(args, versions.idc_version, version.previous_idc_version, version.md5_hash)
-        pass
+    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
+    # sql_engine = create_engine(sql_uri, echo=True)
+    sql_engine = create_engine(sql_uri)
+    # Create the tables if they do not already exist
+    Base.metadata.create_all(sql_engine)
 
+    # todos = open(args.todos).read().splitlines()
+
+    with Session(sql_engine) as sess:
+
+        # bq_client = bigquery.Client()
+        # destination = get_versions_in_root(args)
+        # versions = [version for page in bq_client.list_rows(destination, page_size=args.batch).pages for version in page ]
+        versions = sess.query(Version).order_by(Version.version)
+        root = {
+            "encoding": "v1",
+            "object_type": "root",
+            "md5_hash": get_merkle_hash([version.hashes.all_sources for version in versions]),
+            "self_uri": f"gs://{args.dst_bucket.name}/idc.idc",
+            "versions": {
+                "gs":{
+                    "region": "us-central1",
+                    "urls":
+                        {
+                            "bucket": f"{args.dst_bucket.name}",
+                            "blobs":
+                                [
+                                    {"version": f"idc_v{version.version}",
+                                     "blob_name": f"idc_{version.version}.idc"} for version in versions
+                                ]
+                       }
+                    }
+                 }
+            }
+
+        blob=args.dst_bucket.blob("idc.idc").upload_from_string(json.dumps(root))
+        for version in versions:
+            # gen_version_object(args, version.idc_version, version.previous_idc_version, version.md5_hash)
+            gen_version_object(args, version)
+        print(f"Root")
+        return
 
 if __name__ == '__main__':
     client = storage.Client()

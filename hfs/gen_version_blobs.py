@@ -14,11 +14,13 @@
 # limitations under the License.
 #
 
-import os
-import argparse
-import logging
 from logging import INFO
-from google.cloud import bigquery, storage
+# from google.cloud import bigquery, storage
+from idc.models import Base, Version, Collection, Patient, Study, Series, Instance
+from google.cloud import storage
+from sqlalchemy.orm import Session
+from python_settings import settings
+from sqlalchemy import create_engine, update
 import json
 from gen_collection_blobs import gen_collection_object
 
@@ -32,15 +34,16 @@ def get_collections_in_version(args, version):
     SELECT
       distinct
       collection_id,
-      uuid,
-      c_hashes['all_sources'] md5_hash,
+      c_uuid uuid,
+      c_hashes.all_hash md5_hash,
       c_init_idc_version init_idc_version,
       c_rev_idc_version rev_idc_version,
       c_final_idc_version final_idc_version
     FROM
-      `idc-dev-etl.idc_v{args.version}_dev.all_joined`
+      `idc-dev-etl.whc_dev.hfs_all_joined`
     WHERE
-      version = {version} 
+      idc_version = {version} AND collection_id in {args.collections}
+    ORDER BY collection_id
     """
     # urls = list(client.query(query))
     query_job = client.query(query)  # Make an API request.
@@ -51,43 +54,39 @@ def get_collections_in_version(args, version):
 
 
 def gen_version_object(args, idc_version, previous_idc_version, md5_hash):
-    bq_client = bigquery.Client()
-    destination = get_collections_in_version(args, idc_version)
-    collections = [collection for page in bq_client.list_rows(destination, page_size=args.batch).pages for collection in page ]
+    # bq_client = bigquery.Client()
+    # destination = get_collections_in_version(args, idc_version)
+    # collections = [collection for page in bq_client.list_rows(destination, page_size=args.batch).pages for collection in page ]
+
     version = {
         "encoding": "v1",
         "object_type": "version",
         "version_id": idc_version,
         "md5_hash": md5_hash,
-        "self_uri": f"gs://{args.dst_bucket.name}/v{idc_version}.idc",
-        "children": {
+        "self_uri": f"gs://{args.dst_bucket.name}/idc_v{idc_version}.idc",
+        "collections": {
             "gs":{
                 "region": "us-central1",
-                "collections":{
-                    f"gs://{args.dst_bucket}": [
-                        collection.c_uuid for collection in collections
-                    ]
+                "urls":
+                    {
+                        "bucket": f"{args.dst_bucket.name}",
+                        "blobs":
+                            [
+                                {"idc_webapp_collection_id": collection.collection_id.lower().replace('-','_').replace(' ','_'),
+                                 "blob_name": f"{collection.uuid}.idc"} for collection in collections
+                            ]
+                    }
                 }
             }
-        },
-        "parents": {
-            "gs": {
-                "region": "us-central1",
-                "roots": [
-                    f"gs://{args.dst_bucket}/idc.idc"
-                ]
-            }
         }
-    }
-    blob = args.dst_bucket.blob(f"v{idc_version}.idc").upload_from_string(json.dumps(version))
+    blob = args.dst_bucket.blob(f"idc_v{idc_version}.idc").upload_from_string(json.dumps(version))
     for collection in collections:
-        if not args.dev_bucket.blob(f'{collection.uuid}.dcm').exists():
-            gen_collection_object(args,
-                collection.collection_id,
-                collection.uuid,
-                collection.md5_hash,
-                collection.init_idc_version,
-                collection.rev_idc_version,
-                collection.final_idc_version)
-
+        gen_collection_object(args,
+            collection.collection_id,
+            collection.uuid,
+            collection.md5_hash,
+            collection.init_idc_version,
+            collection.rev_idc_version,
+            collection.final_idc_version)
+    print(f'\tVersion {idc_version}')
     return
