@@ -131,6 +131,7 @@ WITH
 SELECT
   c.collection_id AS tcia_api_collection_id,
   REPLACE(REPLACE(LOWER(c.collection_id),'-','_'), ' ','_') AS idc_webapp_collection_id,
+  REPLACE(REPLACE(LOWER(c.collection_id),'-','_'), ' ','_') AS collection_id,
   c.min_timestamp as collection_timestamp,
   c.hashes.all_hash AS collection_hash,
   c.init_idc_version AS collection_init_idc_version,
