@@ -25,68 +25,37 @@ import json
 from gen_collection_blobs import gen_collection_object
 
 
-# Copy the blobs that are new to a version from dev pre-staging buckets
-# to dev staging buckets.
-
-def get_collections_in_version(args, version):
-    client = bigquery.Client()
-    query = f"""
-    SELECT
-      distinct
-      collection_id,
-      c_uuid uuid,
-      c_hashes.all_hash md5_hash,
-      c_init_idc_version init_idc_version,
-      c_rev_idc_version rev_idc_version,
-      c_final_idc_version final_idc_version
-    FROM
-      `idc-dev-etl.whc_dev.hfs_all_joined`
-    WHERE
-      idc_version = {version} AND collection_id in {args.collections}
-    ORDER BY collection_id
-    """
-    # urls = list(client.query(query))
-    query_job = client.query(query)  # Make an API request.
-    query_job.result()  # Wait for the query to complete.
-    destination = query_job.destination
-    destination = client.get_table(destination)
-    return destination
-
-
-def gen_version_object(args, idc_version, previous_idc_version, md5_hash):
-    # bq_client = bigquery.Client()
-    # destination = get_collections_in_version(args, idc_version)
-    # collections = [collection for page in bq_client.list_rows(destination, page_size=args.batch).pages for collection in page ]
-
-    version = {
-        "encoding": "v1",
-        "object_type": "version",
-        "version_id": idc_version,
-        "md5_hash": md5_hash,
-        "self_uri": f"gs://{args.dst_bucket.name}/idc_v{idc_version}.idc",
-        "collections": {
-            "gs":{
-                "region": "us-central1",
-                "urls":
-                    {
-                        "bucket": f"{args.dst_bucket.name}",
-                        "blobs":
-                            [
-                                {"idc_webapp_collection_id": collection.collection_id.lower().replace('-','_').replace(' ','_'),
-                                 "blob_name": f"{collection.uuid}.idc"} for collection in collections
-                            ]
+def gen_version_object(args, sess, version):
+    idc_version = version.version
+    if not args.dst_bucket.blob(f"idc_v{version.version}.idc").exists():
+        print(f'\tVersion {version.version} started')
+        for collection in version.collections:
+            if collection.collection_id in args.collections:
+                gen_collection_object(args, sess, idc_version, collection)
+        version_data = {
+            "encoding": "v1",
+            "object_type": "version",
+            "version_id": version.version,
+            "md5_hash": version.hashes.all_sources,
+            "self_uri": f"gs://{args.dst_bucket.name}/idc_v{version.version}.idc",
+            "children": {
+                "gs":{
+                    "region": "us-central1",
+                    "urls":
+                        {
+                            "bucket": f"{args.dst_bucket.name}",
+                            "collections":
+                                [
+                                    {"idc_webapp_collection_id": collection.collection_id.lower().replace('-','_').replace(' ','_'),
+                                     "blob_name": f"{collection.uuid}.idc"} \
+                                        for collection in version.collections if collection.collection_id in args.collections
+                                ]
+                        }
                     }
                 }
             }
-        }
-    blob = args.dst_bucket.blob(f"idc_v{idc_version}.idc").upload_from_string(json.dumps(version))
-    for collection in collections:
-        gen_collection_object(args,
-            collection.collection_id,
-            collection.uuid,
-            collection.md5_hash,
-            collection.init_idc_version,
-            collection.rev_idc_version,
-            collection.final_idc_version)
-    print(f'\tVersion {idc_version}')
+        blob = args.dst_bucket.blob(f"idc_v{version.version}.idc").upload_from_string(json.dumps(version_data))
+        print(f'\tVersion {version.version} completed')
+    else:
+        print(f'\tVersion {version.version} exists')
     return

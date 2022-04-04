@@ -45,9 +45,9 @@ from google.cloud import storage
 
 # Return a list of blobs that have the specified prefix
 def list_blobs_with_prefix(bucket, prefix, delimiter=None):
-    # storage_client = storage.Client()
-    # bucket = storage_client.bucket(args.src_bucket)
-    blobs = args.client.list_blobs(bucket, prefix=prefix, delimiter=delimiter)
+    client = storage.Client()
+    bucket = client.bucket(args.src_bucket)
+    blobs =  client.list_blobs(bucket, prefix=prefix, delimiter=delimiter)
     names = [blob.name for blob in blobs]
     ids = [ prefix.split('/')[-2] for prefix in blobs.prefixes]
     ids.sort()
@@ -55,6 +55,7 @@ def list_blobs_with_prefix(bucket, prefix, delimiter=None):
 
 
 def build_instances(client, args, sess, series, prefix):
+    storage_client = storage.Client()
     blobs = client.list_blobs(args.src_bucket, prefix=prefix, delimiter=None)
     for blob in blobs:
         instance_id = blob.name.rsplit('/',1)[-1].split('.dcm')[0]
@@ -63,7 +64,7 @@ def build_instances(client, args, sess, series, prefix):
             instance = WSI_Instance()
             instance.sop_instance_uid = instance_id
             instance.series_instance_uid = series.series_instance_uid
-            instance.url = f'gs://{args.src_bucket.name}/{blob.name}'
+            instance.url = f'gs://{args.src_bucket}/{blob.name}'
             series.instances.append(instance)
             # sess.commit()
         instance.hash = b64decode(blob.md5_hash).hex()
@@ -118,58 +119,34 @@ def build_patients(client, args, sess, collection, prefix):
         patient.hash = get_merkle_hash(hashes)
 
 
-def build_collections(client, args, sess, version, skips):
+def build_collections(client, args, sess, skips):
     try:
         dones = open(args.dones).read().splitlines()
     except:
         dones = []
-    try:
-        included = open(args.included).read().splitlines()
-    except:
-        included = ["*"]
+    included = args.included_collections
+
     # Get the collection IDs in the src bucket
     _, collection_ids = list_blobs_with_prefix(args.src_bucket, prefix=None, delimiter='/')
-    collection_ids = list(set(collection_ids) - set(skips) - set(dones))
+
+    collection_ids = list(set(collection_ids) - set(skips) - set(dones) | set(included))
     collection_ids.sort()
     for collection_id in collection_ids:
-        if any([fnmatch(collection_id, include) for include in included]):
-            rootlogger.info('Collecting metadata from collection %s', collection_id)
-            collection = sess.query(WSI_Collection).filter(WSI_Collection.collection_id == collection_id).first()
-            if not collection:
-                collection = WSI_Collection()
-                collection.collection_id = collection_id
-                version.collections.append(collection)
-                # sess.commit()
-            build_patients(client, args, sess, collection, f'{collection_id}/')
-            hashes = [patient.hash for patient in collection.patients]
-            collection.hash = get_merkle_hash(hashes)
-            sess.commit()
+        rootlogger.info('Collecting metadata from collection %s', collection_id)
+        collection = sess.query(WSI_Collection).filter(WSI_Collection.collection_id == collection_id).first()
+        if not collection:
+            collection = WSI_Collection()
+            collection.collection_id = collection_id
+            sess.add(collection)
+            # version.collections.append(collection)
+            # sess.commit()
+        build_patients(client, args, sess, collection, f'{collection_id}/')
+        hashes = [patient.hash for patient in collection.patients]
+        collection.hash = get_merkle_hash(hashes)
+        sess.commit()
 
-            with open(args.dones, 'a') as f:
-                f.write(f'{collection_id}\n')
-
-
-def build_version(client, args, sess, skips):
-    # The WSI metadata is not actually versioned. It is really a snapshot
-    # of WSI data that is expected to be in the current/next IDC version.
-    # It is only versioned to the extent that it is associated with a
-    # particular version of the DB
-    # There should be only a single "version", having version=0
-    version = sess.query(WSI_Version).filter(WSI_Version.version == 0).first()
-    # version = sess.query(WSI_Version).filter(WSI_Version.version == settings.CURRENT_VERSION).first()
-    if not version:
-        version = WSI_Version()
-        version.version = 0
-        sess.add(version)
-    # version = sess.query(WSI_Version).filter(WSI_Version.version == args.version).first()
-    # if not version:
-    #     version = WSI_Version()
-    #     version.version = args.version
-    #     sess.add(version)
-    build_collections(client, args, sess, version, skips)
-    hashes = [collection.hash for collection in version.collections]
-    version.hash = get_merkle_hash(hashes)
-    sess.commit()
+        with open(args.dones, 'a') as f:
+            f.write(f'{collection_id}\n')
 
 
 def prebuild(args):
@@ -184,44 +161,31 @@ def prebuild(args):
     with Session(sql_engine) as sess:
         client = storage.Client()
         skips = list_skips(sess, Base, args.skipped_groups, args.skipped_collections)
-        build_version(client, args, sess, skips)
+        build_collections(client, args, sess, skips)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=9, help='Version to work on')
-    parser.add_argument('--client', default=storage.Client())
-    args = parser.parse_args()
-    # parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
-    # parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--src_bucket', default=storage.Bucket(args.client,'dac-wsi-conversion-results-v2-sorted'))
-    parser.add_argument('--skipped_groups', default=['open_collections', 'redacted_collections', 'excluded_collections'])
-    parser.add_argument('--skipped_collections', default=[
-     'CPTAC-CCRCC',
-     'CPTAC-CM',
-     'CPTAC-LSCC',
-     'CPTAC-LUAD',
-     'CPTAC-PDA',
-     'CPTAC-SAR',
-     'CPTAC-UCEC',
-     'CPTAC-AML',
-     'CPTAC-BRCA',
-     'CPTAC-COAD',
-     'CPTAC-OV'])
+    # parser.add_argument('--version', default=9, help='Version to work on')
+    parser.add_argument('--src_bucket', default='dac-wsi-conversion-results-v2-sorted')
+    parser.add_argument('--skipped_groups', default=['open_collections', 'redacted_collections',
+                                                     'excluded_collections', 'defaced_collections'])
+    parser.add_argument('--skipped_collections', default=[])
+    parser.add_argument('--included_collections', default=['TCGA-GBM', 'TCGA-HNSC', 'TCGA-LGG' ])
     parser.add_argument('--dones', default='{}/logs/wsi_build_dones.txt'.format(os.environ['PWD']), help="Completed collections")
     args = parser.parse_args()
 
     print("{}".format(args), file=sys.stdout)
 
     rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/wsi_metadata_log.log'.format(os.environ['PWD'], args.version))
+    root_fh = logging.FileHandler('{}/logs/wsi_metadata_log.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
     rootlogger.addHandler(root_fh)
     root_fh.setFormatter(rootformatter)
     rootlogger.setLevel(INFO)
 
     errlogger = logging.getLogger('root.err')
-    err_fh = logging.FileHandler('{}/logs/wsi_metadata_err.log'.format(os.environ['PWD'], args.version))
+    err_fh = logging.FileHandler('{}/logs/wsi_metadata_err.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
     errformatter = logging.Formatter('{%(pathname)s:%(lineno)d} %(levelname)s:err:%(message)s')
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)

@@ -29,29 +29,6 @@ from ingestion.utils import get_merkle_hash
 from hfs.gen_version_blobs import gen_version_object
 
 
-# Copy the blobs that are new to a version from dev pre-staging buckets
-# to dev staging buckets.
-
-def get_versions_in_root(args):
-    client = bigquery.Client()
-    query = f"""
-    SELECT
-      distinct
-      idc_version,
-      previous_idc_version,
-      v_hashes.all_sources as md5_hash
-    FROM
-      `idc-dev-etl.whc_dev.hfs_all_joined`
-    ORDER BY idc_version
-    """
-    # urls = list(client.query(query))
-    query_job = client.query(query)  # Make an API request.
-    query_job.result()  # Wait for the query to complete.
-    destination = query_job.destination
-    destination = client.get_table(destination)
-    return destination
-
-
 def gen_root_obj(args):
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
     # sql_engine = create_engine(sql_uri, echo=True)
@@ -66,33 +43,36 @@ def gen_root_obj(args):
         # bq_client = bigquery.Client()
         # destination = get_versions_in_root(args)
         # versions = [version for page in bq_client.list_rows(destination, page_size=args.batch).pages for version in page ]
-        versions = sess.query(Version).order_by(Version.version)
-        root = {
-            "encoding": "v1",
-            "object_type": "root",
-            "md5_hash": get_merkle_hash([version.hashes.all_sources for version in versions]),
-            "self_uri": f"gs://{args.dst_bucket.name}/idc.idc",
-            "versions": {
-                "gs":{
-                    "region": "us-central1",
-                    "urls":
-                        {
-                            "bucket": f"{args.dst_bucket.name}",
-                            "blobs":
-                                [
-                                    {"version": f"idc_v{version.version}",
-                                     "blob_name": f"idc_{version.version}.idc"} for version in versions
-                                ]
-                       }
-                    }
-                 }
-            }
-
-        blob=args.dst_bucket.blob("idc.idc").upload_from_string(json.dumps(root))
-        for version in versions:
-            # gen_version_object(args, version.idc_version, version.previous_idc_version, version.md5_hash)
-            gen_version_object(args, version)
-        print(f"Root")
+        if not args.dst_bucket.blob("idc.idc").exists():
+            print(f"Root started")
+            versions = sess.query(Version).order_by(Version.version)
+            for version in versions:
+                # gen_version_object(args, version.idc_version, version.previous_idc_version, version.md5_hash)
+                gen_version_object(args, sess, version)
+            root = {
+                "encoding": "v1",
+                "object_type": "root",
+                "md5_hash": get_merkle_hash([version.hashes.all_sources for version in versions]),
+                "self_uri": f"gs://{args.dst_bucket.name}/idc.idc",
+                "children": {
+                    "gs":{
+                        "region": "us-central1",
+                        "urls":
+                            {
+                                "bucket": f"{args.dst_bucket.name}",
+                                "versions":
+                                    [
+                                        {"version": f"idc_v{version.version}",
+                                         "blob_name": f"idc_v{version.version}.idc"} for version in versions
+                                    ]
+                           }
+                        }
+                     }
+                }
+            blob=args.dst_bucket.blob("idc.idc").upload_from_string(json.dumps(root))
+            print(f"Root completed")
+        else:
+            print(f"Root skipped")
         return
 
 if __name__ == '__main__':
@@ -100,7 +80,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=8, help='Version to work on')
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/hfs_gen_version_blobs')
-    parser.add_argument('--collections', default="('APOLLO-5-LSCC', 'CPTAC-SAR', 'TCGA-ESCA', 'TCGA-READ')")
+    parser.add_argument('--collections', default=['APOLLO-5-LSCC', 'CPTAC-SAR', 'TCGA-ESCA', 'TCGA-READ'])
     parser.add_argument('--src_bucket', default='idc-dev-open', help='Bucket from which to copy blobs')
     parser.add_argument('--dst_bucket', default=client.bucket('whc_dev'), help='Bucket into which to copy blobs')
     parser.add_argument('--batch', default=1)

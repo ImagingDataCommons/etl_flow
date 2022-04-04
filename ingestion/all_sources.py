@@ -19,7 +19,6 @@ from utilities.tcia_helpers import  get_access_token, get_hash, get_TCIA_studies
     get_updated_series, get_instance_hash, refresh_access_token
 from uuid import uuid4
 from idc.models  import Collection_id_map, instance_source
-from sqlalchemy import select
 from google.cloud import bigquery
 from ingestion.utils import get_merkle_hash
 from ingestion.sources import TCIA, Pathology

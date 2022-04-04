@@ -19,8 +19,9 @@ from datetime import datetime, timedelta
 import logging
 from uuid import uuid4
 from idc.models import Series, Instance, instance_source
-from ingestion.utils import accum_sources
 from ingestion.instance import clone_instance, build_instances_path, build_instances_tcia
+from python_settings import settings
+
 
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
@@ -37,11 +38,11 @@ def clone_series(series, uuid):
 
 def retire_series(args, series):
     # If this object has children from source, mark them as retired
-    rootlogger.debug('      p%s: Series %s:%s retiring', args.id, series.series_instance_uid, series.uuid)
+    rootlogger.debug('      p%s: Series %s:%s retiring', args.pid, series.series_instance_uid, series.uuid)
     for instance in series.instances:
-        rootlogger.debug('        p%s: Instance %s:%s retiring', args.id, instance.sop_instance_uid, instance.uuid)
-        instance.final_idc_version = args.previous_version
-    series.final_idc_version = args.previous_version
+        rootlogger.debug('        p%s: Instance %s:%s retiring', args.pid, instance.sop_instance_uid, instance.uuid)
+        instance.final_idc_version = settings.PREVIOUS_VERSION
+    series.final_idc_version = settings.PREVIOUS_VERSION
 
 
 def expand_series(sess, args, all_sources, version, collection, patient, study, series):
@@ -49,9 +50,9 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
     # All sources should be from a single source
     instances = all_sources.instances(collection, series)
     if len(instances) != len(set(instances)):
-        errlogger.error("\tp%s: Duplicate instance in expansion of series %s", args.id,
+        errlogger.error("\tp%s: Duplicate instance in expansion of series %s", args.pid,
                         series.series_instance_uid)
-        raise RuntimeError("p%s: Duplicate instance in  expansion of series %s", args.id,
+        raise RuntimeError("p%s: Duplicate instance in  expansion of series %s", args.pid,
                            series.series_instance_uid)
 
     if series.is_new:
@@ -77,14 +78,14 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
         new_instance.done=False
         new_instance.is_new=True
         new_instance.expanded=False
-        new_instance.init_idc_version=args.version
-        new_instance.rev_idc_version=args.version
+        new_instance.init_idc_version=settings.CURRENT_VERSION
+        new_instance.rev_idc_version=settings.CURRENT_VERSION
         new_instance.source = instances[instance]
         new_instance.hash = None
         new_instance.timestamp = datetime.utcnow()
         new_instance.final_idc_version = 0
         series.instances.append(new_instance)
-        rootlogger.debug('        p%s: Instance %s is new', args.id, new_instance.sop_instance_uid)
+        rootlogger.debug('        p%s: Instance %s is new', args.pid, new_instance.sop_instance_uid)
 
     for instance in existing_objects:
         idc_hash = instance.hash
@@ -94,7 +95,7 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
         if revised:
             # rootlogger.debug('**Instance %s needs revision', instance.sop_instance_uid)
             rev_instance = clone_instance(instance, str(uuid4()))
-            assert args.version == instances[instance.sop_instance_uid]['rev_idc_version']
+            assert settings.CURRENT_VERSION == instances[instance.sop_instance_uid]['rev_idc_version']
             rev_instance.revised = True
             rev_instance.done = True
             rev_instance.is_new = False
@@ -104,14 +105,14 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
             new_instance.hash = None
 
             rev_instance.size = 0
-            rev_instance.rev_idc_version = args.version
+            rev_instance.rev_idc_version = settings.CURRENT_VERSION
             series.instances.append(rev_instance)
-            rootlogger.debug('        p%s: Instance %s is revised', args.id, rev_instance.sop_instance_uid)
+            rootlogger.debug('        p%s: Instance %s is revised', args.pid, rev_instance.sop_instance_uid)
 
 
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised series
-            instance.final_idc_version = args.version-1
+            instance.final_idc_version = settings.CURRENT_VERSION-1
             series.instances.remove(instance)
 
         else:
@@ -120,28 +121,28 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
             # Shouldn't be needed if the previous version is done
             instance.done = True
             instance.expanded = True
-            rootlogger.debug('        p%s: Instance %s unchanged', args.id, instance.sop_instance_uid)
+            rootlogger.debug('        p%s: Instance %s unchanged', args.pid, instance.sop_instance_uid)
             # series.instances.append(instance)
 
     for instance in retired_objects:
         # rootlogger.debug('        p%s: Instance %s:%s retiring', instance.sop_instance_uid, instance.uuid)
-        instance.final_idc_version = args.previous_version
+        instance.final_idc_version = settings.PREVIOUS_VERSION
         series.instances.remove(instance)
 
     series.expanded = True
     sess.commit()
     return 0
-    # rootlogger.debug("      p%s: Expanded series %s", args.id, series.series_instance_uid)
+    # rootlogger.debug("      p%s: Expanded series %s", args.pid, series.series_instance_uid)
 
 
 def build_series(sess, args, all_sources, series_index, version, collection, patient, study, series):
     begin = time.time()
-    rootlogger.debug("      p%s: Expand Series %s; %s", args.id, series.series_instance_uid, series_index)
+    rootlogger.debug("      p%s: Expand Series %s; %s", args.pid, series.series_instance_uid, series_index)
     if not series.expanded:
         failed = expand_series(sess, args, all_sources, version, collection, patient, study, series)
         if failed:
             return
-    rootlogger.info("      p%s: Expanded Series %s; %s; %s instances, expand: %s", args.id, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
+    rootlogger.info("      p%s: Expanded Series %s; %s; %s instances, expand: %s", args.pid, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
 
 
     if not all(instance.done for instance in series.instances):
@@ -179,5 +180,5 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
             series.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
-            rootlogger.info("      p%s: Completed Series %s, %s, in %s", args.id, series.series_instance_uid, series_index, duration)
+            rootlogger.info("      p%s: Completed Series %s, %s, in %s", args.pid, series.series_instance_uid, series_index, duration)
 

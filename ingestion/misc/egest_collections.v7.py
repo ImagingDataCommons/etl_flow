@@ -53,7 +53,7 @@ if __name__ == '__main__':
     parser.add_argument('--server', default="", help="NBIA server to access. Set to NLST for NLST ingestion")
     parser.add_argument('--dicom', default='/mnt/disks/idc-etl/dicom', help='Directory in which to expand downloaded zip files')
     args = parser.parse_args()
-    args.id = 0 # Default process ID
+    args.pid = 0 # Default process ID
 
     print("{}".format(args), file=sys.stdout)
 

@@ -544,16 +544,14 @@ class WSI_Version(Base):
     version = Column(Integer, unique=True, primary_key=True, comment='NBIA collection ID')
     hash = Column(String, comment='Version hash')
 
-    collections = relationship("WSI_Collection", back_populates="vers", order_by="WSI_Collection.collection_id", cascade="all, delete")
-    # patients = relationship("Patient", backref="the_collection")
+    # collections = relationship("WSI_Collection", back_populates="vers", order_by="WSI_Collection.collection_id", cascade="all, delete")
 
 class WSI_Collection(Base):
     __tablename__ = 'wsi_collection'
     collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
-    version = Column(ForeignKey('wsi_version.version'), comment="Containing object")
     hash = Column(String, comment='Collection hash')
 
-    vers = relationship("WSI_Version", back_populates="collections")
+    # vers = relationship("WSI_Version", back_populates="collections")
     patients = relationship("WSI_Patient", back_populates="collection", order_by="WSI_Patient.submitter_case_id", cascade="all, delete")
 
 class WSI_Patient(Base):

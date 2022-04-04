@@ -25,7 +25,8 @@
 import os
 import sys
 import argparse
-from fnmatch import fnmatch
+from python_settings import settings
+
 import csv
 
 from idc.models import Base, WSI_Version, WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance
@@ -175,7 +176,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # parser.add_argument('--version', default=8, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())
-    # parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
+    # parser.add_argument('--db', default=f'idc_v{settings.CURRENT_VERSION}', help='Database on which to operate')
     # parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--src_bucket', default='htan-transfer')
     parser.add_argument('--tsv_blob', default = 'HTAN-V1-Converted/Converted_20220228/identifiers.txt',\

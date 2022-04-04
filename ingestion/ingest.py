@@ -30,10 +30,7 @@ from utilities.tcia_helpers import get_access_token
 from ingestion.utils import list_skips
 from ingestion.version import clone_version, build_version
 
-
 from python_settings import settings
-
-from google.cloud import storage
 
 from sqlalchemy import create_engine
 from sqlalchemy_utils import register_composites
@@ -49,18 +46,18 @@ rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
 
 def ingest(args):
-    HTTPConnection.debuglevel = 0
+    # HTTPConnection.debuglevel = 0
     logging.getLogger("urllib3").setLevel(logging.ERROR)
 
     # rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/v{}_log.log'.format(os.environ['PWD'], args.version))
+    root_fh = logging.FileHandler('{}/logs/v{}_log.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
     rootlogger.addHandler(root_fh)
     root_fh.setFormatter(rootformatter)
     rootlogger.setLevel(DEBUG)
 
     # errlogger = logging.getLogger('root.err')
-    err_fh = logging.FileHandler('{}/logs/v{}_err.log'.format(os.environ['PWD'], args.version))
+    err_fh = logging.FileHandler('{}/logs/v{}_err.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
     errformatter = logging.Formatter('{%(pathname)s:%(lineno)d} %(levelname)s:err:%(message)s')
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
@@ -74,10 +71,10 @@ def ingest(args):
     os.mkdir('{}'.format(args.dicom))
 
 
-    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
+    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
     # sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
     sql_engine = create_engine(sql_uri)
-    args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
+    # args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
 
     # Create the tables if they do not already exist
     Base.metadata.create_all(sql_engine)
@@ -87,12 +84,12 @@ def ingest(args):
     register_composites(conn)
 
     with Session(sql_engine) as sess:
-        # Get the target version, if it exists
+        # Get a sharable NBIA access token
         access = shared_memory.ShareableList(get_access_token())
         args.access = access
 
-        args.skipped_tcia_collections = list_skips(sess, Base, args.skipped_tcia_groups, args.skipped_tcia_collections)
-        args.skipped_path_collections = list_skips(sess, Base, args.skipped_path_groups, args.skipped_path_collections)
+        args.skipped_tcia_collections = list_skips(sess, Base, args.skipped_tcia_groups, args.skipped_tcia_collections, args.included_tcia_collections)
+        args.skipped_path_collections = list_skips(sess, Base, args.skipped_path_groups, args.skipped_path_collections, args.included_path_collections)
 
         # Now create a table of collections for which tcia or path ingestion or both, are to be skipped.
         # Populate with tcia skips
@@ -105,12 +102,12 @@ def ingest(args):
             else:
                 skipped_collections[collection_id] = [False, True]
         args.skipped_collections = skipped_collections
-        all_sources = All(args.id, sess, args.version, args.access,
+        all_sources = All(args.pid, sess, settings.CURRENT_VERSION, args.access,
                           args.skipped_tcia_collections, args.skipped_path_collections, Lock())
 
-        version = sess.query(Version).filter(Version.version == args.version).first()
+        version = sess.query(Version).filter(Version.version == settings.CURRENT_VERSION).first()
         if not version:
-            previous_version = sess.query(Version).filter(Version.version == args.previous_version).first()
+            previous_version = sess.query(Version).filter(Version.version == settings.PREVIOUS_VERSION).first()
             if not previous_version:
                 # if it doesn't exist then we are creating V1
                 version = Version()
@@ -120,20 +117,20 @@ def ingest(args):
                 version.revised=False
                 version.hashes = ["","",""]
                 version.sources = [False,False]
-                version.version = str(args.version)
-                version.previous_version = args.previous_version
+                version.version = str(settings.CURRENT_VERSION)
+                version.previous_version = settings.PREVIOUS_VERSION
                 sess.add(version)
                 sess.commit()
             else:
                 # Previous version exists. Create next version as a
                 # clone of previous version
                 if not previous_version.done:
-                    errlogger.error('Previous version %s is not done',args.previous_version)
+                    errlogger.error('Previous version %s is not done',settings.PREVIOUS_VERSION)
                     return -1
                 else:
-                    version = clone_version(previous_version, args.version)
-                    version.version = str(args.version)
-                    version.previous_version = str(args.previous_version)
+                    version = clone_version(previous_version, settings.CURRENT_VERSION)
+                    version.version = str(settings.CURRENT_VERSION)
+                    version.previous_version = str(settings.PREVIOUS_VERSION)
                     version.expanded = False
                     version.done = False
                     version.is_new = False
@@ -148,7 +145,7 @@ def ingest(args):
         if not version.done:
             build_version(sess, args, all_sources, version)
         else:
-            rootlogger.info("    version %s previously built", args.version)
+            rootlogger.info("    version %s previously built", settings.CURRENT_VERSION)
         return
 
 if __name__ == '__main__':
@@ -157,24 +154,26 @@ if __name__ == '__main__':
     # parser.add_argument('--version', default=9, help='Version to work on')
     # parser.add_argument('--client', default=storage.Client())
     # args = parser.parse_args()
-    # parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
+    # parser.add_argument('--db', default=f'idc_v{settings.CURRENT_VERSION}', help='Database on which to operate')
     # parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--num_processes', default=32, help="Number of concurrent processes")
 
     parser.add_argument('--skipped_tcia_groups', default=['redacted_collections', 'excluded_collections'],\
                         help="List of tables containing tcia_api_collection_ids of tcia collections to be skipped")
     parser.add_argument('--skipped_tcia_collections', default=['NLST', 'HCC-TACE-Seg'], help='List of additional tcia collections to be skipped')
-    parser.add_argument('--prestaging_tcia_bucket_prefix', default=f'idc_v{args.version}_tcia_', help='Copy tcia instances here before forwarding to --staging_bucket')
+    parser.add_argument('--included_tcia_collections', default=[], help='List of tcia collections to exclude from skipped')
+    parser.add_argument('--prestaging_tcia_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_tcia_', help='Copy tcia instances here before forwarding to --staging_bucket')
 
-    parser.add_argument('--skipped_path_groups', default=['excluded_collections'],\
+    parser.add_argument('--skipped_path_groups', default=['redacted_collections', 'excluded_collections'],\
                         help="List of tables containind tcia_api_collection_ids of path collections to be skipped")
     parser.add_argument('--skipped_path_collections', default=['HCC-TACE-Seg'], help='List of additional path collections to be skipped')
+    parser.add_argument('--included_path_collections', default=['TCGA-GBM', 'TCGA-HNSC', 'TCGA-LGG'], help='List of path collections to exclude from skipped')
     parser.add_argument('--server', default="", help="NBIA server to access. Set to NLST for NLST ingestion")
-    parser.add_argument('--prestaging_path_bucket_prefix', default=f'idc_v{args.version}_path_', help='Copy path instances here before forwarding to --staging_bucket')
+    parser.add_argument('--prestaging_path_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_path_', help='Copy path instances here before forwarding to --staging_bucket')
 
     parser.add_argument('--dicom', default='/mnt/disks/idc-etl/dicom', help='Directory in which to expand downloaded zip files')
     args = parser.parse_args()
-    args.id = 0 # Default process ID
+    args.pid = 0 # Default process ID
 
     print("{}".format(args), file=sys.stdout)
 

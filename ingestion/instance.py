@@ -24,8 +24,8 @@ import shutil
 from pydicom.errors import InvalidDicomError
 from idc.models import Version, Instance, WSI_Instance
 from sqlalchemy import select,delete
+from google.cloud import storage
 from utilities.tcia_helpers import  get_TCIA_instances_per_series_with_hashes
-
 from ingestion.utils import validate_hashes, md5_hasher, copy_disk_to_gcs, copy_gcs_to_gcs
 
 rootlogger = logging.getLogger('root')
@@ -47,7 +47,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
     # When TCIA provided series timestamps, we'll us that for timestamp.
     now = datetime.now(timezone.utc)
 
-    # rootlogger.debug("      p%s: Series %s, building instances; %s", args.id, series.series_instance_uid, time.asctime())
+    # rootlogger.debug("      p%s: Series %s, building instances; %s", args.pid, series.series_instance_uid, time.asctime())
 
     # Delete the series from disk in case it is there from a previous run
     try:
@@ -61,8 +61,8 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
     download_time = (time.time_ns() - download_start)/10**9
     if not validate_hashes(args, collection, patient, study, series, hashes):
         return
-    # rootlogger.debug("      p%s: Series %s, download time: %s", args.id, series.series_instance_uid, (time.time_ns() - download_start)/10**9)
-    # rootlogger.debug("      p%s: Series %s, downloading instance data; %s", args.id, series.series_instance_uid, time.asctime())
+    # rootlogger.debug("      p%s: Series %s, download time: %s", args.pid, series.series_instance_uid, (time.time_ns() - download_start)/10**9)
+    # rootlogger.debug("      p%s: Series %s, downloading instance data; %s", args.pid, series.series_instance_uid, time.asctime())
 
     # Get a list of the files from the download
     dcms = [dcm for dcm in os.listdir("{}/{}".format(args.dicom, series.series_instance_uid))]
@@ -74,11 +74,11 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
 
     # Ensure that the zip has the expected number of instances
     if not len(dcms) == len(series.instances):
-        errlogger.error("      p%s: Invalid zip file for %s/%s/%s/%s", args.id,
+        errlogger.error("      p%s: Invalid zip file for %s/%s/%s/%s", args.pid,
             collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
         # Return without marking all instances done. This will prevent the series from being done.
         return
-        # raise RuntimeError("      \p%s: Invalid zip file for %s/%s/%s/%s", args.id,
+        # raise RuntimeError("      \p%s: Invalid zip file for %s/%s/%s/%s", args.pid,
         #     collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
 
     # TCIA file names are based on the position of the image in a scan. We need to extract the SOPInstanceUID
@@ -88,7 +88,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
 
     # Replace the TCIA assigned file name
     # Also compute the md5 hash and length in bytes of each
-    # rootlogger.debug("      p%s: Series %s, changing instance filename; %s", args.id, series.series_instance_uid, time.asctime())
+    # rootlogger.debug("      p%s: Series %s, changing instance filename; %s", args.pid, series.series_instance_uid, time.asctime())
     pydicom_times=[]
     psql_times=[]
     rename_times=[]
@@ -102,7 +102,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
             SOPInstanceUID = pydicom.dcmread("{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm), stop_before_pixels=True).SOPInstanceUID
             pydicom_times.append(time.time_ns())
         except InvalidDicomError:
-            errlogger.error("       p%s: Invalid DICOM file for %s/%s/%s/%s", args.id,
+            errlogger.error("       p%s: Invalid DICOM file for %s/%s/%s/%s", args.pid,
                 collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
             # if args.server == 'NLST':
             if collection.collection_id == 'NLST':
@@ -121,7 +121,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         if instance.done:
             # Delete file. We already have it.
             os.remove("{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm))
-            rootlogger.debug("      p%s: Instance %s previously done, ", args.id, series.series_instance_uid)
+            rootlogger.debug("      p%s: Instance %s previously done, ", args.pid, series.series_instance_uid)
 
             continue
         psql_times.append(time.time_ns())
@@ -131,7 +131,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         file_name = "{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm)
         blob_name = "{}/{}/{}.dcm".format(args.dicom, series.series_instance_uid, uuid)
         if os.path.exists(blob_name):
-            errlogger.error("       p%s: Duplicate DICOM files for %s/%s/%s/%s/%s", args.id,
+            errlogger.error("       p%s: Duplicate DICOM files for %s/%s/%s/%s/%s", args.pid,
                 collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid, SOPInstanceUID)
             # if args.server == 'NLST':
             if collection.collection_id == 'NLST':
@@ -162,31 +162,31 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
                 series.instances.remove(instance)
 
     instances_time = time.time_ns() - begin
-    # rootlogger.debug("      p%s: Renamed all files for series %s; %s", args.id, series.series_instance_uid, time.asctime())
-    # rootlogger.debug("      p%s: Series %s instances time: %s", args.id, series.series_instance_uid, instances_time/10**9)
-    # rootlogger.debug("      p%s: Series %s pydicom time: %s", args.id, series.series_instance_uid, (sum(pydicom_times[1::2]) - sum(pydicom_times[0::2]))/10**9)
-    # rootlogger.debug("      p%s: Series %s psql time: %s", args.id, series.series_instance_uid, (sum(psql_times[1::2]) - sum(psql_times[0::2]))/10**9)
-    # rootlogger.debug("      p%s: Series %s rename time: %s", args.id, series.series_instance_uid, (sum(rename_times[1::2]) - sum(rename_times[0::2]))/10**9)
-    # rootlogger.debug("      p%s: Series %s metadata time: %s", args.id, series.series_instance_uid, (sum(metadata_times[1::2]) - sum(metadata_times[0::2]))/10**9)
+    # rootlogger.debug("      p%s: Renamed all files for series %s; %s", args.pid, series.series_instance_uid, time.asctime())
+    # rootlogger.debug("      p%s: Series %s instances time: %s", args.pid, series.series_instance_uid, instances_time/10**9)
+    # rootlogger.debug("      p%s: Series %s pydicom time: %s", args.pid, series.series_instance_uid, (sum(pydicom_times[1::2]) - sum(pydicom_times[0::2]))/10**9)
+    # rootlogger.debug("      p%s: Series %s psql time: %s", args.pid, series.series_instance_uid, (sum(psql_times[1::2]) - sum(psql_times[0::2]))/10**9)
+    # rootlogger.debug("      p%s: Series %s rename time: %s", args.pid, series.series_instance_uid, (sum(rename_times[1::2]) - sum(rename_times[0::2]))/10**9)
+    # rootlogger.debug("      p%s: Series %s metadata time: %s", args.pid, series.series_instance_uid, (sum(metadata_times[1::2]) - sum(metadata_times[0::2]))/10**9)
 
     copy_start = time.time_ns()
     try:
         copy_disk_to_gcs(args, collection, patient, study, series)
     except:
         # Copy failed. Return without marking all instances done. This will be prevent the series from being done.
-        errlogger.error("       p%s: Copy files to GCS failed for %s/%s/%s/%s", args.id,
+        errlogger.error("       p%s: Copy files to GCS failed for %s/%s/%s/%s", args.pid,
                 collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
         return
     copy_time = (time.time_ns() - copy_start)/10**9
-    # rootlogger.debug("      p%s: Series %s, copying time; %s", args.id, series.series_instance_uid, (time.time_ns() - copy_start)/10**9)
+    # rootlogger.debug("      p%s: Series %s, copying time; %s", args.pid, series.series_instance_uid, (time.time_ns() - copy_start)/10**9)
 
     mark_done_start = time.time ()
     for instance in series.instances:
         instance.done = True
     mark_done_time = time.time() - mark_done_start
-    # rootlogger.debug("      p%s: Series %s, completed build_instances; %s", args.id, series.series_instance_uid, time.asctime())
+    # rootlogger.debug("      p%s: Series %s, completed build_instances; %s", args.pid, series.series_instance_uid, time.asctime())
     rootlogger.debug("        p%s: Series %s: download: %s, instances: %s, pydicom: %s, psql: %s, rename: %s, metadata: %s, copy: %s, mark_done: %s",
-                     args.id, series.series_instance_uid,
+                     args.pid, series.series_instance_uid,
                      download_time,
                      instances_time/10**9,
                      (sum(pydicom_times[1::2]) - sum(pydicom_times[0::2]))/10**9,
@@ -204,6 +204,7 @@ def build_instances_path(sess, args, collection, patient, study, series):
 
     # When TCIA provided series timestamps, we'll us that for timestamp.
     now = datetime.now(timezone.utc)
+    client=storage.Client()
 
     # stmt = select(WSI_Instance.sop_instance_uid, WSI_Instance.gcs_url, WSI_Instance.hash, ). \
     #     where(WSI_Instance.series_instance_uid == series.series_instance_uid)
@@ -217,9 +218,9 @@ def build_instances_path(sess, args, collection, patient, study, series):
     for instance in series.instances:
         if not instance.done:
             instance.hash = src_instance_metadata[instance.sop_instance_uid]['hash']
-            instance.size, hash = copy_gcs_to_gcs(args, args.prestaging_path_bucket, instance, src_instance_metadata[instance.sop_instance_uid]['gcs_url'])
+            instance.size, hash = copy_gcs_to_gcs(args, client, args.prestaging_path_bucket, instance, src_instance_metadata[instance.sop_instance_uid]['gcs_url'])
             if hash != instance.hash:
-                errlogger.error("       p%s: Copy files to GCS failed for %s/%s/%s/%s/%s", args.id,
+                errlogger.error("       p%s: Copy files to GCS failed for %s/%s/%s/%s/%s", args.pid,
                                 collection.collection_id, patient.submitter_case_id, study.study_instance_uid,
                                 series.series_instance_uid, instance.sop_instance_uid)
                 # Copy failed. Return without marking all instances done. This will be prevent the series from being done.
@@ -227,7 +228,7 @@ def build_instances_path(sess, args, collection, patient, study, series):
             total_size += instance.size
             instance.done = True
     rootlogger.debug("        p%s: Series %s: instances: %s, gigabytes: %.2f, rate: %.2fMB/s",
-                     args.id, series.series_instance_uid,
+                     args.pid, series.series_instance_uid,
                      len(series.instances),
                      total_size/(2**30),
                      (total_size/(time.time() - start))/(2**20)
