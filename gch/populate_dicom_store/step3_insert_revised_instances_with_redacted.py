@@ -34,8 +34,7 @@ from idc.models import Base, Version, Patient, Study, Series, Instance, Collecti
 from ingestion.utils import empty_bucket
 import settings as etl_settings
 from python_settings import settings
-if not settings.configured:
-    settings.configure(etl_settings)
+from python_settings import settings
 import google
 from google.cloud import storage
 from google.auth.transport import requests
@@ -70,7 +69,7 @@ def get_dataset_operation(
 def wait_done(response, args, sleep_time, verbose=True):
     operation = response['name'].split('/')[-1]
     while True:
-        result = get_dataset_operation(args.dst_project, args.dataset_region, args.gch_dataset_name, operation)
+        result = get_dataset_operation(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET, operation)
         if verbose:
             print("{}".format(result))
 
@@ -201,7 +200,7 @@ def insert_instances(args, sess, dicomweb_sess):
             Instance.sop_instance_uid,Instance.uuid).join(Version.collections).join(Collection.patients).\
             join(Patient.studies).join(Study.seriess).join(Series.instances).filter(Instance.init_idc_version !=
             Instance.rev_idc_version).filter(Instance.final_idc_version == 0).\
-            filter(Version.version == args.version).all()
+            filter(Version.version == settings.CURRENT_VERSION).all()
         uids = [{'collection_id':row.collection_id, 'study_instance_uid':row.study_instance_uid, 'series_instance_uid':row.series_instance_uid,
                  'sop_instance_uid':row.sop_instance_uid,'uuid':row.uuid,
                  'bucket':dev_staging_buckets[row.collection_id]  } for row in rows if row.collection_id in collections]
@@ -213,15 +212,15 @@ def insert_instances(args, sess, dicomweb_sess):
 
     print('Importing {}'.format(args.staging_bucket))
     content_uri = '{}/*'.format(args.staging_bucket)
-    response = import_dicom_instances(args.dst_project, args.dataset_region, args.gch_dataset_name,
-                                      args.dicomstore, content_uri)
+    response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
+                                      settings.GCH_DICOMSTORE, content_uri)
     print(f'Response: {response}')
     result = wait_done(response, args, args.period)
 
     # Don't forget to delete the staging bucket
 
 def repair_store(args):
-    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
+    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.db}'
     sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
     # sql_engine = create_engine(sql_uri)
     args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
@@ -244,15 +243,15 @@ def repair_store(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=8, help='Version to work on')
+    # parser.add_argument('--version', default=8, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())
-    args = parser.parse_args()
-    parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
-    parser.add_argument('--dst_project', default='canceridc-data')
-    parser.add_argument('--dataset_region', default='us')
-    parser.add_argument('--gch_dataset_name', default='idc')
-    parser.add_argument('--dicomstore', default=f'v{args.version}')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/repair_dicom_store_with_redacted_v{args.version}')
+    # args = parser.parse_args()
+    # parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
+    # parser.add_argument('--dst_project', default='canceridc-data')
+    # parser.add_argument('--dataset_region', default='us')
+    # parser.add_argument('--gch_dataset_name', default='idc')
+    # parser.add_argument('--dicomstore', default=f'v{args.version}')
+    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/repair_dicom_store_with_redacted_v{settings.CURRENT_VERSION}')
     parser.add_argument('--period',default=60)
     parser.add_argument('--staging_bucket', default='dicom_store_insert_staging_bucket')
     args = parser.parse_args()

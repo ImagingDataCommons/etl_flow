@@ -27,8 +27,7 @@ from python_settings import settings
 import settings as etl_settings
 from idc.models import Patient, Study, Collection, Redacted_Collections
 
-if not settings.configured:
-    settings.configure(etl_settings)
+from python_settings import settings
 import google
 from google.cloud import storage
 from google.auth.transport import requests
@@ -41,9 +40,9 @@ from sqlalchemy.orm import Session
 def instance_exists(args, dicomweb_sess, study_instance_uid, series_instance_uid, sop_instance_uid):
     # URL to the Cloud Healthcare API endpoint and version
     base_url = "https://healthcare.googleapis.com/v1"
-    url = "{}/projects/{}/locations/{}".format(base_url, args.dst_project, args.dataset_region)
+    url = "{}/projects/{}/locations/{}".format(base_url, settings.dst_project, settings.dataset_region)
     dicomweb_path = "{}/datasets/{}/dicomStores/{}/dicomWeb/studies/{}/series/{}/instances?SOPInstanceUID={}".format(
-        url, args.gch_dataset_name, args.dicomstore, study_instance_uid, series_instance_uid, sop_instance_uid
+        url, settings.gch_dataset_name, settings.dicomstore, study_instance_uid, series_instance_uid, sop_instance_uid
     )
     # Set the required application/dicom+json; charset=utf-8 header on the request
     headers = {"Content-Type": "application/dicom+json; charset=utf-8"}
@@ -63,9 +62,9 @@ def instance_exists(args, dicomweb_sess, study_instance_uid, series_instance_uid
 def delete_instance(args, dicomweb_session, study_instance_uid, series_instance_uid, sop_instance_uid):
     # URL to the Cloud Healthcare API endpoint and version
     base_url = "https://healthcare.googleapis.com/v1"
-    url = "{}/projects/{}/locations/{}".format(base_url, args.dst_project, args.dataset_region)
+    url = "{}/projects/{}/locations/{}".format(base_url, settings.dst_project, settings.dataset_region)
     dicomweb_path = "{}/datasets/{}/dicomStores/{}/dicomWeb/studies/{}/series/{}/instances/{}".format(
-        url, args.gch_dataset_name, args.dicomstore, study_instance_uid, series_instance_uid, sop_instance_uid
+        url, settings.gch_dataset_name, settings.dicomstore, study_instance_uid, series_instance_uid, sop_instance_uid
     )
     # Set the required application/dicom+json; charset=utf-8 header on the request
     headers = {"Content-Type": "application/dicom+json; charset=utf-8"}
@@ -79,9 +78,9 @@ def delete_instance(args, dicomweb_session, study_instance_uid, series_instance_
 def delete_study(args, dicomweb_session, study_instance_uid):
     # URL to the Cloud Healthcare API endpoint and version
     base_url = "https://healthcare.googleapis.com/v1"
-    url = "{}/projects/{}/locations/{}".format(base_url, args.dst_project, args.dataset_region)
+    url = "{}/projects/{}/locations/{}".format(base_url, settings.dst_project, settings.dataset_region)
     dicomweb_path = "{}/datasets/{}/dicomStores/{}/dicomWeb/studies/{}".format(
-        url, args.gch_dataset_name, args.dicomstore, study_instance_uid
+        url, settings.gch_dataset_name, settings.dicomstore, study_instance_uid
     )
     # Set the required application/dicom+json; charset=utf-8 header on the request
     headers = {"Content-Type": "application/dicom+json; charset=utf-8"}
@@ -144,7 +143,7 @@ def delete_instances(args, sess, dicomweb_sess):
     pass
 
 def delete_redacted(args):
-    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
+    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.db}'
     sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
     # sql_engine = create_engine(sql_uri)
     args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
