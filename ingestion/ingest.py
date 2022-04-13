@@ -20,7 +20,7 @@ import os
 import sys
 import argparse
 import logging
-from logging import INFO, DEBUG
+from logging import INFO, DEBUG, ERROR
 from datetime import datetime, timedelta
 import shutil
 from multiprocessing import Lock, shared_memory
@@ -43,24 +43,44 @@ HTTPConnection.debuglevel = 0
 
 
 rootlogger = logging.getLogger('root')
+successlogger = logging.getLogger('root.success')
+debuglogger = logging.getLogger('root.prog')
 errlogger = logging.getLogger('root.err')
 
 def ingest(args):
     # HTTPConnection.debuglevel = 0
     logging.getLogger("urllib3").setLevel(logging.ERROR)
 
-    # rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/v{}_log.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
-    rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
-    rootlogger.addHandler(root_fh)
-    root_fh.setFormatter(rootformatter)
-    rootlogger.setLevel(DEBUG)
+    # # rootlogger = logging.getLogger('root')
+    # root_fh = logging.FileHandler('{}/logs/v{}_log.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
+    # rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
+    # rootlogger.addHandler(root_fh)
+    # root_fh.setFormatter(rootformatter)
+    # rootlogger.setLevel(INFO)
+
+    # successlogger = logging.getLogger('root.success')
+    # success_fh = logging.FileHandler('{}/logs/v{}_log.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
+    success_fh = logging.FileHandler(f'{args.log_dir}/success.log')
+    successformatter = logging.Formatter('%(levelname)s:success:%(message)s')
+    successlogger.addHandler(success_fh)
+    success_fh.setFormatter(successformatter)
+    successlogger.setLevel(INFO)
+
+    # debuglogger = logging.getLogger('root.debug')
+    # debug_fh = logging.FileHandler('{}/logs/v{}_log.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
+    debug_fh = logging.FileHandler(f'{args.log_dir}/debug.log')
+    debugformatter = logging.Formatter('%(levelname)s:debug:%(message)s')
+    debuglogger.addHandler(debug_fh)
+    debug_fh.setFormatter(debugformatter)
+    debuglogger.setLevel(DEBUG)
 
     # errlogger = logging.getLogger('root.err')
-    err_fh = logging.FileHandler('{}/logs/v{}_err.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
+    # err_fh = logging.FileHandler('{}/logs/v{}_err.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
+    err_fh = logging.FileHandler(f'{args.log_dir}/error.log')
     errformatter = logging.Formatter('{%(pathname)s:%(lineno)d} %(levelname)s:err:%(message)s')
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
+    errlogger.setLevel(ERROR)
 
     rootlogger.debug('Args: %s', args)
 
@@ -156,7 +176,7 @@ if __name__ == '__main__':
     # args = parser.parse_args()
     # parser.add_argument('--db', default=f'idc_v{settings.CURRENT_VERSION}', help='Database on which to operate')
     # parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--num_processes', default=32, help="Number of concurrent processes")
+    parser.add_argument('--num_processes', default=16, help="Number of concurrent processes")
 
     parser.add_argument('--skipped_tcia_groups', default=['redacted_collections', 'excluded_collections'],\
                         help="List of tables containing tcia_api_collection_ids of tcia collections to be skipped")
@@ -167,18 +187,20 @@ if __name__ == '__main__':
     parser.add_argument('--skipped_path_groups', default=['redacted_collections', 'excluded_collections'],\
                         help="List of tables containind tcia_api_collection_ids of path collections to be skipped")
     parser.add_argument('--skipped_path_collections', default=['HCC-TACE-Seg'], help='List of additional path collections to be skipped')
-    parser.add_argument('--included_path_collections', default=['TCGA-GBM', 'TCGA-HNSC', 'TCGA-LGG'], help='List of path collections to exclude from skipped')
+    parser.add_argument('--included_path_collections', default=['TCGA-GBM', 'TCGA-HNSC', 'TCGA-LGG', 'CPTAC-GBM', 'CPTAC-HNSCC'], help='List of path collections to exclude from skipped')
     parser.add_argument('--server', default="", help="NBIA server to access. Set to NLST for NLST ingestion")
     parser.add_argument('--prestaging_path_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_path_', help='Copy path instances here before forwarding to --staging_bucket')
 
     parser.add_argument('--dicom', default='/mnt/disks/idc-etl/dicom', help='Directory in which to expand downloaded zip files')
+    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/ingestion')
     args = parser.parse_args()
     args.pid = 0 # Default process ID
 
     print("{}".format(args), file=sys.stdout)
 
-    rootlogger = logging.getLogger('root')
-
+    # rootlogger = logging.getLogger('root')
+    successlogger = logging.getLogger('root.success')
+    debuglogger = logging.getLogger('root.prog')
     errlogger = logging.getLogger('root.err')
 
     ingest(args)

@@ -55,8 +55,9 @@ CLOUD_DATABASE = f'idc_v{CURRENT_VERSION}'
 
 # Various projects that we operate in
 DEV_PROJECT='idc-dev-etl'
+
 PDP_PROJECT='idc-pdp-staging'
-PUB_PROJECT='canceridc-staging'
+PUB_PROJECT='canceridc-data'
 
 # GCH DICOM stores are now only created in the PUB_PROJECT
 GCH_PROJECT=PUB_PROJECT
@@ -77,8 +78,9 @@ GCS_PUB_CR='idc-open-cr'
 GCS_PUB_MASKABLE='idc-open-idc1'
 
 # IDs of the dev and public BQ datasets
+BQ_REGION='us'
 BQ_DEV_INT_DATASET=f'idc_v{CURRENT_VERSION}_dev'
-BQ_DEV_EXT_DATASET=f'idc_v{CURRENT_VERSION}_dev'
+BQ_DEV_EXT_DATASET=f'idc_v{CURRENT_VERSION}_pub'
 BQ_PUB_DATASET=f'idc_v{CURRENT_VERSION}'
 
 # IDs and passwords to accessing some TCIA API endpoints

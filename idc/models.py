@@ -155,6 +155,7 @@ class All_Joined(Base):
     se_uuid = Column(String, nullable=False, comment="IDC assigned UUID of a version of this object")
     series_instances = Column(Integer, nullable=True, comment="Instances in this series")
     source_doi = Column(String, nullable=True, comment="A doi to the wiki page of this source of this series")
+    source_url = Column(String, nullable=True, comment="A url to the wiki page of this source of this series")
     se_hashes = Column(
         CompositeType(
             'hashes',
@@ -535,9 +536,14 @@ class Instance(Base):
 
 class Collection_id_map(Base):
     __tablename__ = 'collection_id_map'
-    tcia_api_collection_id = Column(String, primary_key=True)
-    idc_collection_id = Column(String, primary_key=True)
-    idc_webapp_collection_id = Column(String, primary_key=True)
+    tcia_api_collection_id = Column(String, primary_key=True, \
+                    comment="Collection ID used by TCIA")
+    idc_collection_id = Column(String, primary_key=True,
+                   comment="IDC assigned collection ID (UUID4)")
+    idc_webapp_collection_id = Column(String, primary_key=True, \
+                  comment="Collection ID used by IDC webapp")
+    collection_id = Column(String, primary_key=True, \
+                   comment="Collection ID used for ETL")
 
 class WSI_Version(Base):
     __tablename__ = 'wsi_version'
@@ -611,44 +617,63 @@ class All_WSI_Joined(Base):
 class CR_Collections(Base):
     __tablename__ = 'cr_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    dev_url = Column(String, comment="Dev bucket name")
-    pub_url = Column(String, comment="Public bucket name")
     access = Column(String, comment="Access: Public or Limited")
-    v1 = Column(Boolean, comment='True if collection is in v1')
-    v2 = Column(Boolean, comment='True if collection is in v2')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
+    dev_path_url = Column(String, comment="Dev path bucket name")
+    pub_path_url = Column(String, comment="Public path bucket name")
 
 class Defaced_Collections(Base):
     __tablename__ = 'defaced_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    dev_url = Column(String, comment="Dev bucket name")
-    pub_url = Column(String, comment="Public bucket name")
     access = Column(String, comment="Access: Public or Limited")
-    v1 = Column(Boolean, comment='True if collection is in v1')
-    v2 = Column(Boolean, comment='True if collection is in v2')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
+    dev_path_url = Column(String, comment="Dev path bucket name")
+    pub_path_url = Column(String, comment="Public path bucket name")
 
 class Excluded_Collections(Base):
     __tablename__ = 'excluded_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
     access = Column(String, comment="Access: Public or Limited")
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
+    dev_path_url = Column(String, comment="Dev path bucket name")
+    pub_path_url = Column(String, comment="Public path bucket name")
 
 class Open_Collections(Base):
     __tablename__ = 'open_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    dev_url = Column(String, comment="Dev bucket name")
-    pub_url = Column(String, comment="Public bucket name")
     access = Column(String, comment="Access: Public or Limited")
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
+    dev_path_url = Column(String, comment="Dev path bucket name")
+    pub_path_url = Column(String, comment="Public path bucket name")
 
 class Redacted_Collections(Base):
     __tablename__ = 'redacted_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    dev_url = Column(String, comment="Dev bucket name")
-    pub_url = Column(String, comment="Public bucket name")
     access = Column(String, comment="Access: Public or Limited")
-    v1 = Column(Boolean, comment='True if collection is in v1')
-    v2 = Column(Boolean, comment='True if collection is in v2')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
+    dev_path_url = Column(String, comment="Dev path bucket name")
+    pub_path_url = Column(String, comment="Public path bucket name")
+
+class All_Collections(Base):
+    __tablename__ = 'all_collections'
+    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
+    access = Column(String, comment="Access: Public or Limited")
+    idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
+    dev_path_url = Column(String, comment="Dev path bucket name")
+    pub_path_url = Column(String, comment="Public path bucket name")
+
+
+
 

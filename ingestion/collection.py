@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 import logging
 from uuid import uuid4
 from idc.models import Version, Collection, Patient
-from ingestion.utils import accum_sources, empty_bucket, create_prestaging_bucket
+from ingestion.utils import accum_sources, empty_bucket, create_prestaging_bucket, is_skipped
 from ingestion.patient import clone_patient, build_patient, retire_patient
 from ingestion.all_sources import All
 from utilities.get_collection_dois import get_data_collection_doi, get_analysis_collection_dois
@@ -34,7 +34,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy_utils import register_composites
 from sqlalchemy import create_engine
 
-rootlogger = logging.getLogger('root')
+# rootlogger = logging.getLogger('root')
+successlogger = logging.getLogger('root.success')
+debuglogger = logging.getLogger('root.prog')
 errlogger = logging.getLogger('root.err')
 
 
@@ -50,7 +52,7 @@ def clone_collection(collection,uuid):
 
 def retire_collection(args, collection):
     # If this object has children from source, delete them
-    rootlogger.debug('p%s: Collection %s retiring', args.pid, collection.collection_id)
+    debuglogger.debug('p%s: Collection %s retiring', args.pid, collection.collection_id)
     for patient in collection.patients:
         retire_patient(args, patient)
     collection.final_idc_version = settings.PREVIOUS_VERSION
@@ -63,9 +65,8 @@ def worker(input, output, args, data_collection_doi, analysis_collection_dois, a
     # sql_engine = create_engine(args.sql_uri)
     sql_engine = create_engine(sql_uri)
     with Session(sql_engine) as sess:
-        # all_sources = All(args.pid, sess, settings.CURRENT_VERSION, access, lock)
         all_sources = All(args.pid, sess, settings.CURRENT_VERSION, args.access,
-                          args.skipped_tcia_collections, args.skipped_path_collections, Lock())
+                          args.skipped_tcia_collections, args.skipped_path_collections, lock)
 
         for more_args in iter(input.get, 'STOP'):
             for attempt in range(PATIENT_TRIES):
@@ -89,20 +90,21 @@ def worker(input, output, args, data_collection_doi, analysis_collection_dois, a
 
 
 def expand_collection(sess, args, all_sources, collection):
+    skipped = is_skipped(args.skipped_collections, collection.collection_id)
+    not_skipped = [not x for x in skipped]
     # Get the patients that the sources know about
     # Returned data includes a sources vector for each patient
-    patients = all_sources.patients(collection)
+    patients = all_sources.patients(collection, skipped)
 
     # Since we are starting, delete everything from the prestaging bucket.
     if collection.revised.tcia:
-        rootlogger.info("Emptying tcia prestaging buckets")
+        debuglogger.info("Emptying tcia prestaging buckets")
         create_prestaging_bucket(args, args.prestaging_tcia_bucket)
         empty_bucket(args.prestaging_tcia_bucket)
     if collection.revised.path:
-        rootlogger.info("Emptying path prestaging buckets")
+        debuglogger.info("Emptying path prestaging buckets")
         create_prestaging_bucket(args, args.prestaging_path_bucket)
         empty_bucket(args.prestaging_path_bucket)
-
 
     # Check for duplicates
     if len(patients) != len(set(patients)):
@@ -119,9 +121,20 @@ def expand_collection(sess, args, all_sources, collection):
         # Get the IDs of the patients that we have.
         idc_objects = {object.submitter_case_id: object for object in collection.patients}
 
-        new_objects = sorted([id for id in patients if id not in idc_objects])
-        retired_objects = sorted([idc_objects[id] for id in idc_objects if id not in patients], key=lambda patient: patient.submitter_case_id)
-        existing_objects = sorted([idc_objects[id] for id in idc_objects if id in patients], key=lambda patient: patient.submitter_case_id)
+        # If any (non-skipped) source has an object but IDC does not, it is new. Note that we don't get objects from
+        # skipped collections
+        new_objects = sorted([id for id in patients \
+                              if not id in idc_objects])
+        # An object in IDC will continue to exist if any non-skipped source has the object or IDC's object has a
+        # skipped source. I.E. if an object has a skipped source then, we can't ask the source about it so assume
+        # it exists.
+        existing_objects = [obj for id, obj in idc_objects.items() if \
+                id in patients or any([a and b for a, b in zip(obj.sources,skipped)])]
+        retired_objects = [obj for id, obj in idc_objects.items() \
+                      if not obj in existing_objects]
+        # new_objects = sorted([id for id in patients if id not in idc_objects])
+        # retired_objects = sorted([idc_objects[id] for id in idc_objects if id not in patients], key=lambda patient: patient.submitter_case_id)
+        # existing_objects = sorted([idc_objects[id] for id in idc_objects if id in patients], key=lambda patient: patient.submitter_case_id)
 
     for patient in sorted(new_objects):
         new_patient = Patient()
@@ -142,18 +155,18 @@ def expand_collection(sess, args, all_sources, collection):
         new_patient.expanded=False
 
         collection.patients.append(new_patient)
-        rootlogger.debug('  p%s: Patient %s is new',  args.pid, new_patient.submitter_case_id)
+        debuglogger.debug('  p%s: Patient %s is new',  args.pid, new_patient.submitter_case_id)
 
     for patient in existing_objects:
         idc_hashes = patient.hashes
-        if collection.collection_id in args.skipped_collections:
-            skips = args.skipped_collections[collection.collection_id]
-        else:
-            skips = (False, False)
-            # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
-        src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id, skips)
+        # Get the hash from each source that is not skipped
+        # The hash of a source is "" if the source is skipped, or the source that does not have
+        # the object
+        src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id, skipped)
+        # A source is revised the if idc hashes[source] and the source hash differ and the source is not skipped
         revised = [(x != y) and  not z for x, y, z in \
-                zip(idc_hashes[:-1], src_hashes, skips)]
+                zip(idc_hashes[:-1], src_hashes, skipped)]
+        # If any source is revised, then the object is revised.
         if any(revised):
             # rootlogger.debug('p%s **Revising patient %s', args.pid, patient.submitter_case_id)
             # Mark when we started work on this patient
@@ -167,7 +180,7 @@ def expand_collection(sess, args, all_sources, collection):
             rev_patient.sources = [False, False]
             rev_patient.rev_idc_version = settings.CURRENT_VERSION
             collection.patients.append(rev_patient)
-            rootlogger.debug('  p%s: Patient %s is revised',  args.pid, rev_patient.submitter_case_id)
+            debuglogger.debug('  p%s: Patient %s is revised',  args.pid, rev_patient.submitter_case_id)
 
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised collection
@@ -184,7 +197,7 @@ def expand_collection(sess, args, all_sources, collection):
 
             patient.done = True
             patient.expanded = True
-            rootlogger.debug('  p%s: Patient %s unchanged',  args.pid, patient.submitter_case_id)
+            debuglogger.debug('  p%s: Patient %s unchanged',  args.pid, patient.submitter_case_id)
 
     for patient in retired_objects:
         breakpoint()
@@ -201,18 +214,22 @@ def expand_collection(sess, args, all_sources, collection):
 
 def build_collection(sess, args, all_sources, collection_index, version, collection):
     begin = time.time()
-    rootlogger.debug("p%s: Expand Collection %s, %s", args.pid, collection.collection_id, collection_index)
+    successlogger.debug("p%s: Expand Collection %s, %s", args.pid, collection.collection_id, collection_index)
     args.prestaging_tcia_bucket = f"{args.prestaging_tcia_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
     args.prestaging_path_bucket = f"{args.prestaging_path_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
     if not collection.expanded:
         expand_collection(sess, args, all_sources, collection)
-    rootlogger.info("p%s: Expanded Collection %s, %s, %s patients", args.pid, collection.collection_id, collection_index, len(collection.patients))
+    successlogger.info("p%s: Expanded Collection %s, %s, %s patients", args.pid, collection.collection_id, collection_index, len(collection.patients))
     # Get the lists of data and analyis series for this collection
-    breakpoint() # Get URLs
+    # breakpoint() # Get URLs
     data_collection_doi = get_data_collection_doi(collection.collection_id, server=args.server)
     if data_collection_doi=="":
-        if collection.collection_id=='NLST':
+        if collection.collection_id == 'StageII-Colorectal-CT':
+            data_collection_doi = 'https://doi.org/10.7937/p5k5-tg43'
+        elif collection.collection_id=='NLST':
             data_collection_doi = '10.7937/TCIA.hmq8-j677'
+        elif collection.collection_id == 'B-mode-and-CEUS-Liver':
+            data_collection_doi = '10.7937/TCIA.2021.v4z7-tc39'
         elif collection.collection_id == 'Pancreatic-CT-CBCT-SEG':
             data_collection_doi = '10.7937/TCIA.ESHQ-4D90'
         elif collection.collection_id == 'CPTAC-LSCC':
@@ -225,6 +242,16 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
             data_collection_doi = '10.7937/TCIA.YZWQ-ZZ63'
         elif collection.collection_id == 'CPTAC-OV':
             data_collection_doi = '10.7937/TCIA.ZS4A-JD58'
+        elif collection.collection_id == 'CPTAC-GBM':
+            data_collection_doi = 'K9/TCIA.2018.3RJE41Q1'
+        elif collection.collection_id == 'CPTAC-HNSCC':
+            data_collection_doi = 'K9/TCIA.2018.UW45NH81'
+        elif collection.collection_id == 'TCGA-GBM':
+            data_collection_doi = 'K9/TCIA.2016.RNYFUYE9'
+        elif collection.collection_id == 'TCGA-HNSC':
+            data_collection_doi = 'K9/TCIA.2016.LXKQ47MS'
+        elif collection.collection_id == 'TCGA-LGG':
+            data_collection_doi = 'K9/TCIA.2016.L4LTD3TK'
         elif collection.collection_id in [
             'TCGA-ACC',
             'TCGA-CHOL',
@@ -237,11 +264,12 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
             'TCGA-THYM',
             'TCGA-UCS',
             'TCGA-UVM']:
+            breakpoint()
             data_collection_doi = f'{collection.collection_id}-DOI'
         else:
             errlogger.error('No DOI for collection %s', collection.collection_id)
-            pass
-            # return
+            breakpoint()
+            return
     pre_analysis_collection_dois = get_analysis_collection_dois(collection.collection_id, server=args.server)
     analysis_collection_dois = {x['SeriesInstanceUID']: x['SourceDOI'] for x in pre_analysis_collection_dois}
 
@@ -254,7 +282,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
                 build_patient(sess, args, all_sources, patient_index, data_collection_doi, analysis_collection_dois, version, collection, patient)
             else:
                 if True:
-                    rootlogger.info("  p0: Patient %s, %s, previously built", patient.submitter_case_id,
+                    successlogger.info("  p0: Patient %s, %s, previously built", patient.submitter_case_id,
                                 patient_index)
 
     else:
@@ -287,7 +315,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
                 enqueued_patients.append(patient.submitter_case_id)
             else:
                 if (collection.patients.index(patient) % 100 ) == 0:
-                    rootlogger.info("  p%s: Patient %s, %s, previously built", args.pid, patient.submitter_case_id,
+                    successlogger.info("  p%s: Patient %s, %s, previously built", args.pid, patient.submitter_case_id,
                                 patient_index)
 
         # Collect the results for each patient
@@ -314,7 +342,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
                 process.join()
             sess.rollback()
             duration = str(timedelta(seconds=(time.time() - begin)))
-            rootlogger.info("Collection %s, %s, NOT completed in %s", collection.collection_id, collection_index,
+            successlogger.info("Collection %s, %s, NOT completed in %s", collection.collection_id, collection_index,
                             duration)
 
     if all([patient.done for patient in collection.patients]):
@@ -326,14 +354,16 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
             # src_hashes = all_sources.src_collection_hashes(collection.collection_id)
             # # They must be the same
             # if src_hashes != idc_hashes[:-1]:
-            if collection.collection_id in args.skipped_collections:
-                skips = args.skipped_collections[collection.collection_id]
-            else:
-                skips = (False, False)
+            skipped = is_skipped(args.skipped_collections, collection.collection_id)
+
+            # if collection.collection_id in args.skipped_collections:
+            #     skipped = args.skipped_collections[collection.collection_id]
+            # else:
+            #     skipped = (False, False)
                 # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
-            src_hashes = all_sources.src_collection_hashes(collection.collection_id, skips)
+            src_hashes = all_sources.src_collection_hashes(collection.collection_id, skipped)
             revised = [(x != y) and not z for x, y, z in \
-                       zip(idc_hashes[:-1], src_hashes, skips)]
+                       zip(idc_hashes[:-1], src_hashes, skipped)]
             if any(revised):
                 errlogger.error('Hash match failed for collection %s', collection.collection_id)
             else:
@@ -342,13 +372,13 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
                 collection.done = True
                 sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
-            rootlogger.info("Completed Collection %s, %s, in %s", collection.collection_id, collection_index,
+            successlogger.info("Completed Collection %s, %s, in %s", collection.collection_id, collection_index,
                             duration)
         except Exception as exc:
             errlogger.error('Could not validate collection hash for %s: %s', collection.collection_id, exc)
 
     else:
         duration = str(timedelta(seconds=(time.time() - begin)))
-        rootlogger.info("Collection %s, %s, not completed in %s", collection.collection_id, collection_index,
+        successlogger.info("Collection %s, %s, not completed in %s", collection.collection_id, collection_index,
                         duration)
 

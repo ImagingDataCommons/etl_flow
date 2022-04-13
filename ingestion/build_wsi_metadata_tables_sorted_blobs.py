@@ -160,7 +160,7 @@ def prebuild(args):
 
     with Session(sql_engine) as sess:
         client = storage.Client()
-        skips = list_skips(sess, Base, args.skipped_groups, args.skipped_collections)
+        skips = list_skips(sess, Base, args.skipped_groups, args.skipped_collections, args.included_collections)
         build_collections(client, args, sess, skips)
 
 
@@ -169,9 +169,9 @@ if __name__ == '__main__':
     # parser.add_argument('--version', default=9, help='Version to work on')
     parser.add_argument('--src_bucket', default='dac-wsi-conversion-results-v2-sorted')
     parser.add_argument('--skipped_groups', default=['open_collections', 'redacted_collections',
-                                                     'excluded_collections', 'defaced_collections'])
+                                                     'excluded_collections', 'cr_collections', 'defaced_collections'])
     parser.add_argument('--skipped_collections', default=[])
-    parser.add_argument('--included_collections', default=['TCGA-GBM', 'TCGA-HNSC', 'TCGA-LGG' ])
+    parser.add_argument('--included_collections', default=['CPTAC-GBM', 'CPTAC-HNSCC'])
     parser.add_argument('--dones', default='{}/logs/wsi_build_dones.txt'.format(os.environ['PWD']), help="Completed collections")
     args = parser.parse_args()
 

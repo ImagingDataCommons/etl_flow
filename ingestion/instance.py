@@ -28,7 +28,9 @@ from google.cloud import storage
 from utilities.tcia_helpers import  get_TCIA_instances_per_series_with_hashes
 from ingestion.utils import validate_hashes, md5_hasher, copy_disk_to_gcs, copy_gcs_to_gcs
 
-rootlogger = logging.getLogger('root')
+# rootlogger = logging.getLogger('root')
+successlogger = logging.getLogger('root.success')
+debuglogger = logging.getLogger('root.prog')
 errlogger = logging.getLogger('root.err')
 
 def clone_instance(instance, uuid):
@@ -121,7 +123,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         if instance.done:
             # Delete file. We already have it.
             os.remove("{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm))
-            rootlogger.debug("      p%s: Instance %s previously done, ", args.pid, series.series_instance_uid)
+            debuglogger.debug("      p%s: Instance %s previously done, ", args.pid, series.series_instance_uid)
 
             continue
         psql_times.append(time.time_ns())
@@ -185,7 +187,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         instance.done = True
     mark_done_time = time.time() - mark_done_start
     # rootlogger.debug("      p%s: Series %s, completed build_instances; %s", args.pid, series.series_instance_uid, time.asctime())
-    rootlogger.debug("        p%s: Series %s: download: %s, instances: %s, pydicom: %s, psql: %s, rename: %s, metadata: %s, copy: %s, mark_done: %s",
+    debuglogger.debug("        p%s: Series %s: download: %s, instances: %s, pydicom: %s, psql: %s, rename: %s, metadata: %s, copy: %s, mark_done: %s",
                      args.pid, series.series_instance_uid,
                      download_time,
                      instances_time/10**9,
@@ -227,7 +229,7 @@ def build_instances_path(sess, args, collection, patient, study, series):
                 return
             total_size += instance.size
             instance.done = True
-    rootlogger.debug("        p%s: Series %s: instances: %s, gigabytes: %.2f, rate: %.2fMB/s",
+    debuglogger.debug("        p%s: Series %s: instances: %s, gigabytes: %.2f, rate: %.2fMB/s",
                      args.pid, series.series_instance_uid,
                      len(series.instances),
                      total_size/(2**30),

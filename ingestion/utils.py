@@ -23,9 +23,22 @@ from subprocess import run
 from google.cloud import storage
 from google.api_core.exceptions import Conflict
 
-rootlogger = logging.getLogger('root')
+from python_settings import settings
+
+# rootlogger = logging.getLogger('root')
+successlogger = logging.getLogger('root.success')
+debuglogger = logging.getLogger('root.prog')
 errlogger = logging.getLogger('root.err')
 
+def is_skipped(skipped_collections, collection_id):
+    if collection_id in skipped_collections:
+        skipped = skipped_collections[collection_id]
+    else:
+        skipped = (False, False)
+    return skipped
+
+def to_webapp(collection_id):
+    return collection_id.lower().replace('-','_').replace(' ','_')
 
 BUF_SIZE = 65536
 def md5_hasher(file_path):
@@ -60,7 +73,7 @@ def validate_hashes(args, collection, patient, study, series, hashes):
 
 
 def rollback_copy_to_prestaging_bucket(client, args, series):
-    bucket = client.bucket(args.prestaging_bucket)
+    bucket = client.bucket(args.prestaging_tcia_bucket)
     for instance in series.instances:
         try:
             results = bucket.blob(f'{instance.uuid}.dcm').delete()
@@ -70,9 +83,10 @@ def rollback_copy_to_prestaging_bucket(client, args, series):
 
 
 def validate_series_in_gcs(args, collection, patient, study, series):
-    client = storage.Client(project=args.project)
+    # client = storage.Client(project=settings.DEV_PROJECT)
+    client = storage.Client()
     # blobs_info = get_series_info(storage_client, args.project, args.staging_bucket)
-    bucket = client.get_bucket(args.prestaging_bucket)
+    bucket = client.get_bucket(args.prestaging_tcia_bucket)
     try:
         for instance in series.instances:
             blob = bucket.blob(f'{instance.uuid}.dcm')
@@ -93,8 +107,8 @@ def copy_disk_to_prestaging_bucket(args, series):
     try:
         # Copy the series to GCS
         src = "{}/{}/*".format(args.dicom, series.series_instance_uid)
-        dst = "gs://{}/".format(args.prestaging_bucket)
-        result = run(["gsutil", "-m", "-q", "cp", src, dst], check=True)
+        dst = "gs://{}/".format(args.prestaging_tcia_bucket)
+        result = run(["gsutil", "-m", "-q", "cp", "-J", src, dst], check=True)
         if result.returncode :
             errlogger.error('p%s: \tcopy_disk_to_prestaging_bucket failed for series %s', args.pid, series.series_instance_uid)
             raise RuntimeError('p%s: copy_disk_to_prestaging_bucket failed for series %s', args.pid, series.series_instance_uid)
@@ -108,21 +122,21 @@ def empty_bucket(bucket):
     try:
         src = "gs://{}/*".format(bucket)
         run(["gsutil", "-m", "-q", "rm", src])
-        rootlogger.debug(("Emptied bucket %s", bucket))
+        debuglogger.debug("Emptied bucket %s", bucket)
     except Exception as exc:
         errlogger.error("Failed to empty bucket %s", bucket)
         raise RuntimeError("Failed to empty bucket %s", bucket) from exc
 
 
 def create_prestaging_bucket(args, bucket):
-    client = storage.Client(project='idc-dev-etl')
+    client = storage.Client(project=settings.DEV_PROJECT)
 
     # Try to create the destination bucket
     new_bucket = client.bucket(bucket)
     new_bucket.iam_configuration.uniform_bucket_level_access_enabled = True
     new_bucket.versioning_enabled = False
     try:
-        result = client.create_bucket(new_bucket, location='US-CENTRAL1', project=args.project)
+        result = client.create_bucket(new_bucket, location='US-CENTRAL1', project=settings.DEV_PROJECT)
         # return(0)
     except Conflict:
         # Bucket exists
@@ -134,7 +148,7 @@ def create_prestaging_bucket(args, bucket):
 
 
 def copy_disk_to_gcs(args, collection, patient, study, series):
-    storage_client = storage.Client(project=args.project)
+    # storage_client = storage.Client(project=settings.DEV_PROJECT)
 
     # Delete the zip file before we copy to GCS so that it is not copied
     os.remove("{}/{}.zip".format(args.dicom, series.series_instance_uid))
@@ -160,7 +174,7 @@ def copy_gcs_to_gcs(args, client, dst_bucket_name, instance, gcs_url):
     dst_blob = dst_bucket.blob(f'{instance.uuid}.dcm')
     token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob)
     while token:
-        rootlogger.debug('******p%s: Rewrite bytes_rewritten %s, total_bytes %s', args.pid, bytes_rewritten, total_bytes)
+        debuglogger.debug('******p%s: Rewrite bytes_rewritten %s, total_bytes %s', args.pid, bytes_rewritten, total_bytes)
         token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob, token=token)
     dst_blob.reload()
     return dst_blob.size, b64decode(dst_blob.md5_hash).hex()
