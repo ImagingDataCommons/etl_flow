@@ -265,7 +265,7 @@ def compare_collection_hashes(sess, args):
     query = f"""
         SELECT tcia_api_collection_id, collection_hash
         FROM collection{args.suffix}
-        WHERE idc_version_number=2
+        WHERE idc_version_number={args.version}
         ORDER BY tcia_api_collection_id
       """
     version = sess.query(Version).filter(Version.version == args.version).first()
@@ -371,17 +371,17 @@ if __name__ == '__main__':
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
 
-    version = 7
+    version = 9
     parser = argparse.ArgumentParser()
     # parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
-    parser.add_argument('--db', default=f'idc_v8', help='Database to compare against')
+    parser.add_argument('--db', default=f'idc_v9', help='Database to compare against')
     parser.add_argument('--suffix', default="")
-    parser.add_argument('--stop_expansion', default="", help="Level at which to stop expansion")
+    parser.add_argument('--stop_expansion', default="Collection", help="Level at which to stop expansion")
     parser.add_argument('--stop', default=False, help='Stop expansion if no hash returned by NBIA')
     parser.add_argument('--expand_all', default=False, help="Expand regardless of whether hashes match.")
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
                         help='Levels at which to log')
-    parser.add_argument('--collections', default=['NSCLC Radiogenomics'], \
+    parser.add_argument('--collections', default=[], \
         help='List of collections to compare. If empty, compare all collections')
     parser.add_argument('--skips', default='./logs/compare_hashes_skips')
 
