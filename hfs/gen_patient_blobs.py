@@ -24,7 +24,7 @@ def gen_patient_object(args, sess, idc_version, patient):
         for study in patient.studies:
             gen_study_object(args, sess, idc_version, study)
         patient_data = {
-            "encoding": "v1",
+            "encoding": "1.0",
             "object_type": "patient",
             "submitter_case_id": patient.submitter_case_id,
             "idc_case_id": patient.idc_case_id,
@@ -35,29 +35,22 @@ def gen_patient_object(args, sess, idc_version, patient):
             "final_idc_version": patient.final_idc_version,
             "self_uri": f"gs://{args.dst_bucket.name}/{patient.uuid}.idc",
             "children": {
+                "count": len(patient.studies),
+                "object_ids": [study.study_instance_uid for study in patient.studies],
                 "gs":{
                     "region": "us-central1",
-                    "urls":
-                        {
-                            "bucket": f"{args.dst_bucket.name}",
-                            "studies":
-                                [
-                                    {"StudyInstanceUID": f"{study.study_instance_uid}",
-                                     "object_id": f"{study.uuid}.idc"} \
-                                    for study in patient.studies
-                                ]
-                        }
+                    "bucket": f"{args.dst_bucket.name}",
+                    "gs_object_ids":
+                        [
+                            f"{study.uuid}.idc" for study in patient.studies
+                        ]
                     },
-                "drs":{
-                    "urls":
-                        {
-                            "server": "drs://nci-crdc.datacommons.io",
-                            "studies":
-                                [
-                                    {"StudyInstanceUID": f"{study.study_instance_uid}",
-                                     "object_id": f"dg.4DFC/{study.uuid}"} for study in patient.studies
-                                ]
-                        }
+                "drs": {
+                    "drs_server": "drs://nci-crdc.datacommons.io",
+                    "drs_object_ids":
+                        [
+                                f"dg.4DFC/{study.uuid}" for study in patient.studies
+                        ]
                     }
                 }
             }

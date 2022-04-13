@@ -24,7 +24,7 @@ def gen_study_object(args, sess, idc_version, study):
         for series in study.seriess:
             gen_series_object(args, sess, series)
         study_data = {
-            "encoding": "v1",
+            "encoding": "1.0",
             "object_type": "study",
             "StudyInstanceUID": study.study_instance_uid,
             "uuid": study.uuid,
@@ -33,30 +33,24 @@ def gen_study_object(args, sess, idc_version, study):
             "rev_idc_version": study.rev_idc_version,
             "final_idc_version": study.final_idc_version,
             "self_uri": f"gs://{args.dst_bucket.name}/{study.uuid}.idc",
-            "drs_object_id": f"dg.4DFC/{study.uuid}",
+            "drs_object_id": f"drs://nci-crdc.datacommons.io/dg.4DFC/{study.uuid}",
             "children": {
+                "count": len(study.seriess),
+                "object_ids": [f"{series.series_instance_uid}" for series in study.seriess],
                 "gs":{
                     "region": "us-central1",
-                    "urls":
-                        {
-                            "bucket": f"{args.dst_bucket.name}",
-                            "series":
-                                [
-                                    {"SeriesInstanceUID": f"{series.series_instance_uid}",
-                                     "blob_name": f"{series.uuid}.idc"} for series in study.seriess
-                                ]
-                        }
+                    "bucket": f"{args.dst_bucket.name}",
+                    "gs_object_ids":
+                        [
+                            f"{series.uuid}.idc" for series in study.seriess
+                        ]
                     },
-                "drs":{
-                    "urls":
-                        {
-                            "server": "drs://nci-crdc.datacommons.io",
-                            "series":
-                                [
-                                    {"SeriesInstanceUID": f"{series.series_instance_uid}",
-                                     "object_id": f"dg.4DFC/{series.uuid}"} for series in study.seriess
-                                ]
-                        }
+                "drs": {
+                    "drs_server": "drs://nci-crdc.datacommons.io",
+                    "drs_object_ids":
+                        [
+                            f"dg.4DFC/{series.uuid}" for series in study.seriess
+                        ]
                     }
                 }
             }

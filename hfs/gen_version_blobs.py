@@ -33,24 +33,23 @@ def gen_version_object(args, sess, version):
             if collection.collection_id in args.collections:
                 gen_collection_object(args, sess, idc_version, collection)
         version_data = {
-            "encoding": "v1",
+            "encoding": "1.0",
             "object_type": "version",
             "version_id": version.version,
             "md5_hash": version.hashes.all_sources,
-            "self_uri": f"gs://{args.dst_bucket.name}/idc_v{version.version}.idc",
+            "self_uri": f"{args.dst_bucket.name}/idc_v{version.version}.idc",
             "children": {
+                "count": len([collection for collection in version.collections if collection.collection_id in args.collections]),
+                "object_ids": [collection.collection_id.lower().replace('-', '_').replace(' ', '_') \
+                                              for collection in version.collections if collection.collection_id in args.collections],
                 "gs":{
                     "region": "us-central1",
-                    "urls":
-                        {
-                            "bucket": f"{args.dst_bucket.name}",
-                            "collections":
-                                [
-                                    {"idc_webapp_collection_id": collection.collection_id.lower().replace('-','_').replace(' ','_'),
-                                     "blob_name": f"{collection.uuid}.idc"} \
-                                        for collection in version.collections if collection.collection_id in args.collections
-                                ]
-                        }
+                    "bucket": f"{args.dst_bucket.name}",
+                    "gs_object_ids":
+                        [
+                            f"{collection.uuid}.idc" \
+                                for collection in version.collections if collection.collection_id in args.collections
+                        ]
                     }
                 }
             }

@@ -50,22 +50,20 @@ def gen_root_obj(args):
                 # gen_version_object(args, version.idc_version, version.previous_idc_version, version.md5_hash)
                 gen_version_object(args, sess, version)
             root = {
-                "encoding": "v1",
+                "encoding": "1.0",
                 "object_type": "root",
                 "md5_hash": get_merkle_hash([version.hashes.all_sources for version in versions]),
                 "self_uri": f"gs://{args.dst_bucket.name}/idc.idc",
                 "children": {
+                    "count": versions.count(),
+                    "object_ids": [f"idc_v{version.version}" for version in versions],
                     "gs":{
                         "region": "us-central1",
-                        "urls":
-                            {
-                                "bucket": f"{args.dst_bucket.name}",
-                                "versions":
-                                    [
-                                        {"version": f"idc_v{version.version}",
-                                         "blob_name": f"idc_v{version.version}.idc"} for version in versions
-                                    ]
-                           }
+                        "bucket": f"{args.dst_bucket.name}",
+                        "gs_object_ids":
+                            [
+                                f"idc_v{version.version}.idc" for version in versions
+                            ]
                         }
                      }
                 }

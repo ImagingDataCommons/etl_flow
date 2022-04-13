@@ -19,9 +19,9 @@ import json
 
 def gen_series_object(args, sess, series):
     if not args.dst_bucket.blob(f"{series.uuid}.idc").exists():
-        print(f'\t\t\t\t\tSeries {series.series_instance_uid} started')
+        # print(f'\t\t\t\t\tSeries {series.series_instance_uid} started')
         series_data = {
-            "encoding": "v1",
+            "encoding": "1.0",
             "object_type": "series",
             "SeriesInstanceUID": series.series_instance_uid,
             "source_doi": series.source_doi,
@@ -32,31 +32,24 @@ def gen_series_object(args, sess, series):
             "rev_idc_version": series.rev_idc_version,
             "final_idc_version": series.final_idc_version,
             "self_uri": f"gs://{args.dst_bucket.name}/{series.uuid}.idc",
-            "drs_object_id": f"dg.4DFC/{series.uuid}",
-            "children": {
+            "drs_object_id": f"drs://nci-crdc.datacommons.io/dg.4DFC/{series.uuid}",
+            "instances": {
+                "count": len(series.instances),
+                "SOPInstanceUIDs": [instance.sop_instance_uid for instance in series.instances],
                 "gs":{
                     "region": "us-central1",
-                    "urls":
-                        {
-                            "bucket": f"{args.dst_bucket.name}",
-                            "folder": f"{series.uuid}",
-                            "instances":
-                                [
-                                    {"SOPInstance_UID": f"{instance.sop_instance_uid}",
-                                     "blob_name": f"{instance.uuid}.idc"} for instance in series.instances
-                                ]
-                        }
+                    "bucket/folder": f"{args.dst_bucket.name}/{series.uuid}",
+                    "gs_object_ids":
+                        [
+                            f"{instance.uuid}.dcm" for instance in series.instances
+                        ]
                     },
-                "drs":{
-                    "urls":
-                        {
-                            "server": "drs://nci-crdc.datacommons.io",
-                            "object_ids":
-                                [
-                                    {"SOPInstance_UID": f"{instance.sop_instance_uid}",
-                                     "object_id": f"dg.4DFC/{instance.uuid}"} for instance in series.instances\
-                                ]
-                        }
+                "drs": {
+                    "drs_server": "drs://nci-crdc.datacommons.io",
+                    "drs_object_ids":
+                        [
+                            f"{instance.uuid}" for instance in series.instances
+                        ]
                     }
                 }
             }
