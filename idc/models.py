@@ -545,6 +545,7 @@ class Collection_id_map(Base):
     collection_id = Column(String, primary_key=True, \
                    comment="Collection ID used for ETL")
 
+
 class WSI_Version(Base):
     __tablename__ = 'wsi_version'
     version = Column(Integer, unique=True, primary_key=True, comment='NBIA collection ID')
