@@ -24,7 +24,7 @@ data_collections_metadata_schema = [
     bigquery.SchemaField('Program', 'STRING', mode='NULLABLE', description='TCIA assigned program of this collection'),
     bigquery.SchemaField('Status', 'STRING', mode='NULLABLE', description='TCIA assigned status: Ongoing or Complete'),
     bigquery.SchemaField('Updated', 'DATE', mode='NULLABLE', description='Most recent update reported by TCIA'),
-    bigquery.SchemaField('Access', 'STRING', mode='NULLABLE', description='Limited or Public'),
+    bigquery.SchemaField('Access', 'STRING', mode='REPEATED', description='Limited or Public'),
     bigquery.SchemaField('ImageTypes', 'STRING', mode='NULLABLE', description='Enumeration of image type/modality'),
     bigquery.SchemaField('Subjects', 'INTEGER', mode='NULLABLE', description='Number of subjects in collection'),
     bigquery.SchemaField('DOI','STRING', mode='NULLABLE', description='DOI that can be resolved at doi.org to a wiki page'),
@@ -33,9 +33,19 @@ data_collections_metadata_schema = [
     bigquery.SchemaField('SupportingData', 'STRING', mode='NULLABLE', description='Type(s) of addional available data'),
     bigquery.SchemaField('Species', 'STRING', mode='NULLABLE', description=" Species of collection subjects"),
     bigquery.SchemaField('Location','STRING', mode='NULLABLE', description='Body location that was studies'),
-    bigquery.SchemaField('license_url', 'STRING', mode='NULLABLE', description='URL of license of this analysis result'),
-    bigquery.SchemaField('license_long_name', 'STRING', mode='NULLABLE', description='Long name of license of this analysis result'),
-    bigquery.SchemaField('license_short_name', 'STRING', mode='NULLABLE', description='Short name of license of this analysis result'),
+    bigquery.SchemaField(
+        "licenses",
+        "RECORD",
+        mode="REPEATED",
+        fields=[
+            bigquery.SchemaField('license_url', 'STRING', mode='NULLABLE',
+                                 description='URL of license of this analysis result'),
+            bigquery.SchemaField('license_long_name', 'STRING', mode='NULLABLE',
+                                 description='Long name of license of this analysis result'),
+            bigquery.SchemaField('license_short_name', 'STRING', mode='NULLABLE',
+                                 description='Short name of license of this analysis result')
+        ],
+    ),
     bigquery.SchemaField('Description', 'STRING', mode='NULLABLE', description='TCIA description of collection (HTML format)'),
 
 ]

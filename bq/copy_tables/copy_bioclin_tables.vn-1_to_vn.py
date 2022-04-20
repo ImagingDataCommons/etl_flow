@@ -18,19 +18,20 @@
 # we just copy since these do not change very often.
 import argparse
 import sys
+
+from python_settings import settings
 from bq.copy_tables.copy_tables import copy_tables
 
 
 if __name__ == '__main__':
 
     parser =argparse.ArgumentParser()
-    parser.add_argument('--version', default=0, help='IDC version for which to build the table')
-    args = parser.parse_args()
-    parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--src_bqdataset', default=f'idc_v{args.version-1}_pub', help='Source BQ dataset')
-    parser.add_argument('--dst_bqdataset', default=f'idc_v{args.version}_pub', help='Destination BQ dataset')
-    parser.add_argument('--dataset_description', default = f'IDC V{args.version} BQ tables and views')
+    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version for which to build the table')
+    parser.add_argument('--src_project', default=settings.DEV_PROJECT)
+    parser.add_argument('--dst_project', default=settings.DEV_PROJECT)
+    parser.add_argument('--src_bqdataset', default=f'idc_v{settings.PREVIOUS_VERSION}_pub', help='Source BQ dataset')
+    parser.add_argument('--dst_bqdataset', default=f'idc_v{settings.CURRENT_VERSION}_pub', help='Destination BQ dataset')
+    parser.add_argument('--dataset_description', default = f'IDC V{settings.CURRENT_VERSION} BQ tables and views')
     parser.add_argument('--bqtables', \
         default=['nlst_canc', 'nlst_ctab', 'nlst_ctabc', 'nlst_prsn', 'nlst_screen', \
                 'tcga_biospecimen_rel9', 'tcga_clinical_rel9'], help='BQ tables to be copied')

@@ -202,14 +202,15 @@ if __name__ == '__main__':
     if not os.path.exists('{}'.format(args.log_dir)):
         os.mkdir('{}'.format(args.log_dir))
         st = os.stat('{}'.format(args.log_dir))
-        os.chmod('{}'.format(args.log_dir), st.st_mode | 0o222)
+        # os.chmod('{}'.format(args.log_dir), st.st_mode | 0o222)
 
-    proglogger = logging.getLogger('root.prog')
-    prog_fh = logging.FileHandler(f'{os.environ["PWD"]}/logs/log.log')
-    progformatter = logging.Formatter('%(levelname)s:prog:%(message)s')
-    proglogger.addHandler(prog_fh)
-    prog_fh.setFormatter(progformatter)
-    proglogger.setLevel(INFO)
+    # proglogger = logging.getLogger('root.prog')
+    # # prog_fh = logging.FileHandler(f'{os.environ["PWD"]}/logs/log.log')
+    # prog_fh = logging.FileHandler(f'{args.log_dir}/log.log')
+    # progformatter = logging.Formatter('%(levelname)s:prog:%(message)s')
+    # proglogger.addHandler(prog_fh)
+    # prog_fh.setFormatter(progformatter)
+    # proglogger.setLevel(INFO)
 
     successlogger = logging.getLogger('root.success')
     successlogger.setLevel(INFO)

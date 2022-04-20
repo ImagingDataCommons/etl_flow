@@ -92,15 +92,17 @@ def delete_BQ_Table(client, project, dataset, table):
     client.delete_table(table_id, not_found_ok=True)  # Make an API request.
 
 
-def load_BQ_from_json(client, project, dataset, table, json_rows, aschema, write_disposition='WRITE_APPEND'):
+def load_BQ_from_json(client, project, dataset, table, json_rows, aschema=None, write_disposition='WRITE_APPEND'):
     table_id = "{}.{}.{}".format(project, dataset, table)
 
     job_config = bigquery.LoadJobConfig()
     job_config.source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
     job_config.write_disposition = write_disposition
-    job_config.schema = aschema
-
-    # Convert to
+    if aschema:
+        job_config.schema = aschema
+    else:
+        job_config.autodetect=True
+    # Make the data look like a file
     data = io.StringIO(json_rows)
     #     print(json_rows)
     try:

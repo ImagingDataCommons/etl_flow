@@ -243,15 +243,15 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         elif collection.collection_id == 'CPTAC-OV':
             data_collection_doi = '10.7937/TCIA.ZS4A-JD58'
         elif collection.collection_id == 'CPTAC-GBM':
-            data_collection_doi = 'K9/TCIA.2018.3RJE41Q1'
+            data_collection_doi = '10.7937/K9/TCIA.2018.3RJE41Q1'
         elif collection.collection_id == 'CPTAC-HNSCC':
-            data_collection_doi = 'K9/TCIA.2018.UW45NH81'
+            data_collection_doi = '10.7937/K9/TCIA.2018.UW45NH81'
         elif collection.collection_id == 'TCGA-GBM':
-            data_collection_doi = 'K9/TCIA.2016.RNYFUYE9'
+            data_collection_doi = '10.7937/K9/TCIA.2016.RNYFUYE9'
         elif collection.collection_id == 'TCGA-HNSC':
-            data_collection_doi = 'K9/TCIA.2016.LXKQ47MS'
+            data_collection_doi = '10.7937/K9/TCIA.2016.LXKQ47MS'
         elif collection.collection_id == 'TCGA-LGG':
-            data_collection_doi = 'K9/TCIA.2016.L4LTD3TK'
+            data_collection_doi = '10.7937/K9/TCIA.2016.L4LTD3TK'
         elif collection.collection_id in [
             'TCGA-ACC',
             'TCGA-CHOL',

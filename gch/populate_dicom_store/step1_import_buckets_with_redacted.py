@@ -65,7 +65,7 @@ def get_dataset_operation(
 def wait_done(response, args, sleep_time, verbose=True):
     operation = response['name'].split('/')[-1]
     while True:
-        result = get_dataset_operation(settings.GCH_PROJECT, settings.GCH_REGIONT, settings.GCH_DATASET, operation)
+        result = get_dataset_operation(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET, operation)
         if verbose:
             print("{}".format(result))
 
@@ -106,16 +106,16 @@ def import_dicom_instances(project_id, cloud_region, dataset_id, dicom_store_id,
 def import_buckets(args):
     client = storage.Client()
     try:
-        dataset = get_dataset(settings.GCH_PROJECT, settings.GCH_REGIONT, settings.GCH_DATASET)
+        dataset = get_dataset(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET)
     except HttpError:
         # Dataset doesn't exist. Create it.
-        response = create_dataset(settings.GCH_PROJECT, settings.GCH_REGIONT, settings.GCH_DATASET)
+        response = create_dataset(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET)
 
     try:
-        datastore = get_dicom_store(settings.GCH_PROJECT, settings.GCH_REGIONT, settings.GCH_DATASET, settings.GCH_DICOMSTORE)
+        datastore = get_dicom_store(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET, settings.GCH_DICOMSTORE)
     except HttpError:
         # Datastore doesn't exist. Create it
-        datastore = create_dicom_store(settings.GCH_PROJECT, settings.GCH_REGIONT, settings.GCH_DATASET, settings.GCH_DICOMSTORE)
+        datastore = create_dicom_store(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET, settings.GCH_DICOMSTORE)
     pass
 
     # result = import_collection(args)
@@ -126,7 +126,7 @@ def import_buckets(args):
                 try:
                     print('Importing {}'.format(bucket))
                     content_uri = '{}/*'.format(bucket)
-                    response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGIONT, settings.GCH_DATASET,
+                    response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
                                                       settings.GCH_DICOMSTORE, content_uri)
                     print(f'Response: {response}')
                     result = wait_done(response, args, args.period)
@@ -138,7 +138,7 @@ def import_buckets(args):
             try:
                 print('Importing {}'.format(bucket))
                 content_uri = '{}/*'.format(bucket)
-                response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGIONT, settings.GCH_DATASET,
+                response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
                                 settings.GCH_DICOMSTORE, content_uri)
                 print(f'Response: {response}')
                 result = wait_done(response, args, args.period)
@@ -148,13 +148,8 @@ def import_buckets(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    # args = parser.parse_args()
     parser.add_argument('--src_buckets', default=[f'idc_v{settings.CURRENT_VERSION}_*', 'idc-dev-defaced', 'idc-dev-cr', 'idc-dev-open', 'idc-dev-redacted'],
             help="List of buckets from which to import. This list should include all buckets except idc-dev-excluded")
-    # parser.add_argument('--dst_project', default='canceridc-data')
-    # parser.add_argument('--dataset_region', default='us', help='Dataset region')
-    # parser.add_argument('--gch_dataset_name', default='idc', help='Dataset name')
-    # parser.add_argument('--gch_dicomstore_name', default=f'v{args.version}', help='Datastore name')
     parser.add_argument('--period', default=60, help="seconds to sleep between checking operation status")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

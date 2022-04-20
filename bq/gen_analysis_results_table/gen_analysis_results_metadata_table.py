@@ -23,14 +23,16 @@ from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json
 from bq.gen_analysis_results_table.schema import analysis_results_metadata_schema
 from utilities.tcia_scrapers import scrape_tcia_analysis_collections_page
+from python_settings import settings
 
 # Build the analysis_results_metadata BQ table
 
 # Get the access status of redactable collections
+# Note this assumes that analysis is only against tcia supplied data (radiology) data.
 def get_redacted_collections(client,args):
     query = f"""
-    SELECT tcia_api_collection_id, access
-    FROM `{args.src_project}.{args.dev_bqdataset_name}.redacted_collections` 
+    SELECT tcia_api_collection_id, tcia_access as access
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.redacted_collections` 
     """
     redacted_collection_access = {c.values()[0].lower().replace(' ','_').replace('-','_'): c.values()[1] for c in client.query(query).result()}
     return redacted_collection_access
@@ -39,26 +41,26 @@ def get_redacted_collections(client,args):
 def get_all_idc_dois(client, args):
     query = f"""
         SELECT DISTINCT c.collection_id AS collection_id, se.source_doi AS source_doi 
-        FROM `{args.src_project}.{args.dev_bqdataset_name}.version` AS v
-        JOIN `{args.src_project}.{args.dev_bqdataset_name}.version_collection` as vc
+        FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version` AS v
+        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version_collection` as vc
         ON v.version = vc.version
-        JOIN `{args.src_project}.{args.dev_bqdataset_name}.collection` AS c
+        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection` AS c
         ON vc.collection_uuid = c.uuid
-        JOIN `{args.src_project}.{args.dev_bqdataset_name}.collection_patient` AS cp
+        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection_patient` AS cp
         ON c.uuid = cp.collection_uuid
-        JOIN `{args.src_project}.{args.dev_bqdataset_name}.patient` AS p
+        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.patient` AS p
         ON cp.patient_uuid = p.uuid
-        JOIN `{args.src_project}.{args.dev_bqdataset_name}.patient_study` AS ps
+        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.patient_study` AS ps
         ON p.uuid = ps.patient_uuid
-        JOIN `{args.src_project}.{args.dev_bqdataset_name}.study` AS st
+        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.study` AS st
         ON ps.study_uuid = st.uuid
-        JOIN `{args.src_project}.{args.dev_bqdataset_name}.study_series` AS ss
+        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.study_series` AS ss
         ON st.uuid = ss.study_uuid
-        JOIN `{args.src_project}.{args.dev_bqdataset_name}.series` AS se
+        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.series` AS se
         ON ss.series_uuid = se.uuid
-        LEFT JOIN `{args.src_project}.{args.dev_bqdataset_name}.excluded_collections` AS ex
+        LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.excluded_collections` AS ex
         ON LOWER (c.collection_id) = LOWER(ex.tcia_api_collection_id)
-        WHERE ex.tcia_api_collection_id IS NULL AND v.version = {args.version}
+        WHERE ex.tcia_api_collection_id IS NULL AND v.version = {settings.CURRENT_VERSION}
         """
 
     result = client.query(query).result()
@@ -110,9 +112,9 @@ def build_metadata(args, BQ_client):
     return metadata
 
 def gen_collections_table(args):
-    BQ_client = bigquery.Client(project=args.src_project)
+    BQ_client = bigquery.Client(project=settings.DEV_PROJECT)
     metadata = build_metadata(args, BQ_client)
-    job = load_BQ_from_json(BQ_client, args.dst_project, args.pub_bqdataset_name, args.bqtable_name, metadata, analysis_results_metadata_schema,
+    job = load_BQ_from_json(BQ_client, settings.DEV_PROJECT, settings.BQ_DEV_EXT_DATASET, args.bqtable_name, metadata, analysis_results_metadata_schema,
                             write_disposition='WRITE_TRUNCATE')
     while not job.state == 'DONE':
         print('Status: {}'.format(job.state))
@@ -122,12 +124,12 @@ def gen_collections_table(args):
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
 
-    parser.add_argument('--version', default=8, help='IDC version for which to build the table')
-    args = parser.parse_args()
-    parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--dev_bqdataset_name', default=f'idc_v{args.version}_dev', help='BQ dataset of dev tables')
-    parser.add_argument('--pub_bqdataset_name', default=f'idc_v{args.version}_pub', help='BQ dataset of public tables')
+    # parser.add_argument('--version', default=8, help='IDC version for which to build the table')
+    # args = parser.parse_args()
+    # parser.add_argument('--src_project', default='idc-dev-etl')
+    # parser.add_argument('--dst_project', default='idc-dev-etl')
+    # parser.add_argument('--dev_bqdataset_name', default=f'idc_v{args.version}_dev', help='BQ dataset of dev tables')
+    # parser.add_argument('--pub_bqdataset_name', default=f'idc_v{args.version}_pub', help='BQ dataset of public tables')
     parser.add_argument('--bqtable_name', default='analysis_results_metadata', help='BQ table name')
 
     args = parser.parse_args()

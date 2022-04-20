@@ -20,10 +20,8 @@
 
 import argparse
 import sys
-import os
 import json
 import requests
-import shlex
 import subprocess
 import time
 from subprocess import PIPE
@@ -40,7 +38,7 @@ def export_dicom_metadata(args):
     bearer = str(results.stdout,encoding='utf-8').strip()
 
     # BQ table to which to export metadata
-    destination = f'bq://{settings.DEV_PROJECT}.{settings.BQ_DEV_EXT_DATASET}.{settings.bqtable}'
+    destination = f'bq://{settings.DEV_PROJECT}.{settings.BQ_DEV_EXT_DATASET}.{args.bqtable}'
     data = {
         'bigqueryDestination': {
             'tableUri': destination,
@@ -52,7 +50,7 @@ def export_dicom_metadata(args):
         'Authorization': f'Bearer {bearer}',
         'Content-Type': 'application/json; charset=utf-8'
     }
-    url = f'https://healthcare.googleapis.com/v1/projects/{settings.GCH_DICOMSTORE}/locations/{settings.GCH_REGION}/datasets/{settings.GCH_DATASET}/dicomStores/{settings.GCH_DICOMSTORE}:export'
+    url = f'https://healthcare.googleapis.com/v1/projects/{settings.PUB_PROJECT}/locations/{settings.GCH_REGION}/datasets/{settings.GCH_DATASET}/dicomStores/{settings.GCH_DICOMSTORE}:export'
     results = requests.post(url, headers=headers, json=data)
 
     # Get the operation ID so we can track progress
@@ -67,7 +65,7 @@ def export_dicom_metadata(args):
         headers = {
             'Authorization': f'Bearer {bearer}'
         }
-        url = f'https://healthcare.googleapis.com/v1/projects/{settings.GCH_DICOMSTORE}/locations/{settings.GCH_REGION}/datasets/{settings.GCH_DATASET}/operations/{operation_id}'
+        url = f'https://healthcare.googleapis.com/v1/projects/{settings.PUB_PROJECT}/locations/{settings.GCH_REGION}/datasets/{settings.GCH_DATASET}/operations/{operation_id}'
         results = requests.get(url, headers=headers)
 
         details = results.json()
@@ -77,7 +75,7 @@ def export_dicom_metadata(args):
             if 'error' in details:
                 print('Done with errorcode: {}, message: {}'.format(details['error']['code'], details['error']['message']))
             else:
-                print('Done')
+                print(details)
             break
         else:
             print(details)
@@ -139,32 +137,11 @@ def export_metadata(args):
         err=json.loads(e.content)
         print(f'Error {e}')
 
-    # # We now copy the resulting table if
-    # src_dataset = client.dataset(args.src_bqdataset, args.src_project)
-    # # dst_dataset = client.dataset(args.dst_bqdataset, args.dst_project)
-    # for table in args.bqtables:
-    #     src_table = src_dataset.table(table)
-    #     dst_table = dst_dataset.table(table)
-    #     result = copy_BQ_table(client, src_table, dst_table)
-
-
-
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    # parser.add_argument('--version', default=8, help="IDC version")
-    # args = parser.parse_args()
-    # DICOM store parameters
-    # parser.add_argument('--src_project', default='canceridc-data', help='Project of the DICOM store')
-    # parser.add_argument('--src_region', default='us', help='DICOM dataset region')
-    # parser.add_argument('--dcmdataset_name', default='idc', help='DICOM dataset name')
-    # parser.add_argument('--dcmdatastore_name', default=f'v{args.version}', help='DICOM datastore name')
-    # BQ target dataset
-    # parser.add_argument('--dst_project', default='idc-dev-etl', help='BQ dataset project')
-    # parser.add_argument('--dst_region', default='us', help='Dataset region')
-    # parser.add_argument('--bqdataset', default=f'idc_v{args.version}_pub', help="BQ dataset name")
     parser.add_argument('--bqtable', default='dicom_metadata', help="BQ table name")
-    parser.add_argument('--dataset_description', default = f'IDC V{args.version} BQ tables and views')
+    parser.add_argument('--dataset_description', default = f'IDC V{settings.CURRENT_VERSION} BQ tables and views')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

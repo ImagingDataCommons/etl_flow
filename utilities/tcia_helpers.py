@@ -597,7 +597,7 @@ if __name__ == "__main__":
 
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
 
-    p = get_collection_descriptions_and_licenses()
+    p = get_collection_license_info()
     d = get_collection_descriptions_and_licenses()
     c = get_collection_values_and_counts()
     # s = get_updated_series('13/01/2021')

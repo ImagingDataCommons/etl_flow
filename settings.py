@@ -55,7 +55,6 @@ CLOUD_DATABASE = f'idc_v{CURRENT_VERSION}'
 
 # Various projects that we operate in
 DEV_PROJECT='idc-dev-etl'
-
 PDP_PROJECT='idc-pdp-staging'
 PUB_PROJECT='canceridc-data'
 
