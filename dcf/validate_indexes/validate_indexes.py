@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2021, Institute for Systems Biology
+# Copyright 2015-2022, Institute for Systems Biology
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,9 +36,7 @@ def get_sample(args):
         `bigquery-public-data.idc_v{args.version}.auxiliary_metadata`
     WHERE
         instance_uuid LIKE '000%'
-
     """
-
     results = client.query(query).result()
     return results
 
@@ -78,7 +76,6 @@ def validate_version(args):
         except Exception as exc:
             errlogger.error(f'Server query failure on {row["instance_uuid"]}')
             pass
-
 
 
 if __name__ == '__main__':
