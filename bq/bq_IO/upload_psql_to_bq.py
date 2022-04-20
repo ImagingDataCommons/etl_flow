@@ -19,6 +19,7 @@
 from google.cloud import bigquery
 from utilities.bq_helpers import BQ_table_exists, create_BQ_table, delete_BQ_Table, query_BQ, load_BQ_from_json
 from time import time, sleep
+from python_settings import settings
 
 def upload_version(client, args, table, order_by):
     sql = f"""
@@ -33,7 +34,7 @@ def upload_version(client, args, table, order_by):
       STRUCT(tcia,
         path,
         all_sources) AS hashes,
-      STRUCT(tcia_src AS src,
+      STRUCT(tcia_src AS tcia,
         path_src AS path) AS sources,
       STRUCT(tcia_revised AS tcia,
         path_revised AS path) AS revised
@@ -46,7 +47,7 @@ def upload_version(client, args, table, order_by):
         FROM {table}''')
     ORDER BY {order_by}
     """
-    result=query_BQ(client, args.bqdataset_name, table, sql, write_disposition='WRITE_TRUNCATE')
+    result=query_BQ(client, settings.BQ_DEV_INT_DATASET, table, sql, write_disposition='WRITE_TRUNCATE')
     return result
 
 
@@ -67,7 +68,7 @@ def upload_collection(client, args, table, order_by):
       STRUCT(tcia_hash,
         path_hash,
         all_hash) AS hashes,
-      STRUCT(tcia_src AS src,
+      STRUCT(tcia_src AS tcia,
         path_src AS path) AS sources,
       STRUCT(tcia_rev AS tcia,
         path_rev AS path) AS revised
@@ -81,7 +82,7 @@ def upload_collection(client, args, table, order_by):
         FROM {table}''')
     ORDER BY {order_by}
     """
-    result=query_BQ(client, args.bqdataset_name, table, sql, write_disposition='WRITE_TRUNCATE')
+    result=query_BQ(client, settings.BQ_DEV_INT_DATASET, table, sql, write_disposition='WRITE_TRUNCATE')
     return result
 
 def upload_patient(client, args, table, order_by):
@@ -102,7 +103,7 @@ def upload_patient(client, args, table, order_by):
       STRUCT(tcia_hash,
         path_hash,
         all_hash) AS hashes,
-      STRUCT(tcia_src AS src,
+      STRUCT(tcia_src AS tcia,
         path_src AS path) AS sources,
       STRUCT(tcia_rev AS tcia,
         path_rev AS path) AS revised
@@ -116,7 +117,7 @@ def upload_patient(client, args, table, order_by):
         FROM {table}''')
     ORDER BY {order_by}
     """
-    result=query_BQ(client, args.bqdataset_name, table, sql, write_disposition='WRITE_TRUNCATE')
+    result=query_BQ(client, settings.BQ_DEV_INT_DATASET, table, sql, write_disposition='WRITE_TRUNCATE')
     return result
 
 def upload_study(client, args, table, order_by):
@@ -136,7 +137,7 @@ def upload_study(client, args, table, order_by):
       STRUCT(tcia_hash,
         path_hash,
         all_hash) AS hashes,
-      STRUCT(tcia_src AS src,
+      STRUCT(tcia_src AS tcia,
         path_src AS path) AS sources,
       STRUCT(tcia_rev AS tcia,
         path_rev AS path) AS revised
@@ -150,7 +151,7 @@ def upload_study(client, args, table, order_by):
         FROM {table}''')
     ORDER BY {order_by}
     """
-    result=query_BQ(client, args.bqdataset_name, table, sql, write_disposition='WRITE_TRUNCATE')
+    result=query_BQ(client, settings.BQ_DEV_INT_DATASET, table, sql, write_disposition='WRITE_TRUNCATE')
     return result
 
 
@@ -172,7 +173,7 @@ def upload_series(client, args, table, order_by):
       STRUCT(tcia_hash,
         path_hash,
         all_hash) AS hashes,
-      STRUCT(tcia_src AS src,
+      STRUCT(tcia_src AS tcia,
         path_src AS path) AS sources,
       STRUCT(tcia_rev AS tcia,
         path_rev AS path) AS revised,
@@ -190,7 +191,7 @@ def upload_series(client, args, table, order_by):
         FROM {table}''')
     ORDER BY {order_by}
     """
-    result=query_BQ(client, args.bqdataset_name, table, sql, write_disposition='WRITE_TRUNCATE')
+    result=query_BQ(client, settings.BQ_DEV_INT_DATASET, table, sql, write_disposition='WRITE_TRUNCATE')
     return result
 
 
@@ -218,7 +219,7 @@ def upload_instance(client, args, table, order_by):
         FROM {table}''')
     ORDER BY {order_by}
     """
-    result=query_BQ(client, args.bqdataset_name, table, sql, write_disposition='WRITE_TRUNCATE')
+    result=query_BQ(client, settings.BQ_DEV_INT_DATASET, table, sql, write_disposition='WRITE_TRUNCATE')
     return result
 
 
@@ -231,17 +232,17 @@ def upload_table(client, args, table, order_by):
         '''SELECT * from {table}''')
     ORDER BY {order_by}
     """
-    result=query_BQ(client, args.bqdataset_name, table, sql, write_disposition='WRITE_TRUNCATE')
+    result=query_BQ(client, settings.BQ_DEV_INT_DATASET, table, sql, write_disposition='WRITE_TRUNCATE')
     return result
 
 
 def upload_to_bq(args):
-    client = bigquery.Client(project=args.project)
+    client = bigquery.Client(project=settings.DEV_PROJECT)
     for table, vals in args.tables.items():
         print(f'Uploading table {table}')
         b = time()
-        if BQ_table_exists(client, args.project, args.bqdataset_name, table):
-            delete_BQ_Table(client, args.project, args.bqdataset_name, table)
+        if BQ_table_exists(client, settings.DEV_PROJECT, settings.BQ_DEV_INT_DATASET, table):
+            delete_BQ_Table(client, settings.DEV_PROJECT, settings.BQ_DEV_INT_DATASET, table)
         result = vals['func'](client, args, table, vals['order_by'])
         job_id = result.path.split('/')[-1]
         job = client.get_job(job_id, location='US')

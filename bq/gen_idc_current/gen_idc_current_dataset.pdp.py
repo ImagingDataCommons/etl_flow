@@ -14,9 +14,8 @@
 # limitations under the License.
 #
 
-# This script generates the idc_current dataset, which is comprised of a view of every table and view in
-# the idc_vX dataset corresponding to the current IDC data version.
-
+# One-time use script to replace table/views in `canceridc-data.idc_v<1-4>` datasets
+# with views that reference tables/views in corresponding bigquery-public-data datasets.
 import argparse
 import sys
 from bq.gen_idc_current.gen_idc_current_dataset import gen_idc_current_dataset
@@ -24,13 +23,15 @@ from bq.gen_idc_current.gen_idc_current_dataset import gen_idc_current_dataset
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=7, help='Current IDC version')
+    parser.add_argument('--src_project', default='bigquery-public-datasets')
+    parser.add_argument('--trg_project', default='canceridc-data')
     args = parser.parse_args()
-    parser.add_argument('--src_project', default='idc-pdp-staging')
-    parser.add_argument('--trg_project', default='idc-pdp-staging')
-    parser.add_argument('--src_bqdataset', default=f'idc_v{args.version}', help='BQ dataset name')
-    parser.add_argument('--current_bqdataset', default=f'idc_current', help='current dataset name')
 
-    args = parser.parse_args()
-    print("{}".format(args), file=sys.stdout)
-    gen_idc_current_dataset(args)
+
+    for version in [1,2,3,4]:
+        parser.add_argument('--src_bqdataset', default=f'idc_v{version}', help='BQ dataset name')
+        parser.add_argument('--current_bqdataset', default=f'idc_v{version}', help='current dataset name')
+
+        args = parser.parse_args()
+        print("{}".format(args), file=sys.stdout)
+        gen_idc_current_dataset(args)

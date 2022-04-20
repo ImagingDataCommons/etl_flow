@@ -30,8 +30,6 @@ from logging import INFO
 from idc.models import Base, Version, Patient, Study, Series, Instance, Collection, CR_Collections, Defaced_Collections, Open_Collections, Redacted_Collections
 import settings as etl_settings
 from python_settings import settings
-if not settings.configured:
-    settings.configure(etl_settings)
 import google
 from google.cloud import storage
 from google.auth.transport import requests
@@ -39,14 +37,15 @@ from google.auth.transport import requests
 from sqlalchemy import create_engine, select
 from sqlalchemy_utils import register_composites
 from sqlalchemy.orm import Session
+from python_settings import settings
 
 
 def instance_exists(args, dicomweb_sess, study_instance_uid, series_instance_uid, sop_instance_uid):
     # URL to the Cloud Healthcare API endpoint and version
     base_url = "https://healthcare.googleapis.com/v1"
-    url = "{}/projects/{}/locations/{}".format(base_url, args.dst_project, args.gch_dataset_region)
+    url = "{}/projects/{}/locations/{}".format(base_url, settings.PUB_PROJECT, settings.GCH_REGION)
     dicomweb_path = "{}/datasets/{}/dicomStores/{}/dicomWeb/studies/{}/series/{}/instances?SOPInstanceUID={}".format(
-        url, args.gch_dataset_name, args.dicomstore, study_instance_uid, series_instance_uid, sop_instance_uid
+        url, settings.GCH_DATASET, settings.GCH_DICOMSTORE, study_instance_uid, series_instance_uid, sop_instance_uid
     )
     # Set the required application/dicom+json; charset=utf-8 header on the request
     headers = {"Content-Type": "application/dicom+json; charset=utf-8"}
@@ -66,9 +65,9 @@ def instance_exists(args, dicomweb_sess, study_instance_uid, series_instance_uid
 def delete_instance(args, dicomweb_session, study_instance_uid, series_instance_uid, sop_instance_uid):
     # URL to the Cloud Healthcare API endpoint and version
     base_url = "https://healthcare.googleapis.com/v1"
-    url = "{}/projects/{}/locations/{}".format(base_url, args.dst_project, args.gch_dataset_region)
+    url = "{}/projects/{}/locations/{}".format(base_url, settings.PUB_PROJECT, settings.GCH_REGION)
     dicomweb_path = "{}/datasets/{}/dicomStores/{}/dicomWeb/studies/{}/series/{}/instances/{}".format(
-        url, args.gch_dataset_name, args.dicomstore, study_instance_uid, series_instance_uid, sop_instance_uid
+        url, settings.GCH_DATASET, settings.GCH_DICOMSTORE, study_instance_uid, series_instance_uid, sop_instance_uid
     )
     # Set the required application/dicom+json; charset=utf-8 header on the request
     headers = {"Content-Type": "application/dicom+json; charset=utf-8"}
@@ -165,7 +164,7 @@ def delete_instances(args, sess, dicomweb_sess):
     pass
 
 def repair_store(args):
-    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
+    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
     # sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
     sql_engine = create_engine(sql_uri)
     args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
@@ -188,29 +187,30 @@ def repair_store(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=8, help='Version to work on')
+    # parser.add_argument('--version', default=8, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())
     args = parser.parse_args()
-    parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
-    parser.add_argument('--dst_project', default='canceridc-data')
-    parser.add_argument('--gch_dataset_region', default='us')
-    parser.add_argument('--gch_dataset_name', default='idc')
-    parser.add_argument('--dicomstore', default=f'v{args.version}')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/repair_dicom_store_with_redacted_v{args.version}')
+    # parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
+    # parser.add_argument('--dst_project', default='canceridc-data')
+    # parser.add_argument('--gch_dataset_region', default='us')
+    # parser.add_argument('--gch_dataset_name', default='idc')
+    # parser.add_argument('--dicomstore', default=f'v{args.version}')
+    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/repair_dicom_store_with_redacted_v{settings.CURRENT_VERSION}')
     args = parser.parse_args()
     args.id = 0 # Default process ID
 
     if not os.path.exists('{}'.format(args.log_dir)):
         os.mkdir('{}'.format(args.log_dir))
         st = os.stat('{}'.format(args.log_dir))
-        os.chmod('{}'.format(args.log_dir), st.st_mode | 0o222)
+        # os.chmod('{}'.format(args.log_dir), st.st_mode | 0o222)
 
-    proglogger = logging.getLogger('root.prog')
-    prog_fh = logging.FileHandler(f'{os.environ["PWD"]}/logs/log.log')
-    progformatter = logging.Formatter('%(levelname)s:prog:%(message)s')
-    proglogger.addHandler(prog_fh)
-    prog_fh.setFormatter(progformatter)
-    proglogger.setLevel(INFO)
+    # proglogger = logging.getLogger('root.prog')
+    # # prog_fh = logging.FileHandler(f'{os.environ["PWD"]}/logs/log.log')
+    # prog_fh = logging.FileHandler(f'{args.log_dir}/log.log')
+    # progformatter = logging.Formatter('%(levelname)s:prog:%(message)s')
+    # proglogger.addHandler(prog_fh)
+    # prog_fh.setFormatter(progformatter)
+    # proglogger.setLevel(INFO)
 
     successlogger = logging.getLogger('root.success')
     successlogger.setLevel(INFO)

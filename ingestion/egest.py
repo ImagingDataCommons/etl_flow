@@ -18,6 +18,7 @@
 import os
 from idc.models import Collection, Patient, Study, Series, Instance
 import logging
+from python_settings import settings
 
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
@@ -43,7 +44,7 @@ def egest_series(sess, args, series):
             if instance.init_idc_version != instance.rev_idc_version:
                 prev_instance = sess.query(Instance).filter(
                     Instance.sop_instance_uid == instance.sop_idc_version and
-                    Instance.final_idc_version == args.previous_version).first()
+                    Instance.final_idc_version == settings.PREVIOUS_VERSION).first()
                 prev_instance.final_idc_version = 0
                 series.instances.append(prev_instance)
 
@@ -66,7 +67,7 @@ def egest_study(sess, args, study):
             if series.init_idc_version != series.rev_idc_version:
                 prev_series = sess.query(Series).filter(
                     Series.series_instance_uid == series.series_instance_uid and
-                    Series.final_idc_version == args.previous_version).first()
+                    Series.final_idc_version == settings.PREVIOUS_VERSION).first()
                 prev_series.final_idc_version = 0
                 study.seriess.append(prev_series)
 
@@ -89,7 +90,7 @@ def egest_patient(sess, args, patient):
             if study.init_idc_version != study.rev_idc_version:
                 prev_study = sess.query(Study).filter(
                     Study.study_instance_uid == study.study_instance_uid and
-                    Study.final_idc_version == args.previous_version).first()
+                    Study.final_idc_version == settings.PREVIOUS_VERSION).first()
                 prev_study.final_idc_version = 0
                 patient.studies.append(prev_study)
 
@@ -113,7 +114,7 @@ def egest_collection(sess, args, collection):
             if patient.init_idc_version != patient.rev_idc_version:
                 prev_patient = sess.query(Patient).filter(
                     Patient.submitter_case_id == patient.submitter_case_id and
-                    Patient.final_idc_version == args.previous_version).first()
+                    Patient.final_idc_version == settings.PREVIOUS_VERSION).first()
                 prev_patient.final_idc_version = 0
                 collection.patients.append(prev_patient)
 
@@ -137,7 +138,7 @@ def egest_version(sess, args, version):
             if collection.init_idc_version != collection.rev_idc_version:
                 prev_collection = sess.query(Collection).filter(
                     Collection.collection_id == collection.collection_id and
-                    Collection.final_idc_version == args.previous_version).first()
+                    Collection.final_idc_version == settings.PREVIOUS_VERSION).first()
                 prev_collection.final_idc_version = 0
                 version.collections.append(prev_collection)
 

@@ -41,7 +41,7 @@ analysis_results_metadata_schema = [
     bigquery.SchemaField('CancerType','STRING', mode='NULLABLE', description='Type(s) of cancer analyzed'),
     bigquery.SchemaField('Location', 'STRING', mode='NULLABLE', description='Body location that was analyzed'),
     bigquery.SchemaField('Subjects', 'INTEGER', mode='NULLABLE', description='Number of subjects whose data was analyzed'),
-    bigquery.SchemaField('Collections', 'STRING', mode='NULLABLE', description='Original data collections analyzed'),
+    bigquery.SchemaField('Collections', 'STRING', mode='NULLABLE', description='idc_webapp_collection_ids of original data collections analyzed'),
     bigquery.SchemaField('AnalysisArtifactsonTCIA', 'STRING', mode='NULLABLE', description='Types of analysis artifacts produced'),
     bigquery.SchemaField('Updated', 'DATE', mode='NULLABLE', description='Most recent update reported by TCIA'),
     bigquery.SchemaField('license_url', 'STRING', mode='NULLABLE', description='URL of license of this analysis result'),

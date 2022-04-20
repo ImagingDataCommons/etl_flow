@@ -19,10 +19,14 @@ from datetime import datetime, timedelta
 import logging
 from uuid import uuid4
 from idc.models import Series, Instance, instance_source
-from ingestion.utils import accum_sources
 from ingestion.instance import clone_instance, build_instances_path, build_instances_tcia
+from ingestion.utils import is_skipped
+from python_settings import settings
 
-rootlogger = logging.getLogger('root')
+
+# rootlogger = logging.getLogger('root')
+successlogger = logging.getLogger('root.success')
+debuglogger = logging.getLogger('root.prog')
 errlogger = logging.getLogger('root.err')
 
 
@@ -37,21 +41,23 @@ def clone_series(series, uuid):
 
 def retire_series(args, series):
     # If this object has children from source, mark them as retired
-    rootlogger.debug('      p%s: Series %s:%s retiring', args.id, series.series_instance_uid, series.uuid)
+    debuglogger.debug('      p%s: Series %s:%s retiring', args.pid, series.series_instance_uid, series.uuid)
     for instance in series.instances:
-        rootlogger.debug('        p%s: Instance %s:%s retiring', args.id, instance.sop_instance_uid, instance.uuid)
-        instance.final_idc_version = args.previous_version
-    series.final_idc_version = args.previous_version
+        debuglogger.debug('        p%s: Instance %s:%s retiring', args.pid, instance.sop_instance_uid, instance.uuid)
+        instance.final_idc_version = settings.PREVIOUS_VERSION
+    series.final_idc_version = settings.PREVIOUS_VERSION
 
 
 def expand_series(sess, args, all_sources, version, collection, patient, study, series):
+    skipped = is_skipped(args.skipped_collections, collection.collection_id)
     # Get the instances that the sources know about
     # All sources should be from a single source
-    instances = all_sources.instances(collection, series)
+    instances = all_sources.instances(collection, series, skipped)
+
     if len(instances) != len(set(instances)):
-        errlogger.error("\tp%s: Duplicate instance in expansion of series %s", args.id,
+        errlogger.error("\tp%s: Duplicate instance in expansion of series %s", args.pid,
                         series.series_instance_uid)
-        raise RuntimeError("p%s: Duplicate instance in  expansion of series %s", args.id,
+        raise RuntimeError("p%s: Duplicate instance in  expansion of series %s", args.pid,
                            series.series_instance_uid)
 
     if series.is_new:
@@ -62,11 +68,27 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
     else:
         # Get a list of the instances that we currently have in this series
         # We assume that a series has instances from a single source
+        breakpoint()
         idc_objects = {object.sop_instance_uid: object for object in series.instances}
 
-        new_objects = sorted([id for id in instances if id not in idc_objects])
-        retired_objects = sorted([idc_objects[id] for id in idc_objects if id not in instances], key=lambda instance: instance.sop_instance_uid)
-        existing_objects = sorted([idc_objects[id] for id in instances if id in idc_objects], key=lambda instance: instance.sop_instance_uid)
+        # If any (non-skipped) source has an object but IDC does not, it is new. Note that we don't get objects from
+        # skipped collections
+        new_objects = sorted([id for id, source in instances.items() \
+               if id not in idc_objects ])
+        # An object in IDC will continue to exist if any non-skipped source has the object or IDC's object has a
+        # skipped source. I.E. if an object has a skipped source then, we can't ask the source about it so assume
+        # it exists.
+        existing_objects = [obj for id, obj in idc_objects.items() \
+               if id in instances or (obj.source and skipped[instance_source[obj.source].value])]
+        # An object in IDC is retired if it no longer exists in IDC
+        retired_objects = [obj for id, obj in idc_objects.items() \
+               if not obj in existing_objects ]
+        # retired_objects = sorted([idc_objects[id] for id in idc_objects if id not in instances], key=lambda instance: instance.sop_instance_uid)
+
+
+        # new_objects = sorted([id for id in instances if id not in idc_objects])
+        # retired_objects = sorted([idc_objects[id] for id in idc_objects if id not in instances], key=lambda instance: instance.sop_instance_uid)
+        # existing_objects = sorted([idc_objects[id] for id in instances if id in idc_objects], key=lambda instance: instance.sop_instance_uid)
 
     for instance in sorted(new_objects):
         new_instance = Instance()
@@ -77,24 +99,23 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
         new_instance.done=False
         new_instance.is_new=True
         new_instance.expanded=False
-        new_instance.init_idc_version=args.version
-        new_instance.rev_idc_version=args.version
+        new_instance.init_idc_version=settings.CURRENT_VERSION
+        new_instance.rev_idc_version=settings.CURRENT_VERSION
         new_instance.source = instances[instance]
         new_instance.hash = None
         new_instance.timestamp = datetime.utcnow()
         new_instance.final_idc_version = 0
         series.instances.append(new_instance)
-        rootlogger.debug('        p%s: Instance %s is new', args.id, new_instance.sop_instance_uid)
+        debuglogger.debug('        p%s: Instance %s is new', args.pid, new_instance.sop_instance_uid)
 
     for instance in existing_objects:
         idc_hash = instance.hash
         src_hash = all_sources.src_instance_hashes(instance.sop_instance_uid, instances[instance.sop_instance_uid])
         revised = idc_hash != src_hash
         # if all_sources.instance_was_revised(instance):
-        if revised:
+        if any(revised):
             # rootlogger.debug('**Instance %s needs revision', instance.sop_instance_uid)
             rev_instance = clone_instance(instance, str(uuid4()))
-            assert args.version == instances[instance.sop_instance_uid]['rev_idc_version']
             rev_instance.revised = True
             rev_instance.done = True
             rev_instance.is_new = False
@@ -104,14 +125,14 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
             new_instance.hash = None
 
             rev_instance.size = 0
-            rev_instance.rev_idc_version = args.version
+            rev_instance.rev_idc_version = settings.CURRENT_VERSION
             series.instances.append(rev_instance)
-            rootlogger.debug('        p%s: Instance %s is revised', args.id, rev_instance.sop_instance_uid)
+            debuglogger.debug('        p%s: Instance %s is revised', args.pid, rev_instance.sop_instance_uid)
 
 
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised series
-            instance.final_idc_version = args.version-1
+            instance.final_idc_version = settings.CURRENT_VERSION-1
             series.instances.remove(instance)
 
         else:
@@ -120,28 +141,29 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
             # Shouldn't be needed if the previous version is done
             instance.done = True
             instance.expanded = True
-            rootlogger.debug('        p%s: Instance %s unchanged', args.id, instance.sop_instance_uid)
+            debuglogger.debug('        p%s: Instance %s unchanged', args.pid, instance.sop_instance_uid)
             # series.instances.append(instance)
 
     for instance in retired_objects:
         # rootlogger.debug('        p%s: Instance %s:%s retiring', instance.sop_instance_uid, instance.uuid)
-        instance.final_idc_version = args.previous_version
+        breakpoint()
+        instance.final_idc_version = settings.PREVIOUS_VERSION
         series.instances.remove(instance)
 
     series.expanded = True
     sess.commit()
     return 0
-    # rootlogger.debug("      p%s: Expanded series %s", args.id, series.series_instance_uid)
+    # rootlogger.debug("      p%s: Expanded series %s", args.pid, series.series_instance_uid)
 
 
 def build_series(sess, args, all_sources, series_index, version, collection, patient, study, series):
     begin = time.time()
-    rootlogger.debug("      p%s: Expand Series %s; %s", args.id, series.series_instance_uid, series_index)
+    successlogger.debug("      p%s: Expand Series %s; %s", args.pid, series.series_instance_uid, series_index)
     if not series.expanded:
         failed = expand_series(sess, args, all_sources, version, collection, patient, study, series)
         if failed:
             return
-    rootlogger.info("      p%s: Expanded Series %s; %s; %s instances, expand: %s", args.id, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
+    successlogger.info("      p%s: Expanded Series %s; %s; %s instances, expand: %s", args.pid, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
 
 
     if not all(instance.done for instance in series.instances):
@@ -157,18 +179,16 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
         # Get a list of what DB thinks are the series's hashes
         idc_hashes = all_sources.idc_series_hashes(series)
         # # Get a list of what the sources think are the series's hashes
-        # src_hashes = all_sources.src_series_hashes(series.series_instance_uid)
-        # # They must be the same
-        # if  src_hashes != idc_hashes[:-1]:
 
-        if collection.collection_id in args.skipped_collections:
-            skips = args.skipped_collections[collection.collection_id]
-        else:
-            skips = (False, False)
-            # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
-        src_hashes = all_sources.src_series_hashes(collection.collection_id, series.series_instance_uid, skips)
+        skipped = is_skipped(args.skipped_collections, collection.collection_id)
+        # if collection.collection_id in args.skipped_collections:
+        #     skipped = args.skipped_collections[collection.collection_id]
+        # else:
+        #     skipped = (False, False)
+        #     # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+        src_hashes = all_sources.src_series_hashes(collection.collection_id, series.series_instance_uid, skipped)
         revised = [(x != y) and not z for x, y, z in \
-                   zip(idc_hashes[:-1], src_hashes, skips)]
+                   zip(idc_hashes[:-1], src_hashes, skipped)]
         if any(revised):
             # errlogger.error('Hash match failed for series %s', series.series_instance_uid)
             raise Exception('Hash match failed for series %s', series.series_instance_uid)
@@ -179,5 +199,5 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
             series.done = True
             sess.commit()
             duration = str(timedelta(seconds=(time.time() - begin)))
-            rootlogger.info("      p%s: Completed Series %s, %s, in %s", args.id, series.series_instance_uid, series_index, duration)
+            successlogger.info("      p%s: Completed Series %s, %s, in %s", args.pid, series.series_instance_uid, series_index, duration)
 

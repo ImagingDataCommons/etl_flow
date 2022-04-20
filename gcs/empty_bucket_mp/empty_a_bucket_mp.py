@@ -15,8 +15,10 @@
 #
 
 """
-One time script to empty the idc-open-pdp-staging bucket as part
-of transitioning from fully populated to delta populated.
+Script to empty the PDP staging bucket, which is a "delta" bucket
+containing only the instances that are new to a version. Therefore
+it must be emptied before the instances for the next version are
+copied to it.
 """
 
 import argparse
@@ -43,11 +45,11 @@ assert settings.configured
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bucket', default='idc-open-pdp-staging')
+    parser.add_argument('--bucket', default='idc_dev')
     parser.add_argument('--processes', default=1, help="Number of concurrent processes")
     parser.add_argument('--batch', default=1000, help='Size of batch assigned to each process')
-    parser.add_argument('--project', default='idc-pdp-staging')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/empty_pdp_staging_bucket_mp')
+    parser.add_argument('--project', default='idc-dev-etl')
+    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/empty_bucket_idc-dev')
 
     args = parser.parse_args()
 

@@ -14,9 +14,9 @@
 # limitations under the License.
 #
 
-# Copy pre-staging buckets populated by ingestion to staging buckets.
-# Ingestion copies data into prestaging buckets named by version and
-# collection, e.g. idc_v7_tcga_brca. The data in these buckets must be
+# Copy pre-staging buckets populated by ingestion to staging buckets:
+# Ingestion copies data into prestaging buckets named by version,
+# collection, and source e.g. idc_v8_path_tcga_brca. The data in these buckets must be
 # copied to one of the idc-dev-etl staging buckets:
 # idc-dev-open, idc-dev-cr, idc-dev-defaced, idc-dev-redacted, idc-dev-excluded.
 
@@ -95,10 +95,10 @@ def copy_dev_buckets(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=7, help='Version to work on')
+    parser.add_argument('--version', default=8, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())
     args = parser.parse_args()
-    parser.add_argument('--db', default=f'idc_v7', help='Database on which to operate')
+    parser.add_argument('--db', default=f'idc_v8', help='Database on which to operate')
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-dev-etl')
     parser.add_argument('--prestaging_bucket_prefix', default=f'idc_v{args.version}_', help='Copy instances here before forwarding to --staging_bucket')

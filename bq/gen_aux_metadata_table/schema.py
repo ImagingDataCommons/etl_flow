@@ -35,7 +35,8 @@ from google.cloud import bigquery
 
 auxiliary_metadata_schema = [
     bigquery.SchemaField('tcia_api_collection_id', 'STRING', mode='NULLABLE', description='Collection ID as accepted by TCIA APIs'),
-    bigquery.SchemaField('tcia_wiki_collection_id', 'STRING', mode='NULLABLE', description='Collection ID as on TCIA wiki page'),
+    bigquery.SchemaField('idc_webapp_collection_id', 'STRING', mode='NULLABLE', description='Collection ID as accepted by the IDC webapp'),
+    bigquery.SchemaField('collection_id', 'STRING', mode='NULLABLE', description='Collection ID as accepted by the IDC webapp. Duplicate of idc_webapp_collection_id'),
     bigquery.SchemaField('collection_timestamp', mode='NULLABLE', description='Revision timestamp'),
     bigquery.SchemaField('collection_hash', mode='NULLABLE', description='md5 hash of the of this version of the collection containing this instance'),
     bigquery.SchemaField('collection_init_idc_version', mode='NULLABLE', description='The IDC version in which the collection containing this instance first appeared'),

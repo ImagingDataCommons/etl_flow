@@ -43,7 +43,10 @@ def get_dataset_operation(
     op_parent = "projects/{}/locations/{}/datasets/{}".format(project_id, cloud_region, dataset_id)
     op_name = "{}/operations/{}".format(op_parent, operation)
     request = client.projects().locations().datasets().operations().get(name=op_name)
-    response = request.execute()
+    try:
+        response = request.execute()
+    except Exception as exc:
+        print(exc)
     return response
 
 
@@ -61,15 +64,15 @@ def wait_done(args, sleep_time):
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--version', default=7)
-    args = parser.parse_args()
-    parser.add_argument('--src_buckets', default=['idc-dev-defaced', 'idc-dev-cr', 'idc-dev-open'], help="List of buckets from which to import")
+    # parser.add_argument('--version', default=7)
+    # args = parser.parse_args()
+    # parser.add_argument('--src_buckets', default=['idc-dev-defaced', 'idc-dev-cr', 'idc-dev-open'], help="List of buckets from which to import")
     # parser.add_argument('--src_buckets', default=['idc-dev-cr','idc-dev-open'], help="List of buckets from which to import")
     parser.add_argument('--dst_project', default='idc-dev-etl')
     parser.add_argument('--dataset_region', default='us-central1', help='Dataset region')
     parser.add_argument('--gch_dataset_name', default='idc', help='Dataset name')
-    parser.add_argument('--gch_dicomstore_name', default=f'v{args.version}-with-redacted', help='Datastore name')
-    parser.add_argument('--operation', default='2765863762417156097')
+    # parser.add_argument('--gch_dicomstore_name', default=f'v{args.version}-with-redacted', help='Datastore name')
+    parser.add_argument('--operation', default='5647339068162310145')
     parser.add_argument('--period', default=60, help="seconds to sleep between checking operation status")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

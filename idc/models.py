@@ -155,6 +155,7 @@ class All_Joined(Base):
     se_uuid = Column(String, nullable=False, comment="IDC assigned UUID of a version of this object")
     series_instances = Column(Integer, nullable=True, comment="Instances in this series")
     source_doi = Column(String, nullable=True, comment="A doi to the wiki page of this source of this series")
+    source_url = Column(String, nullable=True, comment="A url to the wiki page of this source of this series")
     se_hashes = Column(
         CompositeType(
             'hashes',
@@ -535,9 +536,14 @@ class Instance(Base):
 
 class Collection_id_map(Base):
     __tablename__ = 'collection_id_map'
-    tcia_api_collection_id = Column(String, nullable=True)
-    idc_collection_id = Column(String, nullable=False)
-    idc_webapp_collection_id = Column(String, nullable=False)
+    tcia_api_collection_id = Column(String, primary_key=True, \
+                    comment="Collection ID used by TCIA")
+    idc_collection_id = Column(String, primary_key=True,
+                   comment="IDC assigned collection ID (UUID4)")
+    idc_webapp_collection_id = Column(String, primary_key=True, \
+                  comment="Collection ID used by IDC webapp")
+    collection_id = Column(String, primary_key=True, \
+                   comment="Collection ID used for ETL")
 
 
 class WSI_Version(Base):
@@ -545,18 +551,15 @@ class WSI_Version(Base):
     version = Column(Integer, unique=True, primary_key=True, comment='NBIA collection ID')
     hash = Column(String, comment='Version hash')
 
-    collections = relationship("WSI_Collection", back_populates="vers", order_by="WSI_Collection.collection_id", cascade="all, delete")
-    # patients = relationship("Patient", backref="the_collection")
+    # collections = relationship("WSI_Collection", back_populates="vers", order_by="WSI_Collection.collection_id", cascade="all, delete")
 
 class WSI_Collection(Base):
     __tablename__ = 'wsi_collection'
     collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
-    version = Column(ForeignKey('wsi_version.version'), comment="Containing object")
     hash = Column(String, comment='Collection hash')
 
-    vers = relationship("WSI_Version", back_populates="collections")
+    # vers = relationship("WSI_Version", back_populates="collections")
     patients = relationship("WSI_Patient", back_populates="collection", order_by="WSI_Patient.submitter_case_id", cascade="all, delete")
-    # patients = relationship("Patient", backref="the_collection")
 
 class WSI_Patient(Base):
     __tablename__ = 'wsi_patient'
@@ -566,7 +569,6 @@ class WSI_Patient(Base):
 
     collection = relationship("WSI_Collection", back_populates="patients")
     studies = relationship("WSI_Study", back_populates="patient", order_by="WSI_Study.study_instance_uid", cascade="all, delete")
-    # studies = relationship("Study", backref="patient")
 
 class WSI_Study(Base):
     __tablename__ = 'wsi_study'
@@ -576,7 +578,6 @@ class WSI_Study(Base):
 
     patient = relationship("WSI_Patient", back_populates="studies")
     seriess = relationship("WSI_Series", back_populates="study", order_by="WSI_Series.series_instance_uid", cascade="all, delete")
-    # series = relationship("Study", backref="study")
 
 class WSI_Series(Base):
     __tablename__ = 'wsi_series'
@@ -586,7 +587,6 @@ class WSI_Series(Base):
 
     study = relationship("WSI_Study", back_populates="seriess")
     instances = relationship("WSI_Instance", back_populates="seriess", order_by="WSI_Instance.sop_instance_uid", cascade="all, delete")
-    # instances = relationship("Study", backref="series")
 
 class WSI_Instance(Base):
     __tablename__ = 'wsi_instance'
@@ -618,44 +618,63 @@ class All_WSI_Joined(Base):
 class CR_Collections(Base):
     __tablename__ = 'cr_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    dev_url = Column(String, comment="Dev bucket name")
-    pub_url = Column(String, comment="Public bucket name")
     access = Column(String, comment="Access: Public or Limited")
-    v1 = Column(Boolean, comment='True if collection is in v1')
-    v2 = Column(Boolean, comment='True if collection is in v2')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
+    dev_path_url = Column(String, comment="Dev path bucket name")
+    pub_path_url = Column(String, comment="Public path bucket name")
 
 class Defaced_Collections(Base):
     __tablename__ = 'defaced_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    dev_url = Column(String, comment="Dev bucket name")
-    pub_url = Column(String, comment="Public bucket name")
     access = Column(String, comment="Access: Public or Limited")
-    v1 = Column(Boolean, comment='True if collection is in v1')
-    v2 = Column(Boolean, comment='True if collection is in v2')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
+    dev_path_url = Column(String, comment="Dev path bucket name")
+    pub_path_url = Column(String, comment="Public path bucket name")
 
 class Excluded_Collections(Base):
     __tablename__ = 'excluded_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
     access = Column(String, comment="Access: Public or Limited")
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
+    dev_path_url = Column(String, comment="Dev path bucket name")
+    pub_path_url = Column(String, comment="Public path bucket name")
 
 class Open_Collections(Base):
     __tablename__ = 'open_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    dev_url = Column(String, comment="Dev bucket name")
-    pub_url = Column(String, comment="Public bucket name")
     access = Column(String, comment="Access: Public or Limited")
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
+    dev_path_url = Column(String, comment="Dev path bucket name")
+    pub_path_url = Column(String, comment="Public path bucket name")
 
 class Redacted_Collections(Base):
     __tablename__ = 'redacted_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    dev_url = Column(String, comment="Dev bucket name")
-    pub_url = Column(String, comment="Public bucket name")
     access = Column(String, comment="Access: Public or Limited")
-    v1 = Column(Boolean, comment='True if collection is in v1')
-    v2 = Column(Boolean, comment='True if collection is in v2')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
+    dev_path_url = Column(String, comment="Dev path bucket name")
+    pub_path_url = Column(String, comment="Public path bucket name")
+
+class All_Collections(Base):
+    __tablename__ = 'all_collections'
+    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
+    access = Column(String, comment="Access: Public or Limited")
+    idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
+    dev_path_url = Column(String, comment="Dev path bucket name")
+    pub_path_url = Column(String, comment="Public path bucket name")
+
+
+
 

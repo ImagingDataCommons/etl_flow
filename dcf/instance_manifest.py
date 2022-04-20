@@ -30,20 +30,20 @@ def gen_revision_manifest(args):
             instance_size as size, 
             '*' as acl, 
             gcs_url as url
-        FROM `idc-pdp-staging.{args.bqdataset}.auxiliary_metadata` 
+        FROM `idc-pdp-staging.{args.src_bqdataset}.auxiliary_metadata` 
         WHERE instance_revised_idc_version in {args.versions}
         ORDER BY GUID
     """
 
     # Run a query that generates the manifest data
-    results = query_BQ(BQ_client, args.bqdataset, args.temp_table, query, write_disposition='WRITE_TRUNCATE')
+    results = query_BQ(BQ_client, args.dst_bqdataset, args.temp_table, query, write_disposition='WRITE_TRUNCATE')
 
     # Export the resulting table to GCS
-    results = export_BQ_to_GCS(BQ_client, args.bqdataset, args.temp_table, args.manifest_uri)
+    results = export_BQ_to_GCS(BQ_client, args.dst_bqdataset, args.temp_table, args.manifest_uri)
 
     while results.state == 'RUNNING':
         pass
 
-    delete_BQ_Table(BQ_client, args.project, args.bqdataset, args.temp_table)
+    delete_BQ_Table(BQ_client, args.project, args.dst_bqdataset, args.temp_table)
 
 

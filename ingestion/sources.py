@@ -60,12 +60,9 @@ class TCIA(Source):
             result = get_hash(request_data, self.access[0])
             if result.status_code == 401:
                 # Refresh the token and try once more to get the hash
-                # errlogger.error('%s Refreshing access token %s', access_token)
-                # self.access_token, self.refresh_token = refresh_access_token(self.refresh_token)
-                # result = get_hash(request_data, self.access_token)
-                errlogger.error('p%s Refreshing access token %s, refresh token %s at %s', self.pid, self.access[0], self.access[1], time.asctime(time.localtime()))
+                # errlogger.error('p%s Refreshing access token %s, refresh token %s at %s', self.pid, self.access[0], self.access[1], time.asctime(time.localtime()))
                 self.access[0], self.access[1] = refresh_access_token(self.access[1])
-                errlogger.error('p%s After refresh, token %s, refresh token %s', self.pid, self.access[0], self.access[1])
+                # errlogger.error('p%s After refresh, token %s, refresh token %s', self.pid, self.access[0], self.access[1])
                 result = get_hash(request_data, self.access[0])
                 if result.status_code != 200:
                     result = None
@@ -91,7 +88,9 @@ class TCIA(Source):
 
 
     def collections(self):
+        # Get TCIAs list of collections
         collections = get_collection_values_and_counts(self.nbia_server)
+        # Remove any collections to be skipped
         for collection in self.skipped_collections:
             try:
                 collections.remove(collection)
@@ -210,7 +209,8 @@ class TCIA(Source):
         # result = requests.get(url, headers=headers)
         self.lock.acquire()
         try:
-            result = get_instance_hash(sop_instance_uid, self.access_token)
+            # result = get_instance_hash(sop_instance_uid, self.access_token)
+            result = get_instance_hash(sop_instance_uid, self.access[0])
             if result.status_code == 401:
                 # Refresh the token and try once more to get the hash
                 self.access_token, self.refresh_token = refresh_access_token(self.refresh_token)

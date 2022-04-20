@@ -18,15 +18,11 @@
 # It uses the source DOI to map between TCIA collections and IDC
 # collections names. Collection IDs that are only different in casing
 # are ignored
+# If there is no output, then no name changes were detected.
 
-import sys
-import argparse
 from idc.models import Base, Version, Patient, Study, Series, Collection
 from utilities.tcia_scrapers import scrape_tcia_data_collections_page, scrape_tcia_analysis_collections_page
-import settings as etl_settings
 from python_settings import settings
-if not settings.configured:
-    settings.configure(etl_settings)
 import google
 from google.auth.transport import requests
 
@@ -35,33 +31,30 @@ from sqlalchemy_utils import register_composites
 from sqlalchemy.orm import Session
 
 
-def compare_dois(args):
-    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
+
+def compare_dois():
+    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
     # sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
     sql_engine = create_engine(sql_uri)
-    args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
-
-    # Create the tables if they do not already exist
-    Base.metadata.create_all(sql_engine)
 
     # Enable the underlying psycopg2 to deal with composites
     conn = sql_engine.connect()
     register_composites(conn)
 
-    scoped_credentials, project = google.auth.default(
-        ["https://www.googleapis.com/auth/cloud-platform"]
-    )
-    # Creates a requests Session object with the credentials.
-    dicomweb_sess = requests.AuthorizedSession(scoped_credentials)
 
     with Session(sql_engine) as sess:
+        # Get the source_dois across all series in each collection. This can
+        # include both original collection dois and analysis results dois
         rows = sess.query(Collection.collection_id,Series.source_doi).distinct(). \
             join(Version.collections).join(Collection.patients).join(Patient.studies).join(\
-            Study.seriess).filter(Version.version == args.version).all()
-        idc_dois = {row.source_doi: row.collection_id for row in rows }
+            Study.seriess).filter(Version.version == settings.PREVIOUS_VERSION).all()
+        idc_dois = {row.source_doi: row.collection_id for row in rows if row.source_doi }
 
+        # Scrape TCIA pages to get a list of dois mapped to IDs
         tcia_original_dois = {item['DOI']: collection_id for collection_id, item in scrape_tcia_data_collections_page().items()}
         tcia_analysis_dois = {item['DOI']: collection_id for collection_id, item in scrape_tcia_analysis_collections_page().items()}
+
+        # Looks for each doi that have in the latter two lists, if found compare IDs.
         for doi in idc_dois:
             if doi in tcia_original_dois:
                 if idc_dois[doi].lower() != tcia_original_dois[doi].lower():
@@ -70,13 +63,7 @@ def compare_dois(args):
                 print(f'Collection {idc_dois[doi]} DOI {doi} not in TCIA DOIs')
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=7, help='IDC version for which to build the table')
-    parser.add_argument('--db', default='idc_v7', help='IDC version for which to build the table')
-
-    args = parser.parse_args()
-    print("{}".format(args), file=sys.stdout)
-    compare_dois(args)
+    compare_dois()
 
 
 

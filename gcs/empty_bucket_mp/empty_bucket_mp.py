@@ -44,7 +44,7 @@ def delete_instances(args, client, bucket, blobs, n):
     try:
         with client.batch():
             for blob in blobs:
-                bucket.blob(blob[0]).delete()
+                bucket.blob(blob[0], generation=blob[1]).delete()
                 # bucket.blob(blob[0], generation=blob[1]).delete()
 
         successlogger.info('p%s Delete %s blobs %s:%s ', args.id, args.bucket, n, n+len(blobs)-1)
@@ -124,7 +124,7 @@ def pre_delete(args):
     if not os.path.exists('{}'.format(args.log_dir)):
         os.mkdir('{}'.format(args.log_dir))
         st = os.stat('{}'.format(args.log_dir))
-        os.chmod('{}'.format(args.log_dir), st.st_mode | 0o222)
+        # os.chmod('{}'.format(args.log_dir), st.st_mode | 0o222)
 
     # Change logging file. File name includes bucket ID.
     for hdlr in successlogger.handlers[:]:
