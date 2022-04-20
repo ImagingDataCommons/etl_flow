@@ -18,8 +18,14 @@
 import sys
 from google.cloud import bigquery
 from utilities.tcia_helpers import get_url
-from python_settings import settings
+import logging
+from logging import INFO, DEBUG, ERROR
 import argparse
+
+rootlogger = logging.getLogger('root')
+successlogger = logging.getLogger('root.success')
+errlogger = logging.getLogger('root.err')
+
 
 def get_sample(args):
     client = bigquery.Client()
@@ -62,15 +68,15 @@ def validate_version(args):
                 assert result.json()["access_methods"][0]["access_url"]["url"] == \
                     row['gcs_url']
                 assert result.json()["access_methods"][0]["type"] == 'gs'
-                print(f'Validated {row["instance_uuid"]}')
+                successlogger.info('Validated %s', row["instance_uuid"])
             except Exception as exc:
                 part, data = find_in_manifest(args, row["instance_uuid"])
-                print(f'\t\tValidation failure on {row["tcia_api_collection_id"]}: {row["instance_uuid"]}')
-                print(f'\t\taccess_url = {result.json()["access_methods"][0]["access_url"]["url"]}')
-                print(f'\t\tExpected {row["gcs_url"]}')
-                print(f'\t\tFound in manifest part {part}: {data}\n')
+                errlogger.error('Validation failure on %s: %s', row["tcia_api_collection_id"], row["instance_uuid"])
+                errlogger.error('access_url = %s', result.json()["access_methods"][0]["access_url"]["url"])
+                errlogger.error('Expected %s',row["gcs_url"])
+                errlogger.error('Found in manifest part %s: %s\n', part, data)
         except Exception as exc:
-            print(f'Server query failure on {row["instance_uuid"]}')
+            errlogger.error(f'Server query failure on {row["instance_uuid"]}')
             pass
 
 
@@ -82,4 +88,18 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
+
+    success_fh = logging.FileHandler(f'./success.log')
+    successformatter = logging.Formatter('%(message)s')
+    successlogger.addHandler(success_fh)
+    success_fh.setFormatter(successformatter)
+    successlogger.setLevel(INFO)
+
+    err_fh = logging.FileHandler(f'./error.log')
+    errformatter = logging.Formatter('%(message)s')
+    errlogger.addHandler(err_fh)
+    err_fh.setFormatter(errformatter)
+    errlogger.setLevel(ERROR)
+
+
     validate_version(args)

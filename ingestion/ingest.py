@@ -40,8 +40,6 @@ from ingestion.all_sources import All
 from http.client import HTTPConnection
 HTTPConnection.debuglevel = 0
 
-
-
 rootlogger = logging.getLogger('root')
 successlogger = logging.getLogger('root.success')
 debuglogger = logging.getLogger('root.prog')
