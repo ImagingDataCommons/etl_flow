@@ -221,7 +221,5 @@ def export_BQ_to_GCS(client, src_dataset, src_table, dst_uri, field_delimiter="\
     return results
 
 if __name__ == "__main__":
-    client = bigquery.Client(project="idc-dev-etl")
-    src_table = ""
-    dst_table = ""
-    result = copy_BQ_table(client, src_table, dst_table)
+    client = bigquery.Client(project="canceridc-data")
+    delete_BQ_dataset(client, 'idc_v4_test')

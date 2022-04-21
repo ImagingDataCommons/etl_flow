@@ -60,7 +60,7 @@ if __name__ == '__main__':
         # 'all_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
         # 'all_included_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
         # 'program': {"func": upload_table, "order_by": "tcia_wiki_collection_id"},
-            # 'non_tcia_collection_metadata':{"func": upload_table, "order_by": "idc_webapp_collection_id"},
+        'non_tcia_collection_metadata':{"func": upload_table, "order_by": "idc_webapp_collection_id"},
     }, help="Tables to upload")
     # parser.add_argument('--server', default='CLOUD')
     # parser.add_argument('--user', default=settings.CLOUD_USERNAME)
