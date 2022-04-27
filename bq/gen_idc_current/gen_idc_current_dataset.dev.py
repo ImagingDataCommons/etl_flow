@@ -19,7 +19,6 @@
 
 import argparse
 import sys
-
 from python_settings import settings
 from bq.gen_idc_current.gen_idc_current_dataset import gen_idc_current_dataset
 
