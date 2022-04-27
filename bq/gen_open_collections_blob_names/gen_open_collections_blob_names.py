@@ -20,6 +20,7 @@
 # idc_metadata dataset in idc-pdp-staging
 import argparse
 import sys
+import settings
 from google.cloud import bigquery
 from utilities.bq_helpers import query_BQ
 
@@ -85,13 +86,12 @@ def gen_blob_table(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=8, help='IDC version for which to build the table')
-    args = parser.parse_args()
-    parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--dst_project', default='idc-pdp-staging')
-    parser.add_argument('--src_bqdataset_name', default=f'idc_v{args.version}_dev', help='BQ dataset name')
+    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version for which to build the table')
+    parser.add_argument('--src_project', default=f'{settings.DEV_PROJECT}')
+    parser.add_argument('--dst_project', default=f'{settings.PDP_PROJECT}')
+    parser.add_argument('--src_bqdataset_name', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ dataset name')
     parser.add_argument('--trg_bqdataset_name', default=f'idc_metadata', help='BQ dataset name')
-    parser.add_argument('--bqtable_name', default=f'open_collections_blob_names_v{args.version}', help='BQ table name')
+    parser.add_argument('--bqtable_name', default=f'open_collections_blob_names_v{settings.CURRENT_VERSION}', help='BQ table name')
     # parser.add_argument('--sql', default=f'./gen_open_collections_blob_names.sql')
     args = parser.parse_args()
 
