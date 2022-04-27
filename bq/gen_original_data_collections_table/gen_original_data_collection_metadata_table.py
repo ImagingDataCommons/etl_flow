@@ -36,6 +36,7 @@ def get_collections_programs(client, args):
     return programs
     # programs = {collection: program for cur.fetchall()
 
+# Generate a list of included or excluded collections
 def get_collections_and_sources_in_version(client, args):
     if args.gen_excluded:
         # Only excluded collections
@@ -73,6 +74,7 @@ def get_collections_and_sources_in_version(client, args):
                            'path_source': collection['path_source']} for collection in result}
     return collection_ids
 
+# Count the cases (patients) in each collection
 def get_cases_per_collection(client, args):
     query = f"""
     SELECT
@@ -95,26 +97,90 @@ def get_cases_per_collection(client, args):
     case_counts = {c['collection_id'].lower().replace(' ','_').replace('-','_'): c['cases'] for c in client.query(query).result()}
     return case_counts
 
-# def get_access_status(client, args):
-#     query = f"""
-#     SELECT o.tcia_api_collection_id as collection_id, o.access as access
-#     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.open_collections` o
-#     UNION ALL
-#     SELECT cr.tcia_api_collection_id, cr .access
-#     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.cr_collections` cr
-#     UNION ALL
-#     SELECT r.tcia_api_collection_id, r.access
-#     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.redacted_collections` r
-#     UNION ALL
-#     SELECT ex.tcia_api_collection_id, ex.access
-#     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.excluded_collections` ex
-#     UNION ALL
-#     SELECT de.tcia_api_collection_id, de.access
-#     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.defaced_collections` de
-#     """
-#
-#     access_status = {c['collection_id'].lower().replace(' ','_').replace('-','_'): c['access'] for c in client.query(query).result()}
-#     return access_status
+# Generate a per-collection list of the modalities across all instances in each collection
+def get_image_types(client, args):
+    query = f"""
+    WITH
+      siis AS (
+      SELECT
+        REPLACE(REPLACE(LOWER(c.collection_id),'-','_'),' ','_') AS idc_webapp_collection_id,
+        i.sop_instance_uid,
+      FROM
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.version` v
+      JOIN
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.version_collection` vc
+      ON
+        v.version = vc.version
+      JOIN
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.collection` c
+      ON
+        vc.collection_uuid = c.uuid
+      JOIN
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.collection_patient` cp
+      ON
+        c.uuid = cp.collection_uuid
+      JOIN
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.patient` p
+      ON
+        cp.patient_uuid = p.uuid
+      JOIN
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.patient_study` ps
+      ON
+        p.uuid = ps.patient_uuid
+      JOIN
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.study` st
+      ON
+        ps.study_uuid = st.uuid
+      JOIN
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.study_series` ss
+      ON
+        st.uuid = ss.study_uuid
+      JOIN
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.series` se
+      ON
+        ss.series_uuid = se.uuid
+      JOIN
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.series_instance` si
+      ON
+        se.uuid = si.series_uuid
+      JOIN
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.instance` i
+      ON
+        si.instance_uuid = i.uuid
+      WHERE
+        v.version = {settings.CURRENT_VERSION}),
+      pre_mods AS (
+      SELECT
+        siis.idc_webapp_collection_id,
+        da.Modality
+      FROM
+        siis
+      JOIN
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_pub.dicom_all` da
+      ON
+        siis.sop_instance_uid = da.SOPInstanceUID),
+      mods AS (
+      SELECT
+        DISTINCT idc_webapp_collection_id,
+        modality
+      FROM
+        pre_mods
+      ORDER BY
+        Modality)
+    SELECT
+      idc_webapp_collection_id,
+      ARRAY_TO_STRING(ARRAY_AGG(modality),", ") ImageTypes
+    FROM
+      mods
+    GROUP BY
+      idc_webapp_collection_id
+    ORDER BY
+      idc_webapp_collection_id
+  """
+
+    imageTypes = {c['idc_webapp_collection_id'].lower().replace(' ','_').replace('-','_'): c['ImageTypes'] for c in client.query(query).result()}
+    return imageTypes
+
 
 def get_access_status(client, args):
     query = f"""
@@ -126,8 +192,7 @@ def get_access_status(client, args):
         for c in client.query(query).result()}
     return access_status
 
-
-#
+# Get metadata like that on the TCIA data collections page for collections that TCIA doesn't have
 def get_non_tcia_collection_metadata(client, args):
     query = f"""
     SELECT * 
@@ -165,29 +230,13 @@ def get_collection_metadata(client, args):
         json.dump(tcia_collection_metadata,f)
     collection_metadata |= tcia_collection_metadata
 
-    return collection_metadata
+    # Replace ImageTypes values with actual image types in IDC data
+    imageTypes = get_image_types(client, args)
 
-# def get_non_tcia_license_info(client, args):
-#     query = f"""
-#     SELECT *
-#     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.non_tcia_collection_metadata`
-#     ORDER BY idc_webapp_collection_id
-#     """
-#
-#     licenses = {}
-#     for row in client.query(query).result():
-#         licenses[row['idc_webapp_collection_id'].lower().replace(' ','_').replace('-','_')] = dict(
-#             licenseURL = row['license_url'],
-#             longName = row['license_long_name'],
-#             shortName = row['license_short_name']
-#         )
-#     return licenses
-#
-#
-# def get_all_license_info(client, args):
-#     licenses = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_collection_license_info().items()}
-#     licenses |= get_non_tcia_license_info(client, args)
-#     return licenses
+    for id, data in collection_metadata.items():
+        if id in imageTypes:
+            data['ImageTypes'] = imageTypes[id]
+    return collection_metadata
 
 
 def get_non_tcia_descriptions(client, args):
