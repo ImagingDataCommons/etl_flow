@@ -21,15 +21,14 @@ import argparse
 import sys
 from bq.gen_idc_current.gen_idc_current_dataset import gen_idc_current_dataset
 
-
+version = 4
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=8, help='Current IDC version')
-    args = parser.parse_args()
-    parser.add_argument('--src_project', default='idc-pdp-staging')
-    parser.add_argument('--trg_project', default='idc-pdp-staging')
-    parser.add_argument('--src_bqdataset', default=f'idc_v{args.version}', help='BQ dataset name')
-    parser.add_argument('--current_bqdataset', default=f'idc_current', help='current dataset name')
+    parser.add_argument('--version', default=version, help='Current IDC version')
+    parser.add_argument('--src_project', default='bigquery-public-data')
+    parser.add_argument('--trg_project', default='canceridc-data')
+    parser.add_argument('--src_bqdataset', default=f'idc_v{version}', help='BQ dataset name')
+    parser.add_argument('--current_bqdataset', default=f'idc_v{version}_test', help='current dataset name')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

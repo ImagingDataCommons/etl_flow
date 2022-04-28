@@ -159,7 +159,9 @@ WITH
     oc.DOI, oc.URL,
     tl.license_url,
     tl.license_long_name,
-    tl.license_short_name
+    tl.license_short_name,
+    IF(tl.license_short_name='TCIA', 'Limited', 'Public') AS access
+
   FROM
     `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.{args.temp_license_table_name}` tl
   JOIN
@@ -172,7 +174,9 @@ WITH
     oc.DOI, oc.URL,
     tl.license_url,
     tl.license_long_name,
-    tl.license_short_name
+    tl.license_short_name,
+    IF(tl.license_short_name='TCIA', 'Limited', 'Public') AS access
+
   FROM
     `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.{args.temp_license_table_name}` tl
   JOIN
@@ -185,7 +189,9 @@ WITH
     DOI, "" AS URL,
     license_url,
     license_long_name,
-    license_short_name
+    license_short_name,
+    access
+
   FROM
     `idc-dev-etl.{settings.BQ_DEV_EXT_DATASET}.analysis_results_metadata` ),
 --
@@ -312,7 +318,7 @@ SELECT
 licensed as (
   SELECT 
     p_l.*, 
-    IF(li.license_short_name='TCIA', 'Limited', 'Public') AS access,
+    li.access,
     li.license_url,
     li.license_long_name,
     li.license_short_name
@@ -324,7 +330,7 @@ licensed as (
   UNION ALL
   SELECT 
     p_l.*, 
-    IF(li.license_short_name='TCIA', 'Limited', 'Public') AS access,
+    li.access,
     li.license_url,
     li.license_long_name,
     li.license_short_name
@@ -336,7 +342,7 @@ licensed as (
   UNION ALL
   SELECT 
     p_l.*, 
-    IF(li.license_short_name='TCIA', 'Limited', 'Public') AS access,
+    li.access,
     li.license_url,
     li.license_long_name,
     li.license_short_name
@@ -352,8 +358,8 @@ licensed as (
     tcia_api_collection_id, submitter_case_id
 """
 
-    client = bigquery.Client(project=settings.DEV_PROJECT)
-    result=query_BQ(client, settings.BQ_DEV_EXT_DATASET, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
+    client = bigquery.Client(project=args.dst_project)
+    result=query_BQ(client, args.trg_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
 
 def gen_aux_table(args):
     create_original_collections_licenses_table(args)

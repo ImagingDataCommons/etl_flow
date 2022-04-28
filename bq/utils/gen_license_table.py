@@ -125,7 +125,7 @@ def get_original_collection_licenses(args):
             if collection.startswith('cptac') or collection.startswith('tcga'):
                 # All cptac and tcga pathology is CC by 3.0
                 licenses[collection]['path'] = {
-                    'license_url': 'http://creativecommons.org/licenses/by/3.0/',
+                    'license_url': 'https://creativecommons.org/licenses/by/3.0/',
                     'license_long_name': 'Creative Commons Attribution 3.0 Unported License',
                     'license_short_name': 'CC BY 3.0'
                 }

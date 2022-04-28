@@ -562,7 +562,7 @@ def get_collection_license_info():
     # for collection_id in ['CPTAC-AML', 'CPTAC-BRCA', 'CPTAC-COAD', 'CPTAC-OV']:
     #     if not collection_id in table:
     #         licenses[collection_id] = dict(
-    #             licenseURL="http://creativecommons.org/licenses/by/3.0/",
+    #             licenseURL="https://creativecommons.org/licenses/by/3.0/",
     #             longName="Creative Commons Attribution 3.0 Unported License",
     #             shortName="CC BY 3.0"
     #         )
@@ -596,8 +596,10 @@ if __name__ == "__main__":
 
 
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
-
+    t = get_access_token(auth_server = NLST_AUTH_URL)
+    d = get_images_with_md5_hash_nlst('1.2.840.113654.2.55.202732461171966044615971291921878044168 ', access_token=t[0])
     p = get_collection_license_info()
+
     d = get_collection_descriptions_and_licenses()
     c = get_collection_values_and_counts()
     # s = get_updated_series('13/01/2021')
@@ -609,6 +611,5 @@ if __name__ == "__main__":
     # table = get_collection_license_info()
     # result = get_TCIA_series_per_study('TCGA-GBM', 'TCGA-02-0006', '1.3.6.1.4.1.14519.5.2.1.1706.4001.149500105036523046215258942545' )
     # result = get_TCIA_patients_per_collection('APOLLO-5-LSCC', server=NBIA_V1_URL)
-    collections = [key for key in table.keys()]
 
 
