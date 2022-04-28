@@ -337,7 +337,7 @@ def build_metadata(client, args):
                     if args.gen_excluded:
                         collection_data['Access'] = ['Excluded']
                     else:
-                        collection_data['Access'] = list(set(['Limited' if license['license_short_name'] == 'TCIA' else 'Public' \
+                        collection_data['Access'] = list(set(['Limited' if license['license_short_name'] == 'TCIA' or license['license_short_name'] == 'TCIA NC'else 'Public' \
                                  for collection, license in licenses[idc_collection_id].items()]))
                     rows.append(collection_data)
                     json_rows.append(json.dumps(collection_data))
@@ -394,19 +394,19 @@ def gen_collections_table(args):
         time.sleep(args.period * 60)
     print("{}: Completed collections metatdata upload \n".format(time.asctime()))
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=8, help='IDC version for which to build the table')
-    args = parser.parse_args()
-    parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--dev_bqdataset_name', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ dataset of dev tables')
-    parser.add_argument('--pub_bqdataset_name', default=f'idc_v{settings.CURRENT_VERSION}_pub', help='BQ dataset of public tables')
-    parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
-    parser.add_argument('--gen_excluded', default=False, help="Generate excluded_original_collections_metadata if True")
-    parser.add_argument('--use_cached_metadata', default=True)
-    parser.add_argument('--cached_metadata_file', default='cached_metadata.json', help='Where to cache metadata')
-
-    args = parser.parse_args()
-    print("{}".format(args), file=sys.stdout)
-    gen_collections_table(args)
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--version', default=8, help='IDC version for which to build the table')
+#     args = parser.parse_args()
+#     parser.add_argument('--src_project', default='idc-dev-etl')
+#     parser.add_argument('--dst_project', default='idc-dev-etl')
+#     parser.add_argument('--dev_bqdataset_name', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ dataset of dev tables')
+#     parser.add_argument('--pub_bqdataset_name', default=f'idc_v{settings.CURRENT_VERSION}_pub', help='BQ dataset of public tables')
+#     parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
+#     parser.add_argument('--gen_excluded', default=False, help="Generate excluded_original_collections_metadata if True")
+#     parser.add_argument('--use_cached_metadata', default=True)
+#     parser.add_argument('--cached_metadata_file', default='cached_metadata.json', help='Where to cache metadata')
+#
+#     args = parser.parse_args()
+#     print("{}".format(args), file=sys.stdout)
+#     gen_collections_table(args)
