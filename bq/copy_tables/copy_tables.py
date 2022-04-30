@@ -37,18 +37,18 @@ def copy_tables(args):
         result = copy_BQ_table(client, src_table, dst_table)
         print(f"Copied table {table}")
 
-if __name__ == '__main__':
-
-    parser =argparse.ArgumentParser()
-    parser.add_argument('--version', default=3, help='IDC version for which to build the table')
-    args = parser.parse_args()
-    parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--dst_project', default='canceridc-data')
-    parser.add_argument('--src_bqdataset', default=f'idc_v{args.version}', help='Source BQ dataset')
-    parser.add_argument('--dst_bqdataset', default=f'idc_v{args.version}', help='Destination BQ dataset')
-    parser.add_argument('--dataset_description', default = f'IDC V{args.version} BQ tables and views')
-    parser.add_argument('--bqtables', default=['analysis_results_metadata', 'dicom_metadata', 'original_collections_metadata', 'version_metadata'], help='BQ tables to be copied')
-
-    args = parser.parse_args()
-    print("{}".format(args), file=sys.stdout)
-    copy_tables(args)
+# if __name__ == '__main__':
+#
+#     parser =argparse.ArgumentParser()
+#     parser.add_argument('--version', default=3, help='IDC version for which to build the table')
+#     args = parser.parse_args()
+#     parser.add_argument('--src_project', default='idc-dev-etl')
+#     parser.add_argument('--dst_project', default='canceridc-data')
+#     parser.add_argument('--src_bqdataset', default=f'idc_v{args.version}', help='Source BQ dataset')
+#     parser.add_argument('--dst_bqdataset', default=f'idc_v{args.version}', help='Destination BQ dataset')
+#     parser.add_argument('--dataset_description', default = f'IDC V{args.version} BQ tables and views')
+#     parser.add_argument('--bqtables', default=['analysis_results_metadata', 'dicom_metadata', 'original_collections_metadata', 'version_metadata'], help='BQ tables to be copied')
+#
+#     args = parser.parse_args()
+#     print("{}".format(args), file=sys.stdout)
+#     copy_tables(args)

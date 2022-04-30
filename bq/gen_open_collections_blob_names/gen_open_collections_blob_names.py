@@ -27,57 +27,13 @@ from utilities.bq_helpers import query_BQ
 
 def gen_blob_table(args):
     query = f"""
-    WITH
-      pubs AS (
-      SELECT
-        DISTINCT tcia_api_collection_id
-      FROM
-        `{args.src_project}.{args.src_bqdataset_name}.open_collections`
-      )
-    SELECT
-      DISTINCT CONCAT(i.uuid, '.dcm') as blob_name
-      FROM
-        `{args.src_project}.{args.src_bqdataset_name}.collection` AS c
-      JOIN
-        `{args.src_project}.{args.src_bqdataset_name}.collection_patient` AS cp
-      ON
-        c.uuid = cp.collection_uuid
-      JOIN
-        `{args.src_project}.{args.src_bqdataset_name}.patient` AS p
-      ON
-        cp.patient_uuid = p.uuid
-      JOIN
-        `{args.src_project}.{args.src_bqdataset_name}.patient_study` AS ps
-      ON
-        p.uuid = ps.patient_uuid
-      JOIN
-        `{args.src_project}.{args.src_bqdataset_name}.study` AS st
-      ON
-        ps.study_uuid = st.uuid
-      JOIN
-        `{args.src_project}.{args.src_bqdataset_name}.study_series` AS ss
-      ON
-        st.uuid = ss.study_uuid
-      JOIN
-        `{args.src_project}.{args.src_bqdataset_name}.series` AS se
-      ON
-        ss.series_uuid = se.uuid
-      JOIN 
-        `{args.src_project}.{args.src_bqdataset_name}.series_instance` s_i
-      ON 
-        se.uuid = s_i.series_uuid 
-      JOIN 
-        `{args.src_project}.{args.src_bqdataset_name}.instance` i
-      ON 
-        s_i.instance_uuid = i.uuid 
-      JOIN
-        pubs
-      ON
-        pubs.tcia_api_collection_id = c.collection_id
-      WHERE
-        i.excluded = False
-      ORDER BY
-        blob_name
+    SELECT distinct CONCAT(a.i_uuid, '.dcm') as blob_name
+    FROM `{args.src_project}.{args.src_bqdataset_name}.all_joined` a
+    JOIN `{args.src_project}.{args.src_bqdataset_name}.all_included_collections` i
+    ON a.collection_id = i.tcia_api_collection_id
+    WHERE (a.i_source='tcia' and i.pub_tcia_url='public-datasets-idc')
+    OR (a.i_source='path' and i.pub_path_url='public-datasets-idc')
+    AND a.i_excluded=FALSE 
     """
 
     client = bigquery.Client(project=args.dst_project)

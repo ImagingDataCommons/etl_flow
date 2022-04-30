@@ -15,7 +15,7 @@
 #
 
 import os
-import json
+import sys
 from os.path import join, dirname, exists
 from dotenv import load_dotenv
 
@@ -78,8 +78,8 @@ GCS_PUB_MASKABLE='idc-open-idc1'
 
 # IDs of the dev and public BQ datasets
 BQ_REGION='us'
-BQ_DEV_INT_DATASET=f'idc_v{CURRENT_VERSION}_dev'
-BQ_DEV_EXT_DATASET=f'idc_v{CURRENT_VERSION}_pub'
+BQ_DEV_INT_DATASET=f'idc_v{CURRENT_VERSION}_dev' if CURRENT_VERSION>=8 else f'idc_v{CURRENT_VERSION}'
+BQ_DEV_EXT_DATASET=f'idc_v{CURRENT_VERSION}_pub' if CURRENT_VERSION>=8 else f'idc_v{CURRENT_VERSION}'
 BQ_PUB_DATASET=f'idc_v{CURRENT_VERSION}'
 
 # IDs and passwords to accessing some TCIA API endpoints
@@ -87,6 +87,9 @@ TCIA_ID = os.environ.get('TCIA_ID')
 TCIA_PASSWORD = os.environ.get('TCIA_PASSWORD')
 TCIA_CLIENT_ID = os.environ.get('TCIA_CLIENT_ID')
 TCIA_CLIENT_SECRET= os.environ.get('TCIA_CLIENT_SECRET')
+
+LOGGING_BASE = f'/mnt/disks/idc-etl/logs/v{CURRENT_VERSION}'
+BASE_NAME = sys.argv[0].rsplit('/',1)[1].rsplit('.',1)[0]
 
 
 
