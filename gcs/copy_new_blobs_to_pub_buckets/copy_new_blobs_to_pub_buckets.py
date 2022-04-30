@@ -24,7 +24,12 @@ from multiprocessing import Process, Queue
 
 # Copy the blobs that are new to a version from dev pre-staging buckets
 # to dev staging buckets.
+import settings
 
+
+# Get a the dev_url and pub_url of all new instances. The dev_url is the url of the
+# premerge bucket or staging bucket holding the new instance. The pub_url is the
+# url of the bucket to which to copy it
 def get_urls(args):
     client = bigquery.Client()
     query = f"""
@@ -47,11 +52,8 @@ def get_urls(args):
     destination = client.get_table(destination)
     return destination
 
-def copy_some_blobs(args, client, urls, n):
-    try:
-        dones = open(f'{args.log_dir}/success.log').read().splitlines()
-    except:
-        dones = []
+def copy_some_blobs(args, client, urls, n, dones):
+    done=0
     for blob in urls:
         blob_name = blob['dev_url'].split('/')[3]
         if not blob_name in dones:
@@ -60,25 +62,29 @@ def copy_some_blobs(args, client, urls, n):
             dev_blob = dev_bucket.blob(blob_name)
             pub_bucket_name = blob['pub_url'].split('/')[2]
 
-            # We don't copy directly yo the public-datasets-idc bucket.
+            # We don't copy directly to the public-datasets-idc bucket.
             # We copy to a staging bucket and Google copies to the public bucket
             if 'public-datasets-idc' in pub_bucket_name:
                 pub_bucket_name = 'idc-open-pdp-staging'
+            else:
+                pass
             pub_bucket = client.bucket(pub_bucket_name)
             pub_blob = pub_bucket.blob(blob_name)
-            try:
-                rewrite_token = False
-                while True:
-                    rewrite_token, bytes_rewritten, bytes_to_rewrite = pub_blob.rewrite(
-                        dev_blob, token=rewrite_token
-                    )
-                    if not rewrite_token:
-                        break
-                successlogger.info('%s', blob_name)
-                print(f'p{args.id}: {n}of{len(urls)}: {dev_bucket_name}/{blob_name} --> {pub_bucket_name}/{blob_name}')
-            except Exception as exc:
-                errlogger.error('Blob: %s: %s', blob_name, exc)
-        n += 1
+            for attempt in range(3):
+                try:
+                    rewrite_token = False
+                    while True:
+                        rewrite_token, bytes_rewritten, bytes_to_rewrite = pub_blob.rewrite(
+                            dev_blob, token=rewrite_token
+                        )
+                        if not rewrite_token:
+                            break
+                    successlogger.info('%s', blob_name)
+                    print(f'p{args.id}: {done+n}of{len(urls)+n}: {dev_bucket_name}/{blob_name} --> {pub_bucket_name}/{blob_name}')
+                    break
+                except Exception as exc:
+                    errlogger.error('p%s: Blob: %s, attempt: %s;  %s', args.id, blob_name, attempt, exc)
+        done += 1
 
 
 def worker(input, args):
@@ -86,10 +92,15 @@ def worker(input, args):
     # print(f'p{args.id}: Worker starting: args: {args}')
 
     RETRIES = 3
+    try:
+        dones = open(f'{args.log_dir}/success.log').read().splitlines()
+    except:
+        dones = []
+
 
     client = storage.Client()
     for urls, n in iter(input.get, 'STOP'):
-        copy_some_blobs(args, client, urls, n)
+        copy_some_blobs(args, client, urls, n, dones)
 
 
 def copy_all_blobs(args):
@@ -136,22 +147,20 @@ def copy_all_blobs(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=8, help='Version to work on')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/copy_new_blobs_to_pub_buckets')
+    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
+    parser.add_argument('--log_dir', default=f'{settings.LOGGING_BASE}/{settings.BASE_NAME}')
     parser.add_argument('--batch', default=100)
-    parser.add_argument('--processes', default=32)
+    parser.add_argument('--processes', default=48)
     args = parser.parse_args()
     args.id = 0 # Default process ID
 
-    if not os.path.exists('{}'.format(args.log_dir)):
-        os.mkdir('{}'.format(args.log_dir))
+    if not os.path.exists(settings.LOGGING_BASE):
+        os.mkdir(settings.LOGGING_BASE)
+    if not os.path.exists(args.log_dir):
+        os.mkdir(args.log_dir)
 
     successlogger = logging.getLogger('root.success')
     successlogger.setLevel(INFO)
-
-    errlogger = logging.getLogger('root.err')
-
-    # Change logging file. File name includes bucket ID.
     for hdlr in successlogger.handlers[:]:
         successlogger.removeHandler(hdlr)
     success_fh = logging.FileHandler('{}/success.log'.format(args.log_dir))
@@ -159,6 +168,7 @@ if __name__ == '__main__':
     successformatter = logging.Formatter('%(message)s')
     success_fh.setFormatter(successformatter)
 
+    errlogger = logging.getLogger('root.err')
     for hdlr in errlogger.handlers[:]:
         errlogger.removeHandler(hdlr)
     err_fh = logging.FileHandler('{}/error.log'.format(args.log_dir))

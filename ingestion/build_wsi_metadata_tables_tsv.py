@@ -186,7 +186,6 @@ if __name__ == '__main__':
     parser.add_argument('--src_bucket', default='htan-transfer')
     parser.add_argument('--tsv_blob', default = 'HTAN-V1-Converted/Converted_20220228/identifiers.txt',\
                         help='A GCS blob that contains a TSV manifest of WSI DICOMs to be ingested')
-    parser.add_argument('--tsv_file', default = 'logs/tsv_files.txt')
     parser.add_argument('--skipped_groups', default=['redacted_collections', 'excluded_collections'], \
                         help="Collection groups that should not be ingested")
     parser.add_argument('--skipped_collections', default=[],\
