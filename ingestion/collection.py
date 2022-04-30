@@ -224,16 +224,16 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
     # breakpoint() # Get URLs
     data_collection_doi = get_data_collection_doi(collection.collection_id, server=args.server)
     if data_collection_doi=="":
+        # Reported as https://help.cancerimagingarchive.net/servicedesk/customer/portal/1/TH-49634
         if collection.collection_id == 'StageII-Colorectal-CT':
-            data_collection_doi = 'https://doi.org/10.7937/p5k5-tg43'
-        elif collection.collection_id=='NLST':
-            data_collection_doi = '10.7937/TCIA.hmq8-j677'
+                data_collection_doi = 'https://doi.org/10.7937/p5k5-tg43'
         elif collection.collection_id == 'B-mode-and-CEUS-Liver':
             data_collection_doi = '10.7937/TCIA.2021.v4z7-tc39'
         elif collection.collection_id == 'Pancreatic-CT-CBCT-SEG':
             data_collection_doi = '10.7937/TCIA.ESHQ-4D90'
         elif collection.collection_id == 'CPTAC-LSCC':
             data_collection_doi = '10.7937/K9/TCIA.2018.6EMUB5L2'
+        #Reported as https://help.cancerimagingarchive.net/servicedesk/customer/portal/1/TH-49633
         elif collection.collection_id == 'CPTAC-AML':
             data_collection_doi = '10.7937/tcia.2019.b6foe619'
         elif collection.collection_id == 'CPTAC-BRCA':
@@ -242,6 +242,8 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
             data_collection_doi = '10.7937/TCIA.YZWQ-ZZ63'
         elif collection.collection_id == 'CPTAC-OV':
             data_collection_doi = '10.7937/TCIA.ZS4A-JD58'
+
+        # NBIA does not return DOIs of redacted collections.
         elif collection.collection_id == 'CPTAC-GBM':
             data_collection_doi = '10.7937/K9/TCIA.2018.3RJE41Q1'
         elif collection.collection_id == 'CPTAC-HNSCC':
@@ -252,6 +254,9 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
             data_collection_doi = '10.7937/K9/TCIA.2016.LXKQ47MS'
         elif collection.collection_id == 'TCGA-LGG':
             data_collection_doi = '10.7937/K9/TCIA.2016.L4LTD3TK'
+
+        # These are non-TCIA TCGA collections. There are no (yet) DOIs for these.
+        # If we ever revise them, we'll come here
         elif collection.collection_id in [
             'TCGA-ACC',
             'TCGA-CHOL',
@@ -264,8 +269,14 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
             'TCGA-THYM',
             'TCGA-UCS',
             'TCGA-UVM']:
+
             breakpoint()
             data_collection_doi = f'{collection.collection_id}-DOI'
+        # Shouldn't ever get here, because we won't update NLST
+        elif collection.collection_id == 'NLST':
+            breakpoint()
+            data_collection_doi = '10.7937/TCIA.hmq8-j677'
+        # If we get here, we're broken
         else:
             errlogger.error('No DOI for collection %s', collection.collection_id)
             breakpoint()
