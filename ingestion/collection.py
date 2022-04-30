@@ -242,6 +242,8 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
             data_collection_doi = '10.7937/TCIA.YZWQ-ZZ63'
         elif collection.collection_id == 'CPTAC-OV':
             data_collection_doi = '10.7937/TCIA.ZS4A-JD58'
+
+        # NBIA does not return DOIs of redacted collections.
         elif collection.collection_id == 'CPTAC-GBM':
             data_collection_doi = '10.7937/K9/TCIA.2018.3RJE41Q1'
         elif collection.collection_id == 'CPTAC-HNSCC':
@@ -252,6 +254,9 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
             data_collection_doi = '10.7937/K9/TCIA.2016.LXKQ47MS'
         elif collection.collection_id == 'TCGA-LGG':
             data_collection_doi = '10.7937/K9/TCIA.2016.L4LTD3TK'
+
+        # These are non-TCIA TCGA collections. There are not (yet) DOIs for these.
+        # If we ever revise them, we'll come here
         elif collection.collection_id in [
             'TCGA-ACC',
             'TCGA-CHOL',
@@ -264,6 +269,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
             'TCGA-THYM',
             'TCGA-UCS',
             'TCGA-UVM']:
+
             breakpoint()
             data_collection_doi = f'{collection.collection_id}-DOI'
         else:
