@@ -22,7 +22,7 @@
 # The expectation is that the TSV file will contain metadata of non-TCIA instances that is to
 # to be in the next IDC version. The  wsi_collection/_patient/_study/_series/_instance tables
 # are always a snapshot of non-TCIA data in IDC.
-
+import io
 import os
 import sys
 import argparse
@@ -56,7 +56,7 @@ def build_instance(client, args, sess, series, row):
         instance = WSI_Instance()
         instance.sop_instance_uid = instance_id
         series.instances.append(instance)
-    blob_name = f'HTAN-V1-Converted/Converted_20220228/{row["Filename"].strip().split("/", 1)[1]}'
+    blob_name = f'{args.src_path}/{row["Filename"].strip().split("/", 1)[1]}'
     instance.url = f'gs://{args.src_bucket}/{blob_name}'
     bucket = client.bucket(args.src_bucket)
     blob = bucket.blob(blob_name)
@@ -73,7 +73,6 @@ def build_series(client, args, sess, study, row):
         series = WSI_Series()
         series.series_instance_uid = series_id
         study.seriess.append(series)
-        # sess.commit()
     build_instance(client, args, sess, series, row)
     hashes = [instance.hash for instance in series.instances]
     series.hash = get_merkle_hash(hashes)
@@ -88,7 +87,6 @@ def build_study(client, args, sess, patient, row):
         study = WSI_Study()
         study.study_instance_uid = study_id
         patient.studies.append(study)
-        # sess.commit()
     build_series(client, args, sess, study, row)
     hashes = [series.hash for series in study.seriess]
     study.hash = get_merkle_hash(hashes)
@@ -103,64 +101,26 @@ def build_patient(client, args, sess, collection, row):
         patient = WSI_Patient()
         patient.submitter_case_id = patient_id
         collection.patients.append(patient)
-        # sess.commit()
     build_study(client, args, sess, patient, row)
     hashes = [study.hash for study in patient.studies]
     patient.hash = get_merkle_hash(hashes)
     return
 
 
-def build_collection(client, args, sess, version, row, skips):
+def build_collection(client, args, sess,row, skips):
     collection_id = row['Clinical Trial Protocol ID'].strip()
     if not collection_id in skips:
-        try:
-            collection = next(collection for collection in version.collections if collection.collection_id == collection_id)
-        except StopIteration:
+        # Get the collection from the DB
+        collection = sess.query(WSI_Collection).filter(WSI_Collection.collection_id == collection_id).first()
+        if not collection:
+            # The collection is not currently in the DB, so add it
             collection = WSI_Collection()
             collection.collection_id = collection_id
-            version.collections.append(collection)
-            # sess.commit()
+            sess.add(collection)
         build_patient(client, args, sess, collection, row)
         hashes = [patient.hash for patient in collection.patients]
         collection.hash = get_merkle_hash(hashes)
         return
-
-
-
-def build_version(client, args, sess, skips):
-    try:
-        dones = open(args.dones).read().splitlines()
-    except:
-        dones = []
-    try:
-        included = open(args.included).read().splitlines()
-    except:
-        included = ["*"]
-
-
-    # The WSI metadata is not actually versioned. It is really a snapshot
-    # of WSI data that is expected to be in the current/next IDC version.
-    # It is only versioned to the extent that it is associated with a
-    # particular version of the DB
-    # There should be only a single "version", having version=0
-    version = sess.query(WSI_Version).filter(WSI_Version.version == 0).first()
-    # version = sess.query(WSI_Version).filter(WSI_Version.version == settings.CURRENT_VERSION).first()
-    if not version:
-        version = WSI_Version()
-        version.version = 0
-        sess.add(version)
-
-    with open(args.tsv_file, newline='', ) as tsv:
-        reader = csv.DictReader(tsv, delimiter='\t')
-        rows = len(list(reader))
-        tsv.seek(0)
-        reader = csv.DictReader(tsv, delimiter='\t')
-        for row in reader:
-            print(f'{reader.line_num-1}/{rows}: {row}')
-            build_collection(client, args, sess, version, row, skips)
-            hashes = [collection.hash for collection in version.collections]
-            version.hash = get_merkle_hash(hashes)
-    sess.commit()
 
 
 def prebuild(args):
@@ -172,23 +132,32 @@ def prebuild(args):
     with Session(sql_engine) as sess:
         client = storage.Client()
         skips = list_skips(sess, Base, args.skipped_groups, args.skipped_collections)
+
+        # Get the manifest of htan files/blobs
         bucket = client.bucket(args.src_bucket)
         bucket.blob(args.tsv_blob).download_to_filename(args.tsv_file)
-        build_version(client, args, sess, skips)
+        with open(args.tsv_file, newline='', ) as tsv:
+            reader = csv.DictReader(tsv, delimiter='\t')
+            rows = len(list(reader))
+            tsv.seek(0)
+            reader = csv.DictReader(tsv, delimiter='\t')
+            for row in reader:
+                print(f'{reader.line_num-1}/{rows}: {row}')
+                build_collection(client, args, sess, row, skips)
+        sess.commit()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--version', default=8, help='Version to work on')
     parser.add_argument('--client', default=storage.Client())
-    # parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
-    # parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--src_bucket', default='htan-transfer')
-    parser.add_argument('--tsv_blob', default = 'HTAN-V1-Converted/Converted_20220228/identifiers.txt',\
+    parser.add_argument('--src_path', default='HTAN-V1-Converted/Converted_20220416')
+    parser.add_argument('--tsv_file', default = 'wsi_manifest.tsv')
+    parser.add_argument('--tsv_blob', default = 'HTAN-V1-Converted/Converted_20220416/identifiers.txt',\
                         help='A GCS blob that contains a TSV manifest of WSI DICOMs to be ingested')
     parser.add_argument('--skipped_groups', default=['redacted_collections', 'excluded_collections'], \
                         help="Collection groups that should not be ingested")
-    parser.add_argument('--skipped_collections', default=[],\
+    parser.add_argument('--skipped_collections', default=['HTAN-HMS', 'HTAN-OHSU', 'HTAN-Vanderbilt'],\
       help='Additional collections that should not be ingested.')
     parser.add_argument('--dones', default='{}/logs/wsi_build_dones.txt'.format(os.environ['PWD']), help="Completed collections")
     args = parser.parse_args()
@@ -208,5 +177,4 @@ if __name__ == '__main__':
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
 
-    # rootlogger.info('Args: %s', args)
     prebuild(args)

@@ -188,7 +188,7 @@ def accum_sources(parent, children):
 
 # Generate a list of skipped collections from a list of collection groups
 # and additional collections to be skipped
-def list_skips(sess, Base, skipped_groups, skipped_collections, included_collections):
+def list_skips(sess, Base, skipped_groups, skipped_collections, included_collections=[]):
     tables_dict = {table.__tablename__: table for table in Base.__subclasses__()}
     skips = [collection for collection in skipped_collections]
     for group in skipped_groups:
