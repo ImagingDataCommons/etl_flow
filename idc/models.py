@@ -545,14 +545,6 @@ class Collection_id_map(Base):
     collection_id = Column(String, primary_key=True, \
                    comment="Collection ID used for ETL")
 
-
-class WSI_Version(Base):
-    __tablename__ = 'wsi_version'
-    version = Column(Integer, unique=True, primary_key=True, comment='NBIA collection ID')
-    hash = Column(String, comment='Version hash')
-
-    # collections = relationship("WSI_Collection", back_populates="vers", order_by="WSI_Collection.collection_id", cascade="all, delete")
-
 class WSI_Collection(Base):
     __tablename__ = 'wsi_collection'
     collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
