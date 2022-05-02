@@ -28,7 +28,7 @@ import sys
 import argparse
 import csv
 
-from idc.models import Base, WSI_Version, WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance
+from idc.models import Base, WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance
 from ingestion.utils import get_merkle_hash
 
 from google.cloud import storage
@@ -157,7 +157,7 @@ if __name__ == '__main__':
                         help='A GCS blob that contains a TSV manifest of WSI DICOMs to be ingested')
     parser.add_argument('--skipped_groups', default=['redacted_collections', 'excluded_collections'], \
                         help="Collection groups that should not be ingested")
-    parser.add_argument('--skipped_collections', default=['HTAN-HMS', 'HTAN-OHSU', 'HTAN-Vanderbilt'],\
+    parser.add_argument('--skipped_collections', default=['HTAN-HMS', 'HTAN-OHSU', 'HTAN-Vanderbilt', 'HTAN-WUSTL'],\
       help='Additional collections that should not be ingested.')
     parser.add_argument('--dones', default='{}/logs/wsi_build_dones.txt'.format(os.environ['PWD']), help="Completed collections")
     args = parser.parse_args()
