@@ -151,7 +151,7 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
     # rootlogger.debug("  p%s: Expanded patient %s",args.pid, patient.submitter_case_id)
     return
 
-def build_patient(sess, args, all_sources, patient_index, data_collection_doi, analysis_collection_dois, version, collection, patient):
+def build_patient(sess, args, all_sources, patient_index, data_collection_doi_url, analysis_collection_dois, version, collection, patient):
     begin = time.time()
     successlogger.debug("  p%s: Expand Patient %s, %s", args.pid, patient.submitter_case_id, patient_index)
     if not patient.expanded:
@@ -160,7 +160,7 @@ def build_patient(sess, args, all_sources, patient_index, data_collection_doi, a
     for study in patient.studies:
         study_index = f'{patient.studies.index(study) + 1} of {len(patient.studies)}'
         if not study.done:
-            build_study(sess, args, all_sources, study_index, version, collection, patient, study, data_collection_doi, analysis_collection_dois)
+            build_study(sess, args, all_sources, study_index, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois)
         else:
             successlogger.info("    p%s: Study %s, %s, previously built", args.pid, study.study_instance_uid, study_index)
     if all([study.done for study in patient.studies]):

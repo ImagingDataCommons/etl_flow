@@ -27,7 +27,7 @@ from multiprocessing import Lock, shared_memory
 from idc.models import Base, Version, Collection
 from utilities.tcia_helpers import get_access_token
 
-from ingestion.utils import list_skips
+from ingestion.utilities.utils import list_skips
 from ingestion.version import clone_version, build_version
 
 from python_settings import settings

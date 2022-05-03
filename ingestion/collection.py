@@ -19,10 +19,11 @@ from datetime import datetime, timedelta
 import logging
 from uuid import uuid4
 from idc.models import Version, Collection, Patient
-from ingestion.utils import accum_sources, empty_bucket, create_prestaging_bucket, is_skipped
+from ingestion.utilities.utils import accum_sources, empty_bucket, create_prestaging_bucket, is_skipped
 from ingestion.patient import clone_patient, build_patient, retire_patient
 from ingestion.all_sources import All
-from utilities.get_collection_dois import get_data_collection_doi, get_analysis_collection_dois
+from ingestion.utilities.get_collection_dois_and_urls import get_data_collection_doi, get_analysis_collection_dois,\
+    get_data_collection_url
 from utilities.tcia_helpers import get_access_token
 
 from python_settings import settings
@@ -221,66 +222,70 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         expand_collection(sess, args, all_sources, collection)
     successlogger.info("p%s: Expanded Collection %s, %s, %s patients", args.pid, collection.collection_id, collection_index, len(collection.patients))
     # Get the lists of data and analyis series for this collection
-    # breakpoint() # Get URLs
+    breakpoint() # Get URLs
     data_collection_doi = get_data_collection_doi(collection.collection_id, server=args.server)
-    if data_collection_doi=="":
-        # Reported as https://help.cancerimagingarchive.net/servicedesk/customer/portal/1/TH-49634
-        if collection.collection_id == 'StageII-Colorectal-CT':
-                data_collection_doi = 'https://doi.org/10.7937/p5k5-tg43'
-        elif collection.collection_id == 'B-mode-and-CEUS-Liver':
-            data_collection_doi = '10.7937/TCIA.2021.v4z7-tc39'
-        elif collection.collection_id == 'Pancreatic-CT-CBCT-SEG':
-            data_collection_doi = '10.7937/TCIA.ESHQ-4D90'
-        elif collection.collection_id == 'CPTAC-LSCC':
-            data_collection_doi = '10.7937/K9/TCIA.2018.6EMUB5L2'
-        #Reported as https://help.cancerimagingarchive.net/servicedesk/customer/portal/1/TH-49633
-        elif collection.collection_id == 'CPTAC-AML':
-            data_collection_doi = '10.7937/tcia.2019.b6foe619'
-        elif collection.collection_id == 'CPTAC-BRCA':
-            data_collection_doi = '10.7937/TCIA.CAEM-YS80'
-        elif collection.collection_id == 'CPTAC-COAD':
-            data_collection_doi = '10.7937/TCIA.YZWQ-ZZ63'
-        elif collection.collection_id == 'CPTAC-OV':
-            data_collection_doi = '10.7937/TCIA.ZS4A-JD58'
+    data_collection_url = get_data_collection_url(collection.collection_id, sess)
+    if data_collection_doi=="" and data_collection_url=="":
+        # # Reported as https://help.cancerimagingarchive.net/servicedesk/customer/portal/1/TH-49634
+        # if collection.collection_id == 'StageII-Colorectal-CT':
+        #         data_collection_doi = 'https://doi.org/10.7937/p5k5-tg43'
+        # elif collection.collection_id == 'B-mode-and-CEUS-Liver':
+        #     data_collection_doi = '10.7937/TCIA.2021.v4z7-tc39'
+        # elif collection.collection_id == 'Pancreatic-CT-CBCT-SEG':
+        #     data_collection_doi = '10.7937/TCIA.ESHQ-4D90'
+        # elif collection.collection_id == 'CPTAC-LSCC':
+        #     data_collection_doi = '10.7937/K9/TCIA.2018.6EMUB5L2'
+        # #Reported as https://help.cancerimagingarchive.net/servicedesk/customer/portal/1/TH-49633
+        # elif collection.collection_id == 'CPTAC-AML':
+        #     data_collection_doi = '10.7937/tcia.2019.b6foe619'
+        # elif collection.collection_id == 'CPTAC-BRCA':
+        #     data_collection_doi = '10.7937/TCIA.CAEM-YS80'
+        # elif collection.collection_id == 'CPTAC-COAD':
+        #     data_collection_doi = '10.7937/TCIA.YZWQ-ZZ63'
+        # elif collection.collection_id == 'CPTAC-OV':
+        #     data_collection_doi = '10.7937/TCIA.ZS4A-JD58'
+        #
+        # # NBIA does not return DOIs of redacted collections.
+        # elif collection.collection_id == 'CPTAC-GBM':
+        #     data_collection_doi = '10.7937/K9/TCIA.2018.3RJE41Q1'
+        # elif collection.collection_id == 'CPTAC-HNSCC':
+        #     data_collection_doi = '10.7937/K9/TCIA.2018.UW45NH81'
+        # elif collection.collection_id == 'TCGA-GBM':
+        #     data_collection_doi = '10.7937/K9/TCIA.2016.RNYFUYE9'
+        # elif collection.collection_id == 'TCGA-HNSC':
+        #     data_collection_doi = '10.7937/K9/TCIA.2016.LXKQ47MS'
+        # elif collection.collection_id == 'TCGA-LGG':
+        #     data_collection_doi = '10.7937/K9/TCIA.2016.L4LTD3TK'
+        #
+        # # These are non-TCIA TCGA collections. There are no (yet) DOIs for these.
+        # # If we ever revise them, we'll come here
+        # elif collection.collection_id in [
+        #     'TCGA-ACC',
+        #     'TCGA-CHOL',
+        #     'TCGA-DLBC',
+        #     'TCGA-MESO',
+        #     'TCGA-PAAD',
+        #     'TCGA-PCPG',
+        #     'TCGA-SKCM',
+        #     'TCGA-TGCT',
+        #     'TCGA-THYM',
+        #     'TCGA-UCS',
+        #     'TCGA-UVM']:
+        #
+        #     breakpoint()
+        #     data_collection_doi = f'{collection.collection_id}-DOI'
+        # # Shouldn't ever get here, because we won't update NLST
+        # elif collection.collection_id == 'NLST':
+        #     breakpoint()
+        #     data_collection_doi = '10.7937/TCIA.hmq8-j677'
+        # # If we get here, we're broken
+        # else:
+        errlogger.error('No DOI for collection %s', collection.collection_id)
+        breakpoint()
+        return
+    data_collection_doi_url = {'doi': data_collection_doi, 'url': data_collection_url}
 
-        # NBIA does not return DOIs of redacted collections.
-        elif collection.collection_id == 'CPTAC-GBM':
-            data_collection_doi = '10.7937/K9/TCIA.2018.3RJE41Q1'
-        elif collection.collection_id == 'CPTAC-HNSCC':
-            data_collection_doi = '10.7937/K9/TCIA.2018.UW45NH81'
-        elif collection.collection_id == 'TCGA-GBM':
-            data_collection_doi = '10.7937/K9/TCIA.2016.RNYFUYE9'
-        elif collection.collection_id == 'TCGA-HNSC':
-            data_collection_doi = '10.7937/K9/TCIA.2016.LXKQ47MS'
-        elif collection.collection_id == 'TCGA-LGG':
-            data_collection_doi = '10.7937/K9/TCIA.2016.L4LTD3TK'
-
-        # These are non-TCIA TCGA collections. There are no (yet) DOIs for these.
-        # If we ever revise them, we'll come here
-        elif collection.collection_id in [
-            'TCGA-ACC',
-            'TCGA-CHOL',
-            'TCGA-DLBC',
-            'TCGA-MESO',
-            'TCGA-PAAD',
-            'TCGA-PCPG',
-            'TCGA-SKCM',
-            'TCGA-TGCT',
-            'TCGA-THYM',
-            'TCGA-UCS',
-            'TCGA-UVM']:
-
-            breakpoint()
-            data_collection_doi = f'{collection.collection_id}-DOI'
-        # Shouldn't ever get here, because we won't update NLST
-        elif collection.collection_id == 'NLST':
-            breakpoint()
-            data_collection_doi = '10.7937/TCIA.hmq8-j677'
-        # If we get here, we're broken
-        else:
-            errlogger.error('No DOI for collection %s', collection.collection_id)
-            breakpoint()
-            return
+    # Get all the analysis results DOIs.
     pre_analysis_collection_dois = get_analysis_collection_dois(collection.collection_id, server=args.server)
     analysis_collection_dois = {x['SeriesInstanceUID']: x['SourceDOI'] for x in pre_analysis_collection_dois}
 
@@ -290,7 +295,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         for patient in patients:
             patient_index = f'{patients.index(patient) + 1} of {len(patients)}'
             if not patient.done:
-                build_patient(sess, args, all_sources, patient_index, data_collection_doi, analysis_collection_dois, version, collection, patient)
+                build_patient(sess, args, all_sources, patient_index, data_collection_doi_url, analysis_collection_dois, version, collection, patient)
             else:
                 if True:
                     successlogger.info("  p0: Patient %s, %s, previously built", patient.submitter_case_id,
