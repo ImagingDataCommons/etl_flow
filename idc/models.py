@@ -667,6 +667,28 @@ class All_Collections(Base):
     dev_path_url = Column(String, comment="Dev path bucket name")
     pub_path_url = Column(String, comment="Public path bucket name")
 
+class Non_TCIA_Collection_Metadata(Base):
+    __tablename__ = 'non_tcia_collection_metadata'
+    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID used by TCIA APIs')
+    tcia_wiki_collection_id = Column(String, nullable=False, comment='TCIA Wiki page collection ID')
+    idc_webapp_collection_id = Column(String, nullable=False, comment='Collection ID used by IDC webapp')
+    Status = Column(String, nullable=False, comment='Public or Limited')
+    Updated = Column(String, comment='Date of last update')
+    ImageTypes = Column(String, comment='List of image types')
+    DOI = Column(String,comment='DOI of collection description page')
+    URL = Column(String, comment='URL of collection description page')
+    CancerType = Column(String, comment='Cancer type')
+    SupportingData = Column(String, comment='Supporting data')
+    Species = Column(String, comment='Species studies')
+    Location = Column(String, comment='Cancer location ')
+    license_url = Column(String, comment='URL of license description')
+    license_long_name = Column(String, comment='Short name of license')
+    license_short_name = Column(String, comment='Long name of license')
+    Description = Column(String, comment='Description of collection')
+
+
+
+
 
 
 
