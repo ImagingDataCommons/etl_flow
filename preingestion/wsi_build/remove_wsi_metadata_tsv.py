@@ -29,7 +29,7 @@ from python_settings import settings
 
 import csv
 
-from idc.models import Base, WSI_Version, WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance
+from idc.models import Base, WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance
 from ingestion.utils import get_merkle_hash
 
 from google.cloud import storage
