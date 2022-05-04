@@ -47,4 +47,6 @@ analysis_results_metadata_schema = [
     bigquery.SchemaField('license_url', 'STRING', mode='NULLABLE', description='URL of license of this analysis result'),
     bigquery.SchemaField('license_long_name', 'STRING', mode='NULLABLE', description='Long name of license of this analysis result'),
     bigquery.SchemaField('license_short_name', 'STRING', mode='NULLABLE', description='Short name of license of this analysis result'),
+    bigquery.SchemaField('Description', 'STRING', mode='NULLABLE',
+                         description='Analysis result description'),
 ]
