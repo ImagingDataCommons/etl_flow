@@ -22,61 +22,55 @@ import argparse
 import logging
 import os
 from logging import INFO
-from python_settings import settings
+import settings
 from idc.models import Patient, Study, Collection, Redacted_Collections
 import google
+from google.cloud import bigquery
 from google.auth.transport import requests
 from sqlalchemy import create_engine
 from sqlalchemy_utils import register_composites
 from sqlalchemy.orm import Session
 
+def get_limited_series(args):
+    client = bigquery.Client()
+    query = f"""
+    select distinct idc_webapp_collection_id, StudyInstanceUID, SeriesInstanceUID
+    from `{settings.DEV_PROJECT}.{settings.BQ_DEV_EXT_DATASET}.auxiliary_metadata`
+    WHERE access = 'Limited'
+    """
+    limited_series = client.query(query).result()
+    return limited_series
 
-def instance_exists(args, dicomweb_sess, study_instance_uid, series_instance_uid, sop_instance_uid):
+
+def delete_series(args, dicomweb_session, study_instance_uid, series_instance_uid):
     # URL to the Cloud Healthcare API endpoint and version
     base_url = "https://healthcare.googleapis.com/v1"
-    url = "{}/projects/{}/locations/{}".format(base_url, settings.GCH_PROJECT, settings.GCH_REGION)
-    dicomweb_path = "{}/datasets/{}/dicomStores/{}/dicomWeb/studies/{}/series/{}/instances?SOPInstanceUID={}".format(
-        url, settings.GCH_DATASET, settings.GCH_DICOMSTORE, study_instance_uid, series_instance_uid, sop_instance_uid
-    )
-    # Set the required application/dicom+json; charset=utf-8 header on the request
-    headers = {"Content-Type": "application/dicom+json; charset=utf-8"}
+    url = f"{base_url}/projects/{settings.GCH_PROJECT}/locations/{settings.GCH_REGION}"
+    dicomweb_path = f"{url}/datasets/{settings.GCH_DATASET}/dicomStores/{settings.GCH_DICOMSTORE}/dicomWeb/studies/{study_instance_uid}/series{series_instance_uid}"
 
-    response = dicomweb_sess.get(dicomweb_path, headers=headers)
-    if response.status_code == 200:
-        # successlogger.info('%s found',sop_instance_uid)
-        print('%s found',sop_instance_uid)
-        # done_instances.add(sop_instance_uid)
-        return True
-    else:
-        # errlogger.error('%s not found',sop_instance_uid)
-        print('%s not found',sop_instance_uid)
-        return False
-
-
-def delete_study(args, dicomweb_session, study_instance_uid):
-    # URL to the Cloud Healthcare API endpoint and version
-    base_url = "https://healthcare.googleapis.com/v1"
-    url = "{}/projects/{}/locations/{}".format(base_url, settings.GCH_PROJECT, settings.GCH_REGION)
-    dicomweb_path = "{}/datasets/{}/dicomStores/{}/dicomWeb/studies/{}".format(
-        url, settings.GCH_DATASET, settings.GCH_DICOMSTORE, study_instance_uid
-    )
     # Set the required application/dicom+json; charset=utf-8 header on the request
     headers = {"Content-Type": "application/dicom+json; charset=utf-8"}
 
     response = dicomweb_session.delete(dicomweb_path, headers=headers)
     # response.raise_for_status()
     if response.status_code == 200:
-        successlogger.info(study_instance_uid)
+        successlogger.info(series_instance_uid)
     else:
-        errlogger.error(study_instance_uid)
+        errlogger.error(series_instance_uid)
 
 
-def delete_instances(args, sess, dicomweb_sess):
+def delete_all_series(args):
+    scoped_credentials, project = google.auth.default(
+        ["https://www.googleapis.com/auth/cloud-platform"]
+    )
+    # Creates a requests Session object with the credentials.
+    dicomweb_sess = requests.AuthorizedSession(scoped_credentials)
+
     try:
         # Get the previously copied blobs
-        done_studies = set(open(f'{args.log_dir}/delete_redacted_success.log').read().splitlines())
+        done_series = set(open(f'{args.log_dir}/delete_redacted_success.log').read().splitlines())
     except:
-        done_studies = set()
+        done_series = set()
 
     # Change logging file. File name includes bucket ID.
     for hdlr in successlogger.handlers[:]:
@@ -93,24 +87,25 @@ def delete_instances(args, sess, dicomweb_sess):
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
 
-    # Redacted collection ids
-    collections = sorted(
-        [row.tcia_api_collection_id for row in
-            sess.query(Redacted_Collections.tcia_api_collection_id).all()])
+    # We need to remove all limited series
+    limited_series = get_limited_series(args)
 
-    # We first try to delete any instance for which there are multiple versions from the collections in
-    # open_collections, cr_collections, defaced_collections and redacted_collectons
-    rows = sess.query(Collection.collection_id, Study.study_instance_uid). \
-        distinct().join(Collection.patients).join(Patient.studies). \
-        filter(Collection.collection_id.in_(collections)).all()
-    redacted_studies = [{'collection_id': row.collection_id, 'study_instance_uid': row.study_instance_uid} for row in rows]
+    # # Redacted collection ids
+    # collections = sorted(
+    #     [row.tcia_api_collection_id for row in
+    #         sess.query(Redacted_Collections.tcia_api_collection_id).all()])
+    #
+    # rows = sess.query(Collection.collection_id, Study.study_instance_uid). \
+    #     distinct().join(Collection.patients).join(Patient.studies). \
+    #     filter(Collection.collection_id.in_(collections)).all()
+    # redacted_studies = [{'collection_id': row.collection_id, 'study_instance_uid': row.study_instance_uid} for row in rows]
     n=0
-    for row in redacted_studies:
-        if not row['study_instance_uid'] in done_studies:
-            delete_study(args, dicomweb_sess, row['study_instance_uid'])
-            print(f"{n}: {row['collection_id']}/{row['study_instance_uid']}  deleted")
+    for row in limited_series:
+        if not row.SeriesInstanceUID in done_series:
+            delete_series(args, dicomweb_sess, row.StudyInstanceUID, row.SeriesInstanceUID)
+            print(f"{n}: {row.collection_id}/{row.StudyInstanceUID}/{row.SeriesInstanceUID}  deleted")
         else:
-            print(f"{n}: {row['collection_id']}/{row['study_instance_uid']} previously deleted")
+            print(f"{n}: {row.collection_id}/{row.StudyInstanceUID}/{row.SeriesInstanceUID} previously deleted")
         n+=1
     pass
 
@@ -131,7 +126,7 @@ def delete_redacted(args):
     dicomweb_sess = requests.AuthorizedSession(scoped_credentials)
 
     with Session(sql_engine) as sess:
-        delete_instances(args, sess, dicomweb_sess)
+        delete_all_series(args, sess, dicomweb_sess)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -147,4 +142,5 @@ if __name__ == '__main__':
 
     errlogger = logging.getLogger('root.err')
 
-    delete_redacted(args)
+    breakpoint()
+    delete_all_series(args)

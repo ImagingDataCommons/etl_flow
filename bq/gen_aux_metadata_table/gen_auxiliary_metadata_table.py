@@ -160,7 +160,7 @@ WITH
     tl.license_url,
     tl.license_long_name,
     tl.license_short_name,
-    IF(tl.license_short_name='TCIA', 'Limited', 'Public') AS access
+    IF(tl.license_short_name='TCIA' or tl.license_short_name='TCIA NC', 'Limited', 'Public') AS access
 
   FROM
     `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.{args.temp_license_table_name}` tl
@@ -175,7 +175,7 @@ WITH
     tl.license_url,
     tl.license_long_name,
     tl.license_short_name,
-    IF(tl.license_short_name='TCIA', 'Limited', 'Public') AS access
+    IF(tl.license_short_name='TCIA' or tl.license_short_name='TCIA NC', 'Limited', 'Public') AS access
 
   FROM
     `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.{args.temp_license_table_name}` tl
