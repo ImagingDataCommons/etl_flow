@@ -34,7 +34,7 @@ def get_redacted_collections(client,args):
     SELECT tcia_api_collection_id, tcia_access as access
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.redacted_collections` 
     """
-    redacted_collection_access = {c.values()[0].lower().replace(' ','_').replace('-','_'): c.values()[1] for c in client.query(query).result()}
+    redacted_collection_access = {c.tcia_api_collection_id.lower().replace(' ','_').replace('-','_'): c.access for c in client.query(query).result()}
     return redacted_collection_access
 
 # Get all source DOIS and collections they are in
@@ -77,8 +77,18 @@ def get_all_idc_dois(client, args):
 
     return source_dois
 
+def get_descriptions(client,args):
+    query = f"""
+    SELECT ID, Description
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_descriptions` 
+    """
+    descriptions = {c.ID: c.Description for c in client.query(query).result()}
+    return descriptions
 
 def build_metadata(args, BQ_client):
+    # Get analysis results descriptions
+    descriptions = get_descriptions(BQ_client, args)
+
     # Get access status of potentially redacted collections
     redacted_collection_access = get_redacted_collections(BQ_client,args)
 
@@ -87,7 +97,6 @@ def build_metadata(args, BQ_client):
 
     # Scrape the TCIA analysis results page for metadata
     analysis_metadata = scrape_tcia_analysis_collections_page()
-
 
     rows = []
     for analysis_id, analysis_data in analysis_metadata.items():
@@ -107,6 +116,7 @@ def build_metadata(args, BQ_client):
             for collection in analysis_data["Collections"].split(','):
                 if collection in redacted_collection_access:
                     analysis_data['Access'] = redacted_collection_access[collection]
+            analysis_data['Description'] = descriptions[analysis_data['ID']]
             rows.append(json.dumps(analysis_data))
     metadata = '\n'.join(rows)
     return metadata
