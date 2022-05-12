@@ -19,13 +19,14 @@ from datetime import datetime, timedelta
 import logging
 from uuid import uuid4
 from idc.models import Patient, Study
-from ingestion.utils import accum_sources, get_merkle_hash, is_skipped
+from ingestion.utilities.utils import accum_sources, get_merkle_hash, is_skipped
 from ingestion.study import clone_study, build_study, retire_study
 from python_settings import settings
 
 # rootlogger = logging.getLogger('root')
 successlogger = logging.getLogger('root.success')
-debuglogger = logging.getLogger('root.prog')
+#debuglogger = logging.getLogger('root.prog')
+progresslogger = logging.getLogger('root.progress')
 errlogger = logging.getLogger('root.err')
 
 
@@ -41,7 +42,7 @@ def clone_patient(patient, uuid):
 
 def retire_patient(args, patient):
     # If this object has children from source, delete them
-    debuglogger.debug  ('  p%s: Patient %s retiring', args.pid, patient.submitter_case_id)
+    progresslogger.debug  ('  p%s: Patient %s retiring', args.pid, patient.submitter_case_id)
     for study in patient.studies:
         retire_study(args, study)
     patient.final_idc_version = settings.PREVIOUS_VERSION
@@ -98,7 +99,7 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
         new_study.is_new=True
         new_study.expanded=False
         patient.studies.append(new_study)
-        debuglogger.debug  ('    p%s: Study %s is new',  args.pid, new_study.study_instance_uid)
+        progresslogger.debug  ('    p%s: Study %s is new',  args.pid, new_study.study_instance_uid)
 
 
     for study in existing_objects:
@@ -123,7 +124,7 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
             rev_study.hashes = None
             rev_study.rev_idc_version = settings.CURRENT_VERSION
             patient.studies.append(rev_study)
-            debuglogger.debug  ('    p%s: Study %s is revised',  args.pid, rev_study.study_instance_uid)
+            progresslogger.debug  ('    p%s: Study %s is revised',  args.pid, rev_study.study_instance_uid)
 
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised patient
@@ -138,7 +139,7 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
             # Shouldn't be needed if the previous version is done
             study.done = True
             study.expanded = True
-            debuglogger.debug  ('    p%s: Study %s unchanged',  args.pid, study.study_instance_uid)
+            progresslogger.debug  ('    p%s: Study %s unchanged',  args.pid, study.study_instance_uid)
 
     for study in retired_objects:
         # rootlogger.debug  ('    p%s: Study %s:%s retiring', args.pid, study.study_instance_uid, study.uuid)

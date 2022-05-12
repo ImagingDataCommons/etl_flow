@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 import logging
 from uuid import uuid4
 from idc.models import Version, Collection
-from ingestion.utils import accum_sources, is_skipped
+from ingestion.utilities.utils import accum_sources, is_skipped
 from ingestion.collection import clone_collection, build_collection, retire_collection
 from ingestion.egest import egest_version
 
@@ -27,7 +27,8 @@ from python_settings import settings
 
 # rootlogger = logging.getLogger('root')
 successlogger = logging.getLogger('root.success')
-debuglogger = logging.getLogger('root.prog')
+# progresslogger = logging.getLogger('root.prog')
+progresslogger = logging.getLogger('root.progress')
 errlogger = logging.getLogger('root.err')
 
 
@@ -94,7 +95,7 @@ def expand_version(sess, args, all_sources, version):
         new_collection.expanded = False
 
         version.collections.append(new_collection)
-        debuglogger.debug('p%s: Collection %s is new', args.pid, new_collection.collection_id)
+        progresslogger.info('p%s: Collection %s is new', args.pid, new_collection.collection_id)
 
     for collection in existing_objects:
         # if not collection.collection_id in skipped:
@@ -123,7 +124,7 @@ def expand_version(sess, args, all_sources, version):
             rev_collection.revised = revised
             rev_collection.rev_idc_version = settings.CURRENT_VERSION
             version.collections.append(rev_collection)
-            debuglogger.debug('p%s: Collection %s is revised',  args.pid, rev_collection.collection_id)
+            progresslogger.info('p%s: Collection %s is revised',  args.pid, rev_collection.collection_id)
 
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised version
@@ -131,7 +132,7 @@ def expand_version(sess, args, all_sources, version):
             version.collections.remove(collection)
         elif collection.collection_id != collections[collection.idc_collection_id]['collection_id']:
             # The collection_id has changed. Treat as a revised collection even though the hash is unchanged
-            debuglogger.debug('**Collection_id changed %s. Generating revision',collection.collection_id)
+            progresslogger.info('**Collection_id changed %s. Generating revision',collection.collection_id)
             rev_collection = clone_collection(collection, uuid=str(uuid4()))
 
             # Here is where we update the collecton ID in case it has changed
@@ -143,7 +144,7 @@ def expand_version(sess, args, all_sources, version):
             collection.expanded = True
 
             version.collections.append(rev_collection)
-            debuglogger.debug('p%s: Collection %s is renamed',  args.pid, rev_collection.collection_id)
+            progresslogger.info('p%s: Collection %s is renamed',  args.pid, rev_collection.collection_id)
 
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised version
@@ -158,7 +159,7 @@ def expand_version(sess, args, all_sources, version):
             # Shouldn't be needed if the previous version is done
             collection.done = True
             collection.expanded = True
-            debuglogger.debug('p%s: Collection %s unchanged', args.pid, collection.collection_id)
+            progresslogger.info('p%s: Collection %s unchanged', args.pid, collection.collection_id)
 
     for collection in retired_objects:
         breakpoint()
@@ -168,9 +169,21 @@ def expand_version(sess, args, all_sources, version):
         retire_collection(args, collection)
         version.collections.remove(collection)
 
+    print(f'p{args.pid}; Version expansion summary')
+    for collection in version.collections:
+        if not collection.done:
+            if collection.init_idc_version == collection.rev_idc_version:
+                print(f'p{args.pid}: New collection: {collection.collection_id}')
+            else:
+               print(f'p{args.pid}: Revising collection: {collection.collection_id}')
+    for collection in retired_objects:
+        print(f'p{args.pid}: Revising collection: {collection.collection_id}')
+    if args.stop_after_collection_summary:
+        exit()
+
     version.expanded = True
     sess.commit()
-    debuglogger.info("Expanded version")
+    progresslogger.info("Expanded version")
 
 def build_version(sess, args, all_sources, version):
     begin = time.time()
@@ -178,19 +191,19 @@ def build_version(sess, args, all_sources, version):
     #     skipped = open(args.skipped).read().splitlines()
     # except:
     #     skipped = []
-    successlogger.debug("p%s: Expand version %s", args.pid, settings.CURRENT_VERSION)
+    progresslogger.info("p%s: Expand version %s", args.pid, settings.CURRENT_VERSION)
     if not version.expanded:
         # expand_version(sess, args, all_sources, version, skipped)
         expand_version(sess, args, all_sources, version)
     idc_collections = sorted(version.collections, key=lambda collection: collection.collection_id)
-    successlogger.info("p%s: Expanded Version %s; %s collections", args.pid, settings.CURRENT_VERSION, len(idc_collections))
+    progresslogger.info("p%s: Expanded Version %s; %s collections", args.pid, settings.CURRENT_VERSION, len(idc_collections))
     for collection in idc_collections:
         # if not collection.collection_id in skipped:
         collection_index = f'{idc_collections.index(collection) + 1} of {len(idc_collections)}'
         if not collection.done:
             build_collection(sess, args, all_sources, collection_index, version, collection)
         else:
-            successlogger.info("p%s: Collection %s, %s, previously built", args.pid, collection.collection_id, collection_index)
+            progresslogger.info("p%s: Collection %s, %s, previously built", args.pid, collection.collection_id, collection_index)
 
     # Check if we are really done
     if all([collection.done for collection in idc_collections]):
@@ -206,13 +219,17 @@ def build_version(sess, args, all_sources, version):
             version.sources = accum_sources(version, version.collections)
             version.done = True
             version.revised = [True, True]
+            duration = str(timedelta(seconds=(time.time() - begin)))
+            progresslogger.info("Completed Version %s, in %s", version.version, duration)
         else:
             # Revert the version
+            breakpoint()
             egest_version(sess, args, version)
-            successlogger.info("Version unchanged, remains at %s", settings.PREVIOUS_VERSION)
+            sess.delete(version)
+            progresslogger.info('Deleted version %s', version.version)
+
+            progresslogger.info("Version unchanged, remains at %s", settings.PREVIOUS_VERSION)
         sess.commit()
-        duration = str(timedelta(seconds=(time.time() - begin)))
-        successlogger.info("Completed Version %s, in %s", version.version, duration)
 
     else:
-        successlogger.info("Not all collections are done. Rerun.")
+        progresslogger.info("Not all collections are done. Rerun.")

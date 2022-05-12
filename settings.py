@@ -19,8 +19,8 @@ import sys
 from os.path import join, dirname, exists
 from dotenv import load_dotenv
 
-CURRENT_VERSION=9
-PREVIOUS_VERSION=8
+CURRENT_VERSION=10
+PREVIOUS_VERSION=9
 
 SECURE_LOCAL_PATH = os.environ.get('SECURE_LOCAL_PATH', '')
 
@@ -35,7 +35,7 @@ load_dotenv(dotenv_path=join(dirname(__file__), SECURE_LOCAL_PATH, '.env.idc-dev
 
 DEBUG = (os.environ.get('DEBUG', 'False') == 'True')
 
-print("[STATUS] DEBUG mode is "+str(DEBUG))
+#print("[STATUS] DEBUG mode is "+str(DEBUG))
 
 # These are no longer used since we moved to Cloud SQL.
 # Kept here in case we need to run PSQL locally
@@ -89,7 +89,8 @@ TCIA_CLIENT_ID = os.environ.get('TCIA_CLIENT_ID')
 TCIA_CLIENT_SECRET= os.environ.get('TCIA_CLIENT_SECRET')
 
 LOGGING_BASE = f'/mnt/disks/idc-etl/logs/v{CURRENT_VERSION}'
-BASE_NAME = sys.argv[0].rsplit('/',1)[1].rsplit('.',1)[0]
+BASE_NAME = sys.argv[0].rsplit('/',1)[-1].rsplit('.',1)[0]
+LOG_DIR = f'{LOGGING_BASE}/{BASE_NAME}'
 
 
 

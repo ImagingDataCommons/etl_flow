@@ -31,8 +31,8 @@ import csv
 from idc.models import Base, WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance
 from ingestion.utilities.utils import get_merkle_hash, list_skips
 
-import logging
 from logging import INFO, DEBUG
+from utilities.logging_config import successlogger, errlogger, progresslogger
 from base64 import b64decode
 from python_settings import settings
 
@@ -54,8 +54,8 @@ def build_instance(client, args, sess, series, row):
     bucket = client.bucket(args.src_bucket)
     blob = bucket.blob(blob_name)
     blob.reload()
-
     instance.hash = b64decode(blob.md5_hash).hex()
+    progresslogger.info('\t\t\t\tInstance %s', instance_id)
 
 
 def build_series(client, args, sess, study, row):
@@ -66,6 +66,7 @@ def build_series(client, args, sess, study, row):
         series = WSI_Series()
         series.series_instance_uid = series_id
         study.seriess.append(series)
+        progresslogger.info('\t\t\tSeries %s', series_id)
     build_instance(client, args, sess, series, row)
     hashes = [instance.hash for instance in series.instances]
     series.hash = get_merkle_hash(hashes)
@@ -80,6 +81,7 @@ def build_study(client, args, sess, patient, row):
         study = WSI_Study()
         study.study_instance_uid = study_id
         patient.studies.append(study)
+        progresslogger.info('\t\tStudy %s', study_id)
     build_series(client, args, sess, study, row)
     hashes = [series.hash for series in study.seriess]
     study.hash = get_merkle_hash(hashes)
@@ -94,6 +96,7 @@ def build_patient(client, args, sess, collection, row):
         patient = WSI_Patient()
         patient.submitter_case_id = patient_id
         collection.patients.append(patient)
+        progresslogger.info('\tPatient %s', patient_id)
     build_study(client, args, sess, patient, row)
     hashes = [study.hash for study in patient.studies]
     patient.hash = get_merkle_hash(hashes)
@@ -110,10 +113,13 @@ def build_collection(client, args, sess,row, skips):
             collection = WSI_Collection()
             collection.collection_id = collection_id
             sess.add(collection)
+            progresslogger.info('Collection %s',collection_id)
         build_patient(client, args, sess, collection, row)
         hashes = [patient.hash for patient in collection.patients]
         collection.hash = get_merkle_hash(hashes)
+
         return
+
 
 
 def prebuild(args):
@@ -128,46 +134,70 @@ def prebuild(args):
 
         # Get the manifest of htan files/blobs
         bucket = client.bucket(args.src_bucket)
-        bucket.blob(args.tsv_blob).download_to_filename(args.tsv_file)
-        with open(args.tsv_file, newline='', ) as tsv:
+        result = bucket.blob(f'{args.src_path}/{args.tsv_blob}').download_as_text()
+        with io.StringIO(result) as tsv:
+        # with open(args.tsv_file, newline='', ) as tsv:
             reader = csv.DictReader(tsv, delimiter='\t')
             rows = len(list(reader))
             tsv.seek(0)
             reader = csv.DictReader(tsv, delimiter='\t')
             for row in reader:
-                print(f'{reader.line_num-1}/{rows}: {row}')
+                # print(f'{reader.line_num-1}/{rows}: {row}')
                 build_collection(client, args, sess, row, skips)
         sess.commit()
+    return
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--client', default=storage.Client())
-    parser.add_argument('--src_bucket', default='htan-transfer')
-    parser.add_argument('--src_path', default='HTAN-V1-Converted/Converted_20220416')
-    parser.add_argument('--tsv_file', default = 'wsi_manifest.tsv')
-    parser.add_argument('--tsv_blob', default = 'HTAN-V1-Converted/Converted_20220416/identifiers.txt',\
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--src_bucket', default='htan-transfer', help='Bucket containing WSI instances')
+    parser.add_argument('--src_path', default='HTAN-V1-Converted/Converted_20220416', help='Folder in src_bucket that is the root of WSI data to be indexed ')
+    parser.add_argument('--tsv_blob', default = 'identifiers.txt',\
                         help='A GCS blob that contains a TSV manifest of WSI DICOMs to be ingested')
-    parser.add_argument('--skipped_groups', default=['redacted_collections', 'excluded_collections'], \
-                        help="Collection groups that should not be ingested")
-    parser.add_argument('--skipped_collections', default=['HTAN-HMS', 'HTAN-Vanderbilt', 'HTAN-WUSTL'],\
-      help='Additional collections that should not be ingested.')
-    parser.add_argument('--dones', default='{}/logs/wsi_build_dones.txt'.format(os.environ['PWD']), help="Completed collections")
+    parser.add_argument('--skipped_groups', default=[], nargs='*', \
+                        help="A list of collection groups that should not be ingested. "\
+                             "Can include open_collections, cr_collections, defaced_collections, redacted_collections, excluded_collections. "\
+                             "Note that this is value is interpreted as a list.")
+    parser.add_argument('--skipped_collections', type=str, default=['HTAN-HMS', 'HTAN-Vanderbilt', 'HTAN-WUSTL'], nargs='*', \
+      help='A list of additional collections that should not be ingested.')
+    # parser.add_argument('--log_dir', default=f'{settings.LOGGING_BASE}/{settings.BASE_NAME}')
+
     args = parser.parse_args()
-
     print("{}".format(args), file=sys.stdout)
+    args.client=storage.Client()
 
-    rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/wsi_metadata_log.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
-    rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
-    rootlogger.addHandler(root_fh)
-    root_fh.setFormatter(rootformatter)
-    rootlogger.setLevel(INFO)
-
-    errlogger = logging.getLogger('root.err')
-    err_fh = logging.FileHandler('{}/logs/wsi_metadata_err.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
-    errformatter = logging.Formatter('{%(pathname)s:%(lineno)d} %(levelname)s:err:%(message)s')
-    errlogger.addHandler(err_fh)
-    err_fh.setFormatter(errformatter)
+    # print(f'Logging to {settings.LOG_DIR}')
+    #
+    # if not os.path.exists(settings.LOGGING_BASE):
+    #     os.mkdir(settings.LOGGING_BASE)
+    # if not os.path.exists(settings.LOG_DIR):
+    #     os.mkdir(settings.LOG_DIR)
+    #
+    # successlogger = logging.getLogger('root.success')
+    # successlogger.setLevel(INFO)
+    # for hdlr in successlogger.handlers[:]:
+    #     successlogger.removeHandler(hdlr)
+    # success_fh = logging.FileHandler('{}/success.log'.format(settings.LOG_DIR))
+    # successlogger.addHandler(success_fh)
+    # successformatter = logging.Formatter('%(message)s')
+    # success_fh.setFormatter(successformatter)
+    #
+    # progresslogger = logging.getLogger('root.progress')
+    # progresslogger.setLevel(INFO)
+    # for hdlr in progresslogger.handlers[:]:
+    #     progresslogger.removeHandler(hdlr)
+    # success_fh = logging.FileHandler('{}/progress.log'.format(settings.LOG_DIR))
+    # progresslogger.addHandler(success_fh)
+    # successformatter = logging.Formatter('%(message)s')
+    # success_fh.setFormatter(successformatter)
+    #
+    # errlogger = logging.getLogger('root.err')
+    # for hdlr in errlogger.handlers[:]:
+    #     errlogger.removeHandler(hdlr)
+    # err_fh = logging.FileHandler('{}/error.log'.format(settings.LOG_DIR))
+    # errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
+    # errlogger.addHandler(err_fh)
+    # err_fh.setFormatter(errformatter)
 
     prebuild(args)
+

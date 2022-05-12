@@ -102,7 +102,7 @@ class All:
                         break
                 # If we didn't find a similar collection id, assume this is a new collection
                 tcia_api_collection_id = collection if collections[collection][instance_source.tcia.value] else None
-                print(f'New collection {collection}')
+                # print(f'New collection {collection}')
                 idc_collection_id = str(uuid4())
                 row = Collection_id_map(collection_id=collection, idc_collection_id=idc_collection_id,\
                         tcia_api_collection_id=tcia_api_collection_id, idc_webapp_collection_id=to_webapp(collection))

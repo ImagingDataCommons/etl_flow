@@ -20,13 +20,14 @@ import logging
 from uuid import uuid4
 from idc.models import Series, Instance, instance_source
 from ingestion.instance import clone_instance, build_instances_path, build_instances_tcia
-from ingestion.utils import is_skipped
+from ingestion.utilities.utils import is_skipped
 from python_settings import settings
 
 
 # rootlogger = logging.getLogger('root')
 successlogger = logging.getLogger('root.success')
-debuglogger = logging.getLogger('root.prog')
+#debuglogger = logging.getLogger('root.prog')
+progresslogger = logging.getLogger('root.progress')
 errlogger = logging.getLogger('root.err')
 
 
@@ -41,9 +42,9 @@ def clone_series(series, uuid):
 
 def retire_series(args, series):
     # If this object has children from source, mark them as retired
-    debuglogger.debug('      p%s: Series %s:%s retiring', args.pid, series.series_instance_uid, series.uuid)
+    progresslogger.debug('      p%s: Series %s:%s retiring', args.pid, series.series_instance_uid, series.uuid)
     for instance in series.instances:
-        debuglogger.debug('        p%s: Instance %s:%s retiring', args.pid, instance.sop_instance_uid, instance.uuid)
+        progresslogger.debug('        p%s: Instance %s:%s retiring', args.pid, instance.sop_instance_uid, instance.uuid)
         instance.final_idc_version = settings.PREVIOUS_VERSION
     series.final_idc_version = settings.PREVIOUS_VERSION
 
@@ -106,7 +107,7 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
         new_instance.timestamp = datetime.utcnow()
         new_instance.final_idc_version = 0
         series.instances.append(new_instance)
-        debuglogger.debug('        p%s: Instance %s is new', args.pid, new_instance.sop_instance_uid)
+        progresslogger.debug('        p%s: Instance %s is new', args.pid, new_instance.sop_instance_uid)
 
     for instance in existing_objects:
         idc_hash = instance.hash
@@ -127,7 +128,7 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
             rev_instance.size = 0
             rev_instance.rev_idc_version = settings.CURRENT_VERSION
             series.instances.append(rev_instance)
-            debuglogger.debug('        p%s: Instance %s is revised', args.pid, rev_instance.sop_instance_uid)
+            progresslogger.debug('        p%s: Instance %s is revised', args.pid, rev_instance.sop_instance_uid)
 
 
             # Mark the now previous version of this object as having been replaced
@@ -141,7 +142,7 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
             # Shouldn't be needed if the previous version is done
             instance.done = True
             instance.expanded = True
-            debuglogger.debug('        p%s: Instance %s unchanged', args.pid, instance.sop_instance_uid)
+            progresslogger.debug('        p%s: Instance %s unchanged', args.pid, instance.sop_instance_uid)
             # series.instances.append(instance)
 
     for instance in retired_objects:

@@ -37,7 +37,8 @@ from sqlalchemy import create_engine
 
 # rootlogger = logging.getLogger('root')
 successlogger = logging.getLogger('root.success')
-debuglogger = logging.getLogger('root.prog')
+# debuglogger = logging.getLogger('root.prog')
+progresslogger = logging.getLogger('root.progress')
 errlogger = logging.getLogger('root.err')
 
 
@@ -53,7 +54,7 @@ def clone_collection(collection,uuid):
 
 def retire_collection(args, collection):
     # If this object has children from source, delete them
-    debuglogger.debug('p%s: Collection %s retiring', args.pid, collection.collection_id)
+    progresslogger.debug('p%s: Collection %s retiring', args.pid, collection.collection_id)
     for patient in collection.patients:
         retire_patient(args, patient)
     collection.final_idc_version = settings.PREVIOUS_VERSION
@@ -99,11 +100,11 @@ def expand_collection(sess, args, all_sources, collection):
 
     # Since we are starting, delete everything from the prestaging bucket.
     if collection.revised.tcia:
-        debuglogger.info("Emptying tcia prestaging buckets")
+        progresslogger.info("Emptying tcia prestaging buckets")
         create_prestaging_bucket(args, args.prestaging_tcia_bucket)
         empty_bucket(args.prestaging_tcia_bucket)
     if collection.revised.path:
-        debuglogger.info("Emptying path prestaging buckets")
+        progresslogger.info("Emptying path prestaging buckets")
         create_prestaging_bucket(args, args.prestaging_path_bucket)
         empty_bucket(args.prestaging_path_bucket)
 
@@ -156,7 +157,7 @@ def expand_collection(sess, args, all_sources, collection):
         new_patient.expanded=False
 
         collection.patients.append(new_patient)
-        debuglogger.debug('  p%s: Patient %s is new',  args.pid, new_patient.submitter_case_id)
+        progresslogger.debug('  p%s: Patient %s is new',  args.pid, new_patient.submitter_case_id)
 
     for patient in existing_objects:
         idc_hashes = patient.hashes
@@ -181,7 +182,7 @@ def expand_collection(sess, args, all_sources, collection):
             rev_patient.sources = [False, False]
             rev_patient.rev_idc_version = settings.CURRENT_VERSION
             collection.patients.append(rev_patient)
-            debuglogger.debug('  p%s: Patient %s is revised',  args.pid, rev_patient.submitter_case_id)
+            progresslogger.debug('  p%s: Patient %s is revised',  args.pid, rev_patient.submitter_case_id)
 
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised collection
@@ -198,7 +199,7 @@ def expand_collection(sess, args, all_sources, collection):
 
             patient.done = True
             patient.expanded = True
-            debuglogger.debug('  p%s: Patient %s unchanged',  args.pid, patient.submitter_case_id)
+            progresslogger.debug('  p%s: Patient %s unchanged',  args.pid, patient.submitter_case_id)
 
     for patient in retired_objects:
         breakpoint()

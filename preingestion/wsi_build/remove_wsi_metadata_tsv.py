@@ -23,27 +23,14 @@
 # are to be removed from a subsequent IDC version.
 
 import os
+import io
 import sys
 import argparse
-from python_settings import settings
-
 import csv
-
-from idc.models import Base, WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance
-from ingestion.utils import get_merkle_hash
-
-from google.cloud import storage
-
-
-import logging
-from logging import INFO, DEBUG
-from base64 import b64decode
-# import settings as etl_settings
+from idc.models import Base, WSI_Collection
+from ingestion.utilities.utils import get_merkle_hash, list_skips
+from utilities.logging_config import successlogger, errlogger, progresslogger
 from python_settings import settings
-# settings.configure(etl_settings)
-
-from ingestion.utils import list_skips
-
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, update
 from google.cloud import storage
@@ -53,8 +40,10 @@ def remove_instance_from_series(client, args, sess, series, row):
     instance_id = row['SOP Instance UID'].strip()
     try:
         instance = next(instance for instance in series.instances if instance.sop_instance_uid == instance_id)
+        # Remove the instance from the series and delete it
         series.instances.remove(instance)
         sess.delete(instance)
+        progresslogger.info('\t\t\t\tInstance %s', instance.sop_instance_uid)
         return
     except StopIteration:
         # Instance no longer in series
@@ -70,9 +59,10 @@ def remove_series_from_study(client, args, sess, study, row):
             hashes = [instance.hash for instance in series.instances]
             series.hash = get_merkle_hash(hashes)
         else:
-            # Series is empty now. Remove it from study
+            # Series is empty now. Remove it from study and delete it
             study.seriess.remove(series)
             sess.delete(series)
+            progresslogger.info('\t\t\tSeries %s', series.series_instance_uid)
         return
     except StopIteration:
         # Series no longer in study
@@ -89,9 +79,10 @@ def remove_study_from_patient(client, args, sess, patient, row):
             hashes = [series.hash for series in study.seriess]
             study.hash = get_merkle_hash(hashes)
         else:
-            # Study is empty now. Remove it from patient
+            # Study is empty now. Remove it from patient and delete it
             patient.studies.remove(study)
             sess.delete(study)
+            progresslogger.info('\t\tStudy %s', study.study_instance_uid)
         return
     except StopIteration:
         # Study no longer in patient
@@ -108,55 +99,58 @@ def remove_patient_from_collection(client, args, sess, collection, row):
             hashes = [study.hash for study in patient.studies]
             patient.hash = get_merkle_hash(hashes)
         else:
-            # The patient is empty. Remove it from collection
+            # The patient is empty. Remove it from collection and delete it
             collection.patients.remove(patient)
             sess.delete(patient)
+            progresslogger.info('\tPatient %s', patient.submitter_case_id)
         return
     except StopIteration:
         # Patient no longer in collection
         return
 
 
-def remove_collection_from_version(client, args, sess, version, row):
+def remove_collection(client, args, sess, row, skips):
     collection_id = row['Clinical Trial Protocol ID'].strip()
-    try:
-        collection = next(collection for collection in version.collections if collection.collection_id == collection_id)
-        remove_patient_from_collection(client, args, sess, collection, row)
-        if collection.patients:
-            # Collection is not empty. Keep it.
-            hashes = [patient.hash for patient in collection.patients]
-            collection.hash = get_merkle_hash(hashes)
-        else:
-            # Collection is empty. Remove it from the version.
-            version.collections.remove(collection)
-            sess.delete(collection)
-        return
-    except StopIteration:
-        # Collection no longer in DB
-        return
+    if not collection_id in skips:
+        try:
+            # collection = next(collection for collection in version.collections if collection.collection_id == collection_id)
+            collection = sess.query(WSI_Collection).filter(WSI_Collection.collection_id == collection_id).first()
+            remove_patient_from_collection(client, args, sess, collection, row)
+            if collection.patients:
+                # Collection is not empty. Keep it.
+                hashes = [patient.hash for patient in collection.patients]
+                collection.hash = get_merkle_hash(hashes)
+            else:
+                # Collection is empty. Delete it
+                sess.delete(collection)
+                progresslogger.info('Collection %s', collection.collection_id)
+            return
+        except StopIteration:
+            # Collection no longer in DB
+            return
 
 
-def remove_version(client, args, sess):
-    # The WSI metadata is not actually versioned. It is really a snapshot
-    # of WSI data that is expected to be in the current/next IDC version.
-    # It is only versioned to the extent that it is associated with a
-    # particular version of the DB
-    # There should be only a single "version", having version=0
-    version = sess.query(WSI_Version).filter(WSI_Version.version == 0).first()
-    # version = sess.query(WSI_Version).filter(WSI_Version.version == settings.CURRENT_VERSION).first()
-    if version:
-        with open(args.tsv_file, newline='', ) as tsv:
-            reader = csv.DictReader(tsv, delimiter='\t')
-            rows = len(list(reader))
-            tsv.seek(0)
-            reader = csv.DictReader(tsv, delimiter='\t')
-            for row in reader:
-                print(f'{reader.line_num - 1}/{rows}: {row}')
-                remove_collection_from_version(client, args, sess, version, row)
-                hashes = [collection.hash for collection in version.collections]
-                version.hash = get_merkle_hash(hashes)
-        sess.commit()
-    return
+# def remove_version(client, args, sess):
+#     # The WSI metadata is not actually versioned. It is really a snapshot
+#     # of WSI data that is expected to be in the current/next IDC version.
+#     # It is only versioned to the extent that it is associated with a
+#     # particular version of the DB
+#     # There should be only a single "version", having version=0
+#     version = sess.query(WSI_Version).filter(WSI_Version.version == 0).first()
+#     # version = sess.query(WSI_Version).filter(WSI_Version.version == settings.CURRENT_VERSION).first()
+#     if version:
+#         with open(args.tsv_file, newline='', ) as tsv:
+#             reader = csv.DictReader(tsv, delimiter='\t')
+#             rows = len(list(reader))
+#             tsv.seek(0)
+#             reader = csv.DictReader(tsv, delimiter='\t')
+#             for row in reader:
+#                 print(f'{reader.line_num - 1}/{rows}: {row}')
+#                 remove_collection_from_version(client, args, sess, version, row)
+#                 hashes = [collection.hash for collection in version.collections]
+#                 version.hash = get_merkle_hash(hashes)
+#         sess.commit()
+#     return
 
 
 def prebuild(args):
@@ -166,43 +160,74 @@ def prebuild(args):
 
     with Session(sql_engine) as sess:
         client = storage.Client()
+        skips = list_skips(sess, Base, args.skipped_groups, args.skipped_collections)
+
         bucket = client.bucket(args.src_bucket)
-        bucket.blob(args.tsv_blob).download_to_filename(args.tsv_file)
-        remove_version(client, args, sess)
+        result = bucket.blob(f'{args.src_path}/{args.tsv_blob}').download_as_text()
+        with io.StringIO(result) as tsv:
+            # with open(args.tsv_file, newline='', ) as tsv:
+            reader = csv.DictReader(tsv, delimiter='\t')
+            rows = len(list(reader))
+            tsv.seek(0)
+            reader = csv.DictReader(tsv, delimiter='\t')
+            for row in reader:
+                # print(f'{reader.line_num-1}/{rows}: {row}')
+                remove_collection(client, args, sess, row, skips)
+        sess.commit()
     return
+    #     bucket.blob(args.tsv_blob).download_to_filename(args.tsv_file)
+    #     remove_version(client, args, sess)
+    # return
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    # parser.add_argument('--version', default=8, help='Version to work on')
-    parser.add_argument('--client', default=storage.Client())
-    # parser.add_argument('--db', default=f'idc_v{settings.CURRENT_VERSION}', help='Database on which to operate')
-    # parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--src_bucket', default='htan-transfer')
-    parser.add_argument('--tsv_blob', default = 'HTAN-V1-Converted/Converted_20220228/identifiers.txt',\
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--src_bucket', default='htan-transfer', help='Bucket containing WSI instances')
+    parser.add_argument('--src_path', default='HTAN-V1-Converted/Converted_20220416', help='Folder in src_bucket that is the root of WSI data to be indexed ')
+    parser.add_argument('--tsv_blob', default = 'identifiers.txt',\
                         help='A GCS blob that contains a TSV manifest of WSI DICOMs to be ingested')
-    parser.add_argument('--tsv_file', default = 'logs/tsv_files.txt')
-    parser.add_argument('--skipped_groups', default=['redacted_collections', 'excluded_collections'], \
-                        help="Collection groups that should not be ingested")
-    parser.add_argument('--skipped_collections', default=[],\
-      help='Additional collections that should not be ingested.')
-    parser.add_argument('--dones', default='{}/logs/wsi_build_dones.txt'.format(os.environ['PWD']), help="Completed collections")
+    parser.add_argument('--skipped_groups', default=[], nargs='*', \
+                        help="A list of collection groups that should not be ingested. "\
+                             "Can include open_collections, cr_collections, defaced_collections, redacted_collections, excluded_collections. "\
+                             "Note that this is value is interpreted as a list.")
+    parser.add_argument('--skipped_collections', type=str, default=['HTAN-HMS', 'HTAN-Vanderbilt', 'HTAN-WUSTL'], nargs='*', \
+      help='A list of additional collections that should not be ingested.')
+    # parser.add_argument('--log_dir', default=f'{settings.LOGGING_BASE}/{settings.BASE_NAME}')
+
     args = parser.parse_args()
-
     print("{}".format(args), file=sys.stdout)
+    args.client=storage.Client()
+    #
+    # if not os.path.exists(settings.LOGGING_BASE):
+    #     os.mkdir(settings.LOGGING_BASE)
+    # if not os.path.exists(args.log_dir):
+    #     os.mkdir(args.log_dir)
+    #
+    # successlogger = logging.getLogger('root.success')
+    # successlogger.setLevel(INFO)
+    # for hdlr in successlogger.handlers[:]:
+    #     successlogger.removeHandler(hdlr)
+    # success_fh = logging.FileHandler('{}/success.log'.format(args.log_dir))
+    # successlogger.addHandler(success_fh)
+    # successformatter = logging.Formatter('%(message)s')
+    # success_fh.setFormatter(successformatter)
+    #
+    # progresslogger = logging.getLogger('root.progress')
+    # progresslogger.setLevel(INFO)
+    # for hdlr in progresslogger.handlers[:]:
+    #     progresslogger.removeHandler(hdlr)
+    # success_fh = logging.FileHandler('{}/progress.log'.format(args.log_dir))
+    # progresslogger.addHandler(success_fh)
+    # successformatter = logging.Formatter('%(message)s')
+    # success_fh.setFormatter(successformatter)
+    #
+    #
+    # errlogger = logging.getLogger('root.err')
+    # for hdlr in errlogger.handlers[:]:
+    #     errlogger.removeHandler(hdlr)
+    # err_fh = logging.FileHandler('{}/error.log'.format(args.log_dir))
+    # errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
+    # errlogger.addHandler(err_fh)
+    # err_fh.setFormatter(errformatter)
 
-    rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/wsi_metadata_log.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
-    rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
-    rootlogger.addHandler(root_fh)
-    root_fh.setFormatter(rootformatter)
-    rootlogger.setLevel(INFO)
-
-    errlogger = logging.getLogger('root.err')
-    err_fh = logging.FileHandler('{}/logs/wsi_metadata_err.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
-    errformatter = logging.Formatter('{%(pathname)s:%(lineno)d} %(levelname)s:err:%(message)s')
-    errlogger.addHandler(err_fh)
-    err_fh.setFormatter(errformatter)
-
-    # rootlogger.info('Args: %s', args)
     prebuild(args)

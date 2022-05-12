@@ -20,14 +20,15 @@ from datetime import datetime, timedelta
 import logging
 from uuid import uuid4
 from idc.models import Study, Series
-from ingestion.utils import accum_sources, get_merkle_hash, is_skipped
+from ingestion.utilities.utils import accum_sources, get_merkle_hash, is_skipped
 from ingestion.series import clone_series, build_series, retire_series
 
 from python_settings import settings
 
 # rootlogger = logging.getLogger('root')
 successlogger = logging.getLogger('root.success')
-debuglogger = logging.getLogger('root.prog')
+#debuglogger = logging.getLogger('root.prog')
+progresslogger = logging.getLogger('root.progressr')
 errlogger = logging.getLogger('root.err')
 
 
@@ -43,7 +44,7 @@ def clone_study(study, uuid):
 
 def retire_study(args, study ):
     # If this object has children from source, delete them
-    debuglogger.debug('    p%s: Study %s:%s retiring', args.pid, study.study_instance_uid, study.uuid)
+    progresslogger.debug('    p%s: Study %s:%s retiring', args.pid, study.study_instance_uid, study.uuid)
     for series in study.seriess:
         retire_series(args, series)
     study.final_idc_version = settings.PREVIOUS_VERSION
@@ -114,7 +115,7 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
         new_series.is_new=True
         new_series.expanded=False
         study.seriess.append(new_series)
-        debuglogger.debug('      p%s:Series %s new', args.pid, new_series.series_instance_uid)
+        progresslogger.debug('      p%s:Series %s new', args.pid, new_series.series_instance_uid)
 
     for series in existing_objects:
         idc_hashes = series.hashes
@@ -128,7 +129,7 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
                    zip(idc_hashes[:-1], src_hashes, skipped)]
         # If any source is revised, then the object is revised.
         if any(revised):
-            debuglogger.debug('**Series %s needs revision', series.series_instance_uid)
+            progresslogger.debug('**Series %s needs revision', series.series_instance_uid)
             rev_series = clone_series(series, str(uuid4()))
             rev_series.rev_idc_version = settings.CURRENT_VERSION
             rev_series.revised = True
@@ -140,7 +141,7 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
             rev_series.sources = [False, False]
             rev_series.rev_idc_version = settings.CURRENT_VERSION
             study.seriess.append(rev_series)
-            debuglogger.debug('      p%s:Series %s revised',  args.pid, rev_series.series_instance_uid)
+            progresslogger.debug('      p%s:Series %s revised',  args.pid, rev_series.series_instance_uid)
 
 
             # Mark the now previous version of this object as having been replaced
@@ -156,7 +157,7 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
             # Shouldn't be needed if the previous version is done
             series.done = True
             series.expanded = True
-            debuglogger.debug('      p%s: Series %s unchanged',  args.pid, series.series_instance_uid)
+            progresslogger.debug('      p%s: Series %s unchanged',  args.pid, series.series_instance_uid)
 
     for series in retired_objects:
         # rootlogger.debug('      p%s: Series %s:%s retiring', args.pid, series.series_instance_uid, series.uuid)

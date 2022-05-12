@@ -26,11 +26,14 @@ from idc.models import Version, Instance, WSI_Instance
 from sqlalchemy import select,delete
 from google.cloud import storage
 from utilities.tcia_helpers import  get_TCIA_instances_per_series_with_hashes
-from ingestion.utils import validate_hashes, md5_hasher, copy_disk_to_gcs, copy_gcs_to_gcs
+from ingestion.utilities.utils import validate_hashes, md5_hasher, copy_disk_to_gcs, copy_gcs_to_gcs
+
+
 
 # rootlogger = logging.getLogger('root')
 successlogger = logging.getLogger('root.success')
-debuglogger = logging.getLogger('root.prog')
+#debuglogger = logging.getLogger('root.prog')
+progresslogger = logging.getLogger('root.progress')
 errlogger = logging.getLogger('root.err')
 
 def clone_instance(instance, uuid):
@@ -53,13 +56,13 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
 
     # Delete the series from disk in case it is there from a previous run
     try:
-        shutil.rmtree("{}/{}".format(args.dicom, series.series_instance_uid), ignore_errors=True)
+        shutil.rmtree("{}/{}".format(args.dicom_dir, series.series_instance_uid), ignore_errors=True)
     except:
         # It wasn't there
         pass
 
     download_start = time.time_ns()
-    hashes = get_TCIA_instances_per_series_with_hashes(args.dicom, series.series_instance_uid)
+    hashes = get_TCIA_instances_per_series_with_hashes(args.dicom_dir, series.series_instance_uid)
     download_time = (time.time_ns() - download_start)/10**9
     if not validate_hashes(args, collection, patient, study, series, hashes):
         return
@@ -67,10 +70,10 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
     # rootlogger.debug("      p%s: Series %s, downloading instance data; %s", args.pid, series.series_instance_uid, time.asctime())
 
     # Get a list of the files from the download
-    dcms = [dcm for dcm in os.listdir("{}/{}".format(args.dicom, series.series_instance_uid))]
+    dcms = [dcm for dcm in os.listdir("{}/{}".format(args.dicom_dir, series.series_instance_uid))]
 
     # if 'LICENSE' in dcms:
-    #     os.remove("{}/{}/LICENSE".format(args.dicom, series.series_instance_uid))
+    #     os.remove("{}/{}/LICENSE".format(args.dicom_dir, series.series_instance_uid))
     #     dcms.remove('LICENSE')
     #
 
@@ -101,7 +104,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
     for dcm in dcms:
         try:
             pydicom_times.append(time.time_ns())
-            SOPInstanceUID = pydicom.dcmread("{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm), stop_before_pixels=True).SOPInstanceUID
+            SOPInstanceUID = pydicom.dcmread("{}/{}/{}".format(args.dicom_dir, series.series_instance_uid, dcm), stop_before_pixels=True).SOPInstanceUID
             pydicom_times.append(time.time_ns())
         except InvalidDicomError:
             errlogger.error("       p%s: Invalid DICOM file for %s/%s/%s/%s", args.pid,
@@ -110,7 +113,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
             if collection.collection_id == 'NLST':
                 breakpoint()
                 # For NLST only, just delete the invalid file
-                os.remove("{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm))
+                os.remove("{}/{}/{}".format(args.dicom_dir, series.series_instance_uid, dcm))
                 continue
             else:
                 # Return without marking all instances done. This will be prevent the series from being done.
@@ -122,7 +125,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         # If an instance is already done, don't need to do anything more
         if instance.done:
             # Delete file. We already have it.
-            os.remove("{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm))
+            os.remove("{}/{}/{}".format(args.dicom_dir, series.series_instance_uid, dcm))
             debuglogger.debug("      p%s: Instance %s previously done, ", args.pid, series.series_instance_uid)
 
             continue
@@ -130,8 +133,8 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
 
         rename_times.append(time.time_ns())
         uuid = instance.uuid
-        file_name = "{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm)
-        blob_name = "{}/{}/{}.dcm".format(args.dicom, series.series_instance_uid, uuid)
+        file_name = "{}/{}/{}".format(args.dicom_dir, series.series_instance_uid, dcm)
+        blob_name = "{}/{}/{}.dcm".format(args.dicom_dir, series.series_instance_uid, uuid)
         if os.path.exists(blob_name):
             errlogger.error("       p%s: Duplicate DICOM files for %s/%s/%s/%s/%s", args.pid,
                 collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid, SOPInstanceUID)
@@ -139,7 +142,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
             if collection.collection_id == 'NLST':
                 breakpoint()
                 # For NLST only, just delete the duplicate
-                os.remove("{}/{}/{}".format(args.dicom, series.series_instance_uid, dcm))
+                os.remove("{}/{}/{}".format(args.dicom_dir, series.series_instance_uid, dcm))
                 continue
             else:
                 # Return without marking all instances done. This will be prevent the series from being done.
@@ -159,7 +162,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         breakpoint()
         # For NLST only, delete any instances for which there is not a corresponding file
         for instance in series.instances:
-            if not os.path.exists("{}/{}/{}.dcm".format(args.dicom, series.series_instance_uid, instance.uuid)):
+            if not os.path.exists("{}/{}/{}.dcm".format(args.dicom_dir, series.series_instance_uid, instance.uuid)):
                 sess.execute(delete(Instance).where(Instance.uuid==instance.uuid))
                 series.instances.remove(instance)
 

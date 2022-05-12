@@ -58,9 +58,9 @@ def compare_dois():
         for doi in idc_dois:
             if doi in tcia_original_dois:
                 if idc_dois[doi].lower() != tcia_original_dois[doi].lower():
-                    print(f'Collection ID mismatch, IDC: {idc_dois[doi]}, TCIA: {tcia_original_dois[doi]}')
+                    print(f'####Collection ID mismatch, IDC: {idc_dois[doi]}, TCIA: {tcia_original_dois[doi]}')
             elif not doi in tcia_analysis_dois:
-                print(f'Collection {idc_dois[doi]} DOI {doi} not in TCIA DOIs')
+                print(f'####Collection {idc_dois[doi]} DOI {doi} not in TCIA DOIs')
 
 if __name__ == '__main__':
     compare_dois()

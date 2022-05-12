@@ -69,7 +69,8 @@ def get_data_collection_doi(collection, server=""):
             uri = '10.7937/TCIA.ESHQ-4D90'
         elif collection == 'CPTAC-LSCC':
             uri = '10.7937/K9/TCIA.2018.6EMUB5L2'
-        #Reported as https://help.cancerimagingarchive.net/servicedesk/customer/portal/1/TH-49633
+
+        # These collections do not include radiology data. NBIA does not return a DOI for such collections.
         elif collection == 'CPTAC-AML':
             uri = '10.7937/tcia.2019.b6foe619'
         elif collection == 'CPTAC-BRCA':
