@@ -21,7 +21,7 @@ from uuid import uuid4
 from idc.models import Version, Collection
 from ingestion.utilities.utils import accum_sources, is_skipped
 from ingestion.collection import clone_collection, build_collection, retire_collection
-from ingestion.egest import egest_version
+from egestion.egest import egest_version
 
 from python_settings import settings
 

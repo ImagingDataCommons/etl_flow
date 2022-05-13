@@ -64,7 +64,7 @@ def get_merkle_hash(hashes):
 def validate_hashes(args, collection, patient, study, series, hashes):
     for instance in hashes:
         instance = instance.split(',')
-        if md5_hasher(f'{args.dicom}/{series.series_instance_uid}/{instance[0]}') != instance[1]:
+        if md5_hasher(f'{args.dicom_dir}/{series.series_instance_uid}/{instance[0]}') != instance[1]:
             errlogger.error("      p%s: Invalid hash for %s/%s/%s/%s", args.pid,
             collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid,\
             instance[0])
@@ -106,7 +106,7 @@ def copy_disk_to_prestaging_bucket(args, series):
     # Do the copy as a subprocess in order to use the gsutil -m option
     try:
         # Copy the series to GCS
-        src = "{}/{}/*".format(args.dicom, series.series_instance_uid)
+        src = "{}/{}/*".format(args.dicom_dir, series.series_instance_uid)
         dst = "gs://{}/".format(args.prestaging_tcia_bucket)
         result = run(["gsutil", "-m", "-q", "cp", "-J", src, dst], check=True)
         if result.returncode :
@@ -151,7 +151,7 @@ def copy_disk_to_gcs(args, collection, patient, study, series):
     # storage_client = storage.Client(project=settings.DEV_PROJECT)
 
     # Delete the zip file before we copy to GCS so that it is not copied
-    os.remove("{}/{}.zip".format(args.dicom, series.series_instance_uid))
+    os.remove("{}/{}.zip".format(args.dicom_dir, series.series_instance_uid))
 
     # Copy the instances to the staging bucket
     copy_disk_to_prestaging_bucket(args, series)
@@ -160,7 +160,7 @@ def copy_disk_to_gcs(args, collection, patient, study, series):
     validate_series_in_gcs(args, collection, patient, study, series)
 
     # Delete the series from disk
-    shutil.rmtree("{}/{}".format(args.dicom, series.series_instance_uid), ignore_errors=True)
+    shutil.rmtree("{}/{}".format(args.dicom_dir, series.series_instance_uid), ignore_errors=True)
 
 
 # Copy an instance from a source bucket to a destination bucket. Currently used when ingesting pathology

@@ -158,47 +158,51 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
 
 
 def build_series(sess, args, all_sources, series_index, version, collection, patient, study, series):
-    begin = time.time()
-    successlogger.debug("      p%s: Expand Series %s; %s", args.pid, series.series_instance_uid, series_index)
-    if not series.expanded:
-        failed = expand_series(sess, args, all_sources, version, collection, patient, study, series)
-        if failed:
-            return
-    successlogger.info("      p%s: Expanded Series %s; %s; %s instances, expand: %s", args.pid, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
+    try:
+        begin = time.time()
+        successlogger.debug("      p%s: Expand Series %s; %s", args.pid, series.series_instance_uid, series_index)
+        if not series.expanded:
+            failed = expand_series(sess, args, all_sources, version, collection, patient, study, series)
+            if failed:
+                return
+        successlogger.info("      p%s: Expanded Series %s; %s; %s instances, expand: %s", args.pid, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
 
 
-    if not all(instance.done for instance in series.instances):
-        if series.sources.tcia:
-            build_instances_tcia(sess, args, collection, patient, study, series)
-        if series.sources.path:
-            # Get instance data from path DB table/ GCS bucket.
-            build_instances_path(sess, args, collection, patient, study, series)
+        if not all(instance.done for instance in series.instances):
+            if series.sources.tcia:
+                build_instances_tcia(sess, args, collection, patient, study, series)
+            if series.sources.path:
+                # Get instance data from path DB table/ GCS bucket.
+                build_instances_path(sess, args, collection, patient, study, series)
 
-    if all(instance.done for instance in series.instances):
-        # series.min_timestamp = min(instance.timestamp for instance in series.instances)
-        series.max_timestamp = max(instance.timestamp for instance in series.instances)
-        # Get a list of what DB thinks are the series's hashes
-        idc_hashes = all_sources.idc_series_hashes(series)
-        # # Get a list of what the sources think are the series's hashes
+        if all(instance.done for instance in series.instances):
+            # series.min_timestamp = min(instance.timestamp for instance in series.instances)
+            series.max_timestamp = max(instance.timestamp for instance in series.instances)
+            # Get a list of what DB thinks are the series's hashes
+            idc_hashes = all_sources.idc_series_hashes(series)
+            # # Get a list of what the sources think are the series's hashes
 
-        skipped = is_skipped(args.skipped_collections, collection.collection_id)
-        # if collection.collection_id in args.skipped_collections:
-        #     skipped = args.skipped_collections[collection.collection_id]
-        # else:
-        #     skipped = (False, False)
-        #     # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
-        src_hashes = all_sources.src_series_hashes(collection.collection_id, series.series_instance_uid, skipped)
-        revised = [(x != y) and not z for x, y, z in \
-                   zip(idc_hashes[:-1], src_hashes, skipped)]
-        if any(revised):
-            # errlogger.error('Hash match failed for series %s', series.series_instance_uid)
-            raise Exception('Hash match failed for series %s', series.series_instance_uid)
-        else:
-            series.hashes = idc_hashes
-            series.series_instances = len(series.instances)
+            skipped = is_skipped(args.skipped_collections, collection.collection_id)
+            # if collection.collection_id in args.skipped_collections:
+            #     skipped = args.skipped_collections[collection.collection_id]
+            # else:
+            #     skipped = (False, False)
+            #     # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
+            src_hashes = all_sources.src_series_hashes(collection.collection_id, series.series_instance_uid, skipped)
+            revised = [(x != y) and not z for x, y, z in \
+                       zip(idc_hashes[:-1], src_hashes, skipped)]
+            if any(revised):
+                # errlogger.error('Hash match failed for series %s', series.series_instance_uid)
+                raise Exception('Hash match failed for series %s', series.series_instance_uid)
+            else:
+                series.hashes = idc_hashes
+                series.series_instances = len(series.instances)
 
-            series.done = True
-            sess.commit()
-            duration = str(timedelta(seconds=(time.time() - begin)))
-            successlogger.info("      p%s: Completed Series %s, %s, in %s", args.pid, series.series_instance_uid, series_index, duration)
+                series.done = True
+                sess.commit()
+                duration = str(timedelta(seconds=(time.time() - begin)))
+                successlogger.info("      p%s: Completed Series %s, %s, in %s", args.pid, series.series_instance_uid, series_index, duration)
+    except Exception as exc:
+        errlogger.info('  p%s build_patient failed: %s', args.pid, exc)
+        raise exc
 

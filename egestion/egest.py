@@ -35,17 +35,18 @@ from python_settings import settings
 successlogger = logging.getLogger('root.success')
 errlogger = logging.getLogger('root.err')
 
-def egest_series(sess, args, series):
-    successlogger.info('\t\t\t\tDeleting series %s', series.series_instance_uid)
+def egest_series(sess, series):
+    successlogger.info('        Deleting series %s', series.series_instance_uid)
     # instances = {instance.sop_instance_uid:instance for instance in series.instances }
-    for instance in series.instances:
+    # for instance in series.instances:
+    while series.instances:
+        instance = series.instances
         # We first remove the instance from the series
         series.instances.remove(instance)
-        successlogger.info('\t\t\t\tRemoved instance %s from series %s', instance.sop_instance_uid, series.series_instance_uid)
         # If the version of the instance was new in this version, delete it
         if series.rev_idc_version == instance.rev_idc_version :
             sess.delete(instance)
-            successlogger.info('\t\t\t\t\tDeleted instance %s', instance.sop_instance_uid)
+            successlogger.info('          Deleted instance %s', instance.sop_instance_uid)
 
             # if this is not a new instance, just a new version of an existing instance,
             # find the previous version and reset it's final_idc_version to 0 to
@@ -56,6 +57,8 @@ def egest_series(sess, args, series):
                     Instance.final_idc_version == settings.PREVIOUS_VERSION).first()
                 prev_instance.final_idc_version = 0
                 series.instances.append(prev_instance)
+        successlogger.info('        Removed instance %s from series %s', instance.sop_instance_uid,
+                       series.series_instance_uid)
     series.expanded = False
     series.done = False
     series.sources = [False,False]
@@ -63,17 +66,18 @@ def egest_series(sess, args, series):
     series.final_idc_version = 0
 
 
-def egest_study(sess, args, study):
-    successlogger.info('\t\t\tDeleting study %s', study.study_instance_uid)
+def egest_study(sess, study):
+    successlogger.info('      Deleting study %s', study.study_instance_uid)
     # seriess = {series.series_instance_uid:series for series in study.studies }
-    for series in study.seriess:
+    # for series in study.seriess:
+    while study.seriess:
+        series = study.seriess[0]
         study.seriess.remove(series)
-        successlogger.info('\t\t\tRemoved series %s from study %s', series.series_instance_uid, study.study_instance_uid)
         # If the version of the series was new in this version, delete it
         if study.rev_idc_version == series.rev_idc_version :
-            egest_series(sess, args, series)
+            egest_series(sess, series)
             sess.delete(series)
-            successlogger.info('\t\t\t\tDeleted series %s', series.series_instance_uid)
+            successlogger.info('        Deleted series %s', series.series_instance_uid)
 
             # if this is not a new series, just a new version of an existing series,
             # find the previous version and reset it's final_idc_version to 0 to
@@ -84,6 +88,7 @@ def egest_study(sess, args, study):
                     Series.final_idc_version == settings.PREVIOUS_VERSION).first()
                 prev_series.final_idc_version = 0
                 study.seriess.append(prev_series)
+        successlogger.info('      Removed series %s from study %s', series.series_instance_uid, study.study_instance_uid)
     study.expanded = False
     study.done = False
     study.sources = [False,False]
@@ -91,17 +96,18 @@ def egest_study(sess, args, study):
     study.final_idc_version = 0
 
 
-def egest_patient(sess, args, patient):
-    successlogger.info('\t\tDeleting patient %s', patient.submitter_case_id)
+def egest_patient(sess, patient):
+    successlogger.info('    Deleting patient %s', patient.submitter_case_id)
     # studys = {study.study_instance_uid:study for study in patient.studies }
-    for study in patient.studies:
+    # for study in patient.studies:
+    while patient.studies:
+        study = patient.studies[0]
         patient.studies.remove(study)
-        successlogger.info('\t\tRemoved study %s from patient %s', study.study_instance_uid, patient.submitter_case_id)
         # If the version of the study was new in this version, delete it
         if patient.rev_idc_version == study.rev_idc_version :
-            egest_study(sess, args, study)
+            egest_study(sess, study)
             sess.delete(study)
-            successlogger.info('\t\t\tDeleted study %s', study.study_instance_uid)
+            successlogger.info('      Deleted study %s', study.study_instance_uid)
 
             # if this is not a new study, just a new version of an existing study,
             # find the previous version and reset it's final_idc_version to 0 to
@@ -112,6 +118,7 @@ def egest_patient(sess, args, patient):
                     Study.final_idc_version == settings.PREVIOUS_VERSION).first()
                 prev_study.final_idc_version = 0
                 patient.studies.append(prev_study)
+        successlogger.info('    Removed study %s from patient %s', study.study_instance_uid, patient.submitter_case_id)
     patient.expanded = False
     patient.done = False
     patient.sources = [False,False]
@@ -119,17 +126,18 @@ def egest_patient(sess, args, patient):
     patient.final_idc_version = 0
 
 
-def egest_collection(sess, args, collection):
-    successlogger.info('\tDeleting collection %s', collection.collection_id)
+def egest_collection(sess, collection):
+    successlogger.info('  Deleting collection %s', collection.collection_id)
     # patients = {patient.submitter_case_id:patient for patient in collection.patients }
-    for patient in collection.patients:
+    # for patient in collection.patients:
+    while collection.patients:
+        patient = collection.patients[0]
         collection.patients.remove(patient)
-        successlogger.info('\tRemoved patient %s from collection %s', patient.submitter_case_id, collection.collection_id)
         # If the version of the patient was new in this version, delete it
         if collection.rev_idc_version == patient.rev_idc_version :
-            egest_patient(sess, args, patient)
+            egest_patient(sess, patient)
             sess.delete(patient)
-            successlogger.info('\t\tDeleted patient %s', patient.submitter_case_id)
+            successlogger.info('    Deleted patient %s', patient.submitter_case_id)
 
             # if this is not a new patient, just a new version of an existing patient,
             # find the previous version and reset it's final_idc_version to 0 to
@@ -142,6 +150,7 @@ def egest_collection(sess, args, collection):
                 breakpoint()
                 ### Why are we doing the following? Isn't prev_patient a child of some previous version of collection?
                 collection.patients.append(prev_patient)
+        successlogger.info('  Removed patient %s from collection %s', patient.submitter_case_id, collection.collection_id)
     collection.expanded = False
     collection.done = False
     collection.sources = [False,False]
@@ -149,17 +158,18 @@ def egest_collection(sess, args, collection):
     collection.final_idc_version = 0
 
 
-def egest_version(sess, args, version):
+def egest_version(sess, version):
     successlogger.info('Deleting version %s', version.version)
     # collections = {collection.collection_id:collection for collection in version.collections }
-    for collection in version.collections:
+    # for collection in version.collections:
+    while version.collections:
+        collection = version.collections[0]
         version.collections.remove(collection)
-        successlogger.info('\tRemoved collection %s from version %s', collection.collection_id, version.version)
         # If the version of the collection was new in this version, delete it
         if version.version == collection.rev_idc_version :
-            egest_collection(sess, args, collection)
+            egest_collection(sess, collection)
             sess.delete(collection)
-            successlogger.info('\tDeleted collection %s', collection.collection_id)
+            successlogger.info('  Deleted collection %s', collection.collection_id)
 
             # if this is not a new collection, just a new version of an existing collection,
             # find the previous version and reset it's final_idc_version to 0 to
@@ -173,6 +183,8 @@ def egest_version(sess, args, version):
                 ### Why are we doing the following? Isn't prev_collection a child of some previous version of version?
                 ### Seems doing this will prevent deleting the version unless it can somehow cascade.
                 version.collections.append(prev_collection)
+        successlogger.info('  Removed collection %s from version %s', collection.collection_id, version.version)
+
     version.expanded = False
     version.done = False
     version.sources = [False,False]
