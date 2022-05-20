@@ -21,6 +21,7 @@ import sys
 
 from python_settings import settings
 from bq.copy_tables.copy_tables import copy_tables
+from utilities.logging_config import successlogger, progresslogger
 
 
 if __name__ == '__main__':

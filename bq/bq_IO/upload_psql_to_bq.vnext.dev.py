@@ -19,27 +19,16 @@
 # into idc_v<version>_dev and idc_v<version>_pub. These tables
 # go into the former, generated tables into the latter.
 
-import os
-import logging
-from logging import INFO
 import argparse
-from python_settings import settings
+import settings
 from bq.bq_IO.upload_psql_to_bq import upload_to_bq, upload_version, upload_collection, upload_patient, upload_study, \
     upload_series, upload_instance, upload_table
+from google.cloud import bigquery
+from utilities.bq_helpers import create_BQ_dataset
 
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    # parser.add_argument('--version', default=9, help='Version to upload')
-    # args = parser.parse_args()
-    # parser.add_argument('--db', default=f'idc_v{settings.CURRENT_VERSION}', help="Database to access")
-    # parser.add_argument('--project', default='idc-dev-etl')
-    # args = parser.parse_args()
-    # parser.add_argument('--bqdataset_name', default=f"idc_v{args.version}_dev", help="BQ dataset of table")
-    # parser.add_argument('--bqdataset_name', default=f"whc_dev", help="BQ dataset of table")
-    parser.add_argument('--federated_query', default=f'idc-dev-etl.us.etl_federated_query_idc_v{settings.CURRENT_VERSION}')
-    parser.add_argument('--tables', default= {
+tables = {
         'analysis_id_map': {"func": upload_table, "order_by": "collection_id"},
+        'analysis_results_descriptions': {"func": upload_table, "order_by": "id"},
         'collection_id_map': {"func": upload_table, "order_by": "idc_webapp_collection_id"},
         'version': {"func":upload_version, "order_by":"version"},
         'version_collection': {"func": upload_table, "order_by": "version"},
@@ -61,31 +50,54 @@ if __name__ == '__main__':
         'all_included_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
         'program': {"func": upload_table, "order_by": "tcia_wiki_collection_id"},
         'non_tcia_collection_metadata':{"func": upload_table, "order_by": "idc_webapp_collection_id"},
-    }, help="Tables to upload")
-    # parser.add_argument('--server', default='CLOUD')
-    # parser.add_argument('--user', default=settings.CLOUD_USERNAME)
-    # parser.add_argument('--password', default=settings.CLOUD_PASSWORD)
-    # parser.add_argument('--host', default=settings.CLOUD_HOST)
-    # parser.add_argument('--port', default=settings.CLOUD_PORT)
-    args = parser.parse_args()
+    }
 
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--federated_query', default=f'idc-dev-etl.us.etl_federated_query_idc_v{settings.CURRENT_VERSION}')
+    parser.add_argument('--upload', nargs='*', default= [
+        'analysis_id_map',
+        'analysis_results_descriptions',
+        'collection_id_map',
+        'version',
+        'version_collection',
+        'collection',
+        'collection_patient',
+        'patient',
+        'patient_study',
+        'study',
+        'study_series',
+        'series',
+        'series_instance',
+        'instance',
+        'cr_collections',
+        'defaced_collections',
+        'excluded_collections',
+        'open_collections',
+        'redacted_collections',
+        'all_collections',
+        'all_included_collections',
+        'program',
+        'non_tcia_collection_metadata',
+    ], help="Tables to upload")
+    args = parser.parse_args()
     print('args: {}'.format(args))
 
+    # Create BQ datasets.
+    BQ_client = bigquery.Client(project=settings.DEV_PROJECT)
+    try:
+        dataset = create_BQ_dataset(BQ_client, settings.BQ_DEV_INT_DATASET)
+    except:
+        # Presume the dataset already exists
+        pass
 
-    rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/copy_staging_log.log'.format(os.environ['PWD']))
-    rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
-    rootlogger.addHandler(root_fh)
-    root_fh.setFormatter(rootformatter)
-    rootlogger.setLevel(INFO)
+    try:
+        dataset = create_BQ_dataset(BQ_client, settings.BQ_DEV_EXT_DATASET)
+    except:
+        # Presume the dataset already exists
+        pass
 
-    errlogger = logging.getLogger('root.err')
-    err_fh = logging.FileHandler('{}/logs/copy_staging_err.log'.format(os.environ['PWD']))
-    errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
-    errlogger.addHandler(err_fh)
-    err_fh.setFormatter(errformatter)
-
-    upload_to_bq(args)
+    upload_to_bq(args, tables)
 
 
 

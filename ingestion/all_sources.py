@@ -19,9 +19,8 @@ from utilities.tcia_helpers import  get_access_token, get_hash, get_TCIA_studies
     get_updated_series, get_instance_hash, refresh_access_token
 from uuid import uuid4
 from idc.models  import Collection_id_map, instance_source
-from ingestion.utils import to_webapp
+from ingestion.utilities.utils import to_webapp, get_merkle_hash
 from google.cloud import bigquery
-from ingestion.utils import get_merkle_hash
 from ingestion.sources import TCIA, Pathology
 import logging
 rootlogger = logging.getLogger('root')
@@ -102,7 +101,7 @@ class All:
                         break
                 # If we didn't find a similar collection id, assume this is a new collection
                 tcia_api_collection_id = collection if collections[collection][instance_source.tcia.value] else None
-                print(f'New collection {collection}')
+                # print(f'New collection {collection}')
                 idc_collection_id = str(uuid4())
                 row = Collection_id_map(collection_id=collection, idc_collection_id=idc_collection_id,\
                         tcia_api_collection_id=tcia_api_collection_id, idc_webapp_collection_id=to_webapp(collection))

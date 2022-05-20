@@ -17,7 +17,8 @@
 # Upload tables from Cloud SQL to BQ
 
 from google.cloud import bigquery
-from utilities.bq_helpers import BQ_table_exists, create_BQ_table, delete_BQ_Table, query_BQ, load_BQ_from_json
+from utilities.bq_helpers import BQ_table_exists, delete_BQ_Table, query_BQ
+from utilities.logging_config import successlogger, errlogger
 from time import time, sleep
 from python_settings import settings
 
@@ -236,24 +237,25 @@ def upload_table(client, args, table, order_by):
     return result
 
 
-def upload_to_bq(args):
+def upload_to_bq(args, tables):
     client = bigquery.Client(project=settings.DEV_PROJECT)
-    for table, vals in args.tables.items():
-        print(f'Uploading table {table}')
+    for table in args.upload:
+        successlogger.info(f'Uploading table {table}')
         b = time()
+
         if BQ_table_exists(client, settings.DEV_PROJECT, settings.BQ_DEV_INT_DATASET, table):
             delete_BQ_Table(client, settings.DEV_PROJECT, settings.BQ_DEV_INT_DATASET, table)
-        result = vals['func'](client, args, table, vals['order_by'])
+        result = tables[table]['func'](client, args, table, tables[table]['order_by'])
         job_id = result.path.split('/')[-1]
         job = client.get_job(job_id, location='US')
         while job.state != 'DONE':
-            print('Waiting...')
+            successlogger.info('Waiting...')
             sleep(15)
             job = client.get_job(job_id, location='US')
         if not job.error_result==None:
-            print(f'{table} upload failed')
+            errlogger.error(f'{table} upload failed')
         else:
-            print(f'{table} upload completed in {time()-b:.2f}s')
+            successlogger.info(f'{table} upload completed in {time()-b:.2f}s')
 
 
 

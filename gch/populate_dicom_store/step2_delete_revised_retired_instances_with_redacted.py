@@ -24,6 +24,7 @@
 import os
 import argparse
 import logging
+from utilities.logging_config import successlogger, progresslogger, errlogger
 import json
 from logging import INFO
 
@@ -52,13 +53,12 @@ def instance_exists(args, dicomweb_sess, study_instance_uid, series_instance_uid
 
     response = dicomweb_sess.get(dicomweb_path, headers=headers)
     if response.status_code == 200:
-        # successlogger.info('%s found',sop_instance_uid)
-        print('%s found',sop_instance_uid)
-        # done_instances.add(sop_instance_uid)
+        successlogger.info('%s found',sop_instance_uid)
+        # print('%s found',sop_instance_uid)
         return True
     else:
-        # errlogger.error('%s not found',sop_instance_uid)
-        print('%s not found',sop_instance_uid)
+        errlogger.error('%s not found',sop_instance_uid)
+        # print('%s not found',sop_instance_uid)
         return False
 
 
@@ -87,22 +87,22 @@ def delete_instances(args, sess, dicomweb_sess):
     except:
         done_instances = set()
 
-    # Change logging file. File name includes bucket ID.
-    for hdlr in successlogger.handlers[:]:
-        successlogger.removeHandler(hdlr)
-    success_fh = logging.FileHandler(f'{args.log_dir}/delete_success.log')
-    successlogger.addHandler(success_fh)
-    successformatter = logging.Formatter('%(message)s')
-    success_fh.setFormatter(successformatter)
+    # # Change logging file. File name includes bucket ID.
+    # for hdlr in successlogger.handlers[:]:
+    #     successlogger.removeHandler(hdlr)
+    # success_fh = logging.FileHandler(f'{args.log_dir}/delete_success.log')
+    # successlogger.addHandler(success_fh)
+    # successformatter = logging.Formatter('%(message)s')
+    # success_fh.setFormatter(successformatter)
+    #
+    # for hdlr in errlogger.handlers[:]:
+    #     errlogger.removeHandler(hdlr)
+    # err_fh = logging.FileHandler(f'{args.log_dir}/delete_error.log')
+    # errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
+    # errlogger.addHandler(err_fh)
+    # err_fh.setFormatter(errformatter)
 
-    for hdlr in errlogger.handlers[:]:
-        errlogger.removeHandler(hdlr)
-    err_fh = logging.FileHandler(f'{args.log_dir}/delete_error.log')
-    errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
-    errlogger.addHandler(err_fh)
-    err_fh.setFormatter(errformatter)
-
-    # Collections that are included in the DICOM store are in one of four groups
+    # Collections that are included in the DICOM store are in one of four collection groups
     # Specifically we do not include excluded_collections
     collections = sorted(
         [row.tcia_api_collection_id for row in
@@ -130,11 +130,15 @@ def delete_instances(args, sess, dicomweb_sess):
                                row['series_instance_uid'], row['sop_instance_uid']):
                 delete_instance(args, dicomweb_sess, row['study_instance_uid'],
                                 row['series_instance_uid'], row['sop_instance_uid'])
-                print(f"{n}: Instance {row['sop_instance_uid']}  deleted")
+                # print(f"{n}: Instance {row['sop_instance_uid']}  deleted")
+                progresslogger.info(f"{n}: Instance {row['sop_instance_uid']}  deleted")
             else:
-                print(f"{n}: Instance {row['sop_instance_uid']} not in DICOM store")
+                # print(f"{n}: Instance {row['sop_instance_uid']} not in DICOM store")
+                progresslogger.info(f"{n}: Instance {row['sop_instance_uid']} not in DICOM store")
+
         else:
-            print(f"{n}: Instance {row['sop_instance_uid']} previously deleted")
+            # print(f"{n}: Instance {row['sop_instance_uid']} previously deleted")
+            progresslogger.info(f"{n}: Instance {row['sop_instance_uid']} previously deleted")
         n+=1
 
     # The above will not delete fully retired instances for which there is a single version
@@ -155,11 +159,14 @@ def delete_instances(args, sess, dicomweb_sess):
                                row['series_instance_uid'], row['sop_instance_uid']):
                 delete_instance(args, dicomweb_sess, row['study_instance_uid'],
                                 row['series_instance_uid'], row['sop_instance_uid'])
-                print(f"{n}: Instance {row['sop_instance_uid']}  deleted")
+                # print(f"{n}: Instance {row['sop_instance_uid']}  deleted")
+                progresslogger.info(f"{n}: Instance {row['sop_instance_uid']}  deleted")
             else:
-                print(f"{n}: Instance {row['sop_instance_uid']} not in DICOM store")
+                # print(f"{n}: Instance {row['sop_instance_uid']} not in DICOM store")
+                progresslogger.info(f"{n}: Instance {row['sop_instance_uid']} not in DICOM store")
         else:
-            print(f"{n}: Instance {row['sop_instance_uid']} previously deleted")
+            # print(f"{n}: Instance {row['sop_instance_uid']} previously deleted")
+            progresslogger(f"{n}: Instance {row['sop_instance_uid']} previously deleted")
         n+=1
     pass
 
@@ -179,7 +186,7 @@ def repair_store(args):
     scoped_credentials, project = google.auth.default(
         ["https://www.googleapis.com/auth/cloud-platform"]
     )
-    # Creates a requests Session object with the credentials.
+    # Create a DICOMweb requests Session object with the credentials.
     dicomweb_sess = requests.AuthorizedSession(scoped_credentials)
 
     with Session(sql_engine) as sess:
@@ -187,34 +194,17 @@ def repair_store(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--version', default=8, help='Version to work on')
-    parser.add_argument('--client', default=storage.Client())
-    args = parser.parse_args()
-    # parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
-    # parser.add_argument('--dst_project', default='canceridc-data')
-    # parser.add_argument('--gch_dataset_region', default='us')
-    # parser.add_argument('--gch_dataset_name', default='idc')
-    # parser.add_argument('--dicomstore', default=f'v{args.version}')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/repair_dicom_store_with_redacted_v{settings.CURRENT_VERSION}')
+    # parser.add_argument('--client', default=storage.Client())
     args = parser.parse_args()
     args.id = 0 # Default process ID
+    args.client = storage.Client()
+    # if not os.path.exists('{}'.format(args.log_dir)):
+    #     os.mkdir('{}'.format(args.log_dir))
+    #     st = os.stat('{}'.format(args.log_dir))
 
-    if not os.path.exists('{}'.format(args.log_dir)):
-        os.mkdir('{}'.format(args.log_dir))
-        st = os.stat('{}'.format(args.log_dir))
-        # os.chmod('{}'.format(args.log_dir), st.st_mode | 0o222)
-
-    # proglogger = logging.getLogger('root.prog')
-    # # prog_fh = logging.FileHandler(f'{os.environ["PWD"]}/logs/log.log')
-    # prog_fh = logging.FileHandler(f'{args.log_dir}/log.log')
-    # progformatter = logging.Formatter('%(levelname)s:prog:%(message)s')
-    # proglogger.addHandler(prog_fh)
-    # prog_fh.setFormatter(progformatter)
-    # proglogger.setLevel(INFO)
-
-    successlogger = logging.getLogger('root.success')
-    successlogger.setLevel(INFO)
-
-    errlogger = logging.getLogger('root.err')
+    # successlogger = logging.getLogger('root.success')
+    # successlogger.setLevel(INFO)
+    #
+    # errlogger = logging.getLogger('root.err')
 
     repair_store(args)

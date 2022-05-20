@@ -30,6 +30,9 @@ from python_settings import settings
 from utilities.gch_helpers import get_dicom_store, get_dataset, create_dicom_store, create_dataset
 from googleapiclient import discovery
 
+import logging
+from utilities.logging_config import progresslogger
+
 
 def get_gch_client():
     """Returns an authorized API client by discovering the Healthcare API and
@@ -67,11 +70,12 @@ def wait_done(response, args, sleep_time, verbose=True):
     while True:
         result = get_dataset_operation(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET, operation)
         if verbose:
-            print("{}".format(result))
-
+            # print("{}".format(result))
+            progresslogger.info('%',result)
         if 'done' in result:
             if not verbose:
-                print("{}".format(result))
+                # print("{}".format(result))
+                progresslogger.info('%',result)
             break
         sleep(sleep_time)
     return result
@@ -98,8 +102,8 @@ def import_dicom_instances(project_id, cloud_region, dataset_id, dicom_store_id,
     )
 
     response = request.execute()
-    print("Initiated DICOM import,response: {}".format(response))
-
+    # print("Initiated DICOM import,response: {}".format(response))
+    progresslogger.info('Initiated DICOM import, response: %s', response)
     return response
 
 
@@ -124,27 +128,32 @@ def import_buckets(args):
             buckets = get_wildcard_buckets(bucket)
             for bucket in buckets:
                 try:
-                    print('Importing {}'.format(bucket))
+                    # print('Importing {}'.format(bucket))
+                    progresslogger.info('Importing %s', bucket)
                     content_uri = '{}/*'.format(bucket)
                     response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
                                                       settings.GCH_DICOMSTORE, content_uri)
-                    print(f'Response: {response}')
+                    # print(f'Response: {response}')
+                    progresslogger.info(response)
                     result = wait_done(response, args, args.period)
                 except HttpError as e:
                     err = json.loads(e.content)
-                    print('Error loading {}; code: {}, message: {}'.format(bucket, err['error']['code'],
-                                                                           err['error']['message']))
+                    # print('Error loading {}; code: {}, message: {}'.format(bucket, err['error']['code'],
+                    #                                                        err['error']['message']))
+                    progresslogger.info('Error loading %s; code: %s, message: %s',bucket, err['error']['code'],
+                                                                           err['error']['message'])
+
         else:
             try:
-                print('Importing {}'.format(bucket))
+                progresslogger.info('Importing %s', bucket)
                 content_uri = '{}/*'.format(bucket)
                 response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
                                 settings.GCH_DICOMSTORE, content_uri)
-                print(f'Response: {response}')
+                progresslogger.info('Response: %s', response)
                 result = wait_done(response, args, args.period)
             except HttpError as e:
                 err = json.loads(e.content)
-                print('Error loading {}; code: {}, message: {}'.format(bucket, err['error']['code'], err['error']['message']))
+                progresslogger.info('Error loading %s; code: %s, message: %s', bucket, err['error']['code'], err['error']['message'])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

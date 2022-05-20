@@ -15,12 +15,14 @@
 #
 
 import os
+
 import json
 import sys
 from subprocess import run, PIPE
 from time import sleep
 import requests
 import logging
+
 import zipfile
 
 from http.client import HTTPConnection
@@ -29,7 +31,8 @@ HTTPConnection.debuglevel = 0
 # rootlogger = logging.getLogger('root')
 # errlogger = logging.getLogger('root.err')
 
-from python_settings import settings
+# from python_settings import settings
+import settings
 
 
 TIMEOUT=60
@@ -119,9 +122,9 @@ def get_hash_nlst(request_data, access_token):
     result = requests.post(url, headers=headers, data=request_data)
     return result
 
-def get_hash(request_data, access_token):
-    # if not access_token:
-    #     access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
+def get_hash(request_data, access_token=None):
+    if not access_token:
+        access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
     retries = 4
     while retries:
         headers = dict(
@@ -587,19 +590,19 @@ def get_updated_series(date):
 
 
 if __name__ == "__main__":
-    if not settings.configured:
-        from python_settings import settings
-        import settings as etl_settings
-
-        settings.configure(etl_settings)
-        assert settings.configured
+    # if not settings.configured:
+    #     from python_settings import settings
+    #     import settings as etl_settings
+    #
+    #     settings.configure(etl_settings)
+    #     assert settings.configured
 
 
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
-    t = get_access_token(auth_server = NLST_AUTH_URL)
-    d = get_images_with_md5_hash_nlst('1.2.840.113654.2.55.202732461171966044615971291921878044168 ', access_token=t[0])
-    p = get_collection_license_info()
-
+    # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
+    # p = get_collection_license_info()
+    # print(p)
+    h = get_hash({'Collection': 'ISPY2'})
     d = get_collection_descriptions_and_licenses()
     c = get_collection_values_and_counts()
     # s = get_updated_series('13/01/2021')

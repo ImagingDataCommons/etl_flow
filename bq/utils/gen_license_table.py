@@ -19,7 +19,7 @@ import argparse
 import sys
 from google.cloud import bigquery
 from utilities.tcia_helpers import get_collection_license_info
-from ingestion.utils import to_webapp
+from ingestion.utilities.utils import to_webapp
 
 from python_settings import settings
 

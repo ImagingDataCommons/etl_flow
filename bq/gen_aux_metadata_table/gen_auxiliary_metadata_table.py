@@ -25,6 +25,7 @@ from google.cloud import bigquery
 from python_settings import settings
 from time import sleep
 from utilities.bq_helpers import load_BQ_from_json, query_BQ
+from utilities.logging_config import successlogger,progresslogger
 from bq.utils.gen_license_table import get_original_collection_licenses
 
 
@@ -51,9 +52,11 @@ def create_original_collections_licenses_table(args):
                 settings.DEV_PROJECT,
                 settings.BQ_DEV_INT_DATASET, args.temp_license_table_name, json_licenses,
                             aschema=None, write_disposition='WRITE_TRUNCATE')
+    progresslogger.info('Creating original collections_license table')
     while not job.state == 'DONE':
-        print('Status: {}'.format(job.state))
+        progresslogger.info('Status: {}'.format(job.state))
         sleep(args.period * 60)
+    progresslogger.info('Created original collections_license table')
 
 def build_table(args):
     query = f"""
@@ -160,7 +163,7 @@ WITH
     tl.license_url,
     tl.license_long_name,
     tl.license_short_name,
-    IF(tl.license_short_name='TCIA', 'Limited', 'Public') AS access
+    IF(tl.license_short_name='TCIA' or tl.license_short_name='TCIA NC', 'Limited', 'Public') AS access
 
   FROM
     `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.{args.temp_license_table_name}` tl
@@ -175,7 +178,7 @@ WITH
     tl.license_url,
     tl.license_long_name,
     tl.license_short_name,
-    IF(tl.license_short_name='TCIA', 'Limited', 'Public') AS access
+    IF(tl.license_short_name='TCIA' or tl.license_short_name='TCIA NC', 'Limited', 'Public') AS access
 
   FROM
     `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.{args.temp_license_table_name}` tl
@@ -360,6 +363,7 @@ licensed as (
 
     client = bigquery.Client(project=args.dst_project)
     result=query_BQ(client, args.trg_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
+    successlogger.info('Created auxiliary_metadata table')
 
 def gen_aux_table(args):
     create_original_collections_licenses_table(args)

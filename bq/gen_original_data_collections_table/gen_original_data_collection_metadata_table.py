@@ -25,6 +25,7 @@ from bq.gen_original_data_collections_table.schema import data_collections_metad
 from bq.utils.gen_license_table import get_original_collection_licenses
 from utilities.tcia_helpers import get_collection_descriptions_and_licenses, get_collection_license_info
 from utilities.tcia_scrapers import scrape_tcia_data_collections_page
+from utilities.logging_config import successlogger, errlogger, progresslogger
 from python_settings import settings
 
 def get_collections_programs(client, args):
@@ -156,7 +157,7 @@ def get_image_types(client, args):
       FROM
         siis
       JOIN
-        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_pub.dicom_all` da
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_pub.dicom_metadata` da
       ON
         siis.sop_instance_uid = da.SOPInstanceUID),
       mods AS (
@@ -343,15 +344,15 @@ def build_metadata(client, args):
                     json_rows.append(json.dumps(collection_data))
 
                 except Exception as exc:
-                    print(f'Exception building metadata {exc}')
+                    errlogger.error(f'Exception building metadata {exc}')
 
         else:
-            print(f'{idc_collection_id} not in collection metadata')
+            errlogger.error(f'{idc_collection_id} not in collection metadata')
 
     # Make sure we found metadata for all our collections
     for idc_collection in collection_ids_and_sources:
         if not idc_collection in found_ids:
-            print(f'****No metadata for {idc_collection}')
+            errlogger.error(f'****No metadata for {idc_collection}')
             if idc_collection == 'apollo':
                 collection_data = {
                     "tcia_wiki_collection_id": "APOLLO-1-VA",
@@ -390,9 +391,9 @@ def gen_collections_table(args):
                 settings.BQ_DEV_INT_DATASET if args.gen_excluded else settings.BQ_DEV_EXT_DATASET , args.bqtable_name, metadata,
                             data_collections_metadata_schema, write_disposition='WRITE_TRUNCATE')
     while not job.state == 'DONE':
-        print('Status: {}'.format(job.state))
+        progresslogger.info('Status: {}'.format(job.state))
         time.sleep(args.period * 60)
-    print("{}: Completed collections metatdata upload \n".format(time.asctime()))
+    successlogger.info(f"{time.asctime()}: Completed collections metatdata upload")
 
 # if __name__ == '__main__':
 #     parser = argparse.ArgumentParser()

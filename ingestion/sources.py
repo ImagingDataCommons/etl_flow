@@ -19,10 +19,10 @@ from utilities.tcia_helpers import  get_access_token, get_hash, get_TCIA_studies
     get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_TCIA_instances_per_series, get_collection_values_and_counts,\
     get_updated_series, get_instance_hash, refresh_access_token
 from uuid import uuid4
-from idc.models  import WSI_Version, WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance, instance_source
+from idc.models  import WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance, instance_source
 from sqlalchemy import select
 from google.cloud import bigquery
-from ingestion.utils import get_merkle_hash
+from ingestion.utilities.utils import get_merkle_hash
 import logging
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')

@@ -22,12 +22,10 @@ import logging
 from logging import INFO
 from google.cloud import storage
 
-
+from utilities.logging_config import successlogger, progresslogger
+from utilities.sqlalchemy_helpers import sa_session
 from idc.models import Base, Collection, CR_Collections, Defaced_Collections, Excluded_Collections, Open_Collections, Redacted_Collections
-import settings as etl_settings
-from python_settings import settings
-if not settings.configured:
-    settings.configure(etl_settings)
+import settings
 from google.cloud import storage
 from gcs.empty_bucket_mp.empty_bucket_mp import pre_delete
 
@@ -38,54 +36,27 @@ from sqlalchemy.orm import Session
 
 def delete_buckets(args):
     client = storage.Client()
-    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{args.db}'
-    # sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
-    sql_engine = create_engine(sql_uri)
-    args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
-
-    # Create the tables if they do not already exist
-    Base.metadata.create_all(sql_engine)
-
-    # Enable the underlying psycopg2 to deal with composites
-    conn = sql_engine.connect()
-    register_composites(conn)
-
-    with Session(sql_engine) as sess:
+    with sa_session() as sess:
         revised_collection_ids = sorted([row.collection_id for row in sess.query(Collection).filter(Collection.rev_idc_version == args.version).all()])
         for collection_id in revised_collection_ids:
             prestaging_collection_id = collection_id.lower().replace('-','_').replace(' ','_')
-            prestaging_bucket = f"{args.prestaging_bucket_prefix}{prestaging_collection_id}"
-            args.bucket = prestaging_bucket
-            if client.bucket(prestaging_bucket).exists():
-                pre_delete(args)
-                client.bucket(prestaging_bucket).delete()
+            for prefix in args.prestaging_bucket_prefix:
+                prestaging_bucket = f"{prefix}{prestaging_collection_id}"
+                if client.bucket(prestaging_bucket).exists():
+                    args.bucket = prestaging_bucket
+                    progresslogger.info(f'Deleting bucket {prestaging_bucket}')
+                    # Delete the contents of the bucket
+                    pre_delete(args)
+                    # Delete the bucket itself
+                    client.bucket(prestaging_bucket).delete()
 
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=7, help='Version to work on')
-    parser.add_argument('--client', default=storage.Client())
-    args = parser.parse_args()
-    parser.add_argument('--db', default=f'idc_v{args.version}', help='Database on which to operate')
-    parser.add_argument('--project', default='idc-dev-etl')
-    parser.add_argument('--prestaging_bucket_prefix', default=f'idc_v{args.version}_', help='Copy instances here before forwarding to --staging_bucket')
+    parser.add_argument('--prestaging_bucket_prefix', default=[f'idc_v{settings.CURRENT_VERSION}_tcia_', f'idc_v{settings.CURRENT_VERSION}_path_'], help='Prefix of premerge buckets')
     parser.add_argument('--processes', default=8, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/empty_bucket_mp')
     args = parser.parse_args()
-    args.id = 0 # Default process ID
-
-    proglogger = logging.getLogger('root.prog')
-    prog_fh = logging.FileHandler(f'{os.environ["PWD"]}/logs/bucket.log')
-    progformatter = logging.Formatter('%(levelname)s:prog:%(message)s')
-    proglogger.addHandler(prog_fh)
-    prog_fh.setFormatter(progformatter)
-    proglogger.setLevel(INFO)
-
-    successlogger = logging.getLogger('root.success')
-    successlogger.setLevel(INFO)
-
-    errlogger = logging.getLogger('root.err')
 
     delete_buckets(args)

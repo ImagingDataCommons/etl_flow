@@ -27,6 +27,7 @@ from logging import INFO
 from utilities.tcia_helpers import get_hash, get_access_token, get_images_with_md5_hash, get_images_with_md5_hash_nlst,\
     get_TCIA_patients_per_collection, get_TCIA_studies_per_patient, get_TCIA_series_per_study, NBIA_AUTH_URL, \
     get_hash_nlst, NLST_AUTH_URL
+from ingestion.utilities.utils import get_merkle_hash
 
 from python_settings import settings
 # import settings as etl_settings
@@ -90,11 +91,11 @@ def compare_instance_hashes(access_token, refresh_token, cur, args, collection, 
 
 
     if len(nbia_instances) != len(idc_instances):
-        # print('\t\t\t\t%-32s Differing instance count for series %s: IDC: %s, NBIA: %s; %s' %  (series_instance_uid,
+        # print('                %-32s Differing instance count for series %s: IDC: %s, NBIA: %s; %s' %  (series_instance_uid,
         #                 len(idc_instances), len(nbia_instances)))
-        print('\t\t\t%-32s Differing instance count for series: IDC: %s, NBIA: %s' %  (series.series_instance_uid,
+        print('            %-32s Differing instance count for series: IDC: %s, NBIA: %s' %  (series.series_instance_uid,
                         len(idc_instances), len(nbia_instances)))
-        rootlogger.info('\t\t\t%-32s Differing instance count for series: IDC: %s, NBIA: %s', series.series_instance_uid,
+        rootlogger.info('            %-32s Differing instance count for series: IDC: %s, NBIA: %s', series.series_instance_uid,
                         len(idc_instances), len(nbia_instances))
     else:
         for idc_instance in idc_instances:
@@ -105,15 +106,15 @@ def compare_instance_hashes(access_token, refresh_token, cur, args, collection, 
             idc_hash = idc_instance['instance_hash']
             nbia_hash = nbia_instance[1]
             if pyhash != idc_hash:
-                print('\t\t\t\t%-32s IDC: %s, py: %s, NBIA: %s; IDC/NBIA mismatch: %s' % ( idc_instance['sop_instance_uid'], idc_instance['instance_hash'],
+                print('                %-32s IDC: %s, py: %s, NBIA: %s; IDC/NBIA mismatch: %s' % ( idc_instance['sop_instance_uid'], idc_instance['instance_hash'],
                                 pyhash, nbia_instance[1], idc_hash == nbia_hash))
-                rootlogger.info('\t\t\t\t%-32s IDC: %s, py: %s. NBIA: %s; IDC/NBIA mismatch: %s', idc_instance['sop_instance_uid'], idc_instance['instance_hash'],
+                rootlogger.info('                %-32s IDC: %s, py: %s. NBIA: %s; IDC/NBIA mismatch: %s', idc_instance['sop_instance_uid'], idc_instance['instance_hash'],
                                 pyhash, nbia_instance[1], idc_hash == nbia_hash)
 
             else:
-                print('\t\t\t\t%-32s IDC: %s, NBIA: %s; %s' % ( idc_instance['sop_instance_uid'], idc_instance['instance_hash'],
+                print('                %-32s IDC: %s, NBIA: %s; %s' % ( idc_instance['sop_instance_uid'], idc_instance['instance_hash'],
                                 nbia_instance[1], idc_hash == nbia_hash))
-                rootlogger.info('\t\t\t\t%-32s IDC: %s, NBIA: %s; %s', idc_instance['sop_instance_uid'], idc_instance['instance_hash'],
+                rootlogger.info('                %-32s IDC: %s, NBIA: %s; %s', idc_instance['sop_instance_uid'], idc_instance['instance_hash'],
                                 nbia_instance[1], idc_hash == nbia_hash)
 
 
@@ -135,7 +136,7 @@ def compare_series_hashes(access_token, refresh_token, cur, args, collection, pa
     tcia_series = sorted(tcia_series, key=lambda id: id['SeriesInstanceUID'])
     for series in tcia_series:
         if not series['SeriesInstanceUID'] in [serie[0] for serie in series]:
-            print('\t\t{:32} Series {} not in IDC'.format(study.study_instance_uid, series['SeriesInstanceUID']))
+            print('        {:32} Series {} not in IDC'.format(study.study_instance_uid, series['SeriesInstanceUID']))
         else:
             row = [s for s in series if s[0] == series['SeriesInstanceUID']][0]
     # if len(series) == len(tcia_series):
@@ -150,22 +151,22 @@ def compare_series_hashes(access_token, refresh_token, cur, args, collection, pa
                         get_hash({'SeriesInstanceUID': row[0]}, access_token=access_token, refresh_token=refresh_token)
 
                 if result.status_code == 504:
-                    print('\t\t\t{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code,
+                    print('            {:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code,
                                                                               result.reason))
-                    rootlogger.info('\t\t\t%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code,
+                    rootlogger.info('            %-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code,
                                     result.reason)
 
                 nbia_hash = result.text
                 idc_hash = row[1]
                 if 'series' in args.log_level:
-                    print('\t\t\t{:32} IDC: {}, NBIA: {}; {}'.format(row[0], row[1], nbia_hash, idc_hash==nbia_hash))
-                    rootlogger.info('\t\t\t%-32s IDC: %s, NBIA: %s; %s', row[0], row[1], nbia_hash, idc_hash==nbia_hash)
+                    print('            {:32} IDC: {}, NBIA: {}; {}'.format(row[0], row[1], nbia_hash, idc_hash==nbia_hash))
+                    rootlogger.info('            %-32s IDC: %s, NBIA: %s; %s', row[0], row[1], nbia_hash, idc_hash==nbia_hash)
                 if not args.stop_expansion == 'series':
                     if idc_hash != nbia_hash or args.expand_all:
                         if args.stop and (nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == ""):
                             if 'series' in args.log_level:
-                                print('\t\t{:32} Skip expansion'.format(""))
-                                rootlogger.info('\t\t%-32s Skip expansion', "")
+                                print('        {:32} Skip expansion'.format(""))
+                                rootlogger.info('        %-32s Skip expansion', "")
                         else:
                             compare_instance_hashes(access_token, refresh_token, cur, args, collection, patient, study, series)
 
@@ -173,7 +174,7 @@ def compare_series_hashes(access_token, refresh_token, cur, args, collection, pa
                 print('{:32} IDC: {}, error: {}, reason: {}'.format(row[0], row[1], result.status_code, result.reason))
                 rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', row[0], row[1], result.status_code, result.reason)
     else:
-        print('\t\t{:32} Different number of series: IDC: {}, NBIA: {}'.format(study.study_instance_uid,
+        print('        {:32} Different number of series: IDC: {}, NBIA: {}'.format(study.study_instance_uid,
                 len(series), len(tcia_series)))
 
 
@@ -194,37 +195,46 @@ def compare_study_hashes(access_token, refresh_token, sess, args, collection, pa
                 result, access_token, refresh_token = get_hash({'StudyInstanceUID': study.study_instance_uid},
                         access_token=access_token, refresh_token=refresh_token)
             if result.status_code == 504:
-                print('\t\t{:32} IDC: {}, error: {}, reason: {}'.format(patient.submitter_uid, study.study_instance_uid, result.status_code,
+                print('        {:32} IDC: {}, error: {}, reason: {}'.format(patient.submitter_uid, study.study_instance_uid, result.status_code,
                                                                         result.reason))
-                rootlogger.info('\t\t%-32s IDC: %s, error: %s, reason: %s', patient.submitter_uid, study.study_instance_uid, result.status_code,
+                rootlogger.info('        %-32s IDC: %s, error: %s, reason: %s', patient.submitter_uid, study.study_instance_uid, result.status_code,
                                 result.reason)
 
             nbia_hash = result.text
             idc_hash = study.hashes.tcia
             if 'study' in args.log_level:
-                print('\t\t{:32} IDC: {}, NBIA: {}; {}'.format(patient.submitter_uid, study.study_instance_uid, nbia_hash, idc_hash==nbia_hash))
-                rootlogger.info('\t\t%-32s IDC: %s, NBIA: %s; %s', patient.submitter_uid, study.study_instance_uid, nbia_hash, idc_hash==nbia_hash)
+                print('        {:32} IDC: {}, NBIA: {}; {}'.format(patient.submitter_uid, study.study_instance_uid, nbia_hash, idc_hash==nbia_hash))
+                rootlogger.info('        %-32s IDC: %s, NBIA: %s; %s', patient.submitter_uid, study.study_instance_uid, nbia_hash, idc_hash==nbia_hash)
             if not args.stop_expansion == 'study':
                 if idc_hash != nbia_hash or args.expand_all:
                     if args.stop and (nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == ""):
                         if 'study' in args.log_level:
-                            print('\t\t{:32} Skip expansion'.format(""))
-                            rootlogger.info('\t\t%-32s Skip expansion', "")
+                            print('        {:32} Skip expansion'.format(""))
+                            rootlogger.info('        %-32s Skip expansion', "")
                     else:
                         compare_series_hashes(access_token, refresh_token, sess, args, collection, patient, study)
         except TimeoutError as esc:
             print('{:32} IDC: {}, error: {}, reason: {}'.format(patient.submitter_uid, study.study_instance_uid, result.status_code, result.reason))
             rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', patient.submitter_uid, study.study_instance_uid, result.status_code, result.reason)
     # else:
-    #     print('\t{:32} Different number of studies: IDC: {}, NBIA: {}'.format(submitter_case_id,
+    #     print('    {:32} Different number of studies: IDC: {}, NBIA: {}'.format(submitter_case_id,
     #             len(studies), len(tcia_studies)))
+
+def validate_idc_collection_hash(collection):
+    idc_patient_hashes = [patient.hashes.tcia for patient in collection.patients]
+    idc_collection_hash = get_merkle_hash(idc_patient_hashes)
+    if idc_collection_hash != collection.hashes.tcia:
+        print('idc collection hash hierarchically incorrect')
+    else:
+        print ('idc collection hash hierarchically correct')
 
 def compare_patient_hashes(access_token, refresh_token, sess, args, collection):
     patients = collection.patients
+    # validate_idc_collection_hash(collection)
 #    access_token = get_access_token(auth_server=NBIA_AUTH_URL)
     tcia_patients = get_TCIA_patients_per_collection(collection.collection_id)
     if not set([patient.submitter_case_id for patient in patients]) == set([patient['PatientId'] for patient in tcia_patients]):
-        errlogger.info("\tPatients are different")
+        errlogger.info("    Patients are different")
         return
     for patient in patients:
         try:
@@ -235,23 +245,23 @@ def compare_patient_hashes(access_token, refresh_token, sess, args, collection):
                 result = get_hash(
                 {'Collection': collection.collection_id, 'PatientID': patient.submitter_case_id}, access_token=access_token)
             if result.status_code == 504:
-                print('\t{:32} error: {}, reason: {}'.format(patient.submitter_case_id, result.status_code,
+                print('    {:32} error: {}, reason: {}'.format(patient.submitter_case_id, result.status_code,
                                                                       result.reason))
-                rootlogger.info('\t%-32s error: %s, reason: %s', patient.submitter_case_id, result.status_code,
+                rootlogger.info('    %-32s error: %s, reason: %s', patient.submitter_case_id, result.status_code,
                                 result.reason)
 
             nbia_hash = result.text
             idc_hash = patient.hashes.tcia
             if 'patient' in args.log_level:
-                print('\t{:32} IDC: {}, NBIA: {}; {}'.format(patient.submitter_case_id, idc_hash, nbia_hash, idc_hash==nbia_hash))
-                rootlogger.info('\t%-32s IDC: %s, NBIA: %s; %s', patient.submitter_case_id, idc_hash, nbia_hash, idc_hash==nbia_hash)
+                print('    {:32} IDC: {}, NBIA: {}; {}'.format(patient.submitter_case_id, idc_hash, nbia_hash, idc_hash==nbia_hash))
+                rootlogger.info('    %-32s IDC: %s, NBIA: %s; %s', patient.submitter_case_id, idc_hash, nbia_hash, idc_hash==nbia_hash)
             if not args.stop_expansion == 'patient':
                 if idc_hash != nbia_hash or args.expand_all:
                     # if args.stop and (nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == ""):
                     if args.stop:
                         if 'patient' in args.log_level:
-                            print('\t{:32} Skip expansion'.format(""))
-                            rootlogger.info('\t%-32s Skip expansion', "")
+                            print('    {:32} Skip expansion'.format(""))
+                            rootlogger.info('    %-32s Skip expansion', "")
                     else:
                         compare_study_hashes(access_token, refresh_token, sess, args, collection, patient)
         except TimeoutError as esc:
@@ -371,17 +381,17 @@ if __name__ == '__main__':
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
 
-    version = 9
+    version = 10
     parser = argparse.ArgumentParser()
     # parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
-    parser.add_argument('--db', default=f'idc_v9', help='Database to compare against')
+    parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
     parser.add_argument('--suffix', default="")
     parser.add_argument('--stop_expansion', default="Collection", help="Level at which to stop expansion")
     parser.add_argument('--stop', default=False, help='Stop expansion if no hash returned by NBIA')
     parser.add_argument('--expand_all', default=False, help="Expand regardless of whether hashes match.")
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
                         help='Levels at which to log')
-    parser.add_argument('--collections', default=[], \
+    parser.add_argument('--collections', default=['ISPY2'], \
         help='List of collections to compare. If empty, compare all collections')
     parser.add_argument('--skips', default='./logs/compare_hashes_skips')
 
