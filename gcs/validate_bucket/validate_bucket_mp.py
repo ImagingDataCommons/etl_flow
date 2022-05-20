@@ -36,10 +36,10 @@ def get_expected_blobs_in_bucket(args):
          JOIN `idc-dev-etl.idc_v{args.version}_dev.series` se ON ss.series_uuid = se.uuid
          JOIN `idc-dev-etl.idc_v{args.version}_dev.series_instance` si ON se.uuid = si.series_uuid
          JOIN `idc-dev-etl.idc_v{args.version}_dev.instance` i ON si.instance_uuid = i.uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.{args.collection_group_table}` aic
+         JOIN `idc-dev-etl.idc_v{args.version}_dev.all_included_collections` aic
          ON c.collection_id = aic.tcia_api_collection_id
-         WHERE ((i.source='tcia' and aic.pub_tcia_url="{args.bucket}")
-         OR (i.source='path' and aic.pub_path_url="{args.bucket}"))
+         WHERE ((i.source='tcia' and aic.{args.dev_or_pub}_tcia_url="{args.bucket}")
+         OR (i.source='path' and aic.{args.dev_or_pub}_path_url="{args.bucket}"))
          AND i.excluded = False
      """
 
