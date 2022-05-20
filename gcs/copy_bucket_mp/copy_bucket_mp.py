@@ -96,13 +96,6 @@ def copy_all_instances(args):
         done_instances = []
 
     n=len(done_instances)
-    # done_instances = []
-    # iterator = client.list_blobs(dst_bucket, page_size=args.batch)
-    # for page in iterator.pages:
-    #     blobs = [blob.name for blob in page]
-    #     done_instances.extend(blobs)
-    #     # if len(blobs) == 0:
-    #     #     break
 
     print(f"{len(done_instances)} previously copied")
     done_instances = set(done_instances)
@@ -111,8 +104,6 @@ def copy_all_instances(args):
 
     num_processes = args.processes
     processes = []
-    # Create a pair of queue for each process
-
     task_queue = Queue()
 
     strt = time.time()
@@ -161,7 +152,6 @@ def pre_copy(args):
     if not os.path.exists('{}'.format(args.log_dir)):
         os.mkdir('{}'.format(args.log_dir))
         st = os.stat('{}'.format(args.log_dir))
-        # os.chmod('{}'.format(args.log_dir), st.st_mode | 0o222)
 
     # Change logging file. File name includes bucket ID.
     for hdlr in successlogger.handlers[:]:
