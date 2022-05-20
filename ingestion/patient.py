@@ -23,9 +23,7 @@ from ingestion.utilities.utils import accum_sources, get_merkle_hash, is_skipped
 from ingestion.study import clone_study, build_study, retire_study
 from python_settings import settings
 
-# rootlogger = logging.getLogger('root')
 successlogger = logging.getLogger('root.success')
-#debuglogger = logging.getLogger('root.prog')
 progresslogger = logging.getLogger('root.progress')
 errlogger = logging.getLogger('root.err')
 
@@ -50,7 +48,6 @@ def retire_patient(args, patient):
 
 def expand_patient(sess, args, all_sources, version, collection, patient):
     skipped = is_skipped(args.skipped_collections, collection.collection_id)
-    not_skipped = [not x for x in skipped]
     # Get the studies that the sources know about
     studies = all_sources.studies(patient, skipped)    # patient_ids = [patient['PatientId'] for patient in patients]
 
@@ -80,8 +77,6 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
         # An object in IDC is retired if it no longer exists in IDC
         retired_objects = [obj for id, obj in idc_objects.items() \
                       if not obj in existing_objects]
-        # new_objects = sorted([id for id in studies if id not in idc_objects])
-        # retired_objects = sorted([idc_objects[id] for id in idc_objects if id not in studies], key=lambda study: study.study_instance_uid)
 
     for study in sorted(new_objects):
         new_study = Study()
@@ -101,7 +96,6 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
         patient.studies.append(new_study)
         progresslogger.debug  ('    p%s: Study %s is new',  args.pid, new_study.study_instance_uid)
 
-
     for study in existing_objects:
         idc_hashes = study.hashes
 
@@ -114,7 +108,6 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
                    zip(idc_hashes[:-1], src_hashes, skipped)]
         # If any source is revised, then the object is revised.
         if any(revised):
-            # rootlogger.debug  ('**Patient %s needs revision', patient.submitter_case_id)
             rev_study = clone_study(study, str(uuid4()))
             rev_study.revised = True
             rev_study.done = False
@@ -142,14 +135,12 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
             progresslogger.debug  ('    p%s: Study %s unchanged',  args.pid, study.study_instance_uid)
 
     for study in retired_objects:
-        # rootlogger.debug  ('    p%s: Study %s:%s retiring', args.pid, study.study_instance_uid, study.uuid)
         breakpoint()
         retire_study(args, study)
         patient.studies.remove(study)
 
     patient.expanded = True
     sess.commit()
-    # rootlogger.debug("  p%s: Expanded patient %s",args.pid, patient.submitter_case_id)
     return
 
 def build_patient(sess, args, all_sources, patient_index, data_collection_doi_url, analysis_collection_dois, version, collection, patient):
@@ -170,21 +161,11 @@ def build_patient(sess, args, all_sources, patient_index, data_collection_doi_ur
 
              # Get a list of what DB thinks are the patient's hashes
             idc_hashes = all_sources.idc_patient_hashes(patient)
-            # # Get a list of what the sources think are the patient's hashes
-            # src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id)
-            # # They must be the same
-            # if  src_hashes != idc_hashes[:-1]:
             skipped = is_skipped(args.skipped_collections, collection.collection_id)
-            # if collection.collection_id in args.skipped_collections:
-            #     skipped = args.skipped_collections[collection.collection_id]
-            # else:
-            #     skipped = (False, False)
-            #     # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
             src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id, skipped)
             revised = [(x != y) and  not z for x, y, z in \
                     zip(idc_hashes[:-1], src_hashes, skipped)]
             if any(revised):
-                # errlogger.error('Hash match failed for patient %s', patient.submitter_case_id)
                 raise Exception('Hash match failed for patient %s', patient.submitter_case_id)
             else:
                 patient.hashes = idc_hashes

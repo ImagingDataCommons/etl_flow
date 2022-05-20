@@ -36,7 +36,7 @@ from sqlalchemy import create_engine
 from sqlalchemy_utils import register_composites
 from sqlalchemy.orm import Session
 
-
+# Return a dict indexed by idc_web_collection_id. Each element is premerge tcia bucket, premerge path bucket, staging bucket
 def get_collection_groups(sess):
     collections = {}
     for c in sess.query(CR_Collections.tcia_api_collection_id, CR_Collections.premerge_tcia_url, CR_Collections.premerge_path_url, CR_Collections.dev_url):
@@ -99,8 +99,10 @@ def copy_dev_buckets(args):
         bucket_data= get_collection_groups(sess)
         revised_collection_ids = sorted([row.collection_id.lower().replace('-','_').replace(' ','_') for row in sess.query(Collection).filter(Collection.rev_idc_version == args.version).all()])
         for collection_id in revised_collection_ids:
+            # If there is a corresponding bucket, e.g. idc_vX_tcia_yyyy, copy its contents
             if client.bucket(bucket_data[collection_id]['premerge_tcia_url']).exists():
                 copy_prestaging_to_staging(args, bucket_data[collection_id]['premerge_tcia_url'], bucket_data[collection_id]['dev_url'])
+            # If there is a corresponding bucket, e.g. idc_vX_path_yyyy, copy its contents
             if client.bucket(bucket_data[collection_id]['premerge_path_url']).exists():
                 copy_prestaging_to_staging(args, bucket_data[collection_id]['premerge_path_url'], bucket_data[collection_id]['dev_url'])
 

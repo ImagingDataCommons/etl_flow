@@ -16,7 +16,7 @@
 
 import os
 import logging
-from logging import INFO
+from logging import INFO, ERROR
 import settings
 print(f'Logging to {settings.LOG_DIR}')
 
@@ -24,6 +24,11 @@ if not os.path.exists(settings.LOGGING_BASE):
     os.mkdir(settings.LOGGING_BASE)
 if not os.path.exists(settings.LOG_DIR):
     os.mkdir(settings.LOG_DIR)
+
+logging.basicConfig()
+
+rootlogger = logging.getLogger('root')
+rootlogger.setLevel(INFO)
 
 successlogger = logging.getLogger('root.success')
 successlogger.setLevel(INFO)
@@ -44,6 +49,7 @@ successformatter = logging.Formatter('%(message)s')
 success_fh.setFormatter(successformatter)
 
 errlogger = logging.getLogger('root.err')
+errlogger.setLevel(ERROR)
 for hdlr in errlogger.handlers[:]:
     errlogger.removeHandler(hdlr)
 err_fh = logging.FileHandler('{}/error.log'.format(settings.LOG_DIR))

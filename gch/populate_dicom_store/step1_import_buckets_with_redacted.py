@@ -103,7 +103,7 @@ def import_dicom_instances(project_id, cloud_region, dataset_id, dicom_store_id,
 
     response = request.execute()
     # print("Initiated DICOM import,response: {}".format(response))
-    progresslogger.info('Initiated DICOM import,response: %s', response)
+    progresslogger.info('Initiated DICOM import, response: %s', response)
     return response
 
 
@@ -140,20 +140,20 @@ def import_buckets(args):
                     err = json.loads(e.content)
                     # print('Error loading {}; code: {}, message: {}'.format(bucket, err['error']['code'],
                     #                                                        err['error']['message']))
-                    ('Error loading {}; code: {}, message: {}'.format(bucket, err['error']['code'],
-                                                                           err['error']['message']))
+                    progresslogger.info('Error loading %s; code: %s, message: %s',bucket, err['error']['code'],
+                                                                           err['error']['message'])
 
         else:
             try:
-                print('Importing {}'.format(bucket))
+                progresslogger.info('Importing %s', bucket)
                 content_uri = '{}/*'.format(bucket)
                 response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
                                 settings.GCH_DICOMSTORE, content_uri)
-                print(f'Response: {response}')
+                progresslogger.info('Response: %s', response)
                 result = wait_done(response, args, args.period)
             except HttpError as e:
                 err = json.loads(e.content)
-                print('Error loading {}; code: {}, message: {}'.format(bucket, err['error']['code'], err['error']['message']))
+                progresslogger.info('Error loading %s; code: %s, message: %s', bucket, err['error']['code'], err['error']['message'])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -15,8 +15,12 @@
 #
 
 """
-Validate that a bucket holds the correct set of instance blobs
+Validate that th idc-open-pdp-staging bucket holds the correct set of instance blobs
 """
+
+import argparse
+import os
+import settings
 
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from google.cloud import storage, bigquery
@@ -24,24 +28,15 @@ from google.cloud import storage, bigquery
 def get_expected_blobs_in_bucket(args):
     client = bigquery.Client()
     query = f"""
-    SELECT distinct concat(i.uuid, '.dcm') as uuid
-     FROM `idc-dev-etl.idc_v{args.version}_dev.version` v
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.version_collection` vc ON v.version = vc.version
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.collection` c ON vc.collection_uuid = c.uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.collection_patient` cp ON c.uuid = cp.collection_uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.patient` p ON cp.patient_uuid = p.uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.patient_study` ps ON p.uuid = ps.patient_uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.study` st ON ps.study_uuid = st.uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.study_series` ss ON st.uuid = ss.study_uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.series` se ON ss.series_uuid = se.uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.series_instance` si ON se.uuid = si.series_uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.instance` i ON si.instance_uuid = i.uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.{args.collection_group_table}` aic
-         ON c.collection_id = aic.tcia_api_collection_id
-         WHERE ((i.source='tcia' and aic.pub_tcia_url="{args.bucket}")
-         OR (i.source='path' and aic.pub_path_url="{args.bucket}"))
-         AND i.excluded = False
-     """
+    SELECT distinct CONCAT(a.i_uuid, '.dcm') as uuid
+    FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined` a
+    JOIN `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_included_collections` i
+    ON a.collection_id = i.tcia_api_collection_id
+    WHERE ((a.i_source='tcia' and i.pub_tcia_url='public-datasets-idc')
+    OR (a.i_source='path' and i.pub_path_url='public-datasets-idc'))
+    AND a.i_rev_idc_version = {settings.CURRENT_VERSION}
+    AND a.i_excluded=FALSE 
+    """
 
     query_job = client.query(query)  # Make an API request.
     query_job.result()  # Wait for the query to complete.
@@ -62,6 +57,8 @@ def get_expected_blobs_in_bucket(args):
             rows = [f'{row["uuid"]}\n' for row in page]
             f.write(''.join(rows))
 
+
+from gcs.validate_bucket.validate_bucket_mp import check_all_instances
 def get_found_blobs_in_bucket(args):
     client = storage.Client()
     bucket = client.bucket(args.bucket)
@@ -95,3 +92,15 @@ def check_all_instances(args):
     return
 
 
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    # parser.add_argument('--version', default=f'{settings.CURRENT_VERSION}')
+    parser.add_argument('--version', default=9)
+    parser.add_argument('--bucket', default='idc-open-pdp-staging')
+    parser.add_argument('--expected_blobs', default=f'{settings.LOG_DIR}/expected_blobs.txt', help='List of blobs names expected to be in above collections')
+    parser.add_argument('--found_blobs', default=f'{settings.LOG_DIR}/found_blobs.txt', help='List of blobs names found in bucket')
+    parser.add_argument('--batch', default=1000000, help='Size of batch assigned to each process')
+    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/validate_open_buckets')
+
+    args = parser.parse_args()
+    check_all_instances(args)

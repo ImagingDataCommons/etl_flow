@@ -26,23 +26,23 @@ from python_settings import settings
 import google
 from google.auth.transport import requests
 
-from sqlalchemy import create_engine, distinct
-from sqlalchemy_utils import register_composites
-from sqlalchemy.orm import Session
+# from sqlalchemy import create_engine, distinct
+# from sqlalchemy_utils import register_composites
+# from sqlalchemy.orm import Session
 
-
+from utilities.sqlalchemy_helpers import sa_session
 
 def compare_dois():
-    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
-    # sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
-    sql_engine = create_engine(sql_uri)
+    # sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
+    # # sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
+    # sql_engine = create_engine(sql_uri)
+    #
+    # # Enable the underlying psycopg2 to deal with composites
+    # conn = sql_engine.connect()
+    # register_composites(conn)
+    #
 
-    # Enable the underlying psycopg2 to deal with composites
-    conn = sql_engine.connect()
-    register_composites(conn)
-
-
-    with Session(sql_engine) as sess:
+    with sa_session(echo=False) as sess:
         # Get the source_dois across all series in each collection. This can
         # include both original collection dois and analysis results dois
         rows = sess.query(Collection.collection_id,Series.source_doi).distinct(). \

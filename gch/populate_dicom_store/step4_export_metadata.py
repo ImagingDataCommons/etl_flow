@@ -31,6 +31,9 @@ from google.api_core.exceptions import NotFound
 from utilities.bq_helpers import create_BQ_dataset, copy_BQ_table
 from python_settings import settings
 
+import logging
+from utilities.logging_config import successlogger, progresslogger, errlogger
+
 
 def export_dicom_metadata(args):
     # Get an access token
@@ -38,7 +41,7 @@ def export_dicom_metadata(args):
     bearer = str(results.stdout,encoding='utf-8').strip()
 
     # BQ table to which to export metadata
-    destination = f'bq://{settings.DEV_PROJECT}.{settings.BQ_DEV_EXT_DATASET}.{args.bqtable}'
+    destination = f'bq://{settings.DEV_PROJECT}.{settings.BQ_DEV_EXT_DATASET}.dicom_metadata'
     data = {
         'bigqueryDestination': {
             'tableUri': destination,
@@ -55,7 +58,7 @@ def export_dicom_metadata(args):
 
     # Get the operation ID so we can track progress
     operation_id = results.json()['name'].split('/')[-1]
-    print("Operation ID: {}".format(operation_id))
+    progresslogger.info(f"Metadata export initiated. Operation ID: {operation_id}")
 
     while True:
         # Get an access token. This can be a long running job. Just get a new one every time.
@@ -73,12 +76,12 @@ def export_dicom_metadata(args):
         # The result is JSON that will include a "done" element with status when the op us complete
         if 'done' in details and details['done']:
             if 'error' in details:
-                print('Done with errorcode: {}, message: {}'.format(details['error']['code'], details['error']['message']))
+                errlogger.error(f"Done with errorcode: {details['error']['code']}, message: {details['error']['message']}")
             else:
-                print(details)
+                progresslogger.info(details)
             break
         else:
-            print(details)
+            progresslogger.info(details)
             time.sleep(5*60)
 
 def get_job(args):
@@ -92,7 +95,7 @@ def get_job(args):
     results = requests.get(url, headers=headers)
     # Get the operation ID so we can track progress
     operation_id = results.json()['operations'][0]['name'].split('/')[-1]
-    print("Operation ID: {}".format(operation_id))
+    progresslogger.info("Operation ID: {}".format(operation_id))
 
     while True:
         # Get an access token. This can be a long running job. Just get a new one every time.
@@ -110,12 +113,12 @@ def get_job(args):
         # The result is JSON that will include a "done" element with status when the op us complete
         if 'done' in details and details['done']:
             if 'error' in details:
-                print('Done with errorcode: {}, message: {}'.format(details['error']['code'], details['error']['message']))
+                errlogger.error('Done with errorcode: {}, message: {}'.format(details['error']['code'], details['error']['message']))
             else:
-                print('Done')
+                progresslogger.info('Done')
             break
         else:
-            print(details)
+            progresslogger.info(details)
             time.sleep(5*60)
 
 def export_metadata(args):
@@ -131,20 +134,17 @@ def export_metadata(args):
         response=export_dicom_metadata(args)
         finished = time.time()
         elapsed = finished - start
-        print('Elapsed time: {}'.format(elapsed))
+        progresslogger.info('Elapsed time: {}'.format(elapsed))
 
     except HttpError as e:
         err=json.loads(e.content)
-        print(f'Error {e}')
+        errlogger.error(f'Error {e}')
 
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--bqtable', default='dicom_metadata', help="BQ table name")
     parser.add_argument('--dataset_description', default = f'IDC V{settings.CURRENT_VERSION} BQ tables and views')
-
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-    # get_job(args)
     export_metadata(args)
 

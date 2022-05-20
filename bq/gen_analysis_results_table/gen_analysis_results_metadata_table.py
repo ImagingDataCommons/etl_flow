@@ -23,6 +23,7 @@ from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json
 from bq.gen_analysis_results_table.schema import analysis_results_metadata_schema
 from utilities.tcia_scrapers import scrape_tcia_analysis_collections_page
+from utilities.logging_config import successlogger, progresslogger
 from python_settings import settings
 
 # Build the analysis_results_metadata BQ table
@@ -127,19 +128,12 @@ def gen_collections_table(args):
     job = load_BQ_from_json(BQ_client, settings.DEV_PROJECT, settings.BQ_DEV_EXT_DATASET, args.bqtable_name, metadata, analysis_results_metadata_schema,
                             write_disposition='WRITE_TRUNCATE')
     while not job.state == 'DONE':
-        print('Status: {}'.format(job.state))
+        progresslogger.info('Status: {}'.format(job.state))
         time.sleep(args.period * 60)
-    print("{}: Completed collections metatdata upload \n".format(time.asctime()))
+    successlogger.info(f"{time.asctime()}: Completed {args.bqtable_name}")
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-
-    # parser.add_argument('--version', default=8, help='IDC version for which to build the table')
-    # args = parser.parse_args()
-    # parser.add_argument('--src_project', default='idc-dev-etl')
-    # parser.add_argument('--dst_project', default='idc-dev-etl')
-    # parser.add_argument('--dev_bqdataset_name', default=f'idc_v{args.version}_dev', help='BQ dataset of dev tables')
-    # parser.add_argument('--pub_bqdataset_name', default=f'idc_v{args.version}_pub', help='BQ dataset of public tables')
     parser.add_argument('--bqtable_name', default='analysis_results_metadata', help='BQ table name')
 
     args = parser.parse_args()

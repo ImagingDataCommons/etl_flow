@@ -24,9 +24,7 @@ from ingestion.utilities.utils import is_skipped
 from python_settings import settings
 
 
-# rootlogger = logging.getLogger('root')
 successlogger = logging.getLogger('root.success')
-#debuglogger = logging.getLogger('root.prog')
 progresslogger = logging.getLogger('root.progress')
 errlogger = logging.getLogger('root.err')
 
@@ -84,12 +82,6 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
         # An object in IDC is retired if it no longer exists in IDC
         retired_objects = [obj for id, obj in idc_objects.items() \
                if not obj in existing_objects ]
-        # retired_objects = sorted([idc_objects[id] for id in idc_objects if id not in instances], key=lambda instance: instance.sop_instance_uid)
-
-
-        # new_objects = sorted([id for id in instances if id not in idc_objects])
-        # retired_objects = sorted([idc_objects[id] for id in idc_objects if id not in instances], key=lambda instance: instance.sop_instance_uid)
-        # existing_objects = sorted([idc_objects[id] for id in instances if id in idc_objects], key=lambda instance: instance.sop_instance_uid)
 
     for instance in sorted(new_objects):
         new_instance = Instance()
@@ -113,9 +105,7 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
         idc_hash = instance.hash
         src_hash = all_sources.src_instance_hashes(instance.sop_instance_uid, instances[instance.sop_instance_uid])
         revised = idc_hash != src_hash
-        # if all_sources.instance_was_revised(instance):
         if any(revised):
-            # rootlogger.debug('**Instance %s needs revision', instance.sop_instance_uid)
             rev_instance = clone_instance(instance, str(uuid4()))
             rev_instance.revised = True
             rev_instance.done = True
@@ -124,12 +114,10 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
             rev_instance.timestamp = datetime.utcnow()
             rev_instance.source = instances[instance]
             new_instance.hash = None
-
             rev_instance.size = 0
             rev_instance.rev_idc_version = settings.CURRENT_VERSION
             series.instances.append(rev_instance)
             progresslogger.debug('        p%s: Instance %s is revised', args.pid, rev_instance.sop_instance_uid)
-
 
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised series
@@ -154,7 +142,6 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
     series.expanded = True
     sess.commit()
     return 0
-    # rootlogger.debug("      p%s: Expanded series %s", args.pid, series.series_instance_uid)
 
 
 def build_series(sess, args, all_sources, series_index, version, collection, patient, study, series):
@@ -166,7 +153,6 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
             if failed:
                 return
         successlogger.info("      p%s: Expanded Series %s; %s; %s instances, expand: %s", args.pid, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
-
 
         if not all(instance.done for instance in series.instances):
             if series.sources.tcia:
@@ -183,21 +169,14 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
             # # Get a list of what the sources think are the series's hashes
 
             skipped = is_skipped(args.skipped_collections, collection.collection_id)
-            # if collection.collection_id in args.skipped_collections:
-            #     skipped = args.skipped_collections[collection.collection_id]
-            # else:
-            #     skipped = (False, False)
-            #     # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
             src_hashes = all_sources.src_series_hashes(collection.collection_id, series.series_instance_uid, skipped)
             revised = [(x != y) and not z for x, y, z in \
                        zip(idc_hashes[:-1], src_hashes, skipped)]
             if any(revised):
-                # errlogger.error('Hash match failed for series %s', series.series_instance_uid)
                 raise Exception('Hash match failed for series %s', series.series_instance_uid)
             else:
                 series.hashes = idc_hashes
                 series.series_instances = len(series.instances)
-
                 series.done = True
                 sess.commit()
                 duration = str(timedelta(seconds=(time.time() - begin)))
@@ -205,4 +184,3 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
     except Exception as exc:
         errlogger.info('  p%s build_patient failed: %s', args.pid, exc)
         raise exc
-

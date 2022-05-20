@@ -25,9 +25,7 @@ from ingestion.series import clone_series, build_series, retire_series
 
 from python_settings import settings
 
-# rootlogger = logging.getLogger('root')
 successlogger = logging.getLogger('root.success')
-#debuglogger = logging.getLogger('root.prog')
 progresslogger = logging.getLogger('root.progressr')
 errlogger = logging.getLogger('root.err')
 
@@ -52,11 +50,6 @@ def retire_study(args, study ):
 
 def expand_study(sess, args, all_sources, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois):
     skipped = is_skipped(args.skipped_collections, collection.collection_id)
-    # if collection.collection_id in args.skipped_collections:
-    #     skipped = args.skipped_collections[collection.collection_id]
-    # else:
-    #     skipped = (False, False)
-    #     # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
     # Get the series that the sources know about
     seriess = all_sources.series(study, skipped)
 
@@ -65,8 +58,6 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
                         study.study_instance_uid)
         raise RuntimeError("p%s: Duplicate series expansion of study %s", args.pid,
                            study.study_instance_uid)
-    # Get the series that the sources know about
-    # seriess = all_sources.series(study, skipped)
 
     if study.is_new:
         # All patients are new by definition
@@ -88,10 +79,6 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
         # An object in IDC is retired if it no longer exists in IDC
         retired_objects = [obj for id, obj in idc_objects.items() \
                 if not obj in existing_objects]
-
-        # new_objects = sorted([id for id in seriess if id not in idc_objects])
-        # retired_objects = sorted([idc_objects[id] for id in idc_objects if id not in seriess], key=lambda series: series.series_instance_uid)
-        # existing_objects =sorted( [idc_objects[id] for id in seriess if id in idc_objects], key=lambda series: series.series_instance_uid)
 
     for series in sorted(new_objects):
         new_series = Series()
@@ -143,7 +130,6 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
             study.seriess.append(rev_series)
             progresslogger.debug('      p%s:Series %s revised',  args.pid, rev_series.series_instance_uid)
 
-
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised study
             series.final_idc_version = settings.PREVIOUS_VERSION
@@ -160,14 +146,12 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
             progresslogger.debug('      p%s: Series %s unchanged',  args.pid, series.series_instance_uid)
 
     for series in retired_objects:
-        # rootlogger.debug('      p%s: Series %s:%s retiring', args.pid, series.series_instance_uid, series.uuid)
-        # breakpoint()
+        breakpoint()
         retire_series(args, series)
         study.seriess.remove(series)
 
     study.expanded = True
     sess.commit()
-    # rootlogger.debug("    p%s: Expanded study %s",args.pid,  study.study_instance_uid)
     return
 
 def build_study(sess, args, all_sources, study_index, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois):
@@ -188,27 +172,16 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
             study.max_timestamp = max([series.max_timestamp for series in study.seriess if series.max_timestamp != None])
             # Get a list of what DB thinks are the study's hashes
             idc_hashes = all_sources.idc_study_hashes(study)
-            # # Get a list of what the sources think are the study's hashes
-            # src_hashes = all_sources.src_study_hashes(study.study_instance_uid)
-            # # They must be the same
-            # if src_hashes != idc_hashes[:-1]:
             skipped = is_skipped(args.skipped_collections, collection.collection_id)
-            # if collection.collection_id in args.skipped_collections:
-            #     skipped = args.skipped_collections[collection.collection_id]
-            # else:
-            #     skipped = (False, False)
-            #     # if this collection is excluded from a source, then ignore differing source and idc hashes in that source
             src_hashes = all_sources.src_study_hashes(collection.collection_id, study.study_instance_uid, skipped)
             revised = [(x != y) and not z for x, y, z in \
                        zip(idc_hashes[:-1], src_hashes, skipped)]
             if any(revised):
-                # errlogger.error('Hash match failed for study %s', study.study_instance_uid)
                 raise Exception('Hash match failed for study %s', study.study_instance_uid)
             else:
                 study.hashes = idc_hashes
                 study.sources = accum_sources(study, study.seriess)
                 study.study_instances = sum([series.series_instances for series in study.seriess])
-
                 study.done = True
                 sess.commit()
                 duration = str(timedelta(seconds=(time.time() - begin)))

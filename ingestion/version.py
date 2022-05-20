@@ -25,9 +25,7 @@ from egestion.egest import egest_version
 
 from python_settings import settings
 
-# rootlogger = logging.getLogger('root')
 successlogger = logging.getLogger('root.success')
-# progresslogger = logging.getLogger('root.prog')
 progresslogger = logging.getLogger('root.progress')
 errlogger = logging.getLogger('root.err')
 
@@ -69,12 +67,6 @@ def expand_version(sess, args, all_sources, version):
     retired_objects = [obj for id, obj in idc_objects.items() \
        if not obj in existing_objects]
 
-
-    # Collections that are in the previous version and still known about by some source
-    # existing_objects = sorted([idc_objects[id] for id in collections if id in idc_objects],
-    #                           key=lambda collection: collection.collection_id)
-    # retired_objects = [idc_objects[id] for id in idc_objects if id not in collections]
-
     for idc_collection_id in sorted(new_objects,
             key=lambda idc_collection_id: collections[idc_collection_id]['collection_id']):
         # if not collections[idc_collection_id]['collection_id'] in skipped:
@@ -99,7 +91,6 @@ def expand_version(sess, args, all_sources, version):
 
     for collection in existing_objects:
         # if not collection.collection_id in skipped:
-        # idc_hashes = all_sources.idc_collection_hashes(collection)
         idc_hashes = collection.hashes
         if collection.collection_id in args.skipped_collections:
             skipped = args.skipped_collections[collection.collection_id]
@@ -111,7 +102,6 @@ def expand_version(sess, args, all_sources, version):
                    zip(idc_hashes[:-1], src_hashes, skipped)]
         if any(revised):
             # If any sources has an updated version of this object, create a new version.
-            # rootlogger.debug('**Collection %s needs revision',collection.collection_id)
             rev_collection = clone_collection(collection, uuid=str(uuid4()))
 
             # Here is where we update the collecton ID in case it has changed
@@ -163,8 +153,6 @@ def expand_version(sess, args, all_sources, version):
 
     for collection in retired_objects:
         breakpoint()
-        # if not collection.collection_id in skipped:
-        # rootlogger.debug('p%s: Collection %s retiring', args.pid, collection.collection_id)
         # Mark the now previous version of this object as having been retired
         retire_collection(args, collection)
         version.collections.remove(collection)
@@ -187,18 +175,12 @@ def expand_version(sess, args, all_sources, version):
 
 def build_version(sess, args, all_sources, version):
     begin = time.time()
-    # try:
-    #     skipped = open(args.skipped).read().splitlines()
-    # except:
-    #     skipped = []
     progresslogger.info("p%s: Expand version %s", args.pid, settings.CURRENT_VERSION)
     if not version.expanded:
-        # expand_version(sess, args, all_sources, version, skipped)
         expand_version(sess, args, all_sources, version)
     idc_collections = sorted(version.collections, key=lambda collection: collection.collection_id)
     progresslogger.info("p%s: Expanded Version %s; %s collections", args.pid, settings.CURRENT_VERSION, len(idc_collections))
     for collection in idc_collections:
-        # if not collection.collection_id in skipped:
         collection_index = f'{idc_collections.index(collection) + 1} of {len(idc_collections)}'
         if not collection.done:
             build_collection(sess, args, all_sources, collection_index, version, collection)

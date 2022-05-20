@@ -20,10 +20,8 @@
 
 import argparse
 import logging
-import os
-from logging import INFO
+from utilities.logging_config import successlogger, progresslogger, errlogger
 import settings
-from idc.models import Patient, Study, Collection, Redacted_Collections
 import google
 from google.cloud import bigquery
 from google.auth.transport import requests
@@ -68,44 +66,20 @@ def delete_all_series(args):
 
     try:
         # Get the previously copied blobs
-        done_series = set(open(f'{args.log_dir}/delete_redacted_success.log').read().splitlines())
+        done_series = set(open(f'{settings.LOG_DIR}/success.log').read().splitlines())
     except:
         done_series = set()
-
-    # Change logging file. File name includes bucket ID.
-    for hdlr in successlogger.handlers[:]:
-        successlogger.removeHandler(hdlr)
-    success_fh = logging.FileHandler(f'{args.log_dir}/delete_redacted_success.log')
-    successlogger.addHandler(success_fh)
-    successformatter = logging.Formatter('%(message)s')
-    success_fh.setFormatter(successformatter)
-
-    for hdlr in errlogger.handlers[:]:
-        errlogger.removeHandler(hdlr)
-    err_fh = logging.FileHandler(f'{args.log_dir}/delete_redacted_error.log')
-    errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
-    errlogger.addHandler(err_fh)
-    err_fh.setFormatter(errformatter)
 
     # We need to remove all limited series
     limited_series = get_limited_series(args)
 
-    # # Redacted collection ids
-    # collections = sorted(
-    #     [row.tcia_api_collection_id for row in
-    #         sess.query(Redacted_Collections.tcia_api_collection_id).all()])
-    #
-    # rows = sess.query(Collection.collection_id, Study.study_instance_uid). \
-    #     distinct().join(Collection.patients).join(Patient.studies). \
-    #     filter(Collection.collection_id.in_(collections)).all()
-    # redacted_studies = [{'collection_id': row.collection_id, 'study_instance_uid': row.study_instance_uid} for row in rows]
     n=0
     for row in limited_series:
         if not row.SeriesInstanceUID in done_series:
             delete_series(args, dicomweb_sess, row.StudyInstanceUID, row.SeriesInstanceUID)
-            print(f"{n}: {row.collection_id}/{row.StudyInstanceUID}/{row.SeriesInstanceUID}  deleted")
+            progresslogger.info(f"{n}: {row.collection_id}/{row.StudyInstanceUID}/{row.SeriesInstanceUID}  deleted")
         else:
-            print(f"{n}: {row.collection_id}/{row.StudyInstanceUID}/{row.SeriesInstanceUID} previously deleted")
+            progresslogger.info(f"{n}: {row.collection_id}/{row.StudyInstanceUID}/{row.SeriesInstanceUID} previously deleted")
         n+=1
     pass
 
@@ -130,17 +104,16 @@ def delete_redacted(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/delete_redacted_from_dicom_store')
     args = parser.parse_args()
 
-    if not os.path.exists('{}'.format(args.log_dir)):
-        os.mkdir('{}'.format(args.log_dir))
-        st = os.stat('{}'.format(args.log_dir))
-
-    successlogger = logging.getLogger('root.success')
-    successlogger.setLevel(INFO)
-
-    errlogger = logging.getLogger('root.err')
+    # if not os.path.exists('{}'.format(args.log_dir)):
+    #     os.mkdir('{}'.format(args.log_dir))
+    #     st = os.stat('{}'.format(args.log_dir))
+    #
+    # successlogger = logging.getLogger('root.success')
+    # successlogger.setLevel(INFO)
+    #
+    # errlogger = logging.getLogger('root.err')
 
     breakpoint()
     delete_all_series(args)

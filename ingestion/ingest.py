@@ -20,12 +20,12 @@ import os
 import sys
 import argparse
 import logging
-from logging import INFO, DEBUG, ERROR
 from datetime import datetime, timedelta
 import shutil
 from multiprocessing import Lock, shared_memory
 from idc.models import Base, Version, Collection
 from utilities.tcia_helpers import get_access_token
+from utilities.sqlalchemy_helpers import sa_session
 from utilities.logging_config import successlogger, errlogger, progresslogger
 
 from ingestion.utilities.utils import list_skips
@@ -33,17 +33,12 @@ from ingestion.version import clone_version, build_version
 
 from python_settings import settings
 
-from sqlalchemy import create_engine
-from sqlalchemy_utils import register_composites
-from sqlalchemy.orm import Session
-
 from ingestion.all_sources import All
 from http.client import HTTPConnection
 HTTPConnection.debuglevel = 0
 
 rootlogger = logging.getLogger('root')
 successlogger = logging.getLogger('root.success')
-#debuglogger = logging.getLogger('root.prog')
 progresslogger = logging.getLogger('root.progress')
 errlogger = logging.getLogger('root.err')
 
@@ -57,19 +52,7 @@ def ingest(args):
         shutil.rmtree('{}'.format(args.dicom_dir))
     os.mkdir('{}'.format(args.dicom_dir))
 
-
-    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
-    # sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
-    sql_engine = create_engine(sql_uri)
-
-    # Create the tables if they do not already exist
-    Base.metadata.create_all(sql_engine)
-
-    # Enable the underlying psycopg2 to deal with composites
-    conn = sql_engine.connect()
-    register_composites(conn)
-
-    with Session(sql_engine) as sess:
+    with sa_session() as sess:
         # Get a sharable NBIA access token
         access = shared_memory.ShareableList(get_access_token())
         args.access = access
@@ -136,7 +119,7 @@ def ingest(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--num_processes', type=int, default=16, help="Number of concurrent processes")
+    parser.add_argument('--num_processes', type=int, default=0, help="Number of concurrent processes")
 
     parser.add_argument('--skipped_tcia_groups', nargs='*', default=['redacted_collections', 'excluded_collections'],\
                         help="List of tables containing tcia_api_collection_ids of tcia collections to be skipped")

@@ -48,7 +48,6 @@ if __name__ == '__main__':
     parser.add_argument('--src_bqdataset_name', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ dataset name')
     parser.add_argument('--trg_bqdataset_name', default=f'idc_metadata', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default=f'open_collections_blob_names_v{settings.CURRENT_VERSION}', help='BQ table name')
-    # parser.add_argument('--sql', default=f'./gen_open_collections_blob_names.sql')
     args = parser.parse_args()
 
     print("{}".format(args), file=sys.stdout)

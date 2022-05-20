@@ -381,17 +381,17 @@ if __name__ == '__main__':
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
 
-    version = 9
+    version = 10
     parser = argparse.ArgumentParser()
     # parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
-    parser.add_argument('--db', default=f'idc_v9', help='Database to compare against')
+    parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
     parser.add_argument('--suffix', default="")
     parser.add_argument('--stop_expansion', default="Collection", help="Level at which to stop expansion")
     parser.add_argument('--stop', default=False, help='Stop expansion if no hash returned by NBIA')
     parser.add_argument('--expand_all', default=False, help="Expand regardless of whether hashes match.")
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
                         help='Levels at which to log')
-    parser.add_argument('--collections', default=['QIN Breast DCE-MRI','QIN LUNG CT'], \
+    parser.add_argument('--collections', default=['ISPY2'], \
         help='List of collections to compare. If empty, compare all collections')
     parser.add_argument('--skips', default='./logs/compare_hashes_skips')
 

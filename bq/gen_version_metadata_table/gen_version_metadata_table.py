@@ -20,7 +20,10 @@ import sys
 import json
 from google.cloud import bigquery
 import hashlib
-from utilities.bq_helpers import load_BQ_from_json, query_BQ
+
+import settings
+from utilities.bq_helpers import load_BQ_from_json
+from utilities.logging_config import successlogger
 from bq.gen_version_metadata_table.version_metadata_schema import version_metadata_schema
 
 
@@ -88,14 +91,14 @@ def gen_version_metadata_table(args):
     metadata = '\n'.join(rows)
     job = load_BQ_from_json(client, args.dst_project, args.bqdataset_name, args.bqtable_name, metadata,
                             version_metadata_schema, write_disposition='WRITE_TRUNCATE')
+    successlogger('version_metadata table generation completed')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=0, help='Max IDC version for which to build the table')
-    args = parser.parse_args()
+    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Max IDC version for which to build the table')
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--bqdataset_name', default=f'idc_v{args.version}_pub', help='BQ dataset name')
+    parser.add_argument('--bqdataset_name', default=f'idc_v{settings.CURRENT_VERSION}_pub', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default='version_metadata', help='BQ table name')
 
     args = parser.parse_args()
