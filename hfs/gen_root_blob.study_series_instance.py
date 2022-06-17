@@ -78,36 +78,12 @@ if __name__ == '__main__':
     client = storage.Client()
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=9, help='Version to work on')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/hfs_gen_version_blobs')
     parser.add_argument('--collections', default=['APOLLO-5-LSCC', 'CPTAC-SAR', 'TCGA-ESCA', 'TCGA-READ'])
-    parser.add_argument('--hfs_level', default='series',help='Name blobs as study/series/instance if study, series/instance if series')
-    parser.add_argument('--dst_bucket', default=client.bucket('whc_series_instance'), help='Bucket into which to copy blobs')
-    parser.add_argument('--batch', default=100)
-    parser.add_argument('--processes', default=1)
+    parser.add_argument('--hfs_level', default='study',help='Name blobs as study/series/instance if study, series/instance if series')
+    parser.add_argument('--dst_bucket_name', default='whc_ssi', help='Bucket into which to copy blobs')
     args = parser.parse_args()
     args.id = 0  # Default process ID
-
-    # if not os.path.exists('{}'.format(args.log_dir)):
-    #     os.mkdir('{}'.format(args.log_dir))
-    #
-    # successlogger = logging.getLogger('root.success')
-    # successlogger.setLevel(INFO)
-    #
-    # errlogger = logging.getLogger('root.err')
-    #
-    # # Change logging file. File name includes bucket ID.
-    # for hdlr in successlogger.handlers[:]:
-    #     successlogger.removeHandler(hdlr)
-    # success_fh = logging.FileHandler('{}/success.log'.format(args.log_dir))
-    # successlogger.addHandler(success_fh)
-    # successformatter = logging.Formatter('%(message)s')
-    # success_fh.setFormatter(successformatter)
-    #
-    # for hdlr in errlogger.handlers[:]:
-    #     errlogger.removeHandler(hdlr)
-    # err_fh = logging.FileHandler('{}/error.log'.format(args.log_dir))
-    # errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
-    # errlogger.addHandler(err_fh)
-    # err_fh.setFormatter(errformatter)
+    print(f'args: {json.dumps(args.__dict__, indent=2)}')
+    args.dst_bucket = client.bucket(args.dst_bucket_name)
 
     gen_root_obj(args)

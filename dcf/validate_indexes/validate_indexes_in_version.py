@@ -102,7 +102,7 @@ def validate_version(args):
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
     parser.add_argument('--version', type=int, default=f'{settings.CURRENT_VERSION}', help='IDC version to validate')
-    parser.add_argument('--starts_with', help='Identify UUIDs that start with this pattern')
+    parser.add_argument('--starts_with', type=str, help='Identify UUIDs that start with this pattern')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     validate_version(args)

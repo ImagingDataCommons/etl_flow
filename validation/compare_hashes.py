@@ -316,13 +316,18 @@ def compare_collection_hashes(sess, args):
                 #     break
 
                 nbia_hash = result.text
-                idc_hash = collection.hashes.tcia
-                if 'collection' in args.log_level:
-                    print('{:32} IDC: {}, NBIA: {}; {}'.format(collection_id, collection.hashes.tcia, nbia_hash, idc_hash==nbia_hash))
-                    if idc_hash==nbia_hash:
-                        rootlogger.info('%-32s IDC: %s, NBIA: %s; %s', collection_id, collection.hashes.tcia, nbia_hash, idc_hash==nbia_hash)
-                    else:
-                        errlogger.info('%-32s IDC: %s, NBIA: %s; %s', collection_id, collection.hashes.tcia, nbia_hash, idc_hash==nbia_hash)
+                try:
+                    idc_hash = collection.hashes.tcia
+                    if 'collection' in args.log_level:
+                        print('{:32} IDC: {}, NBIA: {}; {}'.format(collection_id, collection.hashes.tcia, nbia_hash, idc_hash==nbia_hash))
+                        if idc_hash==nbia_hash:
+                            rootlogger.info('%-32s IDC: %s, NBIA: %s; %s', collection_id, collection.hashes.tcia, nbia_hash, idc_hash==nbia_hash)
+                        else:
+                            errlogger.info('%-32s IDC: %s, NBIA: %s; %s', collection_id, collection.hashes.tcia, nbia_hash, idc_hash==nbia_hash)
+                except:
+                    idc_hash = ''
+                    print('{:32} No IDC hash'.format(collection_id) )
+
                 if not args.stop_expansion == 'collection':
                     if idc_hash != nbia_hash or args.expand_all:
                         if args.stop and (nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == ""):
@@ -391,7 +396,7 @@ if __name__ == '__main__':
     parser.add_argument('--expand_all', default=False, help="Expand regardless of whether hashes match.")
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
                         help='Levels at which to log')
-    parser.add_argument('--collections', default=['ISPY2'], \
+    parser.add_argument('--collections', default=[], \
         help='List of collections to compare. If empty, compare all collections')
     parser.add_argument('--skips', default='./logs/compare_hashes_skips')
 
