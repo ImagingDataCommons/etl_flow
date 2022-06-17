@@ -19,7 +19,7 @@ from hfs.gen_patient_blobs import gen_patient_object
 
 
 def gen_collection_object(args, sess, idc_version, collection):
-    if not args.dst_bucket.blob(f"{collection.uuid}.idc").exists():
+    if not args.dst_bucket.blob(f"{collection.uuid}.idc").exists() and collection.sources.tcia:
         print(f'\t\tCollection {collection.collection_id} started')
         for patient in collection.patients:
             gen_patient_object(args, sess, idc_version, patient)

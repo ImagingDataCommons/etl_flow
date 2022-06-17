@@ -168,11 +168,13 @@ def load_BQ_from_uri(client, dataset, table, uri, schema, delimiter='\t', skip=1
 
 
 # Perform a query and write results to dst_dataset.dst_table
-def query_BQ(client, dst_dataset, dst_table, sql, write_disposition='WRITE_APPEND'):
+def query_BQ(client, dst_dataset, dst_table, sql, write_disposition='WRITE_APPEND',
+             schema_update_options = None):
     table_id = "{}.{}.{}".format(client.project, dst_dataset, dst_table)
 
     job_config = bigquery.QueryJobConfig(destination=table_id)
     job_config.write_disposition = write_disposition
+    job_config.schema_update_options = schema_update_options
 
     try:
         job = client.query(sql, job_config=job_config)

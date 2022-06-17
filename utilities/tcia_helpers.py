@@ -602,6 +602,7 @@ if __name__ == "__main__":
     # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
     # p = get_collection_license_info()
     # print(p)
+    p=get_TCIA_patients_per_collection('CPTAC-LUAD')
     h = get_hash({'Collection': 'ISPY2'})
     d = get_collection_descriptions_and_licenses()
     c = get_collection_values_and_counts()

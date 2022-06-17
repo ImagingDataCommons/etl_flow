@@ -16,8 +16,7 @@
 
 import os
 import argparse
-import logging
-from logging import INFO
+from utilities.logging_config import successlogger, progresslogger, errlogger
 from google.cloud import bigquery, storage
 import time
 from multiprocessing import Process, Queue
@@ -31,8 +30,10 @@ def get_urls(args):
     SELECT
       distinct
       collection_id,
+      st_uuid,
       se_uuid,
       i_uuid,
+      series_instance_uid,
       sop_instance_uid
     FROM
       `idc-dev-etl.idc_v{args.version}_dev.all_joined`
@@ -48,14 +49,13 @@ def get_urls(args):
     destination = client.get_table(destination)
     return destination
 
-def copy_some_blobs(args, client, metadata, n):
-    try:
-        dones = open(f'{args.log_dir}/success.log').read().splitlines()
-    except:
-        dones = []
-    for blob in metadata:
+def copy_some_blobs(args, client, dones, metadata, n):
+     for blob in metadata:
         src_blob_name = f"{blob['i_uuid']}.dcm"
-        dst_blob_name = f"{blob['se_uuid']}/{blob['sop_instance_uid']}.dcm"
+        if args.hfs_level == 'series':
+            dst_blob_name = f"{blob['se_uuid']}/{blob['i_uuid']}.dcm"
+        else:
+            dst_blob_name = f"{blob['st_uuid']}/{blob['se_uuid']}/{blob['i_uuid']}.dcm"
         if not src_blob_name in dones:
             src_bucket_name='idc-dev-open'
             src_bucket = client.bucket(src_bucket_name)
@@ -80,7 +80,7 @@ def copy_some_blobs(args, client, metadata, n):
         n += 1
 
 
-def worker(input, args):
+def worker(input, args, dones):
     # proglogger.info('p%s: Worker starting: args: %s', args.id, args )
     # print(f'p{args.id}: Worker starting: args: {args}')
 
@@ -88,10 +88,17 @@ def worker(input, args):
 
     client = storage.Client()
     for metadata, n in iter(input.get, 'STOP'):
-        copy_some_blobs(args, client, metadata, n)
+        copy_some_blobs(args, client, dones, metadata, n)
 
 
 def copy_all_blobs(args):
+    # try:
+    #     # dones = open(f'{args.log_dir}/success.log').read().splitlines()
+    #     dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
+    # except:
+    #     dones = []
+    dones = []
+
     bq_client = bigquery.Client()
     destination = get_urls(args)
 
@@ -107,13 +114,13 @@ def copy_all_blobs(args):
     for process in range(num_processes):
         args.id = process + 1
         processes.append(
-            Process(group=None, target=worker, args=(task_queue, args)))
+            Process(group=None, target=worker, args=(task_queue, args, dones)))
         processes[-1].start()
 
     # Distribute the work across the task_queues
     n = 0
     for page in bq_client.list_rows(destination, page_size=args.batch).pages:
-        metadata = [{"collection_id": row.collection_id, "se_uuid": row.se_uuid, "sop_instance_uid": row.sop_instance_uid, "i_uuid": row.i_uuid} for row in page]
+        metadata = [{"collection_id": row.collection_id, "st_uuid": row.st_uuid, "se_uuid": row.se_uuid, "series_instance_uid": row.series_instance_uid, "sop_instance_uid": row.sop_instance_uid, "i_uuid": row.i_uuid} for row in page]
         task_queue.put((metadata, n))
         # print(f'Queued {n}:{n+args.batch-1}')
         n += page.num_items
@@ -133,40 +140,17 @@ def copy_all_blobs(args):
     rate = (n)/delta
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=8, help='Version to work on')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/copy_and_rename_instances')
-    parser.add_argument('--collections', default="('APOLLO-5-LSCC', 'CPTAC-SAR')")
-    parser.add_argument('--src_bucket', default='idc-dev-open', help='Bucket from which to copy blobs')
-    parser.add_argument('--dst_bucket', default='whc_dev', help='Bucket into which to copy blobs')
-    parser.add_argument('--batch', default=100)
-    parser.add_argument('--processes', default=32)
-    args = parser.parse_args()
-    args.id = 0 # Default process ID
-
-    if not os.path.exists('{}'.format(args.log_dir)):
-        os.mkdir('{}'.format(args.log_dir))
-
-    successlogger = logging.getLogger('root.success')
-    successlogger.setLevel(INFO)
-
-    errlogger = logging.getLogger('root.err')
-
-    # Change logging file. File name includes bucket ID.
-    for hdlr in successlogger.handlers[:]:
-        successlogger.removeHandler(hdlr)
-    success_fh = logging.FileHandler('{}/success.log'.format(args.log_dir))
-    successlogger.addHandler(success_fh)
-    successformatter = logging.Formatter('%(message)s')
-    success_fh.setFormatter(successformatter)
-
-    for hdlr in errlogger.handlers[:]:
-        errlogger.removeHandler(hdlr)
-    err_fh = logging.FileHandler('{}/error.log'.format(args.log_dir))
-    errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
-    errlogger.addHandler(err_fh)
-    err_fh.setFormatter(errformatter)
-
-
-    copy_all_blobs(args)
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--version', default=8, help='Version to work on')
+#     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/copy_and_rename_instances')
+#     parser.add_argument('--collections', default="('APOLLO-5-LSCC', 'CPTAC-SAR')")
+#     parser.add_argument('--hfs_level', default='series',help='Name blobs as study/series/instance if study, series/instance if series')
+#     parser.add_argument('--src_bucket', default='idc-dev-open', help='Bucket from which to copy blobs')
+#     parser.add_argument('--dst_bucket', default='whc_series_instance', help='Bucket into which to copy blobs')
+#     parser.add_argument('--batch', default=100)
+#     parser.add_argument('--processes', default=16)
+#     args = parser.parse_args()
+#     args.id = 0 # Default process ID
+#
+#     copy_all_blobs(args)

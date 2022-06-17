@@ -14,21 +14,17 @@
 # limitations under the License.
 #
 
-backoff
-cryptography
-google
-google-api-python-client
-google-auth-httplib2
-google-cloud-bigquery
-google-cloud-bigquery-storage
-google-cloud-core
-google-cloud-storage
-google-crc32c
-google-resumable-media
-googleapis-common-protos
-psycopg2
-pydicom
-python-dotenv
-python_settings
-sqlalchemy
-sqlalchemy_utils
+import settings
+import argparse
+import sys
+from aux_matches_dicom_metadata import compare_tables
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--project', default = settings.DEV_PROJECT)
+    parser.add_argument('--dataset', default = settings.BQ_DEV_INT_DATASET)
+    args = parser.parse_args()
+    print(args)
+    compare_tables(args)
+
+

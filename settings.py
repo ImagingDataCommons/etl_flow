@@ -81,6 +81,7 @@ BQ_REGION='us'
 BQ_DEV_INT_DATASET=f'idc_v{CURRENT_VERSION}_dev' if CURRENT_VERSION>=8 else f'idc_v{CURRENT_VERSION}'
 BQ_DEV_EXT_DATASET=f'idc_v{CURRENT_VERSION}_pub' if CURRENT_VERSION>=8 else f'idc_v{CURRENT_VERSION}'
 BQ_PUB_DATASET=f'idc_v{CURRENT_VERSION}'
+BQ_PDP_DATASET=f'idc_v{CURRENT_VERSION}'
 
 # IDs and passwords to accessing some TCIA API endpoints
 TCIA_ID = os.environ.get('TCIA_ID')

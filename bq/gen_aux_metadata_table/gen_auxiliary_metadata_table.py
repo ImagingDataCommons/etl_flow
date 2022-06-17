@@ -362,6 +362,7 @@ licensed as (
 """
 
     client = bigquery.Client(project=args.dst_project)
+    breakpoint() # Add schema
     result=query_BQ(client, args.trg_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
     successlogger.info('Created auxiliary_metadata table')
 
