@@ -45,7 +45,7 @@ LOCAL_HOST='localhost'
 LOCAL_PORT='5432'
 #LOCAL_DATABASE_NAME=idc_nlst
 
-# Parameters fpor accessing the Cloud SQL DB server
+# Parameters for accessing the Cloud SQL DB server
 CLOUD_USERNAME = os.environ.get('CLOUD_USERNAME', '')
 CLOUD_PASSWORD = os.environ.get('CLOUD_PASSWORD', '')
 CLOUD_HOST='0.0.0.0'

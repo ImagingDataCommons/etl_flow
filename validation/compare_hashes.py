@@ -26,7 +26,7 @@ from time import sleep
 from logging import INFO
 from utilities.tcia_helpers import get_hash, get_access_token, get_images_with_md5_hash, get_images_with_md5_hash_nlst,\
     get_TCIA_patients_per_collection, get_TCIA_studies_per_patient, get_TCIA_series_per_study, NBIA_AUTH_URL, \
-    get_hash_nlst, NLST_AUTH_URL
+    get_hash_nlst, NLST_AUTH_URL, refresh_access_token
 from ingestion.utilities.utils import get_merkle_hash
 
 from python_settings import settings
@@ -119,22 +119,21 @@ def compare_instance_hashes(access_token, refresh_token, cur, args, collection, 
 
 
 def compare_series_hashes(access_token, refresh_token, cur, args, collection, patient, study):
-    query = f"""
-        SELECT series_instance_uid, series_hash, series_instances
-        FROM study{args.suffix} as st
-        JOIN series{args.suffix} as se
-        ON st.id = se.study_id
-        WHERE st.idc_version_number=2 AND st.study_instance_uid ='{study.study_instance_uid}'
-      """
+    access_token, refresh_token = get_access_token(auth_server=NBIA_AUTH_URL)
 
-    cur.execute(query)
-    series = cur.fetchall()
+    idc_series = study.seriess
     # access_token = get_access_token(auth_server=NBIA_AUTH_URL)
 
     tcia_series = get_TCIA_series_per_study(collection.collection_id, patient.submitter_case_id, study.study_instance_uid)
 
+    if not set([series.series_instance_uid for series in idc_series]) == set([series['SeriesInstanceUID'] for series in tcia_series]):
+        errlogger.info("      Different set of series")
+        print("        Different set of series")
+        return
+
+
     tcia_series = sorted(tcia_series, key=lambda id: id['SeriesInstanceUID'])
-    for series in tcia_series:
+    for series in idc_series:
         if not series['SeriesInstanceUID'] in [serie[0] for serie in series]:
             print('        {:32} Series {} not in IDC'.format(study.study_instance_uid, series['SeriesInstanceUID']))
         else:
@@ -157,7 +156,7 @@ def compare_series_hashes(access_token, refresh_token, cur, args, collection, pa
                                     result.reason)
 
                 nbia_hash = result.text
-                idc_hash = row[1]
+                idc_hash = series.hashes.tcia
                 if 'series' in args.log_level:
                     print('            {:32} IDC: {}, NBIA: {}; {}'.format(row[0], row[1], nbia_hash, idc_hash==nbia_hash))
                     rootlogger.info('            %-32s IDC: %s, NBIA: %s; %s', row[0], row[1], nbia_hash, idc_hash==nbia_hash)
@@ -180,20 +179,24 @@ def compare_series_hashes(access_token, refresh_token, cur, args, collection, pa
 
 
 def compare_study_hashes(access_token, refresh_token, sess, args, collection, patient):
-    studies = [patient.studies]
+    idc_studies = patient.studies
 
-    studies = get_TCIA_studies_per_patient(collection.collection_id, patient.submitter_case_id)
+    tcia_studies = get_TCIA_studies_per_patient(collection.collection_id, patient.submitter_case_id)
 
-    # if len(studies) == len(tcia_studies):
-    studies = sorted(studies, key=lambda id: id['StudyInstanceUID'])
-    for study in studies:
+    if not set([study.study_instance_uid for study in idc_studies]) == set([study['StudyInstanceUID'] for study in tcia_studies]):
+        errlogger.info("    Different set of patients")
+        print("      Different set of patients")
+        return
+
+    for study in idc_studies:
+        access_token, refresh_token = get_access_token(auth_server=NBIA_AUTH_URL)
         try:
             if collection.collection_id == 'NLST':
-               result, access_token, refresh_token = get_hash_nlst({'StudyInstanceUID': study.study_instance_uid},
+               result = get_hash_nlst({'StudyInstanceUID': study.study_instance_uid},
                         access_token=access_token, refresh_token=refresh_token)
             else:
-                result, access_token, refresh_token = get_hash({'StudyInstanceUID': study.study_instance_uid},
-                        access_token=access_token, refresh_token=refresh_token)
+                result = get_hash({'StudyInstanceUID': study.study_instance_uid},
+                        access_token=access_token)
             if result.status_code == 504:
                 print('        {:32} IDC: {}, error: {}, reason: {}'.format(patient.submitter_uid, study.study_instance_uid, result.status_code,
                                                                         result.reason))
@@ -203,8 +206,8 @@ def compare_study_hashes(access_token, refresh_token, sess, args, collection, pa
             nbia_hash = result.text
             idc_hash = study.hashes.tcia
             if 'study' in args.log_level:
-                print('        {:32} IDC: {}, NBIA: {}; {}'.format(patient.submitter_uid, study.study_instance_uid, nbia_hash, idc_hash==nbia_hash))
-                rootlogger.info('        %-32s IDC: %s, NBIA: %s; %s', patient.submitter_uid, study.study_instance_uid, nbia_hash, idc_hash==nbia_hash)
+                print('        {:32} IDC: {}, NBIA: {}; {}'.format(study.study_instance_uid, nbia_hash, idc_hash, idc_hash==nbia_hash))
+                rootlogger.info('        %-32s IDC: %s, NBIA: %s; %s', study.study_instance_uid, nbia_hash, idc_hash, idc_hash==nbia_hash)
             if not args.stop_expansion == 'study':
                 if idc_hash != nbia_hash or args.expand_all:
                     if args.stop and (nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == ""):
@@ -214,8 +217,8 @@ def compare_study_hashes(access_token, refresh_token, sess, args, collection, pa
                     else:
                         compare_series_hashes(access_token, refresh_token, sess, args, collection, patient, study)
         except TimeoutError as esc:
-            print('{:32} IDC: {}, error: {}, reason: {}'.format(patient.submitter_uid, study.study_instance_uid, result.status_code, result.reason))
-            rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', patient.submitter_uid, study.study_instance_uid, result.status_code, result.reason)
+            print('{:32} IDC: {}, error: {}, reason: {}'.format(patient.submitter_case_id, study.study_instance_uid, result.status_code, result.reason))
+            rootlogger.info('%-32s IDC: %s, error: %s, reason: %s', patient.submitter_case_id, study.study_instance_uid, result.status_code, result.reason)
     # else:
     #     print('    {:32} Different number of studies: IDC: {}, NBIA: {}'.format(submitter_case_id,
     #             len(studies), len(tcia_studies)))
@@ -230,13 +233,13 @@ def validate_idc_collection_hash(collection):
 
 def compare_patient_hashes(access_token, refresh_token, sess, args, collection):
     patients = collection.patients
-    # validate_idc_collection_hash(collection)
-#    access_token = get_access_token(auth_server=NBIA_AUTH_URL)
     tcia_patients = get_TCIA_patients_per_collection(collection.collection_id)
-    if not set([patient.submitter_case_id for patient in patients]) == set([patient['PatientId'] for patient in tcia_patients]):
-        errlogger.info("    Patients are different")
+    if len(patients) != len(tcia_patients):
+        errlogger.info(f"    Patients counts are different. IDC: {len(patients)}, TCIA: {len(tcia_patients)}")
+        print(f"    Patients counts are different. IDC: {len(patients)}, TCIA: {len(tcia_patients)}")
         return
     for patient in patients:
+        access_token, refresh_token = get_access_token(auth_server=NBIA_AUTH_URL)
         try:
             if collection.collection_id == 'NLST':
                 result = get_hash_nlst(
@@ -282,19 +285,18 @@ def compare_collection_hashes(sess, args):
     collections = version.collections
     collections = sorted(version.collections, key=lambda collection: collection.collection_id)
 
-    skips = open(args.skips).read().splitlines()
+    skips = args.skips
 
-    access_token, refresh_token = get_access_token(auth_server=NBIA_AUTH_URL)
     if args.collections != []:
         collections = [collection for collection in collections if collection.collection_id in args.collections]
         if collections[0].collection_id == 'NLST':
             access_token, refresh_token = get_access_token(auth_server=NLST_AUTH_URL)
 
-
     for collection in collections:
         # access_token = get_access_token(auth_server=NBIA_AUTH_URL)
         collection_id = collection.collection_id
         if collection_id not in skips:
+            access_token, refresh_token = get_access_token(auth_server=NBIA_AUTH_URL)
             try:
                 if collection_id == 'APOLLO':
                     result, access_token, refresh_token = get_hash({'Collection': 'APOLLO-5-LSCC'}, access_token=access_token, refresh_token=refresh_token)
@@ -398,7 +400,7 @@ if __name__ == '__main__':
                         help='Levels at which to log')
     parser.add_argument('--collections', default=[], \
         help='List of collections to compare. If empty, compare all collections')
-    parser.add_argument('--skips', default='./logs/compare_hashes_skips')
+    parser.add_argument('--skips', default=['Duke-Breast-Cancer-MRI',      'LDCT-and-Projection-data', 'NLST'])
 
     args = parser.parse_args()
     args.version = version
