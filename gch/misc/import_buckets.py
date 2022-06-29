@@ -155,13 +155,15 @@ def import_buckets(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--src_buckets', default=['nlst-pathology-conversion-results-new/NLST/*/*_*'],
+    parser.add_argument('--src_buckets', default=[
+        'tcga_kirp_path_whc/TCGA-KIRP/*/DCM_*'
+    ],
             help="List of buckets from which to import. This list should include all buckets except idc-dev-excluded")
     parser.add_argument('--period', default=60, help="seconds to sleep between checking operation status")
     parser.add_argument('--project', default='idc-dev-etl')
     parser.add_argument('--region', default='us-central1')
     parser.add_argument('--dataset', default='idc')
-    parser.add_argument('--dicomstore', default='idc_v10_pathology')
+    parser.add_argument('--dicomstore', default='tcga_kirp_path_whc')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
 
