@@ -45,24 +45,33 @@ def gen_study_object(args, sess, idc_version, study):
                 "drs_object_id": f"drs://nci-crdc.datacommons.io/dg.4DFC/{study.uuid}",
                 "children": {
                     "count": len(study.seriess),
-                    "object_ids": [f"{series.series_instance_uid}" for series in study.seriess],
+                    "object_ids": [f"{series.series_instance_uid}" for series in study.seriess if series.sources.tcia],
                     "gs":{
                         "region": "us-central1",
                         "bucket": f"{args.dst_bucket.name}",
-                        "gs_object_ids":
-                            [
-                                f"{series.uuid}.idc" for series in study.seriess
-                            ]
-                        },
+                        "gs_object_ids": [
+                            f"{series.uuid}.idc" for series in study.seriess if series.sources.tcia
+                        ]
+                    },
                     "drs": {
                         "drs_server": "drs://nci-crdc.datacommons.io",
-                        "drs_object_ids":
-                            [
-                                f"dg.4DFC/{series.uuid}" for series in study.seriess
-                            ]
-                        }
+                        "drs_object_ids": [
+                            f"dg.4DFC/{series.uuid}" for series in study.seriess if series.sources.tcia
+                        ]
                     }
-                }
+                },
+                # "parents": {
+                #     "count": len(study.patients),
+                #     "object_ids": [patient.submitter_case_id for patient in study.patients],
+                #     "gs": {
+                #         "region": "us-central1",
+                #         "bucket": f"gs://{args.dst_bucket.name}",
+                #         "gs_object_ids": [
+                #             f"{patient.uuid}.idc" for patient in study.patients
+                #         ]
+                #     }
+                # },
+            }
             blob = args.dst_bucket.blob(f"{study.uuid}.idc").upload_from_string(json.dumps(study_data))
             print(f'\t\t\t\tStudy {study.study_instance_uid} completed')
         else:

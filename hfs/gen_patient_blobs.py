@@ -37,24 +37,37 @@ def gen_patient_object(args, sess, idc_version, patient):
                 "self_uri": f"gs://{args.dst_bucket.name}/{patient.uuid}.idc",
                 "children": {
                     "count": len(patient.studies),
-                    "object_ids": [study.study_instance_uid for study in patient.studies],
+                    "object_ids": [study.study_instance_uid for study in patient.studies if study.sources.tcia],
                     "gs":{
                         "region": "us-central1",
                         "bucket": f"{args.dst_bucket.name}",
-                        "gs_object_ids":
-                            [
-                                f"{study.uuid}.idc" for study in patient.studies
-                            ]
-                        },
+                        "gs_object_ids": [
+                            f"{study.uuid}.idc" for study in patient.studies if study.sources.tcia
+                        ]
+                    },
                     "drs": {
                         "drs_server": "drs://nci-crdc.datacommons.io",
-                        "drs_object_ids":
-                            [
-                                    f"dg.4DFC/{study.uuid}" for study in patient.studies
-                            ]
-                        }
+                        "drs_object_ids": [
+                            f"dg.4DFC/{study.uuid}" for study in patient.studies if study.sources.tcia
+                        ]
                     }
-                }
+                },
+                # "parents": {
+                #     "count": len([collection for collection in patient.collections if
+                #                   collection.collection_id in args.collections]),
+                #     "object_ids": [collection.collection_id.lower().replace('-', '_').replace(' ', '_') \
+                #                    for collection in patient.collections if
+                #                    collection.collection_id in args.collections],
+                #     "gs": {
+                #         "region": "us-central1",
+                #         "bucket": f"{args.dst_bucket.name}",
+                #         "gs_object_ids": [
+                #             f"{collection.uuid}.idc" \
+                #             for collection in patient.collections if collection.collection_id in args.collections
+                #         ]
+                #     }
+                # },
+            }
             blob = args.dst_bucket.blob(f"{patient.uuid}.idc").upload_from_string(json.dumps(patient_data))
             print(f'\t\t\tPatient {patient.submitter_case_id} completed')
         else:

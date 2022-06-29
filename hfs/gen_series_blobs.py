@@ -48,7 +48,7 @@ def gen_series_object(args, sess, study, series):
                 "final_idc_version": series.final_idc_version,
                 "self_uri": f"gs://{args.dst_bucket.name}/{series.uuid}.idc",
                 "drs_object_id": f"drs://nci-crdc.datacommons.io/dg.4DFC/{series.uuid}",
-                "instances": {
+                "children": {
                     "count": len(series.instances),
                     "SOPInstanceUIDs": [instance.sop_instance_uid for instance in series.instances],
                     "gs":{
@@ -67,8 +67,25 @@ def gen_series_object(args, sess, study, series):
                     #             f"{instance.uuid}" for instance in series.instances
                     #         ]
                     #     }
-                    }
-                }
+                },
+                # "parents": {
+                #     "count": len(series.studies),
+                #     "object_ids": [study.study_instance_uid for study in series.studies],
+                #     "gs": {
+                #         "region": "us-central1",
+                #         "bucket": f"{args.dst_bucket.name}",
+                #         "gs_object_ids": [
+                #             f"{study.uuid}.idc" for study in series.studies
+                #         ]
+                #     },
+                #     "drs": {
+                #         "drs_server": "drs://nci-crdc.datacommons.io",
+                #         "drs_object_ids": [
+                #             f"dg.4DFC/{study.uuid}" for study in series.studies if study.sources.tcia
+                #         ]
+                #     }
+                # }
+            }
             blob = args.dst_bucket.blob(f"{series.uuid}.idc").upload_from_string(json.dumps(series_data))
             print(f'\t\t\t\t\tSeries object {series.series_instance_uid} completed')
         else:
