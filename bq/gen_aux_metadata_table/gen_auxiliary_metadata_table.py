@@ -24,9 +24,10 @@ from google.cloud import bigquery
 
 from python_settings import settings
 from time import sleep
-from utilities.bq_helpers import load_BQ_from_json, query_BQ
+from utilities.bq_helpers import load_BQ_from_json, query_BQ, create_BQ_table
 from utilities.logging_config import successlogger,progresslogger
 from bq.utils.gen_license_table import get_original_collection_licenses
+from bq.gen_aux_metadata_table.schema import auxiliary_metadata_schema
 
 
 def create_original_collections_licenses_table(args):
@@ -363,7 +364,10 @@ licensed as (
 
     client = bigquery.Client(project=args.dst_project)
     breakpoint() # Add schema
-    result=query_BQ(client, args.trg_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
+    # Create a table to get the schema defined
+    result = create_BQ_table(client, args.dst_project, args.trg_bqdataset_name, args.bqtable_name, auxiliary_metadata_schema, exists_ok=True)
+    # Perform the query and save results in specified table
+    result = query_BQ(client, args.trg_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
     successlogger.info('Created auxiliary_metadata table')
 
 def gen_aux_table(args):
