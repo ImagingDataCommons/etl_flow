@@ -75,12 +75,12 @@ def BQ_table_exists(BQ_client, project, dataset, table):
 #     print("Table is not found.")
 
 
-def create_BQ_table(client, project, dataset, table, schema):
+def create_BQ_table(client, project, dataset, table, schema, exists_ok=False):
     table_id = "{}.{}.{}".format(project, dataset, table)
 
     table = bigquery.Table(table_id, schema=schema)
 
-    table = client.create_table(table)  # Make an API request.
+    table = client.create_table(table, exists_ok=exists_ok)  # Make an API request.
     return table
 
 

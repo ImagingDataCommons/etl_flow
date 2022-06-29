@@ -43,6 +43,7 @@ progresslogger = logging.getLogger('root.progress')
 progresslogger.setLevel(INFO)
 for hdlr in progresslogger.handlers[:]:
     progresslogger.removeHandler(hdlr)
+#The progress log file is always truncated (the mode='w' does that.)
 success_fh = logging.FileHandler('{}/progress.log'.format(settings.LOG_DIR), mode='w')
 progresslogger.addHandler(success_fh)
 successformatter = logging.Formatter('%(message)s')
