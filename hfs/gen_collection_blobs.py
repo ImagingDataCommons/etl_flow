@@ -36,17 +36,27 @@ def gen_collection_object(args, sess, idc_version, collection):
             "self_uri": f"{args.dst_bucket.name}/{collection.uuid}.idc",
             "children": {
                 "count": len(collection.patients),
-                "object_ids": [patient.submitter_case_id for patient in collection.patients],
+                "object_ids": [patient.submitter_case_id for patient in collection.patients if patient.sources.tcia],
                 "gs":{
                     "region": "us-central1",
                     "bucket": f"gs://{args.dst_bucket.name}",
-                    "gs_object_ids":
-                        [
-                             f"{patient.uuid}.idc" for patient in collection.patients
-                        ]
-                    }
-                 }
-            }
+                    "gs_object_ids": [
+                         f"{patient.uuid}.idc" for patient in collection.patients if patient.sources.tcia
+                    ]
+                }
+            },
+            # "parents": {
+            #     "count": len(collection.versions),
+            #     "object_ids": [f"idc_v{version.version}" for version in collection.versions],
+            #     "gs": {
+            #         "region": "us-central1",
+            #         "bucket": f"{args.dst_bucket.name}",
+            #         "gs_object_ids": [
+            #             f"idc_v{version.version}.idc" for version in collection.versions
+            #         ]
+            #     }
+            # },
+        }
         blob = args.dst_bucket.blob(f"{collection.uuid}.idc").upload_from_string(json.dumps(collection_data))
         print(f'\t\tCollection {collection.collection_id} completed')
     else:

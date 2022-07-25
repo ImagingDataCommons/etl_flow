@@ -45,14 +45,25 @@ def gen_version_object(args, sess, version):
                 "gs":{
                     "region": "us-central1",
                     "bucket": f"{args.dst_bucket.name}",
-                    "gs_object_ids":
-                        [
-                            f"{collection.uuid}.idc" \
-                                for collection in version.collections if collection.collection_id in args.collections
-                        ]
-                    }
+                    "gs_object_ids": [
+                        f"{collection.uuid}.idc" \
+                            for collection in version.collections if collection.collection_id in args.collections
+                    ]
                 }
-            }
+            },
+            # "parents": {
+            #     "count": 1,
+            #     "object_ids": ['root'],
+            #     "gs": {
+            #         "region": "us-central1",
+            #         "bucket": f"{args.dst_bucket.name}",
+            #         "gs_object_ids": [
+            #             'idc.idc'
+            #         ]
+            #     }
+            # }
+        }
+
         blob = args.dst_bucket.blob(f"idc_v{version.version}.idc").upload_from_string(json.dumps(version_data))
         print(f'\tVersion {version.version} completed')
     else:

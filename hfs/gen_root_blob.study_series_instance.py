@@ -61,13 +61,17 @@ def gen_root_obj(args):
                     "gs":{
                         "region": "us-central1",
                         "bucket": f"{args.dst_bucket.name}",
-                        "gs_object_ids":
-                            [
-                                f"idc_v{version.version}.idc" for version in versions
-                            ]
-                        }
-                     }
-                }
+                        "gs_object_ids": [
+                            f"idc_v{version.version}.idc" for version in versions
+                        ]
+                    }
+                 },
+                # "parents": {
+                #     "count": 0,
+                #     "object_ids": []
+                # }
+            }
+
             blob=args.dst_bucket.blob("idc.idc").upload_from_string(json.dumps(root))
             print(f"Root completed")
         else:

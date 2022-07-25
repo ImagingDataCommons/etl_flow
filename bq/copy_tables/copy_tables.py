@@ -19,7 +19,7 @@
 import argparse
 import sys
 from google.cloud import bigquery
-from utilities.bq_helpers import create_BQ_dataset, copy_BQ_table
+from utilities.bq_helpers import create_BQ_dataset, delete_BQ_Table, copy_BQ_table
 from utilities.logging_config import successlogger
 from google.api_core.exceptions import NotFound
 
@@ -35,6 +35,7 @@ def copy_tables(args):
     for table in args.bqtables:
         src_table = src_dataset.table(table)
         dst_table = dst_dataset.table(table)
+        delete_BQ_Table(client, args.dst_project, args.dst_bqdataset, table)
         copy_BQ_table(client, src_table, dst_table)
         successlogger.info(f"Copied table {table}")
 
