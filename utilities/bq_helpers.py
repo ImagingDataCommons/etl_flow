@@ -92,12 +92,14 @@ def delete_BQ_Table(client, project, dataset, table):
     client.delete_table(table_id, not_found_ok=True)  # Make an API request.
 
 
-def load_BQ_from_json(client, project, dataset, table, json_rows, aschema=None, write_disposition='WRITE_APPEND'):
+def load_BQ_from_json(client, project, dataset, table, json_rows, aschema=None, \
+        write_disposition='WRITE_APPEND', table_description=''):
     table_id = "{}.{}.{}".format(project, dataset, table)
 
     job_config = bigquery.LoadJobConfig()
     job_config.source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
     job_config.write_disposition = write_disposition
+    job_config.destination_table_description = table_description
     if aschema:
         job_config.schema = aschema
     else:
@@ -169,9 +171,10 @@ def load_BQ_from_uri(client, dataset, table, uri, schema, delimiter='\t', skip=1
 
 # Perform a query and write results to dst_dataset.dst_table
 def query_BQ(client, dst_dataset, dst_table, sql, write_disposition='WRITE_APPEND',
-             schema_update_options = None):
-    table_id = "{}.{}.{}".format(client.project, dst_dataset, dst_table)
+             schema_update_options = None, expiration=0):
 
+
+    table_id = "{}.{}.{}".format(client.project, dst_dataset, dst_table)
     job_config = bigquery.QueryJobConfig(destination=table_id)
     job_config.write_disposition = write_disposition
     job_config.schema_update_options = schema_update_options

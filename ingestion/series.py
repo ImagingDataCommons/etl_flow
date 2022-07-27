@@ -67,7 +67,7 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
     else:
         # Get a list of the instances that we currently have in this series
         # We assume that a series has instances from a single source
-        breakpoint()
+        # breakpoint()
         idc_objects = {object.sop_instance_uid: object for object in series.instances}
 
         # If any (non-skipped) source has an object but IDC does not, it is new. Note that we don't get objects from
@@ -105,15 +105,16 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
         idc_hash = instance.hash
         src_hash = all_sources.src_instance_hashes(instance.sop_instance_uid, instances[instance.sop_instance_uid])
         revised = idc_hash != src_hash
-        if any(revised):
+        # if any(revised):
+        if revised:
             rev_instance = clone_instance(instance, str(uuid4()))
             rev_instance.revised = True
-            rev_instance.done = True
+            rev_instance.done = False
             rev_instance.is_new = False
             rev_instance.expanded = True
             rev_instance.timestamp = datetime.utcnow()
-            rev_instance.source = instances[instance]
-            new_instance.hash = None
+            rev_instance.source = instances[instance.sop_instance_uid]
+            rev_instance.hash = None
             rev_instance.size = 0
             rev_instance.rev_idc_version = settings.CURRENT_VERSION
             series.instances.append(rev_instance)

@@ -360,9 +360,6 @@ def compare_hashes(args):
     sql_engine = create_engine(sql_uri)
     args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
 
-    # Create the tables if they do not already exist
-    # Base.metadata.create_all(sql_engine)
-
     # Enable the underlying psycopg2 to deal with composites
     conn = sql_engine.connect()
     register_composites(conn)
@@ -394,13 +391,13 @@ if __name__ == '__main__':
     parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
     parser.add_argument('--suffix', default="")
     parser.add_argument('--stop_expansion', default="Collection", help="Level at which to stop expansion")
-    parser.add_argument('--stop', default=False, help='Stop expansion if no hash returned by NBIA')
+    parser.add_argument('--stop', default=True, help='Stop expansion if no hash returned by NBIA')
     parser.add_argument('--expand_all', default=False, help="Expand regardless of whether hashes match.")
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
                         help='Levels at which to log')
     parser.add_argument('--collections', default=[], \
         help='List of collections to compare. If empty, compare all collections')
-    parser.add_argument('--skips', default=['Duke-Breast-Cancer-MRI',      'LDCT-and-Projection-data', 'NLST'])
+    parser.add_argument('--skips', default=['LDCT-and-Projection-data', 'NLST'])
 
     args = parser.parse_args()
     args.version = version

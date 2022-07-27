@@ -59,6 +59,7 @@ def get_data_collection_doi(collection, server=""):
             uri = ''
     else:
         uri = ''
+
     if uri=='':
         # Reported as https://help.cancerimagingarchive.net/servicedesk/customer/portal/1/TH-49634
         if collection == 'StageII-Colorectal-CT':
@@ -107,8 +108,9 @@ def get_data_collection_doi(collection, server=""):
             'TCGA-UCS',
             'TCGA-UVM']:
 
-            breakpoint()
-            uri = f'{collection}-DOI'
+            # breakpoint()
+            # uri = f'{collection}-DOI'
+            uri = ''
         # Shouldn't ever get here, because we won't update NLST
         elif collection == 'NLST':
             breakpoint()

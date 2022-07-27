@@ -91,7 +91,7 @@ def gen_version_metadata_table(args):
     metadata = '\n'.join(rows)
     job = load_BQ_from_json(client, args.dst_project, args.bqdataset_name, args.bqtable_name, metadata,
                             version_metadata_schema, write_disposition='WRITE_TRUNCATE')
-    successlogger('version_metadata table generation completed')
+    successlogger.info('version_metadata table generation completed')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -60,7 +60,7 @@ def expand_version(sess, args, all_sources, version):
             idc_objects.pop(idc_object)
 
     # Collections that are not previously known about by any source.
-    new_objects =sorted( [idc_collection_id for idc_collection_id in collections if idc_collection_id not in idc_objects])
+    new_objects = sorted( [idc_collection_id for idc_collection_id in collections if idc_collection_id not in idc_objects])
     existing_objects = [obj for id, obj in idc_objects.items() if \
         id in collections or any([a and b for a, b in zip(obj.sources, is_skipped(args.skipped_collections, id))])]
     # Collections that are no longer known about by any source
@@ -77,7 +77,7 @@ def expand_version(sess, args, all_sources, version):
         new_collection.uuid = str(uuid4())
         new_collection.min_timestamp = datetime.utcnow()
         new_collection.revised = collections[idc_collection_id]['sources']
-        new_collection.sources = [False, False]
+        new_collection.sources = collections[idc_collection_id]['sources']
         new_collection.hashes = None
         new_collection.init_idc_version=settings.CURRENT_VERSION
         new_collection.rev_idc_version=settings.CURRENT_VERSION
@@ -111,6 +111,7 @@ def expand_version(sess, args, all_sources, version):
             rev_collection.is_new = False
             rev_collection.expanded = False
             rev_collection.hashes = None
+            rev_collection.sources = collections[collection.idc_collection_id]['sources']
             rev_collection.revised = revised
             rev_collection.rev_idc_version = settings.CURRENT_VERSION
             version.collections.append(rev_collection)
@@ -157,15 +158,24 @@ def expand_version(sess, args, all_sources, version):
         retire_collection(args, collection)
         version.collections.remove(collection)
 
-    print(f'p{args.pid}; Version expansion summary')
+    progresslogger.info(f'\n\nVersion expansion summary')
+    new_collections = []
+    revised_collections = []
     for collection in version.collections:
         if not collection.done:
             if collection.init_idc_version == collection.rev_idc_version:
-                print(f'p{args.pid}: New collection: {collection.collection_id}')
+                new_collections.append(collection.collection_id)
             else:
-               print(f'p{args.pid}: Revising collection: {collection.collection_id}')
+                revised_collections.append(collection.collection_id)
+    progresslogger.info('New collections:')
+    for collection_id in sorted(new_collections):
+        progresslogger.info(collection_id)
+    progresslogger.info('\nRevised collections:')
+    for collection_id in sorted(revised_collections):
+        progresslogger.info(collection_id)
+    progresslogger.info('\nRetired collections:')
     for collection in retired_objects:
-        print(f'p{args.pid}: Revising collection: {collection.collection_id}')
+        progresslogger.info(collection.collection_id)
     if args.stop_after_collection_summary:
         exit()
 

@@ -265,8 +265,13 @@ class Pathology(Source):
 
 
     def src_patient_hash(self, collection_id, submitter_case_id):
-        query = select(WSI_Patient.hash).where(WSI_Patient.submitter_case_id == submitter_case_id)
-        hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
+        try:
+           query = select(WSI_Patient.hash).where(WSI_Patient.submitter_case_id == submitter_case_id)
+           hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
+        except Exception as exc:
+            errlogger.error(f'Exception in src_patient_hash: {exc}')
+            breakpoint()
+            raise exc
         return hash
 
     ###-------------------Studies-----------------###
@@ -301,3 +306,9 @@ class Pathology(Source):
         query = select(WSI_Instance.sop_instance_uid).where(WSI_Instance.series_instance_uid == series.series_instance_uid)
         instances = [row.sop_instance_uid for row in self.sess.execute(query).fetchall()]
         return instances
+
+    def src_instance_hash(self, sop_instance_uid):
+        query = select(WSI_Instance.hash).where(WSI_Instance.sop_instance_uid == sop_instance_uid)
+        hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
+        return hash
+

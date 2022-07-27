@@ -22,6 +22,7 @@ from time import sleep
 from googleapiclient.errors import HttpError
 from utilities.gch_helpers import get_dicom_store, get_dataset, create_dicom_store, create_dataset
 from googleapiclient import discovery
+import settings
 
 
 def get_gch_client():
@@ -50,14 +51,19 @@ def get_dataset_operation(
     return response
 
 
-def wait_done(args, sleep_time):
+def wait_done(args, sleep_time, verbose=True):
     # operation = response['name'].split('/')[-1]
     operation = args.operation
     while True:
-        result = get_dataset_operation(args.dst_project, args.dataset_region, args.gch_dataset_name, operation)
-        print("{}".format(result))
-
+        result = get_dataset_operation(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET, operation)
+        if verbose:
+            # print("{}".format(result))
+            print(f'counter: {result["metadata"]["counter"]}')
         if 'done' in result:
+            if verbose:
+                # print("{}".format(result))
+                print(
+                    f'counter: {result["metadata"]["counter"]}; done: {result["done"]}; response: {result["response"]}')
             break
         sleep(sleep_time)
     return result
@@ -72,7 +78,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset_region', default='us', help='Dataset region')
     parser.add_argument('--gch_dataset_name', default='idc', help='Dataset name')
     # parser.add_argument('--gch_dicomstore_name', default=f'v{args.version}-with-redacted', help='Datastore name')
-    parser.add_argument('--operation', default='16893844389787336705')
+    parser.add_argument('--operation', default='8634633533937156097')
     parser.add_argument('--period', default=30, help="seconds to sleep between checking operation status")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

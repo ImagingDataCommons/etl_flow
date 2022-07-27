@@ -130,7 +130,8 @@ def expand_collection(sess, args, all_sources, collection):
         new_patient.idc_case_id = str(uuid4())
         new_patient.min_timestamp = datetime.utcnow()
         new_patient.revised = patients[patient]
-        new_patient.sources = (False, False)
+        # new_patient.sources = (False, False)
+        new_patient.sources = patients[patient]
         new_patient.hashes = None
         new_patient.uuid = str(uuid4())
         new_patient.max_timestamp = new_patient.min_timestamp
@@ -142,7 +143,7 @@ def expand_collection(sess, args, all_sources, collection):
         new_patient.expanded=False
 
         collection.patients.append(new_patient)
-        progresslogger.debug('  p%s: Patient %s is new',  args.pid, new_patient.submitter_case_id)
+        progresslogger.info('  p%s: Patient %s is new',  args.pid, new_patient.submitter_case_id)
 
     for patient in existing_objects:
         idc_hashes = patient.hashes
@@ -164,10 +165,11 @@ def expand_collection(sess, args, all_sources, collection):
             rev_patient.expanded = False
             rev_patient.revised = revised
             rev_patient.hashes = None
-            rev_patient.sources = [False, False]
+            # rev_patient.sources = [False, False]
+            rev_patient.sources = patients[patient.submitter_case_id]
             rev_patient.rev_idc_version = settings.CURRENT_VERSION
             collection.patients.append(rev_patient)
-            progresslogger.debug('  p%s: Patient %s is revised',  args.pid, rev_patient.submitter_case_id)
+            progresslogger.info('  p%s: Patient %s is revised',  args.pid, rev_patient.submitter_case_id)
 
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised collection
@@ -184,7 +186,7 @@ def expand_collection(sess, args, all_sources, collection):
 
             patient.done = True
             patient.expanded = True
-            progresslogger.debug('  p%s: Patient %s unchanged',  args.pid, patient.submitter_case_id)
+            progresslogger.info('  p%s: Patient %s unchanged',  args.pid, patient.submitter_case_id)
 
     for patient in retired_objects:
         breakpoint()
@@ -208,7 +210,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
     # Get the lists of data and analyis series for this collection
     data_collection_doi = get_data_collection_doi(collection.collection_id, server=args.server)
     data_collection_url = get_data_collection_url(collection.collection_id, sess)
-    if data_collection_doi=="" and data_collection_url=="":
+    if data_collection_doi=="" and (data_collection_url=="" or data_collection_url is None):
         errlogger.error('No DOI for collection %s', collection.collection_id)
         breakpoint()
         return

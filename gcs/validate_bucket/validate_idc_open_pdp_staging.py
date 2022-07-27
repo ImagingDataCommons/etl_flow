@@ -27,16 +27,37 @@ from google.cloud import storage, bigquery
 
 def get_expected_blobs_in_bucket(args):
     client = bigquery.Client()
+    # query = f"""
+    # SELECT distinct CONCAT(a.i_uuid, '.dcm') as uuid
+    # FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_included` a
+    # JOIN `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_included_collections` i
+    # ON a.collection_id = i.tcia_api_collection_id
+    # WHERE ((a.i_source='tcia' and i.pub_tcia_url='public-datasets-idc')
+    # OR (a.i_source='path' and i.pub_path_url='public-datasets-idc'))
+    # AND a.i_rev_idc_version = {settings.CURRENT_VERSION}
+    # AND a.i_excluded=FALSE
+    # """
+
+    # This query is a hack to deal with V10 pathology in CPTAC-CM, -LSCC is in public-datasets-pdp
+    # but previous is in idc-open-idc1
     query = f"""
-    SELECT distinct CONCAT(a.i_uuid, '.dcm') as uuid
-    FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined` a
-    JOIN `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_included_collections` i
-    ON a.collection_id = i.tcia_api_collection_id
-    WHERE ((a.i_source='tcia' and i.pub_tcia_url='public-datasets-idc')
-    OR (a.i_source='path' and i.pub_path_url='public-datasets-idc'))
-    AND a.i_rev_idc_version = {settings.CURRENT_VERSION}
-    AND a.i_excluded=FALSE 
-    """
+        SELECT distinct CONCAT(a.i_uuid, '.dcm') as uuid
+        FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_included` a
+        JOIN `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_included_collections` i
+        ON a.collection_id = i.tcia_api_collection_id
+        WHERE ((a.i_source='tcia' and i.pub_tcia_url='public-datasets-idc')
+        OR (a.i_source='path' and i.pub_path_url='public-datasets-idc'))
+        AND a.i_rev_idc_version = {settings.CURRENT_VERSION}
+        AND a.i_excluded=FALSE        
+        UNION ALL
+        SELECT distinct CONCAT(a.i_uuid, '.dcm') as blob_name
+        FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_included` a
+        JOIN `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_included_collections` i
+        ON a.collection_id = i.tcia_api_collection_id
+        WHERE 
+        a.collection_id = 'Vestibular-Schwannoma-SEG'
+
+        """
 
     query_job = client.query(query)  # Make an API request.
     query_job.result()  # Wait for the query to complete.
@@ -100,7 +121,7 @@ if __name__ == '__main__':
     parser.add_argument('--dev_or_pub', default = 'pub', help='Validating a dev or pub bucket')
     parser.add_argument('--expected_blobs', default=f'{settings.LOG_DIR}/expected_blobs.txt', help='List of blobs names expected to be in above collections')
     parser.add_argument('--found_blobs', default=f'{settings.LOG_DIR}/found_blobs.txt', help='List of blobs names found in bucket')
-    parser.add_argument('--batch', default=1000000, help='Size of batch assigned to each process')
+    parser.add_argument('--batch', default=10000, help='Size of batch assigned to each process')
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/validate_open_buckets')
 
     args = parser.parse_args()

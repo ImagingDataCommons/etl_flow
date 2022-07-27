@@ -125,7 +125,7 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
             rev_series.expanded = False
             rev_series.revised = revised
             rev_series.hashes = None
-            rev_series.sources = [False, False]
+            rev_series.sources = seriess[series.series_instance_uid]
             rev_series.rev_idc_version = settings.CURRENT_VERSION
             study.seriess.append(rev_series)
             progresslogger.debug('      p%s:Series %s revised',  args.pid, rev_series.series_instance_uid)

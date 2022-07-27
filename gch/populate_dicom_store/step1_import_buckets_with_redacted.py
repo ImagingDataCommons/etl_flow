@@ -31,7 +31,7 @@ from utilities.gch_helpers import get_dicom_store, get_dataset, create_dicom_sto
 from googleapiclient import discovery
 
 import logging
-from utilities.logging_config import progresslogger
+from utilities.logging_config import progresslogger, successlogger, errlogger
 
 
 def get_gch_client():
@@ -71,12 +71,17 @@ def wait_done(response, args, sleep_time, verbose=True):
         result = get_dataset_operation(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET, operation)
         if verbose:
             # print("{}".format(result))
-            progresslogger.info('%',result)
+            try:
+                progresslogger.info(f'counter: {result["metadata"]["counter"]}')
+            except:
+                progresslogger.info(f'No progress')
         if 'done' in result:
-            if not verbose:
-                # print("{}".format(result))
-                progresslogger.info('%',result)
-            break
+            try:
+                progresslogger.info(f'counter: {result["metadata"]["counter"]}; done: {result["done"]}; response: {result["response"]}')
+                break
+            except:
+                progresslogger.info((f'{result}'))
+                break
         sleep(sleep_time)
     return result
 
@@ -122,38 +127,49 @@ def import_buckets(args):
         datastore = create_dicom_store(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET, settings.GCH_DICOMSTORE)
     pass
 
+    dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
+
     # result = import_collection(args)
     for bucket in args.src_buckets:
         if '*' in bucket:
             buckets = get_wildcard_buckets(bucket)
             for bucket in buckets:
-                try:
-                    # print('Importing {}'.format(bucket))
-                    progresslogger.info('Importing %s', bucket)
-                    content_uri = '{}/*'.format(bucket)
-                    response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
-                                                      settings.GCH_DICOMSTORE, content_uri)
-                    # print(f'Response: {response}')
-                    progresslogger.info(response)
-                    result = wait_done(response, args, args.period)
-                except HttpError as e:
-                    err = json.loads(e.content)
-                    # print('Error loading {}; code: {}, message: {}'.format(bucket, err['error']['code'],
-                    #                                                        err['error']['message']))
-                    progresslogger.info('Error loading %s; code: %s, message: %s',bucket, err['error']['code'],
-                                                                           err['error']['message'])
+                if not bucket in dones:
+                    try:
+                        # print('Importing {}'.format(bucket))
+                        progresslogger.info('\nImporting %s', bucket)
+                        content_uri = '{}/*'.format(bucket)
+                        response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
+                                                          settings.GCH_DICOMSTORE, content_uri)
+                        # print(f'Response: {response}')
+                        progresslogger.info(response)
+                        result = wait_done(response, args, args.period)
+                        successlogger.info(bucket)
+                    except HttpError as e:
+                        err = json.loads(e.content)
+                        # print('Error loading {}; code: {}, message: {}'.format(bucket, err['error']['code'],
+                        #                                                        err['error']['message']))
+                        errlogger.info('Error loading %s; code: %s, message: %s',bucket, err['error']['code'],
+                                                                               err['error']['message'])
+                else:
+                    progresslogger.info((f'Bucket {bucket} previously imported'))
 
         else:
-            try:
-                progresslogger.info('Importing %s', bucket)
-                content_uri = '{}/*'.format(bucket)
-                response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
-                                settings.GCH_DICOMSTORE, content_uri)
-                progresslogger.info('Response: %s', response)
-                result = wait_done(response, args, args.period)
-            except HttpError as e:
-                err = json.loads(e.content)
-                progresslogger.info('Error loading %s; code: %s, message: %s', bucket, err['error']['code'], err['error']['message'])
+            if not bucket in dones:
+                try:
+                    progresslogger.info('\nImporting %s', bucket)
+                    content_uri = '{}/*'.format(bucket)
+                    response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
+                                    settings.GCH_DICOMSTORE, content_uri)
+                    progresslogger.info('Response: %s', response)
+                    result = wait_done(response, args, args.period)
+                    successlogger.info(bucket)
+                except HttpError as e:
+                    err = json.loads(e.content)
+                    errlogger.info('Error loading %s; code: %s, message: %s', bucket, err['error']['code'], err['error']['message'])
+            else:
+                progresslogger.info((f'Bucket {bucket} previously imported'))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -91,6 +91,12 @@ def check_all_instances(args):
         successlogger.info(f"Bucket {args.bucket} has the correct set of blobs")
     else:
         errlogger.error(f"Bucket {args.bucket} does not have the correct set of blobs")
+        errlogger.error(f"Unexpected blobs in bucket: {len(found_blobs - expected_blobs)}")
+        for blob in found_blobs - expected_blobs:
+            errlogger.error(blob)
+        errlogger.error(f"Expected blobs not found in bucket: {len(expected_blobs - found_blobs)}")
+        for blob in expected_blobs - found_blobs:
+            errlogger.error(blob)
 
     return
 
