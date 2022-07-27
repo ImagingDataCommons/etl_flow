@@ -15,23 +15,22 @@
 #
 
 
-# Generate a manifest of new instance version in some set of IDC versions
+# Generate a manifest of uuids that are new to a version.
+# The resulting manifest is intended to be submitted to
+# DCF to detect if there are collisions with other uuids.
 
 import argparse
+import settings
 from google.cloud import bigquery
 from utilities.bq_helpers import query_BQ, export_BQ_to_GCS, delete_BQ_Table
 
-def gen_instance_manifest(args):
+def gen_revision_manifest(args):
     BQ_client = bigquery.Client(project=args.project)
     query= f"""
-        SELECT concat('dg.4DFC/', instance_uuid) as GUID, 
-            instance_hash as md5, 
-            instance_size as size, 
-            '*' as acl, 
-            gcs_url as url
-        FROM `idc-pdp-staging.{args.src_bqdataset}.auxiliary_metadata` 
-        WHERE instance_revised_idc_version in {args.versions}
-        ORDER BY GUID
+        SELECT uuid
+        FROM `{args.project}.idc_v{args.version}_dev.instance` 
+        WHERE rev_idc_version = {args.version}
+        ORDER BY uuid
     """
 
     # Run a query that generates the manifest data
@@ -45,4 +44,16 @@ def gen_instance_manifest(args):
 
     delete_BQ_Table(BQ_client, args.project, args.dst_bqdataset, args.temp_table)
 
+if __name__ == '__main__':
+    version = settings.CURRENT_VERSION
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--project', default=settings.DEV_PROJECT)
+    parser.add_argument('--dst_bqdataset', default=settings.BQ_DEV_INT_DATASET)
+    parser.add_argument('--version', default=settings.CURRENT_VERSION, help= 'The version of the new uuids')
+    parser.add_argument('--manifest_uri', default=f'gs://indexd_manifests/dcf_input/pdp_hosting/idc_v{settings.CURRENT_VERSION}_new_uuids_*.tsv',
+                        help="GCS file in which to save results")
+    parser.add_argument('--temp_table', default=f'idc_v{settings.CURRENT_VERSION}_new_uuids_manifest', \
+                        help='Temporary table in which to write query results')
+    args = parser.parse_args()
 
+    gen_revision_manifest(args)

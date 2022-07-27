@@ -20,13 +20,14 @@ import os
 import sys
 import argparse
 import logging
+from logging import DEBUG
 from datetime import datetime, timedelta
 import shutil
 from multiprocessing import Lock, shared_memory
 from idc.models import Base, Version, Collection
 from utilities.tcia_helpers import get_access_token
 from utilities.sqlalchemy_helpers import sa_session
-from utilities.logging_config import successlogger, errlogger, progresslogger
+from utilities.logging_config import successlogger, errlogger, progresslogger, rootlogger
 
 from ingestion.utilities.utils import list_skips
 from ingestion.version import clone_version, build_version
@@ -37,10 +38,10 @@ from ingestion.all_sources import All
 from http.client import HTTPConnection
 HTTPConnection.debuglevel = 0
 
-rootlogger = logging.getLogger('root')
-successlogger = logging.getLogger('root.success')
-progresslogger = logging.getLogger('root.progress')
-errlogger = logging.getLogger('root.err')
+# rootlogger = logging.getLogger('root')
+# successlogger = logging.getLogger('root.success')
+# progresslogger = logging.getLogger('root.progress')
+# errlogger = logging.getLogger('root.err')
 
 DICOM_DIR = '/mnt/disks/idc-etl/dicom' # Directory in which to expand downloaded zip files')
 
@@ -119,18 +120,26 @@ def ingest(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--num_processes', type=int, default=0, help="Number of concurrent processes")
+    parser.add_argument('--num_processes', type=int, default=8, help="Number of concurrent processes")
 
     parser.add_argument('--skipped_tcia_groups', nargs='*', default=['redacted_collections', 'excluded_collections'],\
                         help="List of tables containing tcia_api_collection_ids of tcia collections to be skipped")
-    parser.add_argument('--skipped_tcia_collections', nargs='*', default=['QIN Breast DCE-MRI', 'QIN LUNG CT', 'NLST', 'HCC-TACE-Seg'], help='List of additional tcia collections to be skipped')
+    parser.add_argument('--skipped_tcia_collections', nargs='*', \
+            default=['QIN Breast DCE-MRI', 'QIN LUNG CT', 'NLST',  \
+                     'APOLLO-5-LSCC', 'APOLLO-5-LUAD',\
+                     'CC-Tumor-Heterogeneity', 'HCC-TACE-Seg'], \
+                        help='List of additional tcia collections to be skipped')
     parser.add_argument('--included_tcia_collections', nargs='*', default=[], help='List of tcia collections to exclude from skipped')
     parser.add_argument('--prestaging_tcia_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_tcia_', help='Copy tcia instances here before forwarding to --staging_bucket')
 
     parser.add_argument('--skipped_path_groups', nargs='*', default=['redacted_collections', 'excluded_collections'],\
                         help="List of tables containind tcia_api_collection_ids of path collections to be skipped")
-    parser.add_argument('--skipped_path_collections', nargs='*', default=['QIN Breast DCE-MRI', 'QIN LUNG CT', 'HCC-TACE-Seg'], help='List of additional path collections to be skipped')
-    parser.add_argument('--included_path_collections', nargs='*', default=[], help='List of path collections to exclude from skipped')
+    parser.add_argument('--skipped_path_collections', nargs='*',\
+            default=['QIN Breast DCE-MRI', 'QIN LUNG CT',  \
+                     'APOLLO-5-LSCC', 'APOLLO-5-LUAD',], \
+                        help='List of additional path collections to be skipped')
+    parser.add_argument('--included_path_collections', nargs='*', \
+            default=['CPTAC-GBM', 'CPTAC-HNSCC', 'TCGA-GBM', 'TCGA-HNSC', 'TCGA-LGG'], help='List of path collections to exclude from skipped')
     parser.add_argument('--server', default="", help="NBIA server to access. Set to NLST for NLST ingestion")
     parser.add_argument('--prestaging_path_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_path_', help='Copy path instances here before forwarding to --staging_bucket')
 
@@ -142,5 +151,9 @@ if __name__ == '__main__':
     args.dicom_dir = DICOM_DIR
 
     print("{}".format(args), file=sys.stdout)
+
+    rootlogger.setLevel(DEBUG)
+    successlogger.setLevel(DEBUG)
+    progresslogger.setLevel(DEBUG)
 
     ingest(args)

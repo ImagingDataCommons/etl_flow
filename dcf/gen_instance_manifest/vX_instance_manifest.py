@@ -15,25 +15,28 @@
 #
 
 
-# Generate a manifest of new v3, v4 and v5 instance URLs
+# Generate a manifest of new instance versions in the current (lastest) IDC version
 
 import argparse
 import settings
-from dcf.instance_manifest import gen_revision_manifest
+from dcf.gen_instance_manifest.instance_manifest import gen_instance_manifest
 
 if __name__ == '__main__':
     version = settings.CURRENT_VERSION
     parser = argparse.ArgumentParser()
     parser.add_argument('--project', default=settings.DEV_PROJECT)
-    parser.add_argument('--src_bqdataset', default=settings.BQ_PUB_DATASET)
-    parser.add_argument('--dst_bqdataset', default=settings.BQ_DEV_INT_DATASET)
-    parser.add_argument('--versions', default=f'({settings.CURRENT_VERSION})', help= 'A quoted tuple of version numbers, e.g. "(1,2)"')
+    parser.add_argument('--src_bqdataset', default=settings.BQ_PUB_DATASET, \
+            help='BQ dataset containing the auxiliary_metadata table from which to get gcs_urls')
+    parser.add_argument('--dst_bqdataset', default=settings.BQ_DEV_INT_DATASET, \
+            help='BQ dataset in which to build the temporary table')
+    parser.add_argument('--versions', default=f'({settings.CURRENT_VERSION})', \
+            help= 'A quoted tuple of version numbers, e.g. "(1,2)"')
     parser.add_argument('--manifest_uri', default=f'gs://indexd_manifests/dcf_input/pdp_hosting/idc_v{settings.CURRENT_VERSION}_instance_manifest_*.tsv',
-                        help="GCS file in which to save results")
+            help="GCS blob in which to save results")
     parser.add_argument('--temp_table', default=f'idc_v{settings.CURRENT_VERSION}_instance_manifest', \
-                        help='Temporary table in which to write query results')
+            help='Temporary table in which to write query results')
     args = parser.parse_args()
 
-    gen_revision_manifest(args)
+    gen_instance_manifest(args)
 
 

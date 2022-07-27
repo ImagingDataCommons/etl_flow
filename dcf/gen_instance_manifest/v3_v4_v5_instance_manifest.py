@@ -15,7 +15,7 @@
 #
 
 
-# Generate a manifest of new v3, v4 and v5 instance URLs
+# Generate a manifest of new instance versions in IDC  v3, v4 and v5
 
 import argparse
 from google.cloud import bigquery

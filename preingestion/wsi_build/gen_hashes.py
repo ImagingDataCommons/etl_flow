@@ -31,7 +31,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, update
 from google.cloud import storage
 
-def gen_hashes(args, sess):
+def gen_hashes(args):
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
     # sql_engine = create_engine(sql_uri, echo=True)
     sql_engine = create_engine(sql_uri)
@@ -53,7 +53,9 @@ def gen_hashes(args, sess):
                 progresslogger.info('\tpatient hash %s', patient.submitter_case_id)
             hashes = [patient.hash for patient in collection.patients]
             collection.hash = get_merkle_hash(hashes)
-            progresslogger.info('Collection hash %s', collection.collection_id)
+            progresslogger.info('Collection hash %s', collection.collection_id)\
+
+        sess.commit()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)

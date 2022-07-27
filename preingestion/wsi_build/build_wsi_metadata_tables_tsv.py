@@ -49,13 +49,15 @@ def build_instance(client, args, sess, series, row):
         series.instances.append(instance)
         successlogger.info('\t\t\t\tInstance %s', instance_id)
 
-    blob_name = f'{args.src_path}/{row["Filename"].strip().split("/", 1)[1]}' if args.src_path else \
+    blob_name = f'{args.src_path}/{row["Filename"].strip()}' if args.src_path else \
         f'{row["Filename"].strip().split("/", 1)[1]}'
     instance.url = f'gs://{args.src_bucket}/{blob_name}'
     bucket = client.bucket(args.src_bucket)
     blob = bucket.blob(blob_name)
     blob.reload()
-    instance.hash = b64decode(blob.md5_hash).hex()
+    new_hash = b64decode(blob.md5_hash).hex()
+    if instance.hash != new_hash:
+        instance.hash = new_hash
     progresslogger.info('\t\t\t\tInstance %s', instance_id)
 
 
@@ -146,14 +148,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--src_bucket', default='nlst-pathology-conversion-results-new', help='Bucket containing WSI instances')
-    parser.add_argument('--src_path', default='', help='Folder in src_bucket that is the root of WSI data to be indexed.')
+    parser.add_argument('--src_path', default='', \
+        help='Folder in src_bucket that is the root of WSI data to be indexed. The Filename in the tsv is \
+         concatenated onto this.')
     parser.add_argument('--tsv_blob_path', default = 'identifiers_NLST.txt',\
                         help='A GCS blob that contains a TSV manifest of WSI DICOMs to be ingested')
     parser.add_argument('--skipped_groups', default=[], nargs='*', \
                         help="A list of collection groups that should not be ingested. "\
                              "Can include open_collections, cr_collections, defaced_collections, redacted_collections, excluded_collections. "\
-                             "Note that this is value is interpreted as a list.")
-    parser.add_argument('--skipped_collections', type=str, default=[], nargs='*', \
+                             "Note that this value is interpreted as a list.")
+    parser.add_argument('--skipped_collections', type=str, default=['HTAN-Vanderbilt'], nargs='*', \
       help='A list of additional collections that should not be ingested.')
     # parser.add_argument('--log_dir', default=f'{settings.LOGGING_BASE}/{settings.BASE_NAME}')
 

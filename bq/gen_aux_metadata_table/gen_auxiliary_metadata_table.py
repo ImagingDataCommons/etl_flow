@@ -24,7 +24,7 @@ from google.cloud import bigquery
 
 from python_settings import settings
 from time import sleep
-from utilities.bq_helpers import load_BQ_from_json, query_BQ, create_BQ_table
+from utilities.bq_helpers import load_BQ_from_json, query_BQ, create_BQ_table, delete_BQ_Table
 from utilities.logging_config import successlogger,progresslogger
 from bq.utils.gen_license_table import get_original_collection_licenses
 from bq.gen_aux_metadata_table.schema import auxiliary_metadata_schema
@@ -328,8 +328,8 @@ licensed as (
     li.license_short_name
   FROM pre_licensed p_l
   JOIN tcia_licenses li
-  ON IFNULL(p_l.source_doi,'') = IFNULL(li.DOI,'') 
-  AND IFNULL(p_l.source_url,'') = IFNULL(li.URL,'') AND p_l.i_source='tcia'
+  ON IFNULL(lower(p_l.source_doi),'') = IFNULL(lower(li.DOI),'') 
+  AND IFNULL(lower(p_l.source_url),'') = IFNULL(lower(li.URL),'') AND p_l.i_source='tcia'
 
   UNION ALL
   SELECT 
@@ -340,8 +340,8 @@ licensed as (
     li.license_short_name
   FROM pre_licensed p_l
   JOIN path_licenses li
-  ON IFNULL(p_l.source_doi,'') = IFNULL(li.DOI,'') 
-  AND IFNULL(p_l.source_url,'') = IFNULL(li.URL,'') AND p_l.i_source='path'
+  ON IFNULL(lower(p_l.source_doi),'') = IFNULL(lower(li.DOI),'') 
+  AND IFNULL(lower(p_l.source_url),'') = IFNULL(lower(li.URL),'') AND p_l.i_source='path'
 
   UNION ALL
   SELECT 
@@ -352,8 +352,8 @@ licensed as (
     li.license_short_name
   FROM pre_licensed p_l
   JOIN analysis_licenses li
-  ON IFNULL(p_l.source_doi,'') = IFNULL(li.DOI,'') 
-  AND IFNULL(p_l.source_url,'') = IFNULL(li.URL,'')
+  ON IFNULL(lower(p_l.source_doi),'') = IFNULL(lower(li.DOI),'') 
+  AND IFNULL(lower(p_l.source_url),'') = IFNULL(lower(li.URL),'')
   )
 --
   SELECT * EXCEPT(i_source)
@@ -363,13 +363,17 @@ licensed as (
 """
 
     client = bigquery.Client(project=args.dst_project)
-    breakpoint() # Add schema
+    result = delete_BQ_Table(client, args.dst_project, args.trg_bqdataset_name, args.bqtable_name)
     # Create a table to get the schema defined
-    result = create_BQ_table(client, args.dst_project, args.trg_bqdataset_name, args.bqtable_name, auxiliary_metadata_schema, exists_ok=True)
+    created_table = create_BQ_table(client, args.dst_project, args.trg_bqdataset_name, args.bqtable_name, auxiliary_metadata_schema, exists_ok=True)
     # Perform the query and save results in specified table
-    result = query_BQ(client, args.trg_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
+    results = query_BQ(client, args.trg_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
+    populated_table = client.get_table(f"{args.dst_project}.{args.trg_bqdataset_name}.{args.bqtable_name}")
+    populated_table.schema = auxiliary_metadata_schema
+    populated_table.description = "IDC version-related metadata"
+    client.update_table(populated_table, fields=["schema", "description"])
     successlogger.info('Created auxiliary_metadata table')
 
 def gen_aux_table(args):
-    create_original_collections_licenses_table(args)
+    # create_original_collections_licenses_table(args)
     build_table(args)

@@ -122,6 +122,8 @@ def get_original_collection_licenses(args):
                         'license_short_name': license['shortName'].strip()
                     }
             }
+
+            # Workaround #
             if collection.startswith('cptac') or collection.startswith('tcga'):
                 # All cptac and tcga pathology is CC by 3.0
                 licenses[collection]['path'] = {
@@ -137,6 +139,15 @@ def get_original_collection_licenses(args):
                     'license_short_name': 'CC BY 4.0'
                 }
 
+            # Workaround #
+            if collection == 'vestibular_schwannoma_seg':
+                licenses[collection]['tcia'] = {
+                    'license_url': 'https://creativecommons.org/licenses/by/4.0/',
+                    'license_long_name': 'Creative Commons Attribution 4.0 International License',
+                    'license_short_name': 'CC BY 4.0'
+                }
+
+
     if not args.gen_excluded:
         # Add licenses of non-TCIA collections (certain TCGA collections)
         for collection, license in non_tcia_licenses.items():
@@ -148,6 +159,7 @@ def get_original_collection_licenses(args):
                         'license_short_name': license['shortName'].strip()
                     }
                 }
+
     return licenses
 
 

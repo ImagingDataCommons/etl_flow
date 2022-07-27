@@ -108,7 +108,9 @@ def copy_disk_to_prestaging_bucket(args, series):
         # Copy the series to GCS
         src = "{}/{}/*".format(args.dicom_dir, series.series_instance_uid)
         dst = "gs://{}/".format(args.prestaging_tcia_bucket)
-        result = run(["gsutil", "-m", "-q", "cp", "-J", src, dst], check=True)
+        breakpoint() # Check if -J parameter is still broken
+        result = run(["gsutil", "-m", "-q", "cp", src, dst], check=True)
+        # result = run(["gsutil", "-m", "-q", "cp", "-J", src, dst], check=True)
         if result.returncode :
             errlogger.error('p%s: \tcopy_disk_to_prestaging_bucket failed for series %s', args.pid, series.series_instance_uid)
             raise RuntimeError('p%s: copy_disk_to_prestaging_bucket failed for series %s', args.pid, series.series_instance_uid)

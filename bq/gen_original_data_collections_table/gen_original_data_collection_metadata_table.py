@@ -219,8 +219,16 @@ def get_non_tcia_collection_metadata(client, args):
         )
     return metadata
 
+# Get collection metadata by scraping the TCIA Original Collections page
+# and/or from the non_tcia_collection_metadata table
 def get_collection_metadata(client, args):
+    # Get metadata for collections that TCIA doesn't have
     collection_metadata = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_non_tcia_collection_metadata(client, args).items()}
+
+    # Get the metadata for TCIA hosted collections
+    # Collecting metadata takes a long time, so we sometimes cache it when
+    # doing development on other parts of this code. Normally it should not
+    # be cached.
     if args.use_cached_metadata:
         with open(args.cached_metadata_file) as f:
             tcia_collection_metadata = json.load(f)
@@ -229,6 +237,8 @@ def get_collection_metadata(client, args):
                                 scrape_tcia_data_collections_page().items()}
     with open(args.cached_metadata_file, 'w') as f:
         json.dump(tcia_collection_metadata,f)
+
+    # Merge the TCia collection metadata.
     collection_metadata |= tcia_collection_metadata
 
     # Replace ImageTypes values with actual image types in IDC data
@@ -268,11 +278,10 @@ def build_metadata(client, args):
     BQ_client = bigquery.Client(project=settings.DEV_PROJECT)
     programs = get_collections_programs(BQ_client, args)
 
-    collection_metadata = get_collection_metadata(client, args)
+    # Get a list of the collections that IDC knows about in this version
+    idc_collection_ids_and_sources = get_collections_and_sources_in_version(BQ_client, args)
 
-    collection_ids_and_sources = get_collections_and_sources_in_version(BQ_client, args)
-
-    # Get collection descriptions and license IDs from TCIA
+    # Get collection descriptions for all collections
     collection_descriptions = get_all_descriptions(client, args)
 
     # We report our case count rather than counts from the TCIA wiki pages.
@@ -284,17 +293,20 @@ def build_metadata(client, args):
     # Get a list of the licenses used by data collections
     licenses = get_original_collection_licenses(args)
 
+    # Now get most of the medadata for all collections
+    collection_metadata = get_collection_metadata(client, args)
+
+
     rows = []
     json_rows = []
     found_ids = []
 
-    for idc_collection_id, id_and_sources in collection_ids_and_sources.items():
+    for idc_collection_id, id_and_sources in idc_collection_ids_and_sources.items():
         # if idc_collection_id.lower().replace(' ','_').replace('-','_') in common_collection_metadata_ids:
         if idc_collection_id in collection_metadata:
                 try:
                     # tcia_collection_id = common_collection_metadata_ids[
                     #     idc_collection_id.lower().replace(' ', '_').replace('-', '_')]
-                    found_ids.append(idc_collection_id)
                     collection_data = collection_metadata[idc_collection_id]
                     if not 'URL' in collection_data:
                         # TCIA collections have an empty URL
@@ -309,17 +321,12 @@ def build_metadata(client, args):
                         collection_data['Program'] = programs[collection_data['tcia_wiki_collection_id'].lower().replace(' ','_').replace('-','_')]
                     else:
                         collection_data['Program'] = programs[idc_collection_id]
-
-                    # if collection_id.lower() in common_collection_description_ids:
-                    # mapped_collection_id = lowered_collection_ids[collection_id.lower()]
                     try:
-                        # collection_description_id = common_collection_description_ids[idc_collection_id]
                         collection_data['Description'] = collection_descriptions[idc_collection_id][
                             'description']
                     except:
                         collection_data['Description'] = ""
                     collection_data['Subjects'] = case_counts[idc_collection_id]
-                    # mapped_license_id = common_license_ids[collection_id.lower()]
                     try:
                         collection_data['licenses'] = []
                         if 'tcia' in licenses[idc_collection_id]:
@@ -329,10 +336,6 @@ def build_metadata(client, args):
                                          collection_data['licenses'].append(licenses[idc_collection_id]['path'])
                         else:
                             collection_data['licenses'].append(licenses[idc_collection_id]['path'])
-                        # # license_id = common_license_ids[idc_collection_id.lower()]
-                        # collection_data['license_url'] = licenses[idc_collection_id]['licenseURL']
-                        # collection_data['license_long_name'] = licenses[idc_collection_id]['longName']
-                        # collection_data['license_short_name'] = licenses[idc_collection_id]['shortName']
                     except:
                         collection_data['licenses'] = {}
                     if args.gen_excluded:
@@ -342,7 +345,7 @@ def build_metadata(client, args):
                                  for collection, license in licenses[idc_collection_id].items()]))
                     rows.append(collection_data)
                     json_rows.append(json.dumps(collection_data))
-
+                    found_ids.append(idc_collection_id)
                 except Exception as exc:
                     errlogger.error(f'Exception building metadata {exc}')
 
@@ -350,7 +353,7 @@ def build_metadata(client, args):
             errlogger.error(f'{idc_collection_id} not in collection metadata')
 
     # Make sure we found metadata for all our collections
-    for idc_collection in collection_ids_and_sources:
+    for idc_collection in idc_collection_ids_and_sources:
         if not idc_collection in found_ids:
             errlogger.error(f'****No metadata for {idc_collection}')
             if idc_collection == 'apollo':
@@ -378,6 +381,8 @@ def build_metadata(client, args):
                     "license_short_name": "APOLLO"}
                 # collection_data["Description"] = collection_descriptions['APOLLO']['description']
                 rows.append(json.dumps(collection_data))
+            else:
+                errlogger.error(f'No metadata for {idc_collection}')
 
     metadata = '\n'.join(json_rows)
     return metadata

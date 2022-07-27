@@ -85,6 +85,7 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
         new_study.min_timestamp = datetime.utcnow()
         new_study.study_instances = 0
         new_study.revised = studies[study]
+        new_study.source = studies[study]
         new_study.hashes = None
         new_study.max_timestamp = new_study.min_timestamp
         new_study.init_idc_version=settings.CURRENT_VERSION
@@ -115,6 +116,7 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
             rev_study.expanded = False
             rev_study.revised = revised
             rev_study.hashes = None
+            rev_study.sources = studies[study.study_instance_uid]
             rev_study.rev_idc_version = settings.CURRENT_VERSION
             patient.studies.append(rev_study)
             progresslogger.debug  ('    p%s: Study %s is revised',  args.pid, rev_study.study_instance_uid)

@@ -22,10 +22,12 @@ May saturate a small VM, depending on the number of processes.
 import argparse
 import os
 import logging
-from logging import INFO
-proglogger = logging.getLogger('root.prog')
-successlogger = logging.getLogger('root.success')
-errlogger = logging.getLogger('root.err')
+# from logging import INFO
+# proglogger = logging.getLogger('root.prog')
+# successlogger = logging.getLogger('root.success')
+# errlogger = logging.getLogger('root.err')
+
+from utilities.logging_config import successlogger, progresslogger, errlogger
 
 import time
 from multiprocessing import Process, Queue
@@ -121,25 +123,25 @@ def pre_delete(args):
     bucket = args.bucket
     # if os.path.exists('{}/logs/{}_error.log'.format(args.log_dir, bucket)):
     #     os.remove('{}/logs/{}_error.log'.format(args.log_dir, bucket))
-    if not os.path.exists('{}'.format(args.log_dir)):
-        os.mkdir('{}'.format(args.log_dir))
-        st = os.stat('{}'.format(args.log_dir))
+    # if not os.path.exists('{}'.format(args.log_dir)):
+    #     os.mkdir('{}'.format(args.log_dir))
+    #     st = os.stat('{}'.format(args.log_dir))
         # os.chmod('{}'.format(args.log_dir), st.st_mode | 0o222)
 
-    # Change logging file. File name includes bucket ID.
-    for hdlr in successlogger.handlers[:]:
-        successlogger.removeHandler(hdlr)
-    success_fh = logging.FileHandler('{}/success.log'.format(args.log_dir))
-    successlogger.addHandler(success_fh)
-    successformatter = logging.Formatter('%(message)s')
-    success_fh.setFormatter(successformatter)
-
-    for hdlr in errlogger.handlers[:]:
-        errlogger.removeHandler(hdlr)
-    err_fh = logging.FileHandler('{}/error.log'.format(args.log_dir))
-    errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
-    errlogger.addHandler(err_fh)
-    err_fh.setFormatter(errformatter)
+    # # Change logging file. File name includes bucket ID.
+    # for hdlr in successlogger.handlers[:]:
+    #     successlogger.removeHandler(hdlr)
+    # success_fh = logging.FileHandler('{}/success.log'.format(args.log_dir))
+    # successlogger.addHandler(success_fh)
+    # successformatter = logging.Formatter('%(message)s')
+    # success_fh.setFormatter(successformatter)
+    #
+    # for hdlr in errlogger.handlers[:]:
+    #     errlogger.removeHandler(hdlr)
+    # err_fh = logging.FileHandler('{}/error.log'.format(args.log_dir))
+    # errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
+    # errlogger.addHandler(err_fh)
+    # err_fh.setFormatter(errformatter)
 
     del_all_instances(args)
 

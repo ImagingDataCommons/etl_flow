@@ -126,7 +126,8 @@ def gen_collections_table(args):
     BQ_client = bigquery.Client(project=settings.DEV_PROJECT)
     metadata = build_metadata(args, BQ_client)
     job = load_BQ_from_json(BQ_client, settings.DEV_PROJECT, settings.BQ_DEV_EXT_DATASET, args.bqtable_name, metadata, analysis_results_metadata_schema,
-                            write_disposition='WRITE_TRUNCATE')
+        write_disposition='WRITE_TRUNCATE',
+        table_description='Metadata of Analysis Results. These are the results of analysis performed against Original Collections hosted by IDC.')
     while not job.state == 'DONE':
         progresslogger.info('Status: {}'.format(job.state))
         time.sleep(args.period * 60)

@@ -32,10 +32,34 @@ from sqlalchemy.orm import Session
 def get_limited_series(args):
     client = bigquery.Client()
     query = f"""
-    select distinct idc_webapp_collection_id, StudyInstanceUID, SeriesInstanceUID
-    from `{settings.DEV_PROJECT}.{settings.BQ_DEV_EXT_DATASET}.auxiliary_metadata`
-    WHERE access = 'Limited'
+    WITH
+      tcia_series AS (
+      SELECT
+        DISTINCT 
+            replace(replace(lower(collection_id), '-', '_'), ' ', '_') as idc_webapp_collection_id, 
+            study_instance_uid as StudyInstanceUID, 
+            series_instance_uid as SeriesInstanceUID
+      FROM
+        `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_included`
+      WHERE
+        se_sources.tcia=TRUE
+        AND idc_version=10 )
+    SELECT
+      tcia_series.*
+    FROM
+      `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_included_collections` aic
+    JOIN
+      tcia_series
+    ON
+      tcia_series.idc_webapp_collection_id = aic.idc_webapp_collection_id
+    WHERE
+      aic.tcia_access ='Limited'
     """
+    # query = f"""
+    # select distinct idc_webapp_collection_id, StudyInstanceUID, SeriesInstanceUID
+    # from `{settings.DEV_PROJECT}.{settings.BQ_DEV_EXT_DATASET}.auxiliary_metadata`
+    # WHERE access = 'Limited'
+    # """
     limited_series = client.query(query).result()
     return limited_series
 
@@ -44,7 +68,7 @@ def delete_series(args, dicomweb_session, study_instance_uid, series_instance_ui
     # URL to the Cloud Healthcare API endpoint and version
     base_url = "https://healthcare.googleapis.com/v1"
     url = f"{base_url}/projects/{settings.GCH_PROJECT}/locations/{settings.GCH_REGION}"
-    dicomweb_path = f"{url}/datasets/{settings.GCH_DATASET}/dicomStores/{settings.GCH_DICOMSTORE}/dicomWeb/studies/{study_instance_uid}/series{series_instance_uid}"
+    dicomweb_path = f"{url}/datasets/{settings.GCH_DATASET}/dicomStores/{settings.GCH_DICOMSTORE}/dicomWeb/studies/{study_instance_uid}/series/{series_instance_uid}"
 
     # Set the required application/dicom+json; charset=utf-8 header on the request
     headers = {"Content-Type": "application/dicom+json; charset=utf-8"}
@@ -77,9 +101,9 @@ def delete_all_series(args):
     for row in limited_series:
         if not row.SeriesInstanceUID in done_series:
             delete_series(args, dicomweb_sess, row.StudyInstanceUID, row.SeriesInstanceUID)
-            progresslogger.info(f"{n}: {row.collection_id}/{row.StudyInstanceUID}/{row.SeriesInstanceUID}  deleted")
+            progresslogger.info(f"{n}: {row.idc_webapp_collection_id}/{row.StudyInstanceUID}/{row.SeriesInstanceUID}  deleted")
         else:
-            progresslogger.info(f"{n}: {row.collection_id}/{row.StudyInstanceUID}/{row.SeriesInstanceUID} previously deleted")
+            progresslogger.info(f"{n}: {row.idc_webapp_collection_id}/{row.StudyInstanceUID}/{row.SeriesInstanceUID} previously deleted")
         n+=1
     pass
 
@@ -115,5 +139,4 @@ if __name__ == '__main__':
     #
     # errlogger = logging.getLogger('root.err')
 
-    breakpoint()
     delete_all_series(args)

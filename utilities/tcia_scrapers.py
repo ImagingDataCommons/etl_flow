@@ -62,12 +62,21 @@ def get_license_from_wiki(doi):
     for link in soup.find_all('div'):
         if link.get('name') == "Citations BITVOODOO_ANDamp; Data Usage Policy":
             for att in link.find('p').find_all('a'):
-                if att.text != 'TCIA Data Usage Policy':
+                if att.text != 'TCIA Data Usage Policy' and att.text != 'TCIA Data Usage Policy and Restrictions':
                     licenseURL = att.get('href')
                     longName = att.text
                     # We have to the shortname from the licenses list. It's not in the page.
                     license = next((item for item in licenses if item['longName'] == longName), None)
                     shortName = license["shortName"] if license else ""
+                    return (licenseURL, longName, shortName)
+    # License info not found in the Citations tab. Look in the Data Access tab
+    for link in soup.find_all('div'):
+        if link.get('name') == "Data Access":
+            for att in link.find('p').find_all('a'):
+                if att.text == 'TCIA Restricted License Agreement':
+                    licenseURL = att.get('href')
+                    longName = att.text
+                    shortName = 'TCIA'
                     return (licenseURL, longName, shortName)
 
     return ("", "")
@@ -93,7 +102,11 @@ def scrape_tcia_analysis_collections_page():
         cols = row.find_all("td")
         for cid, col in enumerate(cols):
             if cid == 0:
-                trow[header[0]] = col.find("a").text
+                try:
+                    trow[header[0]] = col.find("a").text
+                except Exception as exc:
+                    print('Empty row in TCIA Analysis Results table')
+                    break
                 trow[header[1]] = col.find("a")["href"]
             else:
                 trow[header[cid + 1]] = col.text

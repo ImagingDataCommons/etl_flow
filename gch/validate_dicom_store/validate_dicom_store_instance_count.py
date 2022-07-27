@@ -29,17 +29,17 @@ def validate_dicom_metadata_counts():
     SELECT aj.sop_instance_uid as SOPInstanceUID
     # FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined` as aj
     # JOIN `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_included_collections` ac
-    FROM `idc-dev-etl.idc_v9_dev.all_joined` as aj
-    JOIN `idc-dev-etl.idc_v9_dev.all_included_collections` ac
+    FROM `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined` as aj
+    JOIN `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_included_collections` ac
     ON aj.collection_id = ac.tcia_api_collection_id
     # WHERE aj.idc_version = {settings.CURRENT_VERSION}
-    WHERE aj.idc_version = 9
+    WHERE aj.idc_version = {settings.CURRENT_VERSION}
     AND aj.i_excluded is False
     )
     select count(siu.sopinstanceuid) as siu_cnt, count(dm.sopinstanceuid) as dcm_cnt
     FROM sopinstanceuids as siu
     # FULL OUTER JOIN `idc-dev-etl.{settings.BQ_DEV_EXT_DATASET}.dicom_metadata` as dm
-    FULL OUTER JOIN `idc-dev-etl.idc_v9_pub.dicom_metadata` as dm
+    FULL OUTER JOIN `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_pub.dicom_metadata` as dm
     ON siu.SOPInstanceUID = dm.SOPInstanceUID
     WHERE siu.SOPInstanceUID is NULL or dm.SOPInstanceUID is null
     """

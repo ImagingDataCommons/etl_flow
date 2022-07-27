@@ -35,16 +35,12 @@ def get_urls(args):
     client = bigquery.Client()
     query = f"""
     SELECT
-      dev.gcs_url as dev_url,
-      pub.gcs_url as pub_url
+      instance_uuid uuid
     FROM
-      `idc-dev-etl.idc_v{args.version}_pub.auxiliary_metadata` dev
-    JOIN
-      `idc-pdp-staging.idc_v{args.version}.auxiliary_metadata` pub
-    ON
-      dev.instance_uuid = pub.instance_uuid
+      `idc-dev-etl.idc_v{args.version}_pub.auxiliary_metadata`
     WHERE
-      dev.instance_revised_idc_version = {args.version}
+      instance_revised_idc_version = {args.version}
+      AND tcia_api_collection_id = '{args.collection}'
     """
     # urls = list(client.query(query))
     query_job = client.query(query)  # Make an API request.
@@ -53,36 +49,28 @@ def get_urls(args):
     destination = client.get_table(destination)
     return destination
 
-def copy_some_blobs(args, client, urls, n, dones):
+def move_some_blobs(args, client, urls, n, dones):
     done = 0
     copied = 0
-    for blob in urls:
-        blob_name = blob['dev_url'].split('/')[3]
+    for blob_name in urls:
         if not blob_name in dones:
-            dev_bucket_name=blob['dev_url'].split('/')[2]
-            dev_bucket = client.bucket(blob['dev_url'].split('/')[2])
-            dev_blob = dev_bucket.blob(blob_name)
-            pub_bucket_name = blob['pub_url'].split('/')[2]
-
-            # We don't copy directly to the public-datasets-idc bucket.
-            # We copy to a staging bucket and Google copies to the public bucket
-            if 'public-datasets-idc' in pub_bucket_name:
-                pub_bucket_name = 'idc-open-pdp-staging'
-            else:
-                pass
-            pub_bucket = client.bucket(pub_bucket_name)
-            pub_blob = pub_bucket.blob(blob_name)
+            src_bucket = client.bucket(args.src_bucket)
+            src_blob = src_bucket.blob(blob_name)
+            trg_bucket = client.bucket(args.trg_bucket)
+            trg_blob = trg_bucket.blob(blob_name)
             for attempt in range(3):
                 try:
                     rewrite_token = False
                     while True:
-                        rewrite_token, bytes_rewritten, bytes_to_rewrite = pub_blob.rewrite(
-                            dev_blob, token=rewrite_token
+                        rewrite_token, bytes_rewritten, bytes_to_rewrite = trg_blob.rewrite(
+                            src_blob, token=rewrite_token
                         )
                         if not rewrite_token:
                             break
+                    src_blob.delete()
+
                     successlogger.info('%s', blob_name)
-                    progresslogger.info(f'p{args.id}: {done+n}of{len(urls)+n}: {dev_bucket_name}/{blob_name} --> {pub_bucket_name}/{blob_name}')
+                    progresslogger.info(f'p{args.id}: {done+n}of{len(urls)+n}: {args.src_bucket}/{blob_name} --> {args.trg_bucket}/{blob_name}')
                     break
                 except Exception as exc:
                     errlogger.error('p%s: Blob: %s, attempt: %s;  %s', args.id, blob_name, attempt, exc)
@@ -104,7 +92,7 @@ def worker(input, args, dones):
 
     client = storage.Client()
     for urls, n in iter(input.get, 'STOP'):
-        copy_some_blobs(args, client, urls, n, dones)
+        move_some_blobs(args, client, urls, n, dones)
 
 
 def copy_all_blobs(args):
@@ -130,8 +118,8 @@ def copy_all_blobs(args):
     # Distribute the work across the task_queues
     n = 0
     for page in bq_client.list_rows(destination, page_size=args.batch).pages:
-        urls = [{"dev_url": row.dev_url, "pub_url": row.pub_url} for row in page]
-        task_queue.put((urls, n))
+        uuids = [f'{row.uuid}.dcm' for row in page]
+        task_queue.put((uuids, n))
         # print(f'Queued {n}:{n+args.batch-1}')
         n += page.num_items
     print('Primary work distribution complete; {} blobs'.format(n))
@@ -154,8 +142,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
     # parser.add_argument('--log_dir', default=f'{settings.LOGGING_BASE}/{settings.BASE_NAME}')
-    parser.add_argument('--batch', default=1000)
+    parser.add_argument('--batch', default=100)
     parser.add_argument('--processes', default=16)
+    parser.add_argument('--collection', default = 'CPTAC-LSCC')
+    parser.add_argument('--src_bucket', default = 'idc-open-idc1')
+    parser.add_argument('--trg_bucket', default = 'idc-open-pdp-staging')
     args = parser.parse_args()
     args.id = 0 # Default process ID
 
