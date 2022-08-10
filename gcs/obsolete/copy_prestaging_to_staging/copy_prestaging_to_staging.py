@@ -30,7 +30,7 @@ import settings as etl_settings
 from python_settings import settings
 settings.configure(etl_settings)
 from google.cloud import storage
-from gcs.copy_bucket_mp.copy_bucket_mp import pre_copy
+from gcs.copy_bucket_mp.copy_bucket_mp import copy_all_instances
 
 from sqlalchemy import create_engine
 from sqlalchemy_utils import register_composites
@@ -66,7 +66,7 @@ def copy_prestaging_to_staging(args, prestaging_bucket, staging_bucket):
     print(f'Copying {prestaging_bucket} to {staging_bucket}')
     args.src_bucket = prestaging_bucket
     args.dst_bucket = staging_bucket
-    pre_copy(args)
+    copy_all_instances(args)
 
 
 def copy_dev_buckets(args):

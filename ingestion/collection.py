@@ -214,6 +214,9 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         errlogger.error('No DOI for collection %s', collection.collection_id)
         breakpoint()
         return
+    # If there is no URL, construct one from the DOI
+    if data_collection_url == "":
+        data_collection_url = f'https://doi.org/{data_collection_doi}'
     data_collection_doi_url = {'doi': data_collection_doi, 'url': data_collection_url}
 
     # Get all the analysis results DOIs.

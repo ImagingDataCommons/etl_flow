@@ -22,12 +22,11 @@
 
 import os
 import argparse
-import logging
-from logging import INFO
+from utilities.logging_config import successlogger, progresslogger, errlogger
 
 import settings
 from google.cloud import storage, bigquery
-from gcs.copy_bucket_mp.copy_bucket_mp import pre_copy
+from gcs.copy_bucket_mp.copy_bucket_mp import copy_all_instances
 
 def get_collection_groups():
     client = bigquery.Client()
@@ -43,45 +42,68 @@ def get_collection_groups():
 
     return collections
 
-
-def copy_prestaging_to_staging(args, prestaging_bucket, staging_bucket):
-    print(f'Copying {prestaging_bucket} to {staging_bucket}')
+def copy_prestaging_to_staging(args, prestaging_bucket, staging_bucket, dones):
+    # progresslogger.info(f'Copying {prestaging_bucket} to {staging_bucket}')
     args.src_bucket = prestaging_bucket
     args.dst_bucket = staging_bucket
-    pre_copy(args)
+    copy_all_instances(args, dones)
+    return
+
+
+def preview_copies(args, client, bucket_data):
+    for collection_id in bucket_data:
+        if client.bucket(f'idc_v{args.version}_tcia_{collection_id}').exists():
+            progresslogger.info(f'Copying idc_v{args.version}_tcia_{collection_id} to {bucket_data[collection_id]["dev_tcia_url"]}')
+        if client.bucket(f'idc_v{args.version}_path_{collection_id}').exists():
+            progresslogger.info(f'Copying idc_v{args.version}_path_{collection_id} to {bucket_data[collection_id]["dev_path_url"]}')
     return
 
 
 def copy_dev_buckets(args):
     client = storage.Client()
     bucket_data= get_collection_groups()
+    preview_copies(args, client, bucket_data)
+    try:
+        # Create a set of previously copied blobs
+        # dones = set(open(f'{args.log_dir}/{args.src_bucket}_success.log').read().splitlines())
+        dones = set(open(successlogger.handlers[0].baseFilename).read().splitlines())
+    except:
+        dones = set([])
+
     for collection_id in bucket_data:
         if client.bucket(f'idc_v{args.version}_tcia_{collection_id}').exists():
-            copy_prestaging_to_staging(args, f'idc_v{args.version}_tcia_{collection_id}', bucket_data[collection_id]['dev_tcia_url'])
+            if f'idc_v{args.version}_tcia_{collection_id}' in dones:
+                progresslogger.info(f'Bucket idc_v{args.version}_tcia_{collection_id} previously copied')
+                continue
+            copy_prestaging_to_staging(args, f'idc_v{args.version}_tcia_{collection_id}', bucket_data[collection_id]['dev_tcia_url'], dones)
         if client.bucket(f'idc_v{args.version}_path_{collection_id}').exists():
-            copy_prestaging_to_staging(args, f'idc_v{args.version}_path_{collection_id}', bucket_data[collection_id]['dev_path_url'])
+            if f'idc_v{args.version}_path_{collection_id}' in dones:
+                progresslogger.info(f'Bucket idc_v{args.version}_path_{collection_id} previously copied')
+                continue
+            copy_prestaging_to_staging(args, f'idc_v{args.version}_path_{collection_id}', bucket_data[collection_id]['dev_path_url'], dones)
     return
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
-    parser.add_argument('--processes', default=16, help="Number of concurrent processes")
+    parser.add_argument('--processes', default=32, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/v9/copy_premerge_to_staging_bucket_mp')
     args = parser.parse_args()
     args.id = 0 # Default process ID
 
-    proglogger = logging.getLogger('root.prog')
-    prog_fh = logging.FileHandler(f'{os.environ["PWD"]}/logs/bucket.log')
-    progformatter = logging.Formatter('%(levelname)s:prog:%(message)s')
-    proglogger.addHandler(prog_fh)
-    prog_fh.setFormatter(progformatter)
-    proglogger.setLevel(INFO)
 
-    successlogger = logging.getLogger('root.success')
-    successlogger.setLevel(INFO)
 
-    errlogger = logging.getLogger('root.err')
-
+    # proglogger = logging.getLogger('root.prog')
+    # prog_fh = logging.FileHandler(f'{os.environ["PWD"]}/logs/bucket.log')
+    # progformatter = logging.Formatter('%(levelname)s:prog:%(message)s')
+    # proglogger.addHandler(prog_fh)
+    # prog_fh.setFormatter(progformatter)
+    # proglogger.setLevel(INFO)
+    #
+    # successlogger = logging.getLogger('root.success')
+    # successlogger.setLevel(INFO)
+    #
+    # errlogger = logging.getLogger('root.err')
+    #
     copy_dev_buckets(args)

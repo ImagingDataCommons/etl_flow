@@ -35,7 +35,7 @@ def get_blob_names(args):
     SELECT
     DISTINCT i_uuid
     FROM
-        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined`
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined_included`
     WHERE
         collection_id = '{args.collection}'
     """
@@ -86,9 +86,10 @@ def worker(input, args):
 
 def move_instances(args):
     all_blobs = get_blob_names(args)
-    client = storage.Client()
-    src_bucket = storage.Bucket(client, args.src_bucket)
-    dst_bucket = storage.Bucket(client, args.dst_bucket)
+    src_client = storage.Client(project=args.src_project)
+    dst_client = storage.Client(project=args.dst_project)
+    src_bucket = storage.Bucket(src_client, args.src_bucket)
+    dst_bucket = storage.Bucket(dst_client, args.dst_bucket)
 
     try:
         # Create a set of previously copied blobs
@@ -154,8 +155,8 @@ def move_instances(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--collection', default = 'Vestibular-Schwannoma-SEG', help='Collection to move')
-    parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--src_bucket', default='idc-dev-redacted')
+    parser.add_argument('--src_project', default='canceridc-data')
+    parser.add_argument('--src_bucket', default='idc-open-idc')
     parser.add_argument('--dst_project', default='idc-dev-etl')
     parser.add_argument('--dst_bucket', default=f'idc-dev-open')
     parser.add_argument('--processes', default=16, help="Number of concurrent processes")

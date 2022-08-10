@@ -21,27 +21,28 @@ Validate that a bucket holds the correct set of instance blobs
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from google.cloud import storage, bigquery
 
-def get_expected_blobs_in_bucket(args):
+def get_expected_blobs_in_bucket(args, query):
     client = bigquery.Client()
-    query = f"""
-    SELECT distinct concat(i.uuid, '.dcm') as uuid
-     FROM `idc-dev-etl.idc_v{args.version}_dev.version` v
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.version_collection` vc ON v.version = vc.version
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.collection` c ON vc.collection_uuid = c.uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.collection_patient` cp ON c.uuid = cp.collection_uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.patient` p ON cp.patient_uuid = p.uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.patient_study` ps ON p.uuid = ps.patient_uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.study` st ON ps.study_uuid = st.uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.study_series` ss ON st.uuid = ss.study_uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.series` se ON ss.series_uuid = se.uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.series_instance` si ON se.uuid = si.series_uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.instance` i ON si.instance_uuid = i.uuid
-         JOIN `idc-dev-etl.idc_v{args.version}_dev.all_included_collections` aic
-         ON c.collection_id = aic.tcia_api_collection_id
-         WHERE ((i.source='tcia' and aic.{args.dev_or_pub}_tcia_url="{args.bucket}")
-         OR (i.source='path' and aic.{args.dev_or_pub}_path_url="{args.bucket}"))
-         AND i.excluded = False
-     """
+    if not query:
+        query = f"""
+         SELECT distinct concat(i.uuid, '.dcm') as blob_name
+          FROM `idc-dev-etl.idc_v{args.version}_dev.version` v
+              JOIN `idc-dev-etl.idc_v{args.version}_dev.version_collection` vc ON v.version = vc.version
+              JOIN `idc-dev-etl.idc_v{args.version}_dev.collection` c ON vc.collection_uuid = c.uuid
+              JOIN `idc-dev-etl.idc_v{args.version}_dev.collection_patient` cp ON c.uuid = cp.collection_uuid
+              JOIN `idc-dev-etl.idc_v{args.version}_dev.patient` p ON cp.patient_uuid = p.uuid
+              JOIN `idc-dev-etl.idc_v{args.version}_dev.patient_study` ps ON p.uuid = ps.patient_uuid
+              JOIN `idc-dev-etl.idc_v{args.version}_dev.study` st ON ps.study_uuid = st.uuid
+              JOIN `idc-dev-etl.idc_v{args.version}_dev.study_series` ss ON st.uuid = ss.study_uuid
+              JOIN `idc-dev-etl.idc_v{args.version}_dev.series` se ON ss.series_uuid = se.uuid
+              JOIN `idc-dev-etl.idc_v{args.version}_dev.series_instance` si ON se.uuid = si.series_uuid
+              JOIN `idc-dev-etl.idc_v{args.version}_dev.instance` i ON si.instance_uuid = i.uuid
+              JOIN `idc-dev-etl.idc_v{args.version}_dev.all_included_collections` aic
+              ON c.collection_id = aic.tcia_api_collection_id
+              WHERE ((i.source='tcia' and aic.{args.dev_or_pub}_tcia_url="{args.bucket}")
+              OR (i.source='path' and aic.{args.dev_or_pub}_path_url="{args.bucket}"))
+              AND i.excluded = False
+          """
 
     query_job = client.query(query)  # Make an API request.
     query_job.result()  # Wait for the query to complete.
@@ -59,7 +60,7 @@ def get_expected_blobs_in_bucket(args):
     destination = client.get_table(destination)
     with open(args.expected_blobs, 'w') as f:
         for page in client.list_rows(destination, page_size=args.batch).pages:
-            rows = [f'{row["uuid"]}\n' for row in page]
+            rows = [f'{row["blob_name"]}\n' for row in page]
             f.write(''.join(rows))
 
 def get_found_blobs_in_bucket(args):
@@ -73,11 +74,11 @@ def get_found_blobs_in_bucket(args):
             blobs = [f'{blob.name}\n' for blob in page]
             f.write(''.join(blobs))
 
-def check_all_instances(args):
+def check_all_instances(args, query=None):
     try:
         expected_blobs = set(open(args.expected_blobs).read().splitlines())
     except:
-        get_expected_blobs_in_bucket(args)
+        get_expected_blobs_in_bucket(args, query)
         expected_blobs = set(open(args.expected_blobs).read().splitlines())
         # json.dump(psql_blobs, open(args.blob_names), 'w')
 

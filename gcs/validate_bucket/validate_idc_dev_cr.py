@@ -29,7 +29,7 @@ from gcs.validate_bucket.validate_bucket_mp import check_all_instances
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # parser.add_argument('--version', default=f'{settings.CURRENT_VERSION}')
-    parser.add_argument('--version', default=9)
+    parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--bucket', default='idc-dev-cr')
     parser.add_argument('--dev_or_pub', default = 'dev', help='Validating a dev or pub bucket')
     # parser.add_argument('--collection_group_table', default='open_collections', help='BQ table containing list of collections')
