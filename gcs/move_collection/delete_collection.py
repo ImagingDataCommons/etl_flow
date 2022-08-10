@@ -33,7 +33,7 @@ def get_blob_names(args):
     SELECT
     DISTINCT i_uuid
     FROM
-        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined`
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined_included`
     WHERE
         collection_id = '{args.collection}'
     """
@@ -144,9 +144,9 @@ def delete_all(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--collection', default = 'Vestibular-Schwannoma-SEG', help='Collection to move')
-    parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--src_bucket', default='idc-dev-redacted')
-    parser.add_argument('--processes', default=8, help="Number of concurrent processes")
+    parser.add_argument('--src_project', default='canceridc-data')
+    parser.add_argument('--src_bucket', default='idc-open-idc')
+    parser.add_argument('--processes', default=16, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
 
     args = parser.parse_args()

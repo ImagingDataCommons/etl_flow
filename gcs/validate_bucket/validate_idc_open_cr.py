@@ -38,4 +38,17 @@ if __name__ == '__main__':
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/validate_open_buckets')
 
     args = parser.parse_args()
+    
+    # query = f"""
+    #  SELECT distinct concat(aji.i_uuid, '.dcm') as blob_name
+    #   FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_included` aji
+    #   JOIN `idc-dev-etl.idc_v{args.version}_dev.all_included_collections` aic
+    #   ON aji.collection_id = aic.tcia_api_collection_id
+    #   WHERE ((aji.i_source='tcia' and aic.{args.dev_or_pub}_tcia_url="{args.bucket}"
+    #   AND (aji.collection_id='Duke-Breast-Cancer-MRI' AND aji.i_rev_idc_version!=10))
+    #   OR (aji.i_source='path' and aic.{args.dev_or_pub}_path_url="{args.bucket}"))
+    #
+    #   AND aji.i_excluded = False
+    #   """
+
     check_all_instances(args)

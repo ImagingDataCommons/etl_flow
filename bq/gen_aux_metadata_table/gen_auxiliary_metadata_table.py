@@ -375,5 +375,5 @@ licensed as (
     successlogger.info('Created auxiliary_metadata table')
 
 def gen_aux_table(args):
-    # create_original_collections_licenses_table(args)
+    create_original_collections_licenses_table(args)
     build_table(args)

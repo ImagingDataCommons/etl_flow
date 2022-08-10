@@ -70,7 +70,7 @@ def del_all_instances(args):
     client = storage.Client()
     bucket = storage.Bucket(client, args.bucket)
 
-    print(f'Deleting bucket {args.bucket}')
+    progresslogger.info(f'Deleting bucket {args.bucket}')
 
     num_processes = args.processes
     processes = []
@@ -101,7 +101,7 @@ def del_all_instances(args):
         # task_queue.put((page, n))
 
         n += page.num_items
-    print('Primary work distribution complete; {} blobs'.format(n))
+    progresslogger.info('Primary work distribution complete; {} blobs'.format(n))
 
     # Tell child processes to stop
     for i in range(num_processes):
@@ -115,7 +115,7 @@ def del_all_instances(args):
 
     delta = time.time() - strt
     rate = (n)/delta
-    print(f'Completed bucket {args.bucket}, {rate} instances/sec, {num_processes} processes')
+    progresslogger.info(f'Completed bucket {args.bucket}, {rate} instances/sec, {num_processes} processes')
 
 
 def pre_delete(args):

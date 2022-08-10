@@ -29,7 +29,7 @@ from gcs.validate_bucket.validate_bucket_mp import check_all_instances
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # parser.add_argument('--version', default=f'{settings.CURRENT_VERSION}')
-    parser.add_argument('--version', default=9)
+    parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--bucket', default='idc-dev-defaced')
     parser.add_argument('--dev_or_pub', default = 'dev', help='Validating a dev or pub bucket')
     # parser.add_argument('--collection_group_table', default='open_collections', help='BQ table containing list of collections')
@@ -39,4 +39,21 @@ if __name__ == '__main__':
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/validate_open_buckets')
 
     args = parser.parse_args()
-    check_all_instances(args)
+
+    query = f"""
+     SELECT distinct concat(aji.i_uuid, '.dcm') as blob_name
+      FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_included` aji
+      JOIN `idc-dev-etl.idc_v{args.version}_dev.all_included_collections` aic
+      ON aji.collection_id = aic.tcia_api_collection_id
+      WHERE 
+      ( ( aji.i_source='tcia' 
+          AND aic.{args.dev_or_pub}_tcia_url="{args.bucket}" )
+        OR ( aji.i_source='path' 
+            AND aic.{args.dev_or_pub}_path_url="{args.bucket}" AND aji.collection_id not in ('CPTAC-CM','CPTAC-LSCC'))
+        OR ( aji.i_source='path'
+          AND ( aji.collection_id in ('CPTAC-CM','CPTAC-LSCC')
+            AND aji.i_rev_idc_version!=10)  ) )
+      AND aji.i_excluded = False
+      """
+
+    check_all_instances(args, query)

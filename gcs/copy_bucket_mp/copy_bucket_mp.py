@@ -24,12 +24,12 @@ to open/public buckets.
 
 import argparse
 import os
-import logging
-from logging import INFO
-proglogger = logging.getLogger('root.prog')
-successlogger = logging.getLogger('root.success')
-errlogger = logging.getLogger('root.err')
-
+# import logging
+# from logging import INFO
+# proglogger = logging.getLogger('root.prog')
+# successlogger = logging.getLogger('root.success')
+# errlogger = logging.getLogger('root.err')
+from utilities.logging_config import successlogger, progresslogger, errlogger
 import time
 from multiprocessing import Process, Queue
 from google.cloud import storage, bigquery
@@ -62,16 +62,15 @@ def copy_instances(args, client, src_bucket, dst_bucket, blob_names, n):
                 break
             except Exception as exc:
                 if retries == TRIES:
-                    errlogger.error('p%s %s: %s copy failed \n, retry %s; %s', args.id,
-                                    n, blob_name, retries, exc)
+                    errlogger.error('p%s: %s/%s copy failed\n   %s', args.id, args.src_bucket, blob_name, exc)
                     break
             time.sleep(retries)
             retries += 1
 
-    proglogger.info('p%s Copied blobs %s:%s ', args.id, n, n+len(blob_names)-1)
+    progresslogger.info('p%s Copied blobs %s:%s ', args.id, n, n+len(blob_names)-1)
 
 
-def worker(input, args):
+def worker(input, args, dones):
     # proglogger.info('p%s: Worker starting: args: %s', args.id, args )
     # print(f'p{args.id}: Worker starting: args: {args}')
 
@@ -81,38 +80,43 @@ def worker(input, args):
     src_bucket = storage.Bucket(client, args.src_bucket)
     dst_bucket = storage.Bucket(client, args.dst_bucket)
     for blob_names, n in iter(input.get, 'STOP'):
-        copy_instances(args, client, src_bucket, dst_bucket, blob_names, n)
+        blob_names_todo = blob_names - dones
+        if blob_names_todo:
+            copy_instances(args, client, src_bucket, dst_bucket, blob_names_todo, n)
+        else:
+            progresslogger.info(f'p{args.id}: Blobs {n}:{n+len(blob_names)-1} previously copied')
 
 
-def copy_all_instances(args):
+def copy_all_instances(args, dones):
     client = storage.Client()
     src_bucket = storage.Bucket(client, args.src_bucket)
-    dst_bucket = storage.Bucket(client, args.dst_bucket)
 
-    try:
-        # Create a set of previously copied blobs
-        done_instances = set(open(f'{args.log_dir}/{args.src_bucket}_success.log').read().splitlines())
-    except:
-        done_instances = []
+    # try:
+    #     # Create a set of previously copied blobs
+    #     # dones = set(open(f'{args.log_dir}/{args.src_bucket}_success.log').read().splitlines())
+    #     dones = set(open(successlogger.handlers[0].baseFilename).read().splitlines())
+    # except:
+    #     dones = set([])
+    # if args.src_bucket in dones:
+    #     progresslogger.info(f'Bucket {args.src_bucket} previously copied')
+    #     return
 
-    n=len(done_instances)
-    # done_instances = []
+    n=len(dones)
+    # dones = []
     # iterator = client.list_blobs(dst_bucket, page_size=args.batch)
     # for page in iterator.pages:
     #     blobs = [blob.name for blob in page]
-    #     done_instances.extend(blobs)
+    #     dones.extend(blobs)
     #     # if len(blobs) == 0:
     #     #     break
 
-    print(f"{len(done_instances)} previously copied")
-    done_instances = set(done_instances)
+    progresslogger.info(f"{len(dones)} blobs previously copied")
+    # dones = set(dones)
 
-    print(f'Copying bucket {args.src_bucket} to {args.dst_bucket}, ')
+    progresslogger.info(f'Copying bucket {args.src_bucket} to {args.dst_bucket}, ')
 
     num_processes = args.processes
     processes = []
-    # Create a pair of queue for each process
-
     task_queue = Queue()
 
     strt = time.time()
@@ -121,7 +125,7 @@ def copy_all_instances(args):
     for process in range(num_processes):
         args.id = process + 1
         processes.append(
-            Process(group=None, target=worker, args=(task_queue, args)))
+            Process(group=None, target=worker, args=(task_queue, args, dones)))
         processes[-1].start()
 
     # Distribute the work across the task_queues
@@ -130,16 +134,17 @@ def copy_all_instances(args):
     for page in iterator.pages:
         if page.num_items:
             blobs = set([blob.name for blob in page])
-            blobs = blobs - done_instances
+            # blobs = blobs - dones
             task_queue.put((blobs, n))
             # print(f'Queued {n}:{n+len(blobs)-1}')
         else:
             break
         n += page.num_items
-    print('Primary work distribution complete; {} blobs'.format(n))
+    progresslogger.info('Primary work distribution complete; {} blobs'.format(n))
 
     # Tell child processes to stop
     for i in range(num_processes):
+        task_queue.put('STOP')
         task_queue.put('STOP')
 
 
@@ -150,37 +155,13 @@ def copy_all_instances(args):
 
     delta = time.time() - strt
     rate = (n)/delta
-    print(f'Completed bucket {args.src_bucket}, {rate} instances/sec, {num_processes} processes')
-
-
-def pre_copy(args):
-
-    bucket = args.src_bucket
-    # if os.path.exists('{}/logs/{}_error.log'.format(args.log_dir, bucket)):
-    #     os.remove('{}/logs/{}_error.log'.format(args.log_dir, bucket))
-    if not os.path.exists('{}'.format(args.log_dir)):
-        os.mkdir('{}'.format(args.log_dir))
-        st = os.stat('{}'.format(args.log_dir))
-        # os.chmod('{}'.format(args.log_dir), st.st_mode | 0o222)
-
-    # Change logging file. File name includes bucket ID.
-    for hdlr in successlogger.handlers[:]:
-        successlogger.removeHandler(hdlr)
-    success_fh = logging.FileHandler('{}/{}_success.log'.format(args.log_dir, bucket))
-    successlogger.addHandler(success_fh)
-    successformatter = logging.Formatter('%(message)s')
-    success_fh.setFormatter(successformatter)
-
-    for hdlr in errlogger.handlers[:]:
-        errlogger.removeHandler(hdlr)
-    err_fh = logging.FileHandler('{}/{}_error.log'.format(args.log_dir, bucket))
-    errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
-    errlogger.addHandler(err_fh)
-    err_fh.setFormatter(errformatter)
-
-    copy_all_instances(args)
-
-
+    errors = open(errlogger.handlers[0].baseFilename).read().splitlines()
+    error_buckets = set([error.split(' ')[1].split('/')[0] for error in errors])
+    if src_bucket in error_buckets:
+        print(f'Bucket {args.src_bucket} had errors')
+    else:
+        successlogger.info(f'{args.src_bucket}')
+        progresslogger.info(f'Completed bucket {args.src_bucket}, {rate} instances/sec, {num_processes} processes')
 
 
 # if __name__ == '__main__':

@@ -310,7 +310,7 @@ def build_metadata(client, args):
                     collection_data = collection_metadata[idc_collection_id]
                     if not 'URL' in collection_data:
                         # TCIA collections have an empty URL
-                        collection_data['URL'] = ""
+                        collection_data['URL'] = f"https://doi.org/{collection_data['DOI']}"
                     if collection_data['tcia_wiki_collection_id']:
                         # Only tcia collections have a tcia_api_collection_id
                         collection_data['tcia_api_collection_id'] = id_and_sources['tcia_api_collection_id']
@@ -333,7 +333,8 @@ def build_metadata(client, args):
                             collection_data['licenses'].append(licenses[idc_collection_id]['tcia'])
                             if 'path' in licenses[idc_collection_id] and \
                                     licenses[idc_collection_id]['tcia'] != licenses[idc_collection_id]['path']:
-                                         collection_data['licenses'].append(licenses[idc_collection_id]['path'])
+                                        breakpoint() # Why are there two of the same license?
+                                        collection_data['licenses'].append(licenses[idc_collection_id]['path'])
                         else:
                             collection_data['licenses'].append(licenses[idc_collection_id]['path'])
                     except:
