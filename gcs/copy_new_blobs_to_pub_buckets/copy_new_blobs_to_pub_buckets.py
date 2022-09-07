@@ -53,6 +53,7 @@ def get_urls(args):
     destination = client.get_table(destination)
     return destination
 
+
 def copy_some_blobs(args, client, urls, n, dones):
     done = 0
     copied = 0
@@ -155,33 +156,10 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
     # parser.add_argument('--log_dir', default=f'{settings.LOGGING_BASE}/{settings.BASE_NAME}')
     parser.add_argument('--batch', default=1000)
-    parser.add_argument('--processes', default=16)
+    parser.add_argument('--processes', default=1)
     args = parser.parse_args()
     args.id = 0 # Default process ID
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
-
-    # if not os.path.exists(settings.LOGGING_BASE):
-    #     os.mkdir(settings.LOGGING_BASE)
-    # if not os.path.exists(args.log_dir):
-    #     os.mkdir(args.log_dir)
-    #
-    # successlogger = logging.getLogger('root.success')
-    # successlogger.setLevel(INFO)
-    # for hdlr in successlogger.handlers[:]:
-    #     successlogger.removeHandler(hdlr)
-    # success_fh = logging.FileHandler('{}/success.log'.format(args.log_dir))
-    # successlogger.addHandler(success_fh)
-    # successformatter = logging.Formatter('%(message)s')
-    # success_fh.setFormatter(successformatter)
-    #
-    # errlogger = logging.getLogger('root.err')
-    # for hdlr in errlogger.handlers[:]:
-    #     errlogger.removeHandler(hdlr)
-    # err_fh = logging.FileHandler('{}/error.log'.format(args.log_dir))
-    # errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
-    # errlogger.addHandler(err_fh)
-    # err_fh.setFormatter(errformatter)
-
 
     copy_all_blobs(args)

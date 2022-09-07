@@ -15,6 +15,7 @@
 #
 
 # Copy all the instances in a collection, across all versions, from one bucket to another
+# One time use script to copy PROSTATE-DIAGNOSIS
 
 import argparse
 import json
@@ -157,9 +158,9 @@ if __name__ == '__main__':
     parser.add_argument('--collection', default = 'PROSTATE-DIAGNOSIS', help='Collection to move')
     parser.add_argument('--src_project', default=settings.DEV_PROJECT)
     parser.add_argument('--src_bucket', default='idc-dev-excluded')
-    parser.add_argument('--dst_project', default=settings.DEV_PROJECT)
-    parser.add_argument('--dst_bucket', default=f'idc-dev-open')
-    parser.add_argument('--processes', default=16, help="Number of concurrent processes")
+    parser.add_argument('--dst_project', default=settings.PDP_PROJECT)
+    parser.add_argument('--dst_bucket', default=f'idc-open-pdp-staging')
+    parser.add_argument('--processes', default=48, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
 
     args = parser.parse_args()

@@ -33,6 +33,7 @@ def get_limited_series(args):
     client = bigquery.Client()
     query = f"""
     WITH
+      -- Get all radiology collection/study/series
       tcia_series AS (
       SELECT
         DISTINCT 
@@ -42,8 +43,9 @@ def get_limited_series(args):
       FROM
         `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_included`
       WHERE
+        -- Pathology is all public access
         se_sources.tcia=TRUE
-        AND idc_version=10 )
+        AND idc_version={settings.CURRENT_VERSION} )
     SELECT
       tcia_series.*
     FROM
@@ -54,6 +56,7 @@ def get_limited_series(args):
       tcia_series.idc_webapp_collection_id = aic.idc_webapp_collection_id
     WHERE
       aic.tcia_access ='Limited'
+    ORDER BY tcia_series.SeriesInstanceUID
     """
     # query = f"""
     # select distinct idc_webapp_collection_id, StudyInstanceUID, SeriesInstanceUID
@@ -94,7 +97,7 @@ def delete_all_series(args):
     except:
         done_series = set()
 
-    # We need to remove all limited series
+    # We need to remove all limited access series
     limited_series = get_limited_series(args)
 
     n=0

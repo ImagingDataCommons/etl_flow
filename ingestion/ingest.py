@@ -35,8 +35,8 @@ from ingestion.version import clone_version, build_version
 from python_settings import settings
 
 from ingestion.all_sources import All
-from http.client import HTTPConnection
-HTTPConnection.debuglevel = 0
+# from http.client import HTTPConnection
+# HTTPConnection.debuglevel = 0
 
 # rootlogger = logging.getLogger('root')
 # successlogger = logging.getLogger('root.success')
@@ -126,8 +126,7 @@ if __name__ == '__main__':
                         help="List of tables containing tcia_api_collection_ids of tcia collections to be skipped")
     parser.add_argument('--skipped_tcia_collections', nargs='*', \
             default=['QIN Breast DCE-MRI', 'QIN LUNG CT', 'NLST',  \
-                     'APOLLO-5-LSCC', 'APOLLO-5-LUAD',\
-                     'CC-Tumor-Heterogeneity', 'HCC-TACE-Seg'], \
+                     'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-THYM'], \
                         help='List of additional tcia collections to be skipped')
     parser.add_argument('--included_tcia_collections', nargs='*', default=[], help='List of tcia collections to exclude from skipped')
     parser.add_argument('--prestaging_tcia_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_tcia_', help='Copy tcia instances here before forwarding to --staging_bucket')
@@ -136,7 +135,7 @@ if __name__ == '__main__':
                         help="List of tables containind tcia_api_collection_ids of path collections to be skipped")
     parser.add_argument('--skipped_path_collections', nargs='*',\
             default=['QIN Breast DCE-MRI', 'QIN LUNG CT',  \
-                     'APOLLO-5-LSCC', 'APOLLO-5-LUAD',], \
+                     'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-THYM'], \
                         help='List of additional path collections to be skipped')
     parser.add_argument('--included_path_collections', nargs='*', \
             default=['CPTAC-GBM', 'CPTAC-HNSCC', 'TCGA-GBM', 'TCGA-HNSC', 'TCGA-LGG'], help='List of path collections to exclude from skipped')

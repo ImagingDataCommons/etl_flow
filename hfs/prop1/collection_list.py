@@ -14,17 +14,4 @@
 # limitations under the License.
 #
 
-import settings
-import argparse
-import sys
-from aux_matches_dicom_metadata import compare_tables
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--project', default = settings.DEV_PROJECT)
-    parser.add_argument('--dataset', default = settings.BQ_DEV_EXT_DATASET)
-    args = parser.parse_args()
-    print(args)
-    compare_tables(args)
-
-
+collection_list = ['APOLLO-5-LSCC', 'CPTAC-SAR', 'TCGA-READ']

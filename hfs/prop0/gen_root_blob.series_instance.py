@@ -50,29 +50,26 @@ def gen_root_obj(args):
             for version in versions:
                 # gen_version_object(args, version.idc_version, version.previous_idc_version, version.md5_hash)
                 gen_version_object(args, sess, version)
-            root = {
-                "encoding": "1.0",
-                "object_type": "root",
-                "md5_hash": get_merkle_hash([version.hashes.all_sources for version in versions]),
-                "self_uri": f"gs://{args.dst_bucket.name}/idc.idc",
-                "children": {
-                    "count": versions.count(),
-                    "object_ids": [f"idc_v{version.version}" for version in versions],
-                    "gs":{
-                        "region": "us-central1",
-                        "bucket": f"{args.dst_bucket.name}",
-                        "gs_object_ids": [
-                            f"idc_v{version.version}.idc" for version in versions
-                        ]
+            if 'root' in args.hfs_levels:
+                root = {
+                    "encoding": "1.0",
+                    "object_type": "root",
+                    "md5_hash": get_merkle_hash([version.hashes.all_sources for version in versions]),
+                    "self_uri": f"gs://{args.dst_bucket.name}/idc.idc",
+                    "children": {
+                        "count": versions.count(),
+                        "object_ids": [f"idc_v{version.version}" for version in versions],
+                        "gs":{
+                            "region": "us-central1",
+                            "bucket": f"{args.dst_bucket.name}",
+                            "gs_object_ids":
+                                [
+                                    f"idc_v{version.version}.idc" for version in versions
+                                ]
+                            }
+                         }
                     }
-                 },
-                # "parents": {
-                #     "count": 0,
-                #     "object_ids": []
-                # }
-            }
-
-            blob=args.dst_bucket.blob("idc.idc").upload_from_string(json.dumps(root))
+                blob=args.dst_bucket.blob("idc.idc").upload_from_string(json.dumps(root))
             print(f"Root completed")
         else:
             print(f"Root skipped")
@@ -83,8 +80,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=9, help='Version to work on')
     parser.add_argument('--collections', default=['APOLLO-5-LSCC', 'CPTAC-SAR', 'TCGA-ESCA', 'TCGA-READ'])
-    parser.add_argument('--hfs_level', default='study',help='Name blobs as study/series/instance if study, series/instance if series')
-    parser.add_argument('--dst_bucket_name', default='whc_ssi', help='Bucket into which to copy blobs')
+    parser.add_argument('--hfs_levels', default=['series'],help='Name blobs as study/series/instance if study, series/instance if series')
+    parser.add_argument('--dst_bucket_name', default='whc_si', help='Bucket into which to copy blobs')
     args = parser.parse_args()
     args.id = 0  # Default process ID
     print(f'args: {json.dumps(args.__dict__, indent=2)}')

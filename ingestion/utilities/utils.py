@@ -108,7 +108,7 @@ def copy_disk_to_prestaging_bucket(args, series):
         # Copy the series to GCS
         src = "{}/{}/*".format(args.dicom_dir, series.series_instance_uid)
         dst = "gs://{}/".format(args.prestaging_tcia_bucket)
-        breakpoint() # Check if -J parameter is still broken
+        # breakpoint() # Check if -J parameter is still broken
         result = run(["gsutil", "-m", "-q", "cp", src, dst], check=True)
         # result = run(["gsutil", "-m", "-q", "cp", "-J", src, dst], check=True)
         if result.returncode :

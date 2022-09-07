@@ -92,18 +92,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.id = 0 # Default process ID
 
-
-
-    # proglogger = logging.getLogger('root.prog')
-    # prog_fh = logging.FileHandler(f'{os.environ["PWD"]}/logs/bucket.log')
-    # progformatter = logging.Formatter('%(levelname)s:prog:%(message)s')
-    # proglogger.addHandler(prog_fh)
-    # prog_fh.setFormatter(progformatter)
-    # proglogger.setLevel(INFO)
-    #
-    # successlogger = logging.getLogger('root.success')
-    # successlogger.setLevel(INFO)
-    #
-    # errlogger = logging.getLogger('root.err')
-    #
     copy_dev_buckets(args)

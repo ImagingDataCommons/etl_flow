@@ -160,11 +160,11 @@ WITH
 --
   tcia_licenses AS (
   SELECT
-    oc.DOI, oc.URL,
+    oc.idc_webapp_collection_id, oc.DOI, oc.URL,
     tl.license_url,
     tl.license_long_name,
     tl.license_short_name,
-    IF(tl.license_short_name='TCIA' or tl.license_short_name='TCIA NC', 'Limited', 'Public') AS access
+    IF(CONTAINS_SUBSTR(tl.license_short_name, 'TCIA'), 'Limited', 'Public') AS access
 
   FROM
     `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.{args.temp_license_table_name}` tl
@@ -175,11 +175,11 @@ WITH
 --
   path_licenses AS (
   SELECT
-    oc.DOI, oc.URL,
+    oc.idc_webapp_collection_id, oc.DOI, oc.URL,
     tl.license_url,
     tl.license_long_name,
     tl.license_short_name,
-    IF(tl.license_short_name='TCIA' or tl.license_short_name='TCIA NC', 'Limited', 'Public') AS access
+    IF(CONTAINS_SUBSTR(tl.license_short_name, 'TCIA'), 'Limited', 'Public') AS access
 
   FROM
     `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.{args.temp_license_table_name}` tl
@@ -190,12 +190,11 @@ WITH
 --
   analysis_licenses AS (
   SELECT
-    DOI, "" AS URL,
+    DOI, CONCAT("https://doi.org/", DOI) AS URL,
     license_url,
     license_long_name,
     license_short_name,
     access
-
   FROM
     `idc-dev-etl.{settings.BQ_DEV_EXT_DATASET}.analysis_results_metadata` ),
 --
@@ -225,7 +224,7 @@ SELECT
   se.series_instance_uid AS SeriesInstanceUID,
   se.uuid AS series_uuid,
   IF(c.collection_id='APOLLO', '', se.source_doi) AS source_doi,
-  IF(se.source_url is Null , "", se.source_url) AS source_url,
+  IF(se.source_url is Null OR se.source_url='', CONCAT('https://doi.org/', source_doi), se.source_url) AS source_url,
   se.series_instances AS series_instances,
   se.hashes.all_hash AS series_hash,
   se.init_idc_version AS series_init_idc_version,
