@@ -13,17 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-# Copy all the instances in a collection, across all versions, from one bucket to another
-
+# Delete all version of all instances in a collection from a bucket
 import argparse
 import json
 from utilities.logging_config import successlogger, progresslogger, errlogger
-from utilities.bq_helpers import query_BQ
 
 import time
 from multiprocessing import Process, Queue
 from google.cloud import storage, bigquery
+from google.cloud.exceptions import NotFound
 
 import settings
 
@@ -35,7 +33,7 @@ def get_blob_names(args):
     SELECT
     DISTINCT i_uuid
     FROM
-        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined`
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined_included`
     WHERE
         collection_id = '{args.collection}'
     """
@@ -44,31 +42,25 @@ def get_blob_names(args):
     return blobs
 
 
-def copy_instances(args, client, src_bucket, dst_bucket, blob_names, n):
+def delete_instances(args, client, src_bucket, blob_names, n):
     for blob_name in blob_names:
-        src_blob = src_bucket.blob(blob_name)
-        dst_blob = dst_bucket.blob(blob_name)
-        retries = 0
         while True:
             try:
-                rewrite_token = False
-                while True:
-                    rewrite_token, bytes_rewritten, bytes_to_rewrite = dst_blob.rewrite(
-                        src_blob, token=rewrite_token
-                    )
-                    if not rewrite_token:
-                        break
+                src_bucket.delete_blob(blob_name)
                 successlogger.info(f'{blob_name}')
                 break
+            except NotFound as exc:
+                errlogger.error('p%s %s: %s: Failed, not found \n', args.id,
+                                args.collection,
+                                blob_name)
+                break
             except Exception as exc:
-                if retries == TRIES:
-                    errlogger.error('p%s %s: %s copy failed \n, retry %s; %s', args.id,
-                                    n, blob_name, retries, exc)
-                    break
-            time.sleep(retries)
-            retries += 1
+                errlogger.error('p%s %s: %s: Failed %s\n: %s', args.id,
+                                args.collection,
+                                blob_name, exc)
+                break
 
-    progresslogger.info('p%s Copied blobs %s:%s ', args.id, n, n+len(blob_names)-1)
+    progresslogger.info('p%s Deleted blobs %s:%s ', args.id, n, n+len(blob_names)-1)
 
 
 def worker(input, args):
@@ -79,17 +71,14 @@ def worker(input, args):
 
     client = storage.Client()
     src_bucket = storage.Bucket(client, args.src_bucket)
-    dst_bucket = storage.Bucket(client, args.dst_bucket)
     for blob_names, n in iter(input.get, 'STOP'):
-        copy_instances(args, client, src_bucket, dst_bucket, blob_names, n)
+        delete_instances(args, client, src_bucket, blob_names, n)
 
 
-def copy_all_instances(args):
+def delete_all(args):
     all_blobs = get_blob_names(args)
-    src_client = storage.Client(project=args.src_project)
-    dst_client = storage.Client(project=args.dst_project)
-    src_bucket = storage.Bucket(src_client, args.src_bucket)
-    dst_bucket = storage.Bucket(dst_client, args.dst_bucket)
+    client = storage.Client()
+    src_bucket = storage.Bucket(client, args.src_bucket)
 
     try:
         # Create a set of previously copied blobs
@@ -106,10 +95,10 @@ def copy_all_instances(args):
     #     # if len(blobs) == 0:
     #     #     break
 
-    progresslogger.info(f"{len(done_instances)} previously copied")
+    progresslogger.info(f"{len(done_instances)} previously deleted")
     done_instances = set(done_instances)
 
-    progresslogger.info(f'Copying collection {args.collection} from {args.src_bucket} to {args.dst_bucket}, ')
+    progresslogger.info(f'Deleting collection {args.collection} from {args.src_bucket}')
 
     num_processes = args.processes
     processes = []
@@ -154,14 +143,12 @@ def copy_all_instances(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--collection', default = 'PROSTATE-DIAGNOSIS', help='Collection to move')
-    parser.add_argument('--src_project', default=settings.DEV_PROJECT)
-    parser.add_argument('--src_bucket', default='idc-dev-excluded')
-    parser.add_argument('--dst_project', default=settings.DEV_PROJECT)
-    parser.add_argument('--dst_bucket', default=f'idc-dev-open')
+    parser.add_argument('--collection', default = 'Vestibular-Schwannoma-SEG', help='Collection to move')
+    parser.add_argument('--src_project', default='canceridc-data')
+    parser.add_argument('--src_bucket', default='idc-open-idc')
     parser.add_argument('--processes', default=16, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
 
     args = parser.parse_args()
     print(f'args: {json.dumps(args.__dict__, indent=2)}')
-    copy_all_instances(args)
+    delete_all(args)

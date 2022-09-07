@@ -18,6 +18,12 @@ import os
 import logging
 from logging import INFO, ERROR
 import settings
+
+# Suppress logging from request module
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("google.auth").setLevel(logging.WARNING)
+
 print(f'Logging to {settings.LOG_DIR}')
 
 if not os.path.exists(settings.LOGGING_BASE):

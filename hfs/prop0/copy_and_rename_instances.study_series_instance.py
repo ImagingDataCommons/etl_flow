@@ -31,9 +31,9 @@ if __name__ == '__main__':
     parser.add_argument('--collections', default="('APOLLO-5-LSCC', 'CPTAC-SAR')")
     parser.add_argument('--hfs_level', default='study',help='Name blobs as study/series/instance if study, series/instance if series')
     parser.add_argument('--src_bucket', default='idc-dev-open', help='Bucket from which to copy blobs')
-    parser.add_argument('--dst_bucket', default='whc_ssi', help='Bucket into which to copy blobs')
+    parser.add_argument('--dst_bucket', default='whc_prop1', help='Bucket into which to copy blobs')
     parser.add_argument('--batch', default=100)
-    parser.add_argument('--processes', default=64)
+    parser.add_argument('--processes', default=8)
     args = parser.parse_args()
     args.id = 0 # Default process ID
 

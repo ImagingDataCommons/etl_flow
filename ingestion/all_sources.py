@@ -149,6 +149,19 @@ class All:
                 collection_hashes[source.value] = self.sources[source].src_collection_hash(collection_id)
         return collection_hashes
 
+    # Compute collection hashes from its child hashes according to sources
+    def src_collection_hashes_from_patient_hashes(self, collection_id, submitter_case_ids, skipped_sources, sources):
+        collection_hashes = ['','']
+        for source in self.sources:
+            if skipped_sources[source.value] or not sources[source.value]:
+                collection_hashes[source.value] = ""
+            else:
+                hashes = []
+                for submitter_case_id in submitter_case_ids:
+                    hashes.append(self.sources[source].src_patient_hash(collection_id, submitter_case_id))
+                collection_hashes[source.value] = get_merkle_hash(hashes)
+        return collection_hashes
+
     ###-------------------Patients-----------------###
 
     # Get the patients in some collection from all sources

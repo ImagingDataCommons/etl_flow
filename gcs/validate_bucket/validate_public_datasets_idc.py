@@ -45,37 +45,5 @@ if __name__ == '__main__':
     FROM `{args.src_project}.idc_metadata.open_collections_blob_names_v{args.version}`
     """
 
-    # query = f"""
-    # SELECT distinct split(gcs_url,'/')[offset(3)] as blob_name
-    # FROM `{args.src_project}.{args.src_bqdataset_name}.auxiliary_metadata`
-    # WHERE instance_revised_idc_version = {args.version} and split(gcs_url,'/')[offset(2)] = 'public-datasets-idc'
-    # UNION all
-    # SELECT distinct split(gcs_url,'/')[offset(3)]  as blob_name
-    # FROM `{args.src_project}.{args.src_bqdataset_name}.auxiliary_metadata`
-    # WHERE idc_webapp_collection_id = 'vestibular_schwannoma_seg'
-    # """
-    # query = f"""
-    #     SELECT distinct CONCAT(a.i_uuid, '.dcm') as blob_name
-    #     FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_included` a
-    #     JOIN `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_included_collections` i
-    #     ON a.collection_id = i.tcia_api_collection_id
-    #     WHERE
-    #     (a.i_source='tcia' and i.pub_tcia_url='public-datasets-idc')
-    #     OR (a.i_source='path' and
-    #     a.collection_id = 'CPTAC-CM' and a.i_rev_idc_version=10)
-    #     OR (a.i_source='path' and
-    #     a.collection_id = 'CPTAC-LSCC' and a.i_rev_idc_version=10)
-    #     OR (a.i_source='path' and a.collection_id != 'CPTAC-CM' and a.collection_id != 'CPTAC-LSCC')
-    #     AND a.i_excluded=FALSE
-    #     UNION ALL
-    #     SELECT distinct CONCAT(a.i_uuid, '.dcm') as blob_name
-    #     FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_included` a
-    #     JOIN `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_included_collections` i
-    #     ON a.collection_id = i.tcia_api_collection_id
-    #     WHERE
-    #     a.collection_id = 'Vestibular-Schwannoma-SEG'
-    #
-    #     """
-
 
     check_all_instances(args, query)

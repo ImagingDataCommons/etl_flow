@@ -29,19 +29,20 @@ from utilities.tcia_helpers import get_hash, get_access_token, get_images_with_m
     get_hash_nlst, NLST_AUTH_URL, refresh_access_token
 from ingestion.utilities.utils import get_merkle_hash
 
-from python_settings import settings
+# from python_settings import settings
 # import settings as etl_settings
+import settings
 from google.cloud import bigquery
 
 # settings.configure(etl_settings)
-assert settings.configured
-import psycopg2
-from psycopg2.extras import DictCursor
+# assert settings.configured
+# import psycopg2
+# from psycopg2.extras import DictCursor
 import zipfile
 import io
 import pydicom
 
-from idc.models import Base, Version, Collection
+from idc.models import Base, Version, Redacted_Collections
 from sqlalchemy.orm import Session
 
 
@@ -275,23 +276,27 @@ def compare_patient_hashes(access_token, refresh_token, sess, args, collection):
     #         len(patients), len(tcia_patients)))
 
 def compare_collection_hashes(sess, args):
-    query = f"""
-        SELECT tcia_api_collection_id, collection_hash
-        FROM collection{args.suffix}
-        WHERE idc_version_number={args.version}
-        ORDER BY tcia_api_collection_id
-      """
-    version = sess.query(Version).filter(Version.version == args.version).first()
-    collections = version.collections
-    collections = sorted(version.collections, key=lambda collection: collection.collection_id)
+    if args.collections == []:
+        query = f"""
+            SELECT tcia_api_collection_id, collection_hash
+            FROM collection{args.suffix}
+            WHERE idc_version_number={args.version}
+            ORDER BY tcia_api_collection_id
+          """
+        version = sess.query(Version).filter(Version.version == args.version).first()
+        all_collections = version.collections
+        all_collections = sorted(version.collections, key=lambda collection: collection.collection_id)
 
-    skips = args.skips
+        redacted_collections = [collection.tcia_api_collection_id for collection in sess.query(Redacted_Collections).all()]
+        collections = [collection for collection in all_collections if
+                       collection.collection_id not in redacted_collections]
 
-    if args.collections != []:
-        collections = [collection for collection in collections if collection.collection_id in args.collections]
+    else:
+        collections = args.collections
         if collections[0].collection_id == 'NLST':
             access_token, refresh_token = get_access_token(auth_server=NLST_AUTH_URL)
 
+    skips = args.skips
     for collection in collections:
         # access_token = get_access_token(auth_server=NBIA_AUTH_URL)
         collection_id = collection.collection_id
@@ -385,13 +390,13 @@ if __name__ == '__main__':
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
 
-    version = 10
+    version = settings.CURRENT_VERSION
     parser = argparse.ArgumentParser()
     # parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
     parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
     parser.add_argument('--suffix', default="")
-    parser.add_argument('--stop_expansion', default="Collection", help="Level at which to stop expansion")
-    parser.add_argument('--stop', default=True, help='Stop expansion if no hash returned by NBIA')
+    parser.add_argument('--stop_expansion', default="Pa", help="Level at which to stop expansion")
+    parser.add_argument('--stop', default=False, help='Stop expansion if no hash returned by NBIA')
     parser.add_argument('--expand_all', default=False, help="Expand regardless of whether hashes match.")
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
                         help='Levels at which to log')

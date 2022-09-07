@@ -610,7 +610,6 @@ class All_WSI_Joined(Base):
 class CR_Collections(Base):
     __tablename__ = 'cr_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    access = Column(String, comment="Access: Public or Limited")
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
     pub_tcia_url = Column(String, comment="Public tcia bucket name")
@@ -620,7 +619,6 @@ class CR_Collections(Base):
 class Defaced_Collections(Base):
     __tablename__ = 'defaced_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    access = Column(String, comment="Access: Public or Limited")
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
     pub_tcia_url = Column(String, comment="Public tcia bucket name")
@@ -630,7 +628,6 @@ class Defaced_Collections(Base):
 class Excluded_Collections(Base):
     __tablename__ = 'excluded_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    access = Column(String, comment="Access: Public or Limited")
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
     pub_tcia_url = Column(String, comment="Public tcia bucket name")
@@ -640,7 +637,6 @@ class Excluded_Collections(Base):
 class Open_Collections(Base):
     __tablename__ = 'open_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    access = Column(String, comment="Access: Public or Limited")
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
     pub_tcia_url = Column(String, comment="Public tcia bucket name")
@@ -650,7 +646,6 @@ class Open_Collections(Base):
 class Redacted_Collections(Base):
     __tablename__ = 'redacted_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    access = Column(String, comment="Access: Public or Limited")
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
     pub_tcia_url = Column(String, comment="Public tcia bucket name")
@@ -660,12 +655,23 @@ class Redacted_Collections(Base):
 class All_Collections(Base):
     __tablename__ = 'all_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    access = Column(String, comment="Access: Public or Limited")
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
     pub_tcia_url = Column(String, comment="Public tcia bucket name")
     dev_path_url = Column(String, comment="Dev path bucket name")
     pub_path_url = Column(String, comment="Public path bucket name")
+
+class All_Included_Collections(Base):
+    __tablename__ = 'all_included_collections'
+    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
+    idc_webapp_collection_id = Column(String)
+    idc_collection_id = Column(String)
+    dev_tcia_url = Column(String)
+    dev_path_url = Column(String)
+    pub_tcia_url = Column(String)
+    pub_path_url = Column(String)
+    tcia_access = Column(String)
+    path_access = Column(String)
 
 class Non_TCIA_Collection_Metadata(Base):
     __tablename__ = 'non_tcia_collection_metadata'

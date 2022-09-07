@@ -329,11 +329,17 @@ def build_metadata(client, args):
                     collection_data['Subjects'] = case_counts[idc_collection_id]
                     try:
                         collection_data['licenses'] = []
+                        # if 'path' in licenses[idc_collection_id]:
+                        #     collection_data['licenses'].append(licenses[idc_collection_id]['path'])
+                        #     if 'tcia' in licenses[idc_collection_id] and \
+                        #             licenses[idc_collection_id]['path'] != licenses[idc_collection_id]['tcia']:
+                        #                 collection_data['licenses'].append(licenses[idc_collection_id]['tcia'])
+                        # else:
+                        #     collection_data['licenses'].append(licenses[idc_collection_id]['tcia'])
                         if 'tcia' in licenses[idc_collection_id]:
                             collection_data['licenses'].append(licenses[idc_collection_id]['tcia'])
                             if 'path' in licenses[idc_collection_id] and \
                                     licenses[idc_collection_id]['tcia'] != licenses[idc_collection_id]['path']:
-                                        breakpoint() # Why are there two of the same license?
                                         collection_data['licenses'].append(licenses[idc_collection_id]['path'])
                         else:
                             collection_data['licenses'].append(licenses[idc_collection_id]['path'])
@@ -342,7 +348,7 @@ def build_metadata(client, args):
                     if args.gen_excluded:
                         collection_data['Access'] = ['Excluded']
                     else:
-                        collection_data['Access'] = list(set(['Limited' if license['license_short_name'] == 'TCIA' or license['license_short_name'] == 'TCIA NC'else 'Public' \
+                        collection_data['Access'] = list(set(['Limited' if 'TCIA' in license['license_short_name'] else 'Public' \
                                  for collection, license in licenses[idc_collection_id].items()]))
                     rows.append(collection_data)
                     json_rows.append(json.dumps(collection_data))

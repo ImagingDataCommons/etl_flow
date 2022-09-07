@@ -61,18 +61,10 @@ def get_data_collection_doi(collection, server=""):
         uri = ''
 
     if uri=='':
-        # Reported as https://help.cancerimagingarchive.net/servicedesk/customer/portal/1/TH-49634
-        if collection == 'StageII-Colorectal-CT':
-                uri = 'https://doi.org/10.7937/p5k5-tg43'
-        elif collection == 'B-mode-and-CEUS-Liver':
-            uri = '10.7937/TCIA.2021.v4z7-tc39'
-        elif collection == 'Pancreatic-CT-CBCT-SEG':
-            uri = '10.7937/TCIA.ESHQ-4D90'
-        elif collection == 'CPTAC-LSCC':
-            uri = '10.7937/K9/TCIA.2018.6EMUB5L2'
+
 
         # These collections do not include radiology data. NBIA does not return a DOI for such collections.
-        elif collection == 'CPTAC-AML':
+        if collection == 'CPTAC-AML':
             uri = '10.7937/tcia.2019.b6foe619'
         elif collection == 'CPTAC-BRCA':
             uri = '10.7937/TCIA.CAEM-YS80'
@@ -173,9 +165,14 @@ if __name__ == "__main__":
 
         # access_token = get_access_token()
         # result = get_analysis_collection_dois('DRO-Toolkit')
-        result = get_data_collection_doi('CPTAC-AML')
+        result = get_data_collection_doi('UPENN-GBM')
         result = get_data_collection_url('tcga_dlbc', sess)
         result = get_analysis_collection_dois('QIN-PROSTATE-Repeatability')
+        from utilities.tcia_helpers import get_collection_values_and_counts
+        collections = get_collection_values_and_counts()
+        for collection in collections:
+            doi = get_data_collection_doi(collection)
+            print(f"{collection}: {doi}")
         pass
         # yes=get_internal_collection_series_ids('TCGA-GBM',"yes")
         # result = get_internal_patient_series_ids('TCGA-GBM', 'TCGA-76-6664', "yes")

@@ -15,6 +15,7 @@
 #
 
 # Load data in some GCS buckets into a DICOM store from staging buckets.
+# Buckts are idc-dev-open, -cr, -defaced, -redacted and all premerge buckets
 # This is the first step in populating a DICOM store
 
 import sys

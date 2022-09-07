@@ -14,7 +14,8 @@
 # limitations under the License.
 #
 
-# Copy all the instances in a collection, across all versions, from one bucket to another
+# One use script:
+# Copy all the path instances in  cptac_cm, cptac_lscc from idc-dev-cm to idc-dev-open
 
 import argparse
 import json
@@ -35,9 +36,12 @@ def get_blob_names(args):
     SELECT
     DISTINCT i_uuid
     FROM
-        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined`
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined_included`
     WHERE
-        collection_id = '{args.collection}'
+        collection_id in ('CPTAC-CM', 'CPTAC-LSCC')
+        AND i_source = 'path'
+        AND i_rev_idc_version < 10
+    ORDER by i_uuid
     """
     result = client.query(query)
     blobs = [f'{row.i_uuid}.dcm' for row in result]
@@ -109,7 +113,7 @@ def copy_all_instances(args):
     progresslogger.info(f"{len(done_instances)} previously copied")
     done_instances = set(done_instances)
 
-    progresslogger.info(f'Copying collection {args.collection} from {args.src_bucket} to {args.dst_bucket}, ')
+    progresslogger.info(f'Copying collection cptac_cm, cptac_lscc from {args.src_bucket} to {args.dst_bucket}, ')
 
     num_processes = args.processes
     processes = []
@@ -154,12 +158,11 @@ def copy_all_instances(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--collection', default = 'PROSTATE-DIAGNOSIS', help='Collection to move')
     parser.add_argument('--src_project', default=settings.DEV_PROJECT)
-    parser.add_argument('--src_bucket', default='idc-dev-excluded')
-    parser.add_argument('--dst_project', default=settings.DEV_PROJECT)
-    parser.add_argument('--dst_bucket', default=f'idc-dev-open')
-    parser.add_argument('--processes', default=16, help="Number of concurrent processes")
+    parser.add_argument('--src_bucket', default='idc-dev-defaced')
+    parser.add_argument('--dst_project', default=settings.PDP_PROJECT)
+    parser.add_argument('--dst_bucket', default=f'idc-open-pdp-staging')
+    parser.add_argument('--processes', default=48, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
 
     args = parser.parse_args()

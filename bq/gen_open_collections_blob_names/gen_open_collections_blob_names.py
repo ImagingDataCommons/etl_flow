@@ -39,23 +39,23 @@ def gen_blob_table(args):
     # This query is a hack to deal with V10 pathology in CPTAC-CM, -LSCC is in public-datasets-pdp
     # but previous is in idc-open-idc1
     query = f"""
-     SELECT distinct CONCAT(a.i_uuid, '.dcm') as blob_name
-     FROM `{args.src_project}.{args.src_bqdataset_name}.all_joined_included` a
-     JOIN `{args.src_project}.{args.src_bqdataset_name}.all_included_collections` i
-     ON a.collection_id = i.tcia_api_collection_id
-     WHERE 
-     (a.i_source='tcia' and i.pub_tcia_url='public-datasets-idc')
-     OR (a.i_source='path' and 
-     a.collection_id = 'CPTAC-CM' and a.i_rev_idc_version=10)
-     OR (a.i_source='path' and 
-     a.collection_id = 'CPTAC-LSCC' and a.i_rev_idc_version=10)
-     OR (a.i_source='path' and a.collection_id != 'CPTAC-CM' and a.collection_id != 'CPTAC-LSCC')     
-     AND a.i_excluded=FALSE 
+        SELECT
+          DISTINCT CONCAT(a.i_uuid, '.dcm') AS blob_name
+        FROM
+          `{args.src_project}.{args.src_bqdataset_name}.all_joined` a
+        JOIN
+          `{args.src_project}.{args.src_bqdataset_name}.all_included_collections` i
+        ON
+          a.collection_id = i.tcia_api_collection_id
+        WHERE
+          ( (a.i_source='tcia'
+              AND i.pub_tcia_url='public-datasets-idc')
+            OR (a.i_source='path'
+              AND i.pub_path_url='public-datasets-idc') )
+          AND a.i_excluded=FALSE
      """
 
     client = bigquery.Client(project=args.dst_project)
-    breakpoint() # Fix query?
-    # query = args.sql.format(version=args.version)
     result=query_BQ(client, args.trg_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
 
 if __name__ == '__main__':

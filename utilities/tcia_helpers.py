@@ -25,14 +25,18 @@ import logging
 
 import zipfile
 
-from http.client import HTTPConnection
-HTTPConnection.debuglevel = 0
+# from http.client import HTTPConnection
+# HTTPConnection.debuglevel = 0
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 # rootlogger = logging.getLogger('root')
 # errlogger = logging.getLogger('root.err')
 
 # from python_settings import settings
 import settings
+import logging
+logging.getLogger("requests").setLevel(logging.WARNING)
 
 
 TIMEOUT=60
@@ -252,6 +256,14 @@ def get_TCIA_series_per_study(collection_id, patientID, studyInstanceUID, server
         server_url = server
         headers = ''
     url = f'{server_url}/getSeries?Collection ={collection_id}&PatientID={patientID}&StudyInstanceUID={studyInstanceUID}'
+    results = get_url(url, headers)
+    series = results.json() if results.content else []
+    return series
+
+def get_TCIA_series_metadata(seriesInstanceUID, server=NBIA_V1_URL):
+    server_url = server
+    headers = ''
+    url = f'{server_url}/getSeriesMetaData?SeriesInstanceUID={seriesInstanceUID}'
     results = get_url(url, headers)
     series = results.json() if results.content else []
     return series
@@ -536,6 +548,9 @@ def get_collection_licenses():
 def get_collection_license_info():
     table = get_collection_descriptions_and_licenses()
     license_info = {license['id']: license for license in get_collection_licenses()}
+    for license in license_info:
+        if license_info[license]['licenseURL'].split(':')[0] == 'http':
+            license_info[license]['licenseURL'] = f'https:{license_info[license]["licenseURL"].split(":",1)[1]}'
     licenses = {}
     for collection_id, data in table.items():
         # print(collection_id, data['licenseId'])
@@ -600,10 +615,11 @@ if __name__ == "__main__":
 
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
     # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
-    # p = get_collection_license_info()
+    s = get_TCIA_series_metadata('1.3.6.1.4.1.14519.5.2.1.6834.5010.105031608124440650687374568136')
+    p = get_collection_license_info()
     # print(p)
     c = get_collection_values_and_counts()
-    h = get_hash({'Collection': 'ISPY2'})
+    h = get_hash({'Collection': 'TCGA-BRCA'})
     h = get_hash({'Collection': 'ACRIN-6698'})
     d = get_collection_descriptions_and_licenses()
     # s = get_updated_series('13/01/2021')

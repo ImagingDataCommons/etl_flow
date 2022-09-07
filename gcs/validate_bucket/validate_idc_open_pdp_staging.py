@@ -27,51 +27,22 @@ from google.cloud import storage, bigquery
 
 def get_expected_blobs_in_bucket(args):
     client = bigquery.Client()
-    # query = f"""
-    # SELECT distinct CONCAT(a.i_uuid, '.dcm') as uuid
-    # FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_included` a
-    # JOIN `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_included_collections` i
-    # ON a.collection_id = i.tcia_api_collection_id
-    # WHERE ((a.i_source='tcia' and i.pub_tcia_url='public-datasets-idc')
-    # OR (a.i_source='path' and i.pub_path_url='public-datasets-idc'))
-    # AND a.i_rev_idc_version = {settings.CURRENT_VERSION}
-    # AND a.i_excluded=FALSE
-    # """
-
-    # This query is a hack to deal with V10 pathology in CPTAC-CM, -LSCC is in public-datasets-pdp
-    # but previous is in idc-open-idc1
     query = f"""
-        SELECT distinct CONCAT(a.i_uuid, '.dcm') as uuid
-        FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_included` a
-        JOIN `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_included_collections` i
-        ON a.collection_id = i.tcia_api_collection_id
-        WHERE ((a.i_source='tcia' and i.pub_tcia_url='public-datasets-idc')
-        OR (a.i_source='path' and i.pub_path_url='public-datasets-idc'))
-        AND a.i_rev_idc_version = {settings.CURRENT_VERSION}
-        AND a.i_excluded=FALSE        
-        UNION ALL
-        SELECT distinct CONCAT(a.i_uuid, '.dcm') as blob_name
-        FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_included` a
-        JOIN `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_included_collections` i
-        ON a.collection_id = i.tcia_api_collection_id
-        WHERE 
-        a.collection_id = 'Vestibular-Schwannoma-SEG'
-
-        """
+    SELECT distinct cur.blob_name as uuid
+    FROM `{settings.PDP_PROJECT}.idc_metadata.open_collections_blob_names_v{settings.CURRENT_VERSION}` cur
+    LEFT JOIN `{settings.PDP_PROJECT}.idc_metadata.open_collections_blob_names_v{settings.PREVIOUS_VERSION}` prev
+    ON cur.blob_name = prev.blob_name
+    WHERE prev.blob_name is NULL
+    """
 
     query_job = client.query(query)  # Make an API request.
     query_job.result()  # Wait for the query to complete.
 
     # Get the destination table for the query results.
-    #
     # All queries write to a destination table. If a destination table is not
     # specified, the BigQuery populates it with a reference to a temporary
     # anonymous table after the query completes.
     destination = query_job.destination
-
-    # Get the schema (and other properties) for the destination table.
-    #
-    # A schema is useful for converting from BigQuery types to Python types.
     destination = client.get_table(destination)
     with open(args.expected_blobs, 'w') as f:
         for page in client.list_rows(destination, page_size=args.batch).pages:
@@ -79,7 +50,6 @@ def get_expected_blobs_in_bucket(args):
             f.write(''.join(rows))
 
 
-from gcs.validate_bucket.validate_bucket_mp import check_all_instances
 def get_found_blobs_in_bucket(args):
     client = storage.Client()
     bucket = client.bucket(args.bucket)
@@ -90,6 +60,7 @@ def get_found_blobs_in_bucket(args):
         for page in iterator.pages:
             blobs = [f'{blob.name}\n' for blob in page]
             f.write(''.join(blobs))
+
 
 def check_all_instances(args):
     try:

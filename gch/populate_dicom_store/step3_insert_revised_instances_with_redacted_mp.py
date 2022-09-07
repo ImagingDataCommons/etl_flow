@@ -280,7 +280,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch', default=100)
     parser.add_argument('--log_dir', default=settings.LOG_DIR)
     parser.add_argument('--period',default=60)
-    parser.add_argument('--staging_bucket', default=f'populate_dicom_store_step3_staging_bucket_{settings.CURRENT_VERSION}')
+    parser.add_argument('--staging_bucket', default=f'populate_dicom_store_step3_staging_bucket_v{settings.CURRENT_VERSION}')
     args = parser.parse_args()
     args.id = 0 # Default process ID
 

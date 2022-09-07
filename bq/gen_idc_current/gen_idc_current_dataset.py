@@ -103,15 +103,15 @@ def gen_idc_current_dataset(args):
         trg_client.update_table(installed_targ_view, fields=["schema", "description"])
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=7, help='Current IDC version')
-    args = parser.parse_args()
-    parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--trg_project', default='idc-dev-etl')
-    parser.add_argument('--src_bqdataset', default=f'idc_v{args.version}', help='BQ dataset name')
-    parser.add_argument('--current_bqdataset', default=f'idc_current_whc', help='current dataset name')
-
-    args = parser.parse_args()
-    print("{}".format(args), file=sys.stdout)
-    gen_idc_current_dataset(args)
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--version', default=7, help='Current IDC version')
+#     args = parser.parse_args()
+#     parser.add_argument('--src_project', default='idc-dev-etl')
+#     parser.add_argument('--trg_project', default='idc-dev-etl')
+#     parser.add_argument('--src_bqdataset', default=f'idc_v{args.version}', help='BQ dataset name')
+#     parser.add_argument('--current_bqdataset', default=f'idc_current_whc', help='current dataset name')
+#
+#     args = parser.parse_args()
+#     print("{}".format(args), file=sys.stdout)
+#     gen_idc_current_dataset(args)

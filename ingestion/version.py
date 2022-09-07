@@ -100,27 +100,41 @@ def expand_version(sess, args, all_sources, version):
         src_hashes = all_sources.src_collection_hashes(collection.collection_id, skipped)
         revised = [(x != y) and not z for x, y, z in \
                    zip(idc_hashes[:-1], src_hashes, skipped)]
+
+        # The NBIA hash API is fast but inreliable on collection hashes. So if the 'tcia' hash doesn't match our
+        # hash for the corresponding collection, we compute the tcia collection hash from patient hashes, which
+        # have been reliable.
+        # if src_hashes[all_sources.]
         if any(revised):
-            # If any sources has an updated version of this object, create a new version.
-            rev_collection = clone_collection(collection, uuid=str(uuid4()))
+            skipped = is_skipped(args.skipped_collections, collection.collection_id)
+            src_hashes = all_sources.src_collection_hashes_from_patient_hashes(collection.collection_id,
+                                                                               [patient.submitter_case_id for patient in
+                                                                                collection.patients], skipped,
+                                                                               collection.sources)
+            revised = [(x != y) and not z for x, y, z in \
+                       zip(idc_hashes[:-1], src_hashes, skipped)]
+            if any(revised):
+                # If any sources has an updated version of this object, create a new version.
+                rev_collection = clone_collection(collection, uuid=str(uuid4()))
 
-            # Here is where we update the collecton ID in case it has changed
-            rev_collection.collection_id = collections[collection.idc_collection_id]['collection_id']
+                # Here is where we update the collecton ID in case it has changed
+                rev_collection.collection_id = collections[collection.idc_collection_id]['collection_id']
 
-            rev_collection.done = False
-            rev_collection.is_new = False
-            rev_collection.expanded = False
-            rev_collection.hashes = None
-            rev_collection.sources = collections[collection.idc_collection_id]['sources']
-            rev_collection.revised = revised
-            rev_collection.rev_idc_version = settings.CURRENT_VERSION
-            version.collections.append(rev_collection)
-            progresslogger.info('p%s: Collection %s is revised',  args.pid, rev_collection.collection_id)
+                rev_collection.done = False
+                rev_collection.is_new = False
+                rev_collection.expanded = False
+                rev_collection.hashes = None
+                rev_collection.sources = collections[collection.idc_collection_id]['sources']
+                rev_collection.revised = revised
+                rev_collection.rev_idc_version = settings.CURRENT_VERSION
+                version.collections.append(rev_collection)
+                progresslogger.info('p%s: Collection %s is revised',  args.pid, rev_collection.collection_id)
 
-            # Mark the now previous version of this object as having been replaced
-            # and drop it from the revised version
-            collection.final_idc_version = settings.PREVIOUS_VERSION
-            version.collections.remove(collection)
+                # Mark the now previous version of this object as having been replaced
+                # and drop it from the revised version
+                collection.final_idc_version = settings.PREVIOUS_VERSION
+                version.collections.remove(collection)
+                continue
         elif collection.collection_id != collections[collection.idc_collection_id]['collection_id']:
             # The collection_id has changed. Treat as a revised collection even though the hash is unchanged
             progresslogger.info('**Collection_id changed %s. Generating revision',collection.collection_id)
