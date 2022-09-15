@@ -36,11 +36,9 @@ def get_urls(args):
       series_instance_uid,
       sop_instance_uid
     FROM
-      `idc-dev-etl.idc_v{args.version}_dev.all_joined`
+      `idc-dev-etl.idc_v{args.version}_dev.all_joined_included`
     WHERE
-      collection_id in {args.collections} 
-      OR (collection_id='TCGA-READ' and i_source='tcia')
-      OR (collection_id='TCGA-ESCA' and i_source='tcia')
+      collection_id in {args.collections}  and i_source='tcia'
     """
     # urls = list(client.query(query))
     query_job = client.query(query)  # Make an API request.
@@ -52,10 +50,7 @@ def get_urls(args):
 def copy_some_blobs(args, client, dones, metadata, n):
      for blob in metadata:
         src_blob_name = f"{blob['i_uuid']}.dcm"
-        if args.hfs_level == 'series':
-            dst_blob_name = f"{blob['se_uuid']}/{blob['i_uuid']}.dcm"
-        else:
-            dst_blob_name = f"{blob['st_uuid']}/{blob['se_uuid']}/{blob['i_uuid']}.dcm"
+        dst_blob_name = f"{blob['i_uuid']}.dcm"
         if not src_blob_name in dones:
             src_bucket_name='idc-dev-open'
             src_bucket = client.bucket(src_bucket_name)
@@ -74,7 +69,7 @@ def copy_some_blobs(args, client, dones, metadata, n):
                     if not rewrite_token:
                         break
                 successlogger.info('%s', src_blob_name)
-                print(f'p{args.id}: {n}of{len(metadata)}: {src_bucket_name}/{src_blob_name} --> {dst_bucket_name}/{dst_blob_name}')
+                progresslogger.info(f'p{args.id}: {n}of{len(metadata)}: {src_bucket_name}/{src_blob_name} --> {dst_bucket_name}/{dst_blob_name}')
             except Exception as exc:
                 errlogger.error('p%s: %sof%s Blob: %s: %s', args.id, n, len(metadata), src_blob_name, exc)
         n += 1
@@ -97,7 +92,7 @@ def copy_all_blobs(args):
     #     dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
     # except:
     #     dones = []
-    dones = []
+    dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
 
     bq_client = bigquery.Client()
     destination = get_urls(args)
@@ -140,17 +135,21 @@ def copy_all_blobs(args):
     rate = (n)/delta
 
 
-# if __name__ == '__main__':
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('--version', default=8, help='Version to work on')
-#     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/copy_and_rename_instances')
-#     parser.add_argument('--collections', default="('APOLLO-5-LSCC', 'CPTAC-SAR')")
-#     parser.add_argument('--hfs_level', default='series',help='Name blobs as study/series/instance if study, series/instance if series')
-#     parser.add_argument('--src_bucket', default='idc-dev-open', help='Bucket from which to copy blobs')
-#     parser.add_argument('--dst_bucket', default='whc_series_instance', help='Bucket into which to copy blobs')
-#     parser.add_argument('--batch', default=100)
-#     parser.add_argument('--processes', default=16)
-#     args = parser.parse_args()
-#     args.id = 0 # Default process ID
-#
-#     copy_all_blobs(args)
+# Copy the blobs that are new to a version from dev pre-staging buckets
+# to dev staging buckets.
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--version', default=8, help='Version to work on')
+    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/copy_and_rename_instances')
+    parser.add_argument('--collections', default="('APOLLO-5-LSCC', 'CPTAC-SAR', 'MIDRC-RICORD-1C', 'TCGA-READ')")
+    parser.add_argument('--src_bucket', default='idc-dev-open', help='Bucket from which to copy blobs')
+    parser.add_argument('--dst_bucket', default='whc_prop3a', help='Bucket into which to copy blobs')
+    parser.add_argument('--batch', default=100)
+    parser.add_argument('--processes', default=64)
+    args = parser.parse_args()
+    args.id = 0 # Default process ID
+
+    if not os.path.exists('{}'.format(args.log_dir)):
+        os.mkdir('{}'.format(args.log_dir))
+
+    copy_all_blobs(args)
