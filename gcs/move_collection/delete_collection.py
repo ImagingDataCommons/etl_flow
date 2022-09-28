@@ -33,7 +33,7 @@ def get_blob_names(args):
     SELECT
     DISTINCT i_uuid
     FROM
-        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined_included`
+        `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined`
     WHERE
         collection_id = '{args.collection}'
     """

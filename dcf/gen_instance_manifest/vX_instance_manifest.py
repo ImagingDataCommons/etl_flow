@@ -15,7 +15,7 @@
 #
 
 
-# Generate a manifest of new instance versions in the current (lastest) IDC version
+# Generate a manifest of new instance versions in the current (latest) IDC version
 
 import argparse
 import settings

@@ -20,7 +20,7 @@ import os
 import sys
 import argparse
 import logging
-from logging import DEBUG
+from logging import DEBUG, INFO
 from datetime import datetime, timedelta
 import shutil
 from multiprocessing import Lock, shared_memory
@@ -151,8 +151,8 @@ if __name__ == '__main__':
 
     print("{}".format(args), file=sys.stdout)
 
-    rootlogger.setLevel(DEBUG)
-    successlogger.setLevel(DEBUG)
-    progresslogger.setLevel(DEBUG)
+    rootlogger.setLevel(INFO)
+    successlogger.setLevel(INFO)
+    progresslogger.setLevel(INFO)
 
     ingest(args)

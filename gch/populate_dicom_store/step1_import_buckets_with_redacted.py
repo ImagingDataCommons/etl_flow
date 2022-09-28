@@ -174,7 +174,7 @@ def import_buckets(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--src_buckets', default=[f'idc_v{settings.CURRENT_VERSION}_*', 'idc-dev-defaced', 'idc-dev-cr', 'idc-dev-open', 'idc-dev-redacted'],
+    parser.add_argument('--src_buckets', default=[f'idc_v{settings.CURRENT_VERSION}_*', 'idc-dev-defaced', 'idc-dev-cr', 'idc-dev-open'],
             help="List of buckets from which to import. This list should include all buckets except idc-dev-excluded")
     parser.add_argument('--period', default=60, help="seconds to sleep between checking operation status")
     args = parser.parse_args()

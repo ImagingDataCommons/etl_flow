@@ -30,49 +30,30 @@ from python_settings import settings
 
 def get_collections_programs(client, args):
     query = f"""
-        SELECT * 
+        SELECT *
         FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.program`"""
     programs = {row['tcia_wiki_collection_id'].lower().replace(' ','_').replace('-','_'): row['program'] for row in client.query(query).result()}
 
     return programs
     # programs = {collection: program for cur.fetchall()
 
+
+
 # Generate a list of included or excluded collections
-def get_collections_and_sources_in_version(client, args):
-    if args.gen_excluded:
-        # Only excluded collections
-        query = f"""
-        SELECT DISTINCT c.collection_id, c.sources.tcia as tcia_source, c.sources.path as path_source
-        FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version` AS v
-        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version_collection` as vc
-        ON v.version = vc.version
-        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection` AS c
-        ON vc.collection_uuid = c.uuid
-        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.excluded_collections` as ex
-        ON LOWER(c.collection_id) = LOWER(ex.tcia_api_collection_id)
-        WHERE v.version = {settings.CURRENT_VERSION}
-        ORDER BY c.collection_id
-        """
-    else:
-        # Only included collections
-        query = f"""
-        SELECT DISTINCT c.collection_id, c.sources.tcia as tcia_source, c.sources.path as path_source 
-        FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version` AS v
-        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version_collection` as vc
-        ON v.version = vc.version
-        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection` AS c
-        ON vc.collection_uuid = c.uuid
-        LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.excluded_collections` as ex
-        ON LOWER(c.collection_id) = LOWER(ex.tcia_api_collection_id)
-        WHERE ex.tcia_api_collection_id IS NULL
-        AND v.version = {settings.CURRENT_VERSION}
-        ORDER BY c.collection_id
-        """
-    result = client.query(query).result()
-    collection_ids = {collection['collection_id'].lower().replace(' ','_').replace('-','_'): \
-                          {'tcia_api_collection_id':collection['collection_id'],
-                           'tcia_source': collection['tcia_source'],
-                           'path_source': collection['path_source']} for collection in result}
+def get_collections_in_version(client, args):
+    # Return collections that have specified access
+    query = f"""
+    SELECT tcia_api_collection_id
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections`
+    WHERE tcia_access='{args.access}' OR path_access='{args.access}'
+    """
+    # result = client.query(query).result()
+    # collection_ids = {collection['collection_id'].lower().replace(' ','_').replace('-','_'): \
+    #     {'tcia_api_collection_id':collection['collection_id'], 'tcia_access':collection['tcia_access'], \
+    #      'path_access':collection['path_access']} for collection in result}
+
+    collection_ids = {row.tcia_api_collection_id.lower().replace(' ','_').replace('-','_'): \
+        row.tcia_api_collection_id for row in client.query(query)}
     return collection_ids
 
 # Count the cases (patients) in each collection
@@ -278,8 +259,9 @@ def build_metadata(client, args):
     BQ_client = bigquery.Client(project=settings.DEV_PROJECT)
     programs = get_collections_programs(BQ_client, args)
 
-    # Get a list of the collections that IDC knows about in this version
-    idc_collection_ids_and_sources = get_collections_and_sources_in_version(BQ_client, args)
+    # Get a list of the collections that IDC knows about in this version and access
+    # differentiated by args.access
+    idc_collection_ids = get_collections_in_version(BQ_client, args)
 
     # Get collection descriptions for all collections
     collection_descriptions = get_all_descriptions(client, args)
@@ -301,7 +283,7 @@ def build_metadata(client, args):
     json_rows = []
     found_ids = []
 
-    for idc_collection_id, id_and_sources in idc_collection_ids_and_sources.items():
+    for idc_collection_id, tcia_api_collection_id in idc_collection_ids.items():
         # if idc_collection_id.lower().replace(' ','_').replace('-','_') in common_collection_metadata_ids:
         if idc_collection_id in collection_metadata:
                 try:
@@ -313,7 +295,7 @@ def build_metadata(client, args):
                         collection_data['URL'] = f"https://doi.org/{collection_data['DOI']}"
                     if collection_data['tcia_wiki_collection_id']:
                         # Only tcia collections have a tcia_api_collection_id
-                        collection_data['tcia_api_collection_id'] = id_and_sources['tcia_api_collection_id']
+                        collection_data['tcia_api_collection_id'] = tcia_api_collection_id
                     else:
                         collection_data['tcia_api_collection_id'] = ""
                     collection_data['idc_webapp_collection_id'] = idc_collection_id
@@ -345,11 +327,12 @@ def build_metadata(client, args):
                             collection_data['licenses'].append(licenses[idc_collection_id]['path'])
                     except:
                         collection_data['licenses'] = {}
-                    if args.gen_excluded:
-                        collection_data['Access'] = ['Excluded']
-                    else:
-                        collection_data['Access'] = list(set(['Limited' if 'TCIA' in license['license_short_name'] else 'Public' \
-                                 for collection, license in licenses[idc_collection_id].items()]))
+                    # if args.gen_excluded:
+                    #     collection_data['Access'] = ['Excluded']
+                    # else:
+                    #     collection_data['Access'] = list(set(['Limited' if 'TCIA' in license['license_short_name'] else 'Public' \
+                    #              for collection, license in licenses[idc_collection_id].items()]))
+                    collection_data['Access'] = [args.access]
                     rows.append(collection_data)
                     json_rows.append(json.dumps(collection_data))
                     found_ids.append(idc_collection_id)
@@ -360,7 +343,7 @@ def build_metadata(client, args):
             errlogger.error(f'{idc_collection_id} not in collection metadata')
 
     # Make sure we found metadata for all our collections
-    for idc_collection in idc_collection_ids_and_sources:
+    for idc_collection in idc_collection_ids:
         if not idc_collection in found_ids:
             errlogger.error(f'****No metadata for {idc_collection}')
             if idc_collection == 'apollo':
@@ -388,6 +371,9 @@ def build_metadata(client, args):
                     "license_short_name": "APOLLO"}
                 # collection_data["Description"] = collection_descriptions['APOLLO']['description']
                 rows.append(json.dumps(collection_data))
+            elif args.access != 'Public' and idc_collection.lower().startswith('apollo'):
+                # APOLLO-* collections are not on the TCIA data collections page so can't scrape metadata.
+                continue
             else:
                 errlogger.error(f'No metadata for {idc_collection}')
 
@@ -398,10 +384,15 @@ def gen_collections_table(args):
     BQ_client = bigquery.Client(project=settings.DEV_PROJECT)
 
     metadata = build_metadata(BQ_client, args)
-    job = load_BQ_from_json(BQ_client,
-                settings.DEV_PROJECT,
-                settings.BQ_DEV_INT_DATASET if args.gen_excluded else settings.BQ_DEV_EXT_DATASET , args.bqtable_name, metadata,
-                            data_collections_metadata_schema, write_disposition='WRITE_TRUNCATE')
+    try:
+        job = load_BQ_from_json(BQ_client,
+                    settings.DEV_PROJECT,
+                    settings.BQ_DEV_EXT_DATASET if args.access=='Public' else settings.BQ_DEV_INT_DATASET , args.bqtable_name, metadata,
+                                data_collections_metadata_schema, write_disposition='WRITE_TRUNCATE')
+    except Exception as exc:
+        errlogger.error(f'Table creation failed: {exc}')
+        exit
+
     while not job.state == 'DONE':
         progresslogger.info('Status: {}'.format(job.state))
         time.sleep(args.period * 60)

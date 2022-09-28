@@ -33,36 +33,36 @@ def get_limited_series(args):
     client = bigquery.Client()
     query = f"""
     WITH
-      -- Get all radiology collection/study/series
+      -- Get all radiology collection/study/series in the current version
       tcia_series AS (
       SELECT
         DISTINCT 
-            replace(replace(lower(collection_id), '-', '_'), ' ', '_') as idc_webapp_collection_id, 
+            collection_id as tcia_api_collection_id, 
             study_instance_uid as StudyInstanceUID, 
             series_instance_uid as SeriesInstanceUID
       FROM
-        `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_included`
+        `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined`
       WHERE
         -- Pathology is all public access
         se_sources.tcia=TRUE
-        AND idc_version={settings.CURRENT_VERSION} )
+        AND idc_version={settings.CURRENT_VERSION} ),
+    limited_series as (
     SELECT
       tcia_series.*
     FROM
-      `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_included_collections` aic
+      `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac
     JOIN
       tcia_series
     ON
-      tcia_series.idc_webapp_collection_id = aic.idc_webapp_collection_id
+      tcia_series.tcia_api_collection_id = ac.tcia_api_collection_id
     WHERE
-      aic.tcia_access ='Limited'
+      ac.tcia_access ='Limited'
     ORDER BY tcia_series.SeriesInstanceUID
+    )
+    SELECT limited_series.*
+    FROM limited_series
+    WHERE limited_series.tcia_api_collection_id in {args.collections}
     """
-    # query = f"""
-    # select distinct idc_webapp_collection_id, StudyInstanceUID, SeriesInstanceUID
-    # from `{settings.DEV_PROJECT}.{settings.BQ_DEV_EXT_DATASET}.auxiliary_metadata`
-    # WHERE access = 'Limited'
-    # """
     limited_series = client.query(query).result()
     return limited_series
 
@@ -104,9 +104,9 @@ def delete_all_series(args):
     for row in limited_series:
         if not row.SeriesInstanceUID in done_series:
             delete_series(args, dicomweb_sess, row.StudyInstanceUID, row.SeriesInstanceUID)
-            progresslogger.info(f"{n}: {row.idc_webapp_collection_id}/{row.StudyInstanceUID}/{row.SeriesInstanceUID}  deleted")
+            progresslogger.info(f"{n}: {row.tcia_api_collection_id}/{row.StudyInstanceUID}/{row.SeriesInstanceUID}  deleted")
         else:
-            progresslogger.info(f"{n}: {row.idc_webapp_collection_id}/{row.StudyInstanceUID}/{row.SeriesInstanceUID} previously deleted")
+            progresslogger.info(f"{n}: {row.tcia_api_collection_id}/{row.StudyInstanceUID}/{row.SeriesInstanceUID} previously deleted")
         n+=1
     pass
 
@@ -131,7 +131,10 @@ def delete_redacted(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--collections', default="('APOLLO', 'APOLLO-5-ESCA', 'APOLLO-5-LSCC', 'APOLLO-5-LUAD', \
+     'APOLLO-5-PAAD', 'APOLLO-5-THYM')", help='Collections to remove from the DICOM store')
     args = parser.parse_args()
+
 
     # if not os.path.exists('{}'.format(args.log_dir)):
     #     os.mkdir('{}'.format(args.log_dir))

@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+#Generate separate (empty) folder objects and manifest objects
 import json
 import argparse
 

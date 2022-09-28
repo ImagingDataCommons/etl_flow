@@ -15,7 +15,7 @@
 #
 
 """
-Multiprocess script to validate that the idc-dev-cr bucket
+Multiprocess script to validate that the idc-dev-excluded bucket
 contains the expected set of blobs.
 """
 
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # parser.add_argument('--version', default=f'{settings.CURRENT_VERSION}')
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--bucket', default='idc-dev-cr')
+    parser.add_argument('--bucket', default='idc-dev-excluded')
     parser.add_argument('--dev_or_pub', default = 'dev', help='Validating a dev or pub bucket')
     parser.add_argument('--premerge', default=False, help='True when performing prior to merging premerge  buckets')
     parser.add_argument('--expected_blobs', default=f'{settings.LOG_DIR}/expected_blobs.txt', help='List of blobs names expected to be in above collections')

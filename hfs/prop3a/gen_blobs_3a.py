@@ -17,6 +17,9 @@
 import json
 import argparse
 
+# In this version, we generate hierarchically named blobs for collections, patients, studies, series, and instances.
+# Blob contents are lists of child series, child instances, and instance blob respectively.
+# Child object names include the bucket in which the child is found.
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from idc.models import Base, Version, Collection, Patient, Study, Series, Instance, All_Included_Collections
 from google.cloud import storage

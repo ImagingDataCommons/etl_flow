@@ -38,6 +38,7 @@ if __name__ == '__main__':
     parser.add_argument('--temp_license_table_name', default='temp_license', help='BQ table name')
     args = parser.parse_args()
 
+    args.access ='Public' # Fixed value
     print("{}".format(args), file=sys.stdout)
 
     gen_aux_table(args)

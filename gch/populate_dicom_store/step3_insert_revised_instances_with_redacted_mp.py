@@ -32,7 +32,7 @@ from ingestion.utilities.utils import empty_bucket, to_webapp
 from utilities.logging_config import successlogger, progresslogger, errlogger
 import settings
 import google
-from google.cloud import storage
+from google.cloud import storage, bigquery
 from google.auth.transport import requests
 from multiprocessing import Process, Queue
 
@@ -182,13 +182,33 @@ def worker(input, args):
         populate_staging_bucket(args, uids)
 
 
-def insert_instances(args, sess, dicomweb_sess):
+def insert_instances(args, dicomweb_sess):
+    client = bigquery.Client()
+
     try:
         # Get the previously copied blobs
         # done_instances = set(open(f'{args.log_dir}/insert_success.log').read().splitlines())
         done_instances = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
     except:
         done_instances = set()
+
+    # The following generates the source bucket of each instance. If the instance's rev_idc_version is the current
+    # version, then the instance is still in a premerge bucket. Otherwise it is in one of the dev merged buckets.
+    query = f"""
+    SELECT DISTINCT aji.collection_id, aji.study_instance_uid, aji.series_instance_uid, aji.sop_instance_uid, aji.i_uuid uuid, 
+    IF(i_rev_idc_version!={settings.CURRENT_VERSION},
+        IF(aji.i_source='tcia', ac.dev_tcia_url, ac.dev_path_url), CONCAT('idc_v', {settings.CURRENT_VERSION},'_',aji.i_source,REPLACE(REPLACE(LOWER(aji.collection_id), '-','_'),' ','_'))) bucket
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_included` aji
+    JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac ON aji.collection_id=ac.tcia_api_collection_id
+    WHERE i_rev_idc_version!=i_init_idc_version 
+      AND i_final_idc_version=0
+      AND idc_version={settings.CURRENT_VERSION}
+    """
+    result = client.query(query).result()
+    # todo_uids = [{'collection_id':row.collection_id, 'study_instance_uid':row.study_instance_uid, 'series_instance_uid':row.series_instance_uid,
+    #              'sop_instance_uid':row.sop_instance_uid, 'uuid':row.uuid, 'bucket':row.bucket} for row in result if row.sop_instance_uid not in done_instances]
+    todo_uids = [ dict(row) for row in result]
+    dones = set(open(successlogger.handlers[0].baseFilename).read().splitlines())
 
     num_processes = args.processes
     processes = []
@@ -200,38 +220,41 @@ def insert_instances(args, sess, dicomweb_sess):
             Process(group=None, target=worker, args=(task_queue, args)))
         processes[-1].start()
 
-    # Collections that are included in the DICOM store are in one of four groups
-    collections = sorted(
-        [row.tcia_api_collection_id for row in sess.query(Open_Collections.tcia_api_collection_id).union(
-            sess.query(Defaced_Collections.tcia_api_collection_id),
-            sess.query(CR_Collections.tcia_api_collection_id),
-            sess.query(Redacted_Collections.tcia_api_collection_id)).all()])
+    # # Collections that are included in the DICOM store are in one of four groups
+    # collections = sorted(
+    #     [row.tcia_api_collection_id for row in sess.query(Open_Collections.tcia_api_collection_id).union(
+    #         sess.query(Defaced_Collections.tcia_api_collection_id),
+    #         sess.query(CR_Collections.tcia_api_collection_id),
+    #         sess.query(Redacted_Collections.tcia_api_collection_id)).all()])
 
-    # dev_staging_buckets tells us which staging bucket has a collection's instances
-    dev_buckets = get_collection_groups(sess)
+    # # dev_staging_buckets tells us which staging bucket has a collection's instances
+    # dev_buckets = get_collection_groups(sess)
 
-    try:
-        uids = json.load(open(f'{args.log_dir}/inserted_uids.txt'))
-    except:
-        rows =  sess.query(Collection.collection_id,Study.study_instance_uid, Series.series_instance_uid,
-            Instance.sop_instance_uid,Instance.uuid, Instance.source, Instance.init_idc_version, Instance.rev_idc_version).join(Version.collections).join(Collection.patients).\
-            join(Patient.studies).join(Study.seriess).join(Series.instances).filter(Instance.init_idc_version !=
-            Instance.rev_idc_version).filter(Instance.final_idc_version == 0).\
-            filter(Version.version == settings.CURRENT_VERSION).all()
-        uids = [{'collection_id':row.collection_id, 'study_instance_uid':row.study_instance_uid, 'series_instance_uid':row.series_instance_uid,
-                 'sop_instance_uid':row.sop_instance_uid,'uuid':row.uuid,
-                 'bucket': dev_buckets[row.collection_id][row.source.name] if row.rev_idc_version != settings.CURRENT_VERSION else \
-                        f'idc_v{settings.CURRENT_VERSION}_{row.source.name}_{to_webapp(row.collection_id)}'} \
-                        for row in rows if row.collection_id in collections]
-        with open(f'{args.log_dir}/inserted_uids.txt','w') as f:
-            json.dump(uids,f)
-    todo_uids = [row for row in uids if row['uuid'] not in done_instances]
+    # try:
+    #     uids = json.load(open(f'{args.log_dir}/inserted_uids.txt'))
+    # except:
+    #     rows =  sess.query(Collection.collection_id,Study.study_instance_uid, Series.series_instance_uid,
+    #         Instance.sop_instance_uid,Instance.uuid, Instance.source, Instance.init_idc_version, Instance.rev_idc_version).join(Version.collections).join(Collection.patients).\
+    #         join(Patient.studies).join(Study.seriess).join(Series.instances).filter(Instance.init_idc_version !=
+    #         Instance.rev_idc_version).filter(Instance.final_idc_version == 0).\
+    #         filter(Version.version == settings.CURRENT_VERSION).all()
+    #     uids = [{'collection_id':row.collection_id, 'study_instance_uid':row.study_instance_uid, 'series_instance_uid':row.series_instance_uid,
+    #              'sop_instance_uid':row.sop_instance_uid,'uuid':row.uuid,
+    #              'bucket': dev_buckets[row.collection_id][row.source.name] if row.rev_idc_version != settings.CURRENT_VERSION else \
+    #                     f'idc_v{settings.CURRENT_VERSION}_{row.source.name}_{to_webapp(row.collection_id)}'} \
+    #                     for row in rows if row.collection_id in collections]
+    #     with open(f'{args.log_dir}/inserted_uids.txt','w') as f:
+    #         json.dump(uids,f)
+    # todo_uids = [row for row in uids if row['uuid'] not in done_instances]
 
+
+    # Populate thestaging bucket
     n=0
     while todo_uids:
-        some_uids = todo_uids[0:args.batch]
+        some_uids = [row for row in todo_uids[0:args.batch] if not row['uuid'] in dones]
         todo_uids = todo_uids[args.batch:]
-        task_queue.put((some_uids,n))
+        if some_uids:
+            task_queue.put((some_uids,n))
         n += args.batch
 
     # Tell child processes to stop
@@ -244,6 +267,7 @@ def insert_instances(args, sess, dicomweb_sess):
         process.join()
 
 
+    # Import the staging bucket into the DICOM store
     print('Importing {}'.format(args.staging_bucket))
     content_uri = '{}/*'.format(args.staging_bucket)
     response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
@@ -254,14 +278,14 @@ def insert_instances(args, sess, dicomweb_sess):
     # Don't forget to delete the staging bucket
 
 def repair_store(args):
-    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
-    sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
-    # sql_engine = create_engine(sql_uri)
-    args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
-
-    # Enable the underlying psycopg2 to deal with composites
-    conn = sql_engine.connect()
-    register_composites(conn)
+    # sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
+    # sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
+    # # sql_engine = create_engine(sql_uri)
+    # args.sql_uri = sql_uri # The subprocesses need this uri to create their own SQL engine
+    #
+    # # Enable the underlying psycopg2 to deal with composites
+    # conn = sql_engine.connect()
+    # register_composites(conn)
 
     scoped_credentials, dst_project = google.auth.default(
         ["https://www.googleapis.com/auth/cloud-platform"]
@@ -270,13 +294,14 @@ def repair_store(args):
     dicomweb_sess = requests.AuthorizedSession(scoped_credentials)
 
     create_staging_bucket(args)
-    with Session(sql_engine) as sess:
-        insert_instances(args, sess, dicomweb_sess)
+    # with Session(sql_engine) as sess:
+    # insert_instances(args, sess, dicomweb_sess)
+    insert_instances(args, dicomweb_sess)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--client', default=storage.Client())
-    parser.add_argument('--processes', default=1)
+    parser.add_argument('--processes', default=8)
     parser.add_argument('--batch', default=100)
     parser.add_argument('--log_dir', default=settings.LOG_DIR)
     parser.add_argument('--period',default=60)

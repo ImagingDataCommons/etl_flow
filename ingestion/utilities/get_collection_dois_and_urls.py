@@ -107,6 +107,10 @@ def get_data_collection_doi(collection, server=""):
         elif collection == 'NLST':
             breakpoint()
             uri = '10.7937/TCIA.hmq8-j677'
+        elif collection == 'CT-vs-PET-Ventilation-Imaging':
+            uri = '10.7937/3ppx-7s22'
+        elif collection == 'CTpred-Sunitinib-panNET':
+            uri = '10.7937/spgk-0p94'
 
     return uri
 

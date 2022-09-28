@@ -124,10 +124,7 @@ def delete_instances(args):
         processes[-1].start()
 
 
-
-    # # We first try to delete any instance for which there are multiple versions from the collections in
-    # # open_collections, cr_collections, defaced_collections and redacted_collectons groups
-
+    # # We first try to delete any instance for which there are multiple versions from public data
     query = f"""
     select distinct collection_id, study_instance_uid, series_instance_uid, sop_instance_uid
     from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_included`
@@ -135,10 +132,12 @@ def delete_instances(args):
     """
 
     result = client.query(query).result()
-    rev_uids = [{'study_instance_uid':row.study_instance_uid, 'series_instance_uid':row.series_instance_uid,
-                 'sop_instance_uid':row.sop_instance_uid } for row in result if row.sop_instance_uid not in done_instances]
+    rev_uids = [{'study_instance_uid': row.study_instance_uid, 'series_instance_uid': row.series_instance_uid,
+                 'sop_instance_uid': row.sop_instance_uid} for row in result if
+                row.sop_instance_uid not in done_instances]
 
     n=0
+    # Submit args.batch size chunks to process
     while rev_uids:
         some_rev_uids = rev_uids[0:args.batch]
         rev_uids = rev_uids[args.batch:]
@@ -155,6 +154,7 @@ def delete_instances(args):
     ret_uids = [{'study_instance_uid': row.study_instance_uid, 'series_instance_uid': row.series_instance_uid,
                  'sop_instance_uid': row.sop_instance_uid} for row in result if row.sop_instance_uid not in done_instances]
     n=0
+    # Submit args.batch size chunks to process
     while ret_uids:
         some_ret_uids = ret_uids[0:args.batch]
         ret_uids = ret_uids[args.batch:]

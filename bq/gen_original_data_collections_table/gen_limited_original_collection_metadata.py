@@ -29,8 +29,8 @@ if __name__ == '__main__':
     # parser.add_argument('--dst_project', default='idc-dev-etl')
     # parser.add_argument('--dev_bqdataset_name', default=f'idc_v{args.version}_dev', help='BQ dataset of dev tables')
     # parser.add_argument('--pub_bqdataset_name', default=f'idc_v{args.version}_dev', help='Actually the target dataset')
-    parser.add_argument('--bqtable_name', default='excluded_collections_metadata', help='BQ table name')
-    parser.add_argument('--access', default='Excluded', help="Generated excluded_original_collections_metadata if True")
+    parser.add_argument('--bqtable_name', default='limited_collections_metadata', help='BQ table name')
+    parser.add_argument('--access', default='Limited', help="Generated excluded_original_collections_metadata if True")
     parser.add_argument('--use_cached_metadata', default=False)
     parser.add_argument('--cached_metadata_file', default='cached_excluded_metadata.json', help='Where to cache metadata')
 

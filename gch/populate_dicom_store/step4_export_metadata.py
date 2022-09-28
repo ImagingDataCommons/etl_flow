@@ -16,7 +16,7 @@
 
 
 
-# Export metadata from a DICOM store to BQ
+# Export metadata from a DICOM store to BQ. If the table currently exists, it is truncated.
 
 import argparse
 import sys
