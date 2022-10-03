@@ -90,7 +90,8 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         for dcm in dcms:
             try:
                 pydicom_times.append(time.time_ns())
-                SOPInstanceUID = pydicom.dcmread("{}/{}/{}".format(args.dicom_dir, series.series_instance_uid, dcm), stop_before_pixels=True).SOPInstanceUID
+                reader = pydicom.dcmread("{}/{}/{}".format(args.dicom_dir, series.series_instance_uid, dcm), stop_before_pixels=True)
+                SOPInstanceUID = reader.SOPInstanceUID
                 pydicom_times.append(time.time_ns())
             except InvalidDicomError:
                 errlogger.error("       p%s: Invalid DICOM file for %s/%s/%s/%s", args.pid,
@@ -114,6 +115,22 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
 
                 continue
             psql_times.append(time.time_ns())
+
+            # Validate that DICOM IDs match what we are expecting
+            try:
+                assert patient.submitter_case_id == reader.PatientID;
+                assert study.study_instance_uid == reader.StudyInstanceUID;
+                assert series.series_instance_uid == reader.SeriesInstanceUID;
+            except:
+                errlogger.error(f"       p{args.pid}: DICOM ID mismatch for instance: {instance.sop_instance_uid} ")
+                errlogger.error(f'       p{args.pid}: PatientID: TCIA : {patient.submitter_case_id}, \
+                    DICOM: {reader.PatientID}')
+                errlogger.error(f'       p{args.pid}: StudyInstanceUID: TCIA : {patient.study_instance_uid}, \
+                    DICOM: {reader.StudyInstanceUID}')
+                errlogger.error(f'       p{args.pid}: SeriesInstanceUID: TCIA : {patient.series_instance_uid}, \
+                    DICOM: {reader.SeriesInstanceUID}')
+                # Return without marking all instances done. This will be prevent the series from being done.
+                return
 
             rename_times.append(time.time_ns())
             uuid = instance.uuid
@@ -176,7 +193,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
                          copy_time,
                          mark_done_time)
     except Exception as exc:
-        errlogger.info('  p%s build_patient failed: %s', args.pid, exc)
+        errlogger.info('  p%s build_instances failed: %s', args.pid, exc)
         raise exc
 
 
