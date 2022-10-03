@@ -44,7 +44,7 @@ def gen_blob_table(args):
         FROM
           `{args.src_project}.{args.src_bqdataset_name}.all_joined` a
         JOIN
-          `{args.src_project}.{args.src_bqdataset_name}.all_included_collections` i
+          `{args.src_project}.{args.src_bqdataset_name}.all_collections` i
         ON
           a.collection_id = i.tcia_api_collection_id
         WHERE

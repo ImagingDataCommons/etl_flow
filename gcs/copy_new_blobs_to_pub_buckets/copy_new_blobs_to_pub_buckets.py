@@ -156,7 +156,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
     # parser.add_argument('--log_dir', default=f'{settings.LOGGING_BASE}/{settings.BASE_NAME}')
     parser.add_argument('--batch', default=1000)
-    parser.add_argument('--processes', default=1)
+    parser.add_argument('--processes', default=16)
     args = parser.parse_args()
     args.id = 0 # Default process ID
 

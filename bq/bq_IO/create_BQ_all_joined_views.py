@@ -86,10 +86,10 @@ def create_all_joined():
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.series` se ON ss.series_uuid = se.uuid
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.series_instance` si ON se.uuid = si.series_uuid
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.instance` i ON si.instance_uuid = i.uuid
-  ORDER BY v.version, c.collection_id, p.submitter_case_id, st.study_instance_uid, se.series_instance_uid, i.sop_instance_uid
+     WHERE i.excluded=False
   """
     # Make an API request to create the view.
-    view = client.create_table(view)
+    view = client.create_table(view, exists_ok=True)
     print(f"Created {view.table_type}: {str(view.reference)}")
     return
 
@@ -155,12 +155,12 @@ def create_all_joined_included():
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.series` se ON ss.series_uuid = se.uuid
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.series_instance` si ON se.uuid = si.series_uuid
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.instance` i ON si.instance_uuid = i.uuid
-     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_included_collections` aic ON c.collection_id = aic.tcia_api_collection_id
-
-  ORDER BY v.version, c.collection_id, p.submitter_case_id, st.study_instance_uid, se.series_instance_uid, i.sop_instance_uid
+     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac ON c.collection_id = ac.tcia_api_collection_id
+     WHERE i.excluded = false AND
+       ((i.source = 'tcia' AND ac.tcia_access = 'Public') OR (i.source = 'path' AND ac.path_access = 'Public'))
   """
     # Make an API request to create the view.
-    view = client.create_table(view)
+    view = client.create_table(view, exists_ok=True)
     print(f"Created {view.table_type}: {str(view.reference)}")
 
 if __name__ == '__main__':

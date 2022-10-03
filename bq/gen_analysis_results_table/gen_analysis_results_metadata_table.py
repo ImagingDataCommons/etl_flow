@@ -38,40 +38,46 @@ def get_redacted_collections(client,args):
     redacted_collection_access = {c.tcia_api_collection_id.lower().replace(' ','_').replace('-','_'): c.access for c in client.query(query).result()}
     return redacted_collection_access
 
-# Get all source DOIS and collections they are in
+# Get all source DOIs and the collections which they are in
 def get_all_idc_dois(client, args):
+    # query = f"""
+    #     SELECT DISTINCT c.collection_id AS collection_id, se.source_doi AS source_doi
+    #     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version` AS v
+    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version_collection` as vc
+    #     ON v.version = vc.version
+    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection` AS c
+    #     ON vc.collection_uuid = c.uuid
+    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection_patient` AS cp
+    #     ON c.uuid = cp.collection_uuid
+    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.patient` AS p
+    #     ON cp.patient_uuid = p.uuid
+    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.patient_study` AS ps
+    #     ON p.uuid = ps.patient_uuid
+    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.study` AS st
+    #     ON ps.study_uuid = st.uuid
+    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.study_series` AS ss
+    #     ON st.uuid = ss.study_uuid
+    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.series` AS se
+    #     ON ss.series_uuid = se.uuid
+    #     LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.excluded_collections` AS ex
+    #     ON LOWER (c.collection_id) = LOWER(ex.tcia_api_collection_id)
+    #     WHERE ex.tcia_api_collection_id IS NULL AND v.version = {settings.CURRENT_VERSION}
+    #     """
     query = f"""
-        SELECT DISTINCT c.collection_id AS collection_id, se.source_doi AS source_doi 
-        FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version` AS v
-        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version_collection` as vc
-        ON v.version = vc.version
-        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection` AS c
-        ON vc.collection_uuid = c.uuid
-        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection_patient` AS cp
-        ON c.uuid = cp.collection_uuid
-        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.patient` AS p
-        ON cp.patient_uuid = p.uuid
-        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.patient_study` AS ps
-        ON p.uuid = ps.patient_uuid
-        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.study` AS st
-        ON ps.study_uuid = st.uuid
-        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.study_series` AS ss
-        ON st.uuid = ss.study_uuid
-        JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.series` AS se
-        ON ss.series_uuid = se.uuid
-        LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.excluded_collections` AS ex
-        ON LOWER (c.collection_id) = LOWER(ex.tcia_api_collection_id)
-        WHERE ex.tcia_api_collection_id IS NULL AND v.version = {settings.CURRENT_VERSION}
+        SELECT DISTINCT collection_id AS collection_id, source_doi AS source_doi
+        FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_included`
+        WHERE idc_version = {settings.CURRENT_VERSION} 
         """
-
     result = client.query(query).result()
+
+    # Generate a dictionary indexed by doi, and where value is associated collection(s)
     source_dois = {}
     for row in result:
         collection_id = row['collection_id'].lower().replace(' ','_').replace('-','_')
         if row['source_doi'] not in source_dois:
-            source_dois[row['source_doi']] = [collection_id]
+            source_dois[row['source_doi'].lower()] = [collection_id]
         else:
-            source_dois[row['source_doi']].append(collection_id)
+            source_dois[row['source_doi'].lower()].append(collection_id)
 
     for doi in source_dois:
         source_dois[doi] = ','.join(source_dois[doi])
@@ -90,8 +96,8 @@ def build_metadata(args, BQ_client):
     # Get analysis results descriptions
     descriptions = get_descriptions(BQ_client, args)
 
-    # Get access status of potentially redacted collections
-    redacted_collection_access = get_redacted_collections(BQ_client,args)
+    # # Get access status of potentially redacted collections
+    # redacted_collection_access = get_redacted_collections(BQ_client,args)
 
     # Get all source DOIS and collections they are in
     source_dois = get_all_idc_dois(BQ_client, args)
@@ -104,7 +110,7 @@ def build_metadata(args, BQ_client):
         # If the DOI of this analysis result is in source_dois, then it is in the series table
         # and therefore we have a series from this analysis result, and therefor we should include
         # this analysis result in the analysis_results metadata table
-        if analysis_data["DOI"] in source_dois:
+        if analysis_data["DOI"].lower() in source_dois:
             # analysis_data["Collection"] = analysis_id
             title_id = analysis_id.rsplit('(',1)
             title = title_id[0]
@@ -114,9 +120,9 @@ def build_metadata(args, BQ_client):
             analysis_data['ID'] = title_id[1].split(')')[0]
             analysis_data['Collections'] = source_dois[analysis_data['DOI']]
             analysis_data['Access'] = 'Public'
-            for collection in analysis_data["Collections"].split(','):
-                if collection in redacted_collection_access:
-                    analysis_data['Access'] = redacted_collection_access[collection]
+            # for collection in analysis_data["Collections"].split(','):
+            #     if collection in redacted_collection_access:
+            #         analysis_data['Access'] = redacted_collection_access[collection]
             analysis_data['Description'] = descriptions[analysis_data['ID']]
             rows.append(json.dumps(analysis_data))
     metadata = '\n'.join(rows)

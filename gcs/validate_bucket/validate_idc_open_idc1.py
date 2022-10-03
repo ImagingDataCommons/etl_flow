@@ -15,7 +15,7 @@
 #
 
 """
-Multiprocess script to validate that the public-datasets-idc bucket
+Multiprocess script to validate that the idc-open-idc1 bucket
 contains the expected set of blobs.
 """
 
@@ -31,28 +31,11 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=f'{settings.CURRENT_VERSION}')
     parser.add_argument('--bucket', default='idc-open-idc1')
     parser.add_argument('--dev_or_pub', default = 'pub', help='Validating a dev or pub bucket')
-    parser.add_argument('--collection_group_table', default='defaced_collections', help='BQ table containing list of collections')
+    # parser.add_argument('--collection_group_table', default='defaced_collections', help='BQ table containing list of collections')
     parser.add_argument('--expected_blobs', default=f'{settings.LOG_DIR}/expected_blobs.txt', help='List of blobs names expected to be in above collections')
     parser.add_argument('--found_blobs', default=f'{settings.LOG_DIR}/found_blobs.txt', help='List of blobs names found in bucket')
     parser.add_argument('--batch', default=10000, help='Size of batch assigned to each process')
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/validate_open_buckets')
 
     args = parser.parse_args()
-
-    query = f"""
-     SELECT distinct concat(aji.i_uuid, '.dcm') as blob_name
-      FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_included` aji
-      JOIN `idc-dev-etl.idc_v{args.version}_dev.all_included_collections` aic
-      ON aji.collection_id = aic.tcia_api_collection_id
-      WHERE 
-      ( ( aji.i_source='tcia' 
-          AND aic.{args.dev_or_pub}_tcia_url="{args.bucket}" )
-        OR ( aji.i_source='path' 
-            AND aic.{args.dev_or_pub}_path_url="{args.bucket}" AND aji.collection_id not in ('CPTAC-CM','CPTAC-LSCC'))
-        OR ( aji.i_source='path'
-          AND ( aji.collection_id in ('CPTAC-CM','CPTAC-LSCC')
-            AND aji.i_rev_idc_version!=10)  ) )
-      AND aji.i_excluded = False
-      """
-
-    check_all_instances(args, query)
+    check_all_instances(args)

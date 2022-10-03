@@ -25,7 +25,7 @@ import argparse
 import os
 import logging
 # from logging import INFO
-from gcs.empty_bucket_mp.empty_bucket_mp import pre_delete
+from gcs.empty_bucket_mp.empty_bucket_mp import del_all_instances
 # proglogger = logging.getLogger('root.prog')
 # successlogger = logging.getLogger('root.success')
 # errlogger = logging.getLogger('root.err')
@@ -42,26 +42,11 @@ assert settings.configured
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--bucket', default='idc-open-pdp-staging')
-    parser.add_argument('--processes', default=32, help="Number of concurrent processes")
+    parser.add_argument('--processes', default=16, help="Number of concurrent processes")
     parser.add_argument('--batch', default=1000, help='Size of batch assigned to each process')
     parser.add_argument('--project', default='idc-pdp-staging')
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/empty_pdp_staging_bucket_mp')
 
     args = parser.parse_args()
 
-    # # if not os.path.exists('{}'.format(args.log_dir)):
-    # #     os.mkdir('{}'.format(args.log_dir))
-    #
-    # proglogger = logging.getLogger('root.prog')
-    # prog_fh = logging.FileHandler(f'{os.environ["PWD"]}/logs/bucket.log')
-    # progformatter = logging.Formatter('%(levelname)s:prog:%(message)s')
-    # proglogger.addHandler(prog_fh)
-    # prog_fh.setFormatter(progformatter)
-    # proglogger.setLevel(INFO)
-    #
-    # successlogger = logging.getLogger('root.success')
-    # successlogger.setLevel(INFO)
-    #
-    # errlogger = logging.getLogger('root.err')
-
-    pre_delete(args)
+    del_all_instances  (args)

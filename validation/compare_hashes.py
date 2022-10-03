@@ -185,8 +185,8 @@ def compare_study_hashes(access_token, refresh_token, sess, args, collection, pa
     tcia_studies = get_TCIA_studies_per_patient(collection.collection_id, patient.submitter_case_id)
 
     if not set([study.study_instance_uid for study in idc_studies]) == set([study['StudyInstanceUID'] for study in tcia_studies]):
-        errlogger.info("    Different set of patients")
-        print("      Different set of patients")
+        errlogger.info("    Different set of studies")
+        print("      Different set of studies")
         return
 
     for study in idc_studies:

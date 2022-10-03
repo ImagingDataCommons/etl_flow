@@ -20,7 +20,7 @@
 import json
 import argparse
 
-from collection_list_3 import collection_list
+from collection_list_j import collection_list
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from idc.models import Base, Version, Collection, Patient, Study, Series, Instance, All_Included_Collections
 from google.cloud import storage
@@ -34,11 +34,20 @@ def gen_series_object(args, sess, collection, patient, study, series):
     if not args.dst_bucket.blob(f"{study.uuid}/{series.uuid}/").exists():
         print(f'\t\t\t{level} {series.uuid} started')
         # Create a combined "folder" and "bundle" blob
-        contents = "\n".join(
-            [f"{sess.query(All_Included_Collections.pub_tcia_url).filter(All_Included_Collections.tcia_api_collection_id == collection.collection_id).first().pub_tcia_url}/{instance.uuid}.dcm" if instance.source.name == 'tcia' else \
-             f"{sess.query(All_Included_Collections.pub_tcia_url).filter(All_Included_Collections.tcia_api_collection_id == collection.collection_id).first().pub_path_url}/{instance.uuid}.dcm" \
-             for instance in series.instances])+'\n'
-        blob = args.dst_bucket.blob(f"{study.uuid}/{series.uuid}.idc").upload_from_string(contents)
+        contents = {
+            'version': '1.0',
+            'children':
+                [
+                    {
+                        "SOPInstanceUID": instance.sop_instance_uid,
+                        "instance_object": \
+                            f"{sess.query(All_Included_Collections.pub_tcia_url).filter(All_Included_Collections.tcia_api_collection_id == collection.collection_id).first().pub_tcia_url}/{instance.uuid}.dcm" if instance.source.name == 'tcia' else \
+                            f"{sess.query(All_Included_Collections.pub_tcia_url).filter(All_Included_Collections.tcia_api_collection_id == collection.collection_id).first().pub_path_url}/{instance.uuid}.dcm" \
+                    }
+                    for instance in series.instances
+                ]
+        }
+        blob = args.dst_bucket.blob(f"{study.uuid}/{series.uuid}.idc").upload_from_string(json.dumps(contents))
         if not args.dst_bucket.blob(f"{study.uuid}/{series.uuid}.idc").exists():
             errlogger.error(f"{study.uuid}/{series.uuid}/ doesn't exist")
         print(f'\t\t\t{level} {series.uuid} completed')
@@ -46,26 +55,6 @@ def gen_series_object(args, sess, collection, patient, study, series):
 
         print(f'\t\t\t{level} {series.uuid} skipped')
     return
-
-
-# def gen_series_object(args, sess, collection, patient, study, series):
-#     level = "Series"
-#     if not args.dst_bucket.blob(f"{collection.uuid}/{patient.uuid}/{study.uuid}/{series.uuid}/").exists():
-#         print(f'\t\t\t{level} {series.uuid} started')
-#         for instance in series.instances:
-#             gen_instance_object(args, sess, collection, patient, study, series, instance)
-#         contents = {
-#             "path": f"{collection.uuid}/{patient.uuid}/{study.uuid}/{series.uuid}/",
-#             "children":
-#             [
-#                  f"{instance.uuid}/" for instance in series.instances
-#             ]
-#         }
-#         blob = args.dst_bucket.blob(f"{collection.uuid}/{patient.uuid}/{study.uuid}/{series.uuid}/").upload_from_string(json.dumps(contents))
-#         print(f'\t\t\t{level} {series.uuid} completed')
-#     else:
-#         print(f'\t\t\t{level} {series.uuid} skipped')
-#     return
 
 
 def gen_study_object(args, sess, collection, patient, study):
@@ -76,33 +65,21 @@ def gen_study_object(args, sess, collection, patient, study):
             if series.sources.tcia:
                 gen_series_object(args, sess, collection, patient, study, series)
         # Create a combined "folder" and "bundle" blob
-        contents = "\n".join([f"{args.dst_bucket_name}/{study.uuid}/{series.uuid}/" for series in study.seriess])+'\n'
-        blob = args.dst_bucket.blob(f"{study.uuid}/").upload_from_string(contents)
+        contents = {
+            'version': '1.0',
+            'children':
+                [
+                {"SeriesInstanceUID": series.series_instance_uid, "series_object": f"{args.dst_bucket_name}/{study.uuid}/{series.uuid}.idc"} \
+                    for series in study.seriess
+                ]
+        }
+        blob = args.dst_bucket.blob(f"{study.uuid}/").upload_from_string(json.dumps(contents))
         if not args.dst_bucket.blob(f"{study.uuid}/").exists():
             errlogger.error(f"{study.uuid}/ doesn't exist")
         print(f'\t\t{level} {study.uuid} completed')
     else:
         print(f'\t\t{level} {study.uuid} skipped')
     return
-
-# def gen_study_object(args, sess, collection, patient, study):
-#     level = "Study"
-#     if not args.dst_bucket.blob(f"{collection.uuid}/{patient.uuid}/{study.uuid}/").exists():
-#         print(f'\t\t{level} {study.uuid} started')
-#         for series in study.seriess:
-#             gen_series_object(args, sess, collection, patient, study, series)
-#         contents = {
-#             "path": f"{collection.uuid}/{patient.uuid}/{study.uuid}/",
-#             "children":
-#             [
-#                  f"{series.uuid}/" for series in study.seriess
-#             ]
-#         }
-#         blob = args.dst_bucket.blob(f"{collection.uuid}/{patient.uuid}/{study.uuid}/").upload_from_string(json.dumps(contents))
-#         print(f'\t\t{level} {study.uuid} completed')
-#     else:
-#         print(f'\t\t{level} {study.uuid} skipped')
-#     return
 
 
 def gen_patient_object(args, sess, collection, patient):
@@ -113,12 +90,14 @@ def gen_patient_object(args, sess, collection, patient):
     print(f'\t{level} {patient.uuid} completed')
     return
 
+
 def gen_collection_object(args, sess, collection):
     level = "Collection"
     for patient in collection.patients:
         gen_patient_object(args, sess, collection, patient)
     print(f'{level} {collection.uuid} completed')
     return
+
 
 def gen_all(args):
 
@@ -141,7 +120,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=11, help='Version to work on')
     # parser.add_argument('--hfs_levels', default=['study', 'series'], help='Name blobs as study/series/instance if study, series/instance if series')
-    parser.add_argument('--dst_bucket_name', default='whc_prop3', help='Bucket into which to copy blobs')
+    parser.add_argument('--dst_bucket_name', default='whc_prop3j', help='Bucket into which to copy blobs')
     args = parser.parse_args()
 
     args.id = 0  # Default process ID

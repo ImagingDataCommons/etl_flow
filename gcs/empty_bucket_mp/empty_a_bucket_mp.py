@@ -45,7 +45,7 @@ assert settings.configured
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bucket', default='idc_dev')
+    parser.add_argument('--bucket', default='')
     parser.add_argument('--processes', default=1, help="Number of concurrent processes")
     parser.add_argument('--batch', default=1000, help='Size of batch assigned to each process')
     parser.add_argument('--project', default='idc-dev-etl')

@@ -35,7 +35,10 @@ def get_collection_id(doi):
         URL = f'https:{doi}'
     else:
         URL = f'https://doi.org/{doi}'
-    page = get_url(URL)
+    try:
+        page = get_url(URL)
+    except Exception as exc:
+        print(f'Exception in get_collection_id: {exc}')
 
     soup = BeautifulSoup(page.content, "html.parser")
 
@@ -112,7 +115,7 @@ def scrape_tcia_analysis_collections_page():
                 trow[header[cid + 1]] = col.text
         if len(trow):
             # Strip off the http server prefix
-            trow['DOI'] = trow['DOI'].split('doi.org/')[1]
+            trow['DOI'] = trow['DOI'].split('doi.org/')[1].lower()
             try:
                 trow['license_url'], trow['license_long_name'], trow['license_short_name'] = get_license_from_wiki(trow['DOI'])
             except Exception as exc:
@@ -156,26 +159,30 @@ def scrape_tcia_data_collections_page():
         if len(trow):
             # Strip off the http server prefix
             try:
-                trow['DOI'] = trow['DOI'].split('https://doi.org/https://doi.org/')[1].strip()
+                trow['DOI'] = trow['DOI'].split('https://doi.org/https://doi.org/')[1].strip().lower()
             except:
                 try:
-                    trow['DOI'] = trow['DOI'].split('doi.org/doi:')[1].strip()
+                    trow['DOI'] = trow['DOI'].split('doi.org/doi:')[1].strip().lower()
                 except:
                     try:
-                        trow['DOI'] = trow['DOI'].split('doi.org/')[1].strip()
+                        trow['DOI'] = trow['DOI'].split('doi.org/')[1].strip().lower()
                     except:
                         # Probably an http: URL not a DOI.
-                        trow['DOI'] = trow['DOI'].replace('http', 'https').strip()
+                        if trow['DOI'].lower().startswith('http:'):
+                            trow['DOI'] = trow['DOI'].replace('http', 'https').strip().lower()
+                        # trow['DOI'] = trow['DOI'].replace('http', 'https').strip()
                         pass
             collection = get_collection_id(trow['DOI'])
-            if collection == 'B-mode-and-CEUS-Liver':
-                if trow['tcia_wiki_collection_id'] == 'Ultrasound data of a variety of liver masses (B-mode-and-CEUS-Liver)':
-                    trow['tcia_wiki_collection_id'] = 'B-mode-and-CEUS-Liver'
             if collection == "":
                 if trow['tcia_wiki_collection_id'] == 'National Lung Screening Trial (NLST)':
                     collection = 'NLST'
-                    trow['DOI'] = '10.7937/TCIA.hmq8-j677'
+                    trow['DOI'] = '10.7937/TCIA.hmq8-j677'.lower()
                     trow['Access'] = 'Public'
+
+                elif trow['tcia_wiki_collection_id'] == 'ACRIN 6698/I-SPY2 Breast DWI (ACRIN 6698)':
+                    collection = 'ACRIN 6698'
+                    # trow['DOI'] = '10.7937/tcia.kk02-6d95'
+                    # trow['Access'] = 'Public'
                 else:
                     collection = trow['tcia_wiki_collection_id']
             # print(f'{collection}')

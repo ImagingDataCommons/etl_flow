@@ -15,8 +15,9 @@
 #
 
 """
-Multiprocess script to validate that the public-datasets-idc bucket
+Multiprocess script to validate that the idc-open-idc bucket
 contains the expected set of blobs.
+This is obsolete.
 """
 
 import argparse

@@ -503,6 +503,8 @@ class Series(Base):
     )
     source_url = Column(String, nullable=True, comment="A url to the wiki page of this series")
     excluded = Column(Boolean, default=False, comment="True if object should be excluded from auxiliary_metadata, etc.")
+    license_name = Column(String, default=False, comment="License long name of this series.")
+    license_url = Column(String, default=False, comment="License URL of this series.")
 
     studies = relationship('Study',
                            secondary=study_series,

@@ -30,7 +30,7 @@ if __name__ == '__main__':
     # parser.add_argument('--dev_bqdataset_name', default=f'idc_v{args.version}_dev', help='BQ dataset of dev tables')
     # parser.add_argument('--pub_bqdataset_name', default=f'idc_v{args.version}_pub', help='BQ dataset of public tables')
     parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
-    parser.add_argument('--gen_excluded', default=False, help="Generate excluded_original_collections_metadata if True")
+    parser.add_argument('--access', default='Public', help="Generate excluded_original_collections_metadata if True")
     parser.add_argument('--use_cached_metadata', default=False)
     parser.add_argument('--cached_metadata_file', default='cached_included_metadata.json', help='Where to cache metadata')
 
