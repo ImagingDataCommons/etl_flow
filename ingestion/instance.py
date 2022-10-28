@@ -90,6 +90,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         for dcm in dcms:
             try:
                 pydicom_times.append(time.time_ns())
+                breakpoint() # Validate new DICOM ID validation code
                 reader = pydicom.dcmread("{}/{}/{}".format(args.dicom_dir, series.series_instance_uid, dcm), stop_before_pixels=True)
                 SOPInstanceUID = reader.SOPInstanceUID
                 pydicom_times.append(time.time_ns())

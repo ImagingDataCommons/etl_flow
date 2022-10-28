@@ -17,38 +17,44 @@
 # Genrate study and series folder objects which each contain a manifest of child objects
 import json
 import argparse
-from collection_list_1n import collection_list
+from collection_list_ndu import collection_list
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from idc.models import Base, Version, Collection, Patient, Study, Series, Instance, All_Included_Collections
 from google.cloud import storage
 from sqlalchemy.orm import Session
-from python_settings import settings
+import settings
 from sqlalchemy import create_engine, update
 
 def gen_series_object(args, sess, collection, patient, study, series):
     level = "Series"
-    if not args.dst_bucket.blob(f"{series.uuid}/").exists():
+    if not args.dst_bucket.blob(f"{series.uuid}/{series.uuid}.json").exists():
         print(f'\t\t\t{level} {series.uuid} started')
         # Create a combined "folder" and "bundle" blob
+        contents = {
+            'description': 'CRDC DICOM series',
+            'series_uuid': series.uuid,
+            'SeriesInstanceUID': series.series_instance_uid,
+            'instance_uuids': [instance.uuid for instance in series.instances],
+            'archive_drs_uri': 'drs://dg.4DFC/some_TBD_uuid'}
+        blob = args.dst_bucket.blob(f"{series.uuid}/{series.uuid}.json").upload_from_string(json.dumps(contents))
+        if not args.dst_bucket.blob(f"{series.uuid}/{series.uuid}.json").exists():
+            errlogger.error(f"{series.uuid}/{series.uuid}.json doesn't exist")
         blob = args.dst_bucket.blob(f"{series.uuid}/").upload_from_string("")
         if not args.dst_bucket.blob(f"{series.uuid}/").exists():
-            errlogger.error(f"/{series.uuid}/ doesn't exist")
+            errlogger.error(f"{series.uuid}/ doesn't exist")
         print(f'\t\t\t{level} {series.uuid} completed')
     else:
+
         print(f'\t\t\t{level} {series.uuid} skipped')
     return
 
 
 def gen_study_object(args, sess, collection, patient, study):
     level = "Study"
+    print(f'\t\t{level} {study.uuid} started')
     for series in study.seriess:
         if series.sources.tcia:
             gen_series_object(args, sess, collection, patient, study, series)
-        # # Create a combined "folder" and "bundle" blob
-        # contents = "\n".join([f"{study.uuid}/{series.uuid}/" for series in study.seriess])
-        # blob = args.dst_bucket.blob(f"{study.uuid}/").upload_from_string(contents)
-        # if not args.dst_bucket.blob(f"{study.uuid}/").exists():
-        #     errlogger.error(f"{study.uuid}/ doesn't exist")
     print(f'\t\t{level} {study.uuid} completed')
 
 
@@ -85,10 +91,8 @@ def gen_all(args):
 if __name__ == '__main__':
     client = storage.Client()
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=9, help='Version to work on')
-    # parser.add_argument('--collections', default=['APOLLO-5-LSCC', 'CPTAC-SAR', 'MIDRC-RICORD-1C', 'TCGA-READ'])
-    # parser.add_argument('--hfs_levels', default=['study', 'series'], help='Name blobs as study/series/instance if study, series/instance if series')
-    parser.add_argument('--dst_bucket_name', default='whc_prop1n', help='Bucket into which to copy blobs')
+    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
+    parser.add_argument('--dst_bucket_name', default='ndu', help='Bucket into which to copy blobs')
     args = parser.parse_args()
 
     args.id = 0  # Default process ID

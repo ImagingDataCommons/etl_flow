@@ -21,8 +21,8 @@ from google.cloud import bigquery, storage
 import time
 from multiprocessing import Process, Queue
 
-# Copy the blobs that are new to a version from dev pre-staging buckets
-# to dev staging buckets.
+# Copy blobs in some specified collections to a bucket,
+# and renaming them hierarchically according to args.hfs_level
 
 def get_urls(args):
     client = bigquery.Client()
@@ -36,7 +36,7 @@ def get_urls(args):
       series_instance_uid,
       sop_instance_uid
     FROM
-      `idc-dev-etl.idc_v{args.version}_dev.all_joined_included`
+      `idc-dev-etl.idc_v{args.version}_dev.all_joined`
     WHERE
       collection_id in {args.collections} and i_source='tcia'
     """
@@ -50,10 +50,7 @@ def get_urls(args):
 def copy_some_blobs(args, client, dones, metadata, n):
      for blob in metadata:
         src_blob_name = f"{blob['i_uuid']}.dcm"
-        if args.hfs_level == 'series':
-            dst_blob_name = f"{blob['se_uuid']}/{blob['i_uuid']}.dcm"
-        else:
-            dst_blob_name = f"{blob['st_uuid']}/{blob['se_uuid']}/{blob['i_uuid']}.dcm"
+        dst_blob_name = f"{blob['se_uuid']}/{blob['i_uuid']}.dcm"
         if not src_blob_name in dones:
             src_bucket_name='idc-dev-open'
             src_bucket = client.bucket(src_bucket_name)
@@ -95,7 +92,9 @@ def copy_all_blobs(args):
     #     dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
     # except:
     #     dones = []
-    dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
+    # dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
+
+    dones = []
 
     bq_client = bigquery.Client()
     destination = get_urls(args)
