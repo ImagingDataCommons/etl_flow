@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-collection_list = ['APOLLO-5-LSCC', 'CPTAC-SAR', 'TCGA-READ']
+collection_list = ['Prostate-3T', 'RIDER Breast MRI', 'TCGA-READ']

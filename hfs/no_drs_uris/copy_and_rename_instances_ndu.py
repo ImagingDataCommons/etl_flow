@@ -21,8 +21,8 @@ from google.cloud import bigquery, storage
 import time
 from multiprocessing import Process, Queue
 
-# Copy the blobs that are new to a version from dev pre-staging buckets
-# to dev staging buckets.
+# Copy blobs in some specified collections to a bucket,
+# and renaming them hierarchically according to args.hfs_level
 
 def get_urls(args):
     client = bigquery.Client()
@@ -36,9 +36,9 @@ def get_urls(args):
       series_instance_uid,
       sop_instance_uid
     FROM
-      `idc-dev-etl.idc_v{args.version}_dev.all_joined_included`
+      `idc-dev-etl.idc_v{args.version}_dev.all_joined`
     WHERE
-      collection_id in {args.collections}  and i_source='tcia'
+      collection_id in {args.collections} and i_source='tcia'
     """
     # urls = list(client.query(query))
     query_job = client.query(query)  # Make an API request.
@@ -50,7 +50,7 @@ def get_urls(args):
 def copy_some_blobs(args, client, dones, metadata, n):
      for blob in metadata:
         src_blob_name = f"{blob['i_uuid']}.dcm"
-        dst_blob_name = f"{blob['i_uuid']}.dcm"
+        dst_blob_name = f"{blob['se_uuid']}/{blob['i_uuid']}.dcm"
         if not src_blob_name in dones:
             src_bucket_name='idc-dev-open'
             src_bucket = client.bucket(src_bucket_name)
@@ -92,7 +92,9 @@ def copy_all_blobs(args):
     #     dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
     # except:
     #     dones = []
-    dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
+    # dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
+
+    dones= []
 
     bq_client = bigquery.Client()
     destination = get_urls(args)
@@ -135,21 +137,17 @@ def copy_all_blobs(args):
     rate = (n)/delta
 
 
-# Copy the blobs that are new to a version from dev pre-staging buckets
-# to dev staging buckets.
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=8, help='Version to work on')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/copy_and_rename_instances')
-    parser.add_argument('--collections', default="('APOLLO-5-LSCC', 'CPTAC-SAR', 'MIDRC-RICORD-1C', 'TCGA-READ')")
-    parser.add_argument('--src_bucket', default='idc-dev-open', help='Bucket from which to copy blobs')
-    parser.add_argument('--dst_bucket', default='whc_prop3a', help='Bucket into which to copy blobs')
-    parser.add_argument('--batch', default=100)
-    parser.add_argument('--processes', default=64)
-    args = parser.parse_args()
-    args.id = 0 # Default process ID
-
-    if not os.path.exists('{}'.format(args.log_dir)):
-        os.mkdir('{}'.format(args.log_dir))
-
-    copy_all_blobs(args)
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--version', default=8, help='Version to work on')
+#     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/copy_and_rename_instances')
+#     parser.add_argument('--collections', default="('APOLLO-5-LSCC', 'CPTAC-SAR')")
+#     parser.add_argument('--hfs_level', default='series',help='Name blobs as study/series/instance if study, series/instance if series')
+#     parser.add_argument('--src_bucket', default='idc-dev-open', help='Bucket from which to copy blobs')
+#     parser.add_argument('--dst_bucket', default='whc_series_instance', help='Bucket into which to copy blobs')
+#     parser.add_argument('--batch', default=100)
+#     parser.add_argument('--processes', default=16)
+#     args = parser.parse_args()
+#     args.id = 0 # Default process ID
+#
+#     copy_all_blobs(args)

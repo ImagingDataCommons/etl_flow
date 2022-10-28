@@ -17,26 +17,25 @@
 
 import os
 import argparse
-from collection_list_1j import collection_list
-from copy_and_rename_instances_1j import copy_all_blobs
+
+import settings
+from collection_list_ndu import collection_list
+from copy_and_rename_instances_ndu import copy_all_blobs
 
 # Copy the blobs that are new to a version from dev pre-staging buckets
 # to dev staging buckets.
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=11, help='Version to work on')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/copy_and_rename_instances')
-    # parser.add_argument('--collections', default=f'({",".join(collection_list)})')
+    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
     parser.add_argument('--collections', default=tuple(c for c in collection_list))
-    parser.add_argument('--hfs_level', default='study',help='Name blobs as study/series/instance if study, series/instance if series')
     parser.add_argument('--src_bucket', default='idc-dev-open', help='Bucket from which to copy blobs')
-    parser.add_argument('--dst_bucket', default='whc_prop1b', help='Bucket into which to copy blobs')
+    parser.add_argument('--dst_bucket', default='ndu', help='Bucket into which to copy blobs')
     parser.add_argument('--batch', default=100)
     parser.add_argument('--processes', default=16)
     args = parser.parse_args()
     args.id = 0 # Default process ID
 
-    if not os.path.exists('{}'.format(args.log_dir)):
-        os.mkdir('{}'.format(args.log_dir))
+    # if not os.path.exists('{}'.format(args.log_dir)):
+    #     os.mkdir('{}'.format(args.log_dir))
 
     copy_all_blobs(args)

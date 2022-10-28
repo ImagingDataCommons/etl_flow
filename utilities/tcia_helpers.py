@@ -116,9 +116,8 @@ def get_instance_hash(sop_instance_uid, access_token=None):
     result = requests.get(url, headers=headers)
     return result
 
-def get_hash_nlst(request_data, access_token):
-    # if not access_token:
-    #     access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
+def get_hash_nlst(request_data, access_token=''):
+    access_token, refresh_token = get_access_token(NLST_AUTH_URL)
     headers = dict(
         Authorization=f'Bearer {access_token}'
     )
@@ -615,6 +614,10 @@ if __name__ == "__main__":
 
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
     # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
+    hash = get_hash_nlst(
+        {'Collection': 'NLST', 'PatientID': '123342'})
+    p = get_TCIA_patients_per_collection('NLST')
+    st = get_TCIA_studies_per_patient('NLST', '108001')
     s = get_TCIA_series_metadata('1.3.6.1.4.1.14519.5.2.1.6834.5010.105031608124440650687374568136')
     p = get_collection_license_info()
     # print(p)
