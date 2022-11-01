@@ -37,10 +37,6 @@ def gen_series_object(args, sess, collection, patient, study, series):
             'id': series.uuid,
             'name': series.series_instance_uid,
             'self_uri': f'drs://dg.4DFC/{series.uuid}',
-            'size': sum([i.size for i in series.instances]),
-            'created_time': series.min_timestamp.strftime("%m/%d/%Y, %H:%M:%S"),
-            'updated_time': series.min_timestamp.strftime("%m/%d/%Y, %H:%M:%S"),
-            'version': series.uuid,
             'access_methods': [
                 {
                     'method': 'children',
@@ -48,7 +44,7 @@ def gen_series_object(args, sess, collection, patient, study, series):
                     'description': 'List of DRS URIs of instances in this series',
                     'contents': [
                         {
-                            'id': i.sop_instance_uid,
+                            'name': i.sop_instance_uid,
                             'drs_uri': f'drs://dg.4DFC/{i.uuid}'
                         } for i in series.instances
                     ],
@@ -59,7 +55,7 @@ def gen_series_object(args, sess, collection, patient, study, series):
                     'description': 'DRS URI that resolves to a gs or s3 folder corresponding to this series',
                     'contents': [
                         {
-                            'id': f'{series.series_instance_uid}/',
+                            'name': f'{series.series_instance_uid}/',
                             'drs_uri': f'drs://dg.4DFC/some_TBD_uuid'
                         }
                     ]
@@ -70,7 +66,7 @@ def gen_series_object(args, sess, collection, patient, study, series):
                     'description': 'DRS URI that resolves to a zip archive of the instances in this series',
                     'contents': [
                         {
-                            'id': f'{series.series_instance_uid}.zip',
+                            'name': f'{series.series_instance_uid}.zip',
                             'drs_uri': f'drs://dg.4DFC/some_TBD_uuid'
                         }
                     ]
