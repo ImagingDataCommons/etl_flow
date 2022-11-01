@@ -157,7 +157,7 @@ def create_all_joined_included():
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.instance` i ON si.instance_uuid = i.uuid
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac ON c.collection_id = ac.tcia_api_collection_id
      WHERE i.excluded = false AND
-       ((i.source = 'tcia' AND ac.tcia_access = 'Public') OR (i.source = 'path' AND ac.path_access = 'Public'))
+       ((i.source = 'tcia' AND ac.tcia_access = 'Public') OR (i.source = 'idc' AND ac.idc_access = 'Public'))
   """
     # Make an API request to create the view.
     view = client.create_table(view, exists_ok=True)

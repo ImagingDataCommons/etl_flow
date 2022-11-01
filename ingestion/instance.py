@@ -22,7 +22,7 @@ import logging
 import pydicom
 import shutil
 from pydicom.errors import InvalidDicomError
-from idc.models import Version, Instance, WSI_Instance
+from idc.models import Version, Instance, IDC_Instance
 from sqlalchemy import select,delete
 from google.cloud import storage
 from utilities.tcia_helpers import  get_TCIA_instances_per_series_with_hashes
@@ -198,7 +198,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         raise exc
 
 
-def build_instances_path(sess, args, collection, patient, study, series):
+def build_instances_idc(sess, args, collection, patient, study, series):
     # Download a zip of the instances in a series
     # It will be write the zip to a file dicom/<series_instance_uid>.zip in the
     # working directory, and expand the zip to directory dicom/<series_instance_uid>
@@ -207,8 +207,8 @@ def build_instances_path(sess, args, collection, patient, study, series):
     now = datetime.now(timezone.utc)
     client=storage.Client()
 
-    stmt = select(WSI_Instance.sop_instance_uid, WSI_Instance.url, WSI_Instance.hash ). \
-        where(WSI_Instance.series_instance_uid == series.series_instance_uid)
+    stmt = select(IDC_Instance.sop_instance_uid, IDC_Instance.url, IDC_Instance.hash ). \
+        where(IDC_Instance.series_instance_uid == series.series_instance_uid)
     result = sess.execute(stmt)
     src_instance_metadata = {i.sop_instance_uid:{'gcs_url':i.url, 'hash':i.hash} \
                              for i in result.fetchall()}
@@ -217,7 +217,7 @@ def build_instances_path(sess, args, collection, patient, study, series):
     for instance in series.instances:
         if not instance.done:
             instance.hash = src_instance_metadata[instance.sop_instance_uid]['hash']
-            instance.size, hash = copy_gcs_to_gcs(args, client, args.prestaging_path_bucket, instance, src_instance_metadata[instance.sop_instance_uid]['gcs_url'])
+            instance.size, hash = copy_gcs_to_gcs(args, client, args.prestaging_idc_bucket, instance, src_instance_metadata[instance.sop_instance_uid]['gcs_url'])
             if hash != instance.hash:
                 errlogger.error("       p%s: Copy files to GCS failed for %s/%s/%s/%s/%s", args.pid,
                                 collection.collection_id, patient.submitter_case_id, study.study_instance_uid,

@@ -15,7 +15,7 @@
 #
 
 # One use script:
-# Copy all the path instances in  cptac_cm, cptac_lscc from idc-dev-cm to idc-dev-open
+# Copy all the idc instances in  cptac_cm, cptac_lscc from idc-dev-cm to idc-dev-open
 
 import argparse
 import json
@@ -39,7 +39,7 @@ def get_blob_names(args):
         `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined_included`
     WHERE
         collection_id in ('CPTAC-CM', 'CPTAC-LSCC')
-        AND i_source = 'path'
+        AND i_source = 'idc'
         AND i_rev_idc_version < 10
     ORDER by i_uuid
     """

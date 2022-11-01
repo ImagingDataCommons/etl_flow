@@ -27,14 +27,15 @@ from gcs.empty_bucket_mp.empty_bucket_mp import pre_delete
 def get_collection_groups():
     client = bigquery.Client()
     collections = {}
+    breakpoint() # FROM all_collections instead of all_included_collections?
     query = f"""
-    SELECT idc_webapp_collection_id, dev_tcia_url, dev_path_url
+    SELECT idc_webapp_collection_id, dev_tcia_url, dev_idc_url
     FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_included_collections`
     """
 
     result = client.query(query).result()
     for row in result:
-        collections[row['idc_webapp_collection_id']] = {"dev_tcia_url": row["dev_tcia_url"], "dev_path_url": row["dev_path_url"]}
+        collections[row['idc_webapp_collection_id']] = {"dev_tcia_url": row["dev_tcia_url"], "dev_idc_url": row["dev_idc_url"]}
 
     return collections
 
@@ -43,8 +44,8 @@ def preview_copies(args, client, bucket_data):
     for collection_id in bucket_data:
         if client.bucket(f'idc_v{args.version}_tcia_{collection_id}').exists():
             progresslogger.info(f'Deleting idc_v{args.version}_tcia_{collection_id}')
-        if client.bucket(f'idc_v{args.version}_path_{collection_id}').exists():
-            progresslogger.info(f'Deleting idc_v{args.version}_path_{collection_id}')
+        if client.bucket(f'idc_v{args.version}_idc_{collection_id}').exists():
+            progresslogger.info(f'Deleting idc_v{args.version}_idc_{collection_id}')
     return
 
 
@@ -78,9 +79,9 @@ def delete_buckets(args):
             pre_delete(args)
             # Delete the bucket itself
             client.bucket(prestaging_bucket).delete()
-        if client.bucket(f'idc_v{args.version}_path_{collection_id}').exists():
-            # copy_prestaging_to_staging(args, f'idc_v{args.version}_path_{collection_id}', bucket_data[collection_id]['dev_path_url'], dones)
-            prestaging_bucket = f'idc_v{args.version}_path_{collection_id}'
+        if client.bucket(f'idc_v{args.version}_idc_{collection_id}').exists():
+            # copy_prestaging_to_staging(args, f'idc_v{args.version}_idc_{collection_id}', bucket_data[collection_id]['dev_idc_url'], dones)
+            prestaging_bucket = f'idc_v{args.version}_idc_{collection_id}'
             args.bucket = prestaging_bucket
             progresslogger.info(f'Deleting bucket {prestaging_bucket}')
             # Delete the contents of the bucket
@@ -94,7 +95,7 @@ def delete_buckets(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    # parser.add_argument('--prestaging_bucket_prefix', default=[f'idc_v{settings.CURRENT_VERSION}_tcia_', f'idc_v{settings.CURRENT_VERSION}_path_'], help='Prefix of premerge buckets')
+    # parser.add_argument('--prestaging_bucket_prefix', default=[f'idc_v{settings.CURRENT_VERSION}_tcia_', f'idc_v{settings.CURRENT_VERSION}_idc_'], help='Prefix of premerge buckets')
     parser.add_argument('--processes', default=32, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
     args = parser.parse_args()

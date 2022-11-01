@@ -47,7 +47,6 @@ tables = {
         'open_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
         'redacted_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
         'all_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
-        'all_included_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
         'program': {"func": upload_table, "order_by": "tcia_wiki_collection_id"},
         'non_tcia_collection_metadata':{"func": upload_table, "order_by": "idc_webapp_collection_id"},
     }
@@ -76,7 +75,6 @@ if __name__ == '__main__':
         'open_collections',
         'redacted_collections',
         'all_collections',
-        'all_included_collections',
         'program',
         'non_tcia_collection_metadata',
     ], help="Tables to upload")

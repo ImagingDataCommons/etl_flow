@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 import logging
 from uuid import uuid4
 from idc.models import Series, Instance, instance_source
-from ingestion.instance import clone_instance, build_instances_path, build_instances_tcia
+from ingestion.instance import clone_instance, build_instances_idc, build_instances_tcia
 from ingestion.utilities.utils import is_skipped
 from python_settings import settings
 
@@ -158,9 +158,9 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
         if not all(instance.done for instance in series.instances):
             if series.sources.tcia:
                 build_instances_tcia(sess, args, collection, patient, study, series)
-            if series.sources.path:
-                # Get instance data from path DB table/ GCS bucket.
-                build_instances_path(sess, args, collection, patient, study, series)
+            if series.sources.idc:
+                # Get instance data from idc DB table/ GCS bucket.
+                build_instances_idc(sess, args, collection, patient, study, series)
 
         if all(instance.done for instance in series.instances):
             # series.min_timestamp = min(instance.timestamp for instance in series.instances)

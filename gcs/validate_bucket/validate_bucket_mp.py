@@ -39,7 +39,7 @@ def get_expected_blobs_in_bucket(args, premerge=False):
           JOIN `idc-dev-etl.idc_v{args.version}_dev.all_collections` aic
           ON c.collection_id = aic.tcia_api_collection_id
           WHERE ((i.source='tcia' and aic.{args.dev_or_pub}_tcia_url="{args.bucket}")
-          OR (i.source='path' and aic.{args.dev_or_pub}_path_url="{args.bucket}"))
+          OR (i.source='idc' and aic.{args.dev_or_pub}_idc_url="{args.bucket}"))
           AND i.excluded = False
           AND if({premerge}, i.rev_idc_version < {settings.CURRENT_VERSION}, i.rev_idc_version <= {settings.CURRENT_VERSION})
       """

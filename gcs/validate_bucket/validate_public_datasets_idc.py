@@ -27,6 +27,8 @@ from gcs.validate_bucket.validate_bucket_mp import check_all_instances
 
 
 if __name__ == '__main__':
+    breakpoint() # Is use of all_included_collections correct?
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=f'{settings.CURRENT_VERSION}')
     parser.add_argument('--bucket', default='public-datasets-idc')

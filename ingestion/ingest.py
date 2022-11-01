@@ -59,21 +59,21 @@ def ingest(args):
         args.access = access
 
         args.skipped_tcia_collections = list_skips(sess, Base, args.skipped_tcia_groups, args.skipped_tcia_collections, args.included_tcia_collections)
-        args.skipped_path_collections = list_skips(sess, Base, args.skipped_path_groups, args.skipped_path_collections, args.included_path_collections)
+        args.skipped_idc_collections = list_skips(sess, Base, args.skipped_idc_groups, args.skipped_idc_collections, args.included_idc_collections)
 
-        # Now create a table of collections for which tcia or path ingestion or both, are to be skipped.
+        # Now create a table of collections for which tcia or idc ingestion or both, are to be skipped.
         # Populate with tcia skips
         skipped_collections = \
             {collection_id:[True, False] for collection_id in args.skipped_tcia_collections}
-        # Now add path skips
-        for collection_id in args.skipped_path_collections:
+        # Now add idc skips
+        for collection_id in args.skipped_idc_collections:
             if collection_id in skipped_collections:
                 skipped_collections[collection_id][1] = True
             else:
                 skipped_collections[collection_id] = [False, True]
         args.skipped_collections = skipped_collections
         all_sources = All(args.pid, sess, settings.CURRENT_VERSION, args.access,
-                          args.skipped_tcia_collections, args.skipped_path_collections, Lock())
+                          args.skipped_tcia_collections, args.skipped_idc_collections, Lock())
 
         version = sess.query(Version).filter(Version.version == settings.CURRENT_VERSION).first()
         if not version:
@@ -131,16 +131,16 @@ if __name__ == '__main__':
     parser.add_argument('--included_tcia_collections', nargs='*', default=[], help='List of tcia collections to exclude from skipped')
     parser.add_argument('--prestaging_tcia_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_tcia_', help='Copy tcia instances here before forwarding to --staging_bucket')
 
-    parser.add_argument('--skipped_path_groups', nargs='*', default=['redacted_collections', 'excluded_collections'],\
-                        help="List of tables containind tcia_api_collection_ids of path collections to be skipped")
-    parser.add_argument('--skipped_path_collections', nargs='*',\
+    parser.add_argument('--skipped_idc_groups', nargs='*', default=['redacted_collections', 'excluded_collections'],\
+                        help="List of tables containing tcia_api_collection_ids of idc collections to be skipped")
+    parser.add_argument('--skipped_idc_collections', nargs='*',\
             default=['QIN Breast DCE-MRI', 'QIN LUNG CT',  \
                      'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-THYM'], \
-                        help='List of additional path collections to be skipped')
-    parser.add_argument('--included_path_collections', nargs='*', \
-            default=['CPTAC-GBM', 'CPTAC-HNSCC', 'TCGA-GBM', 'TCGA-HNSC', 'TCGA-LGG'], help='List of path collections to exclude from skipped')
+                        help='List of additional idc collections to be skipped')
+    parser.add_argument('--included_idc_collections', nargs='*', \
+            default=['CPTAC-GBM', 'CPTAC-HNSCC', 'TCGA-GBM', 'TCGA-HNSC', 'TCGA-LGG'], help='List of idc collections to exclude from skipped')
     parser.add_argument('--server', default="", help="NBIA server to access. Set to NLST for NLST ingestion")
-    parser.add_argument('--prestaging_path_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_path_', help='Copy path instances here before forwarding to --staging_bucket')
+    parser.add_argument('--prestaging_idc_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_idc_', help='Copy idc instances here before forwarding to --staging_bucket')
 
     parser.add_argument('--stop_after_collection_summary', type=bool, default=False, \
                         help='Stop after printing a summary of collection dispositions')

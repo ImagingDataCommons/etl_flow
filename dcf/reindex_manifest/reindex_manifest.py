@@ -26,19 +26,20 @@ from utilities.bq_helpers import query_BQ, export_BQ_to_GCS, delete_BQ_Table
 
 def gen_instance_manifest(args):
     BQ_client = bigquery.Client(project=args.project)
+    breakpoint() # Is use of all_included_collections correct?
     query = f"""
          SELECT distinct 
             CONCAT('dg.4DFC/', a.i_uuid) as GUID, 
             i_hash as md5, 
             i_size as size, 
-            CONCAT('gs://',IF(i_source='tcia', i.pub_tcia_url, i.pub_path_url), '/', a.i_uuid, '.dcm') as url
+            CONCAT('gs://',IF(i_source='tcia', i.pub_tcia_url, i.pub_idc_url), '/', a.i_uuid, '.dcm') as url
          FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_included` a
          JOIN `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_included_collections` i
          ON a.collection_id = i.tcia_api_collection_id
          WHERE
             collection_id in {args.collections} 
 --          AND ((a.i_source='tcia' and i.pub_tcia_url='public-datasets-idc')
---          OR (a.i_source='path' and i.pub_path_url='public-datasets-idc'))
+--          OR (a.i_source='idc' and i.pub_idc_url='public-datasets-idc'))
          AND a.i_excluded=FALSE    
     """
 

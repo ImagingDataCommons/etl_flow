@@ -19,7 +19,7 @@ from utilities.tcia_helpers import  get_access_token, get_hash, get_TCIA_studies
     get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_TCIA_instances_per_series, get_collection_values_and_counts,\
     get_updated_series, get_instance_hash, refresh_access_token
 from uuid import uuid4
-from idc.models  import WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance, instance_source
+from idc.models  import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, instance_source
 from sqlalchemy import select
 from google.cloud import bigquery
 from ingestion.utilities.utils import get_merkle_hash
@@ -76,7 +76,7 @@ class TCIA(Source):
 
 
     def src_version_hash(self):
-        collections = self.sess.execute(select(WSI_Collection.collection_id).distinct())
+        collections = self.sess.execute(select(IDC_Collection.collection_id).distinct())
         hashes = []
         for collection in collections:
             hashes.append(self.src_collection_hash(collection['collection_id']))
@@ -224,24 +224,24 @@ class TCIA(Source):
             return result
 
 
-class Pathology(Source):
+class IDC(Source):
     def __init__(self, sess, skipped_collections):
-        super().__init__(instance_source['path'].value)
-        self.source = instance_source.path
+        super().__init__(instance_source['idc'].value)
+        self.source = instance_source.idc
         self.sess = sess
         self.skipped_collections = skipped_collections
 
     ###-------------------Versions-----------------###
 
     def src_version_hash(self):
-        query = select(WSI_Version.hash)
+        query = select(IDC_Version.hash)
         hash = self.sess.execute(query).fetchone().hash
         return hash
 
     ###-------------------Collections-----------------###
 
     def collections(self):
-        query = select(WSI_Collection.collection_id)
+        query = select(IDC_Collection.collection_id)
         collections = [row.collection_id for row in self.sess.execute(query).fetchall()]
         for collection in self.skipped_collections:
             try:
@@ -252,21 +252,21 @@ class Pathology(Source):
 
 
     def src_collection_hash(self, collection_id):
-        query = select(WSI_Collection.hash).where(WSI_Collection.collection_id == collection_id)
+        query = select(IDC_Collection.hash).where(IDC_Collection.collection_id == collection_id)
         hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
         return hash
 
     ###-------------------Patients-----------------###
 
     def patients(self, collection):
-        query = select(WSI_Patient.submitter_case_id).where(WSI_Patient.collection_id == collection.collection_id)
+        query = select(IDC_Patient.submitter_case_id).where(IDC_Patient.collection_id == collection.collection_id)
         patients = [row.submitter_case_id for row in self.sess.execute(query).fetchall()]
         return patients
 
 
     def src_patient_hash(self, collection_id, submitter_case_id):
         try:
-           query = select(WSI_Patient.hash).where(WSI_Patient.submitter_case_id == submitter_case_id)
+           query = select(IDC_Patient.hash).where(IDC_Patient.submitter_case_id == submitter_case_id)
            hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
         except Exception as exc:
             errlogger.error(f'Exception in src_patient_hash: {exc}')
@@ -277,38 +277,38 @@ class Pathology(Source):
     ###-------------------Studies-----------------###
 
     def studies(self, patient):
-        query = select(WSI_Study.study_instance_uid).where(WSI_Study.submitter_case_id == patient.submitter_case_id)
+        query = select(IDC_Study.study_instance_uid).where(IDC_Study.submitter_case_id == patient.submitter_case_id)
         studies = [row.study_instance_uid for row in self.sess.execute(query).fetchall()]
         return studies
 
 
     def src_study_hash(self, collection_id, study_instance_uid):
-        query = select(WSI_Study.hash).where(WSI_Study.study_instance_uid == study_instance_uid)
+        query = select(IDC_Study.hash).where(IDC_Study.study_instance_uid == study_instance_uid)
         hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
         return hash
 
     ###-------------------Series-----------------###
 
     def series(self, study):
-        query = select(WSI_Series.series_instance_uid).where(WSI_Series.study_instance_uid == study.study_instance_uid)
+        query = select(IDC_Series.series_instance_uid).where(IDC_Series.study_instance_uid == study.study_instance_uid)
         series = [row.series_instance_uid for row in self.sess.execute(query).fetchall()]
         return series
 
 
     def src_series_hash(self, series_instance_uid):
-        query = select(WSI_Series.hash).where(WSI_Series.series_instance_uid == series_instance_uid)
+        query = select(IDC_Series.hash).where(IDC_Series.series_instance_uid == series_instance_uid)
         hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
         return hash
 
     ###-------------------Instances-----------------###
 
     def instances(self, collection, series):
-        query = select(WSI_Instance.sop_instance_uid).where(WSI_Instance.series_instance_uid == series.series_instance_uid)
+        query = select(IDC_Instance.sop_instance_uid).where(IDC_Instance.series_instance_uid == series.series_instance_uid)
         instances = [row.sop_instance_uid for row in self.sess.execute(query).fetchall()]
         return instances
 
     def src_instance_hash(self, sop_instance_uid):
-        query = select(WSI_Instance.hash).where(WSI_Instance.sop_instance_uid == sop_instance_uid)
+        query = select(IDC_Instance.hash).where(IDC_Instance.sop_instance_uid == sop_instance_uid)
         hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
         return hash
 

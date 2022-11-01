@@ -58,7 +58,7 @@ PATIENT_TRIES=5
 def worker(input, output, args, data_collection_doi_url, analysis_collection_dois, access, lock):
     with sa_session() as sess:
         all_sources = All(args.pid, sess, settings.CURRENT_VERSION, args.access,
-                          args.skipped_tcia_collections, args.skipped_path_collections, lock)
+                          args.skipped_tcia_collections, args.skipped_idc_collections, lock)
 
         for more_args in iter(input.get, 'STOP'):
             for attempt in range(PATIENT_TRIES):
@@ -91,10 +91,10 @@ def expand_collection(sess, args, all_sources, collection):
         progresslogger.info("Emptying tcia prestaging buckets")
         create_prestaging_bucket(args, args.prestaging_tcia_bucket)
         empty_bucket(args.prestaging_tcia_bucket)
-    if collection.revised.path:
-        progresslogger.info("Emptying path prestaging buckets")
-        create_prestaging_bucket(args, args.prestaging_path_bucket)
-        empty_bucket(args.prestaging_path_bucket)
+    if collection.revised.idc:
+        progresslogger.info("Emptying idc prestaging buckets")
+        create_prestaging_bucket(args, args.prestaging_idc_bucket)
+        empty_bucket(args.prestaging_idc_bucket)
 
     # Check for duplicates
     if len(patients) != len(set(patients)):
@@ -202,7 +202,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
     begin = time.time()
     successlogger.debug("p%s: Expand Collection %s, %s", args.pid, collection.collection_id, collection_index)
     args.prestaging_tcia_bucket = f"{args.prestaging_tcia_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
-    args.prestaging_path_bucket = f"{args.prestaging_path_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
+    args.prestaging_idc_bucket = f"{args.prestaging_idc_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
     if not collection.expanded:
         expand_collection(sess, args, all_sources, collection)
     successlogger.info("p%s: Expanded Collection %s, %s, %s patients", args.pid, collection.collection_id, collection_index, len(collection.patients))
