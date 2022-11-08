@@ -27,14 +27,11 @@ from gcs.validate_bucket.validate_bucket_mp import check_all_instances
 
 
 if __name__ == '__main__':
-    breakpoint() # Is use of all_included_collections correct?
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=f'{settings.CURRENT_VERSION}')
     parser.add_argument('--bucket', default='public-datasets-idc')
     parser.add_argument('--src_project', default=settings.PDP_PROJECT)
     parser.add_argument('--src_bqdataset_name', default=settings.BQ_PDP_DATASET)
-    parser.add_argument('--collection_group_table', default='all_included_collections', help='BQ table containing list of collections')
     parser.add_argument('--expected_blobs', default=f'{settings.LOG_DIR}/expected_blobs.txt', help='List of blobs names expected to be in above collections')
     parser.add_argument('--found_blobs', default=f'{settings.LOG_DIR}/found_blobs.txt', help='List of blobs names found in bucket')
     parser.add_argument('--dev_or_pub', default='pub', help='Validating a dev or pub bucket')
