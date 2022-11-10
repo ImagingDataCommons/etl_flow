@@ -29,7 +29,8 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=12, help='Version to work on')
     parser.add_argument('--collections', default=tuple(c for c in collection_list))
     parser.add_argument('--src_bucket', default='idc-dev-open', help='Bucket from which to copy blobs')
-    parser.add_argument('--dst_bucket', default='crdcobj', help='Bucket into which to copy blobs')
+    breakpoint() # Bucket
+    parser.add_argument('--dst_bucket', default='crdcobj_dev', help='Bucket into which to copy blobs')
     parser.add_argument('--batch', default=100)
     parser.add_argument('--processes', default=16)
     args = parser.parse_args()

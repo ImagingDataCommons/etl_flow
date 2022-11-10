@@ -88,7 +88,7 @@ def gen_series_object(args, series, instances):
                     'contents': [
                         {
                             'name': f'{series.series_instance_uid}/',
-                            'drs_uri': f'drs://dg.4DFC/some_TBD_uuid'
+                            'drs_uri': f'drs://dg.4DFC/some_TBD_folder_object_uuid'
                         }
                     ]
                 },
@@ -99,7 +99,7 @@ def gen_series_object(args, series, instances):
                     'contents': [
                         {
                             'name': f'{series.series_instance_uid}.zip',
-                            'drs_uri': f'drs://dg.4DFC/some_TBD_uuid'
+                            'drs_uri': f'drs://dg.4DFC/some_TBD_archive_uuid'
                         }
                     ]
                 }
@@ -131,7 +131,8 @@ if __name__ == '__main__':
     client = storage.Client()
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=12, help='Version to work on')
-    parser.add_argument('--dst_bucket_name', default='crdcobj', help='Bucket into which to copy blobs')
+    breakpoint() # Bucket?
+    parser.add_argument('--dst_bucket_name', default='crdcobj_dev', help='Bucket into which to copy blobs')
     args = parser.parse_args()
 
     args.id = 0  # Default process ID
