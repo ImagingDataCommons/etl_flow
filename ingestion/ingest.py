@@ -125,8 +125,7 @@ if __name__ == '__main__':
     parser.add_argument('--skipped_tcia_groups', nargs='*', default=['redacted_collections', 'excluded_collections'],\
                         help="List of tables containing tcia_api_collection_ids of tcia collections to be skipped")
     parser.add_argument('--skipped_tcia_collections', nargs='*', \
-            default=['QIN Breast DCE-MRI', 'QIN LUNG CT', 'NLST',  \
-                     'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-THYM'], \
+            default=['NLST','APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-THYM'], \
                         help='List of additional tcia collections to be skipped')
     parser.add_argument('--included_tcia_collections', nargs='*', default=[], help='List of tcia collections to exclude from skipped')
     parser.add_argument('--prestaging_tcia_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_tcia_', help='Copy tcia instances here before forwarding to --staging_bucket')
@@ -134,15 +133,14 @@ if __name__ == '__main__':
     parser.add_argument('--skipped_idc_groups', nargs='*', default=['redacted_collections', 'excluded_collections'],\
                         help="List of tables containing tcia_api_collection_ids of idc collections to be skipped")
     parser.add_argument('--skipped_idc_collections', nargs='*',\
-            default=['QIN Breast DCE-MRI', 'QIN LUNG CT',  \
-                     'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-THYM'], \
+            default=['APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-THYM'], \
                         help='List of additional idc collections to be skipped')
     parser.add_argument('--included_idc_collections', nargs='*', \
-            default=['CPTAC-GBM', 'CPTAC-HNSCC', 'TCGA-GBM', 'TCGA-HNSC', 'TCGA-LGG'], help='List of idc collections to exclude from skipped')
+            default=['CPTAC-GBM', 'CPTAC-HNSCC', 'TCGA-GBM', 'TCGA-HNSC', 'TCGA-LGG'], help='List of idc collections to include (exclude from skipped)')
     parser.add_argument('--server', default="", help="NBIA server to access. Set to NLST for NLST ingestion")
     parser.add_argument('--prestaging_idc_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_idc_', help='Copy idc instances here before forwarding to --staging_bucket')
 
-    parser.add_argument('--stop_after_collection_summary', type=bool, default=False, \
+    parser.add_argument('--stop_after_collection_summary', type=bool, default=True, \
                         help='Stop after printing a summary of collection dispositions')
 
     args = parser.parse_args()

@@ -124,6 +124,7 @@ def get_collection_groups(sess):
             'tcia': collection.dev_tcia_url,
             'idc': collection.dev_idc_url
         }
+    breakpoint() # Delete the following?
     collections = sess.query(Redacted_Collections.tcia_api_collection_id, Redacted_Collections.dev_tcia_url, Redacted_Collections.dev_idc_url)
     for collection in collections:
         dev_buckets[collection.tcia_api_collection_id] = {

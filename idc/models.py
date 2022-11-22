@@ -614,54 +614,66 @@ class CR_Collections(Base):
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
-    pub_tcia_url = Column(String, comment="Public tcia bucket name")
     dev_idc_url = Column(String, comment="Dev idc bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
     pub_idc_url = Column(String, comment="Public idc bucket name")
+    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
 class Defaced_Collections(Base):
     __tablename__ = 'defaced_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
-    pub_tcia_url = Column(String, comment="Public tcia bucket name")
     dev_idc_url = Column(String, comment="Dev idc bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
     pub_idc_url = Column(String, comment="Public idc bucket name")
+    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
 class Excluded_Collections(Base):
     __tablename__ = 'excluded_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
-    pub_tcia_url = Column(String, comment="Public tcia bucket name")
     dev_idc_url = Column(String, comment="Dev idc bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
     pub_idc_url = Column(String, comment="Public idc bucket name")
+    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
 class Open_Collections(Base):
     __tablename__ = 'open_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
-    pub_tcia_url = Column(String, comment="Public tcia bucket name")
     dev_idc_url = Column(String, comment="Dev idc bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
     pub_idc_url = Column(String, comment="Public idc bucket name")
+    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
 class Redacted_Collections(Base):
     __tablename__ = 'redacted_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
-    pub_tcia_url = Column(String, comment="Public tcia bucket name")
     dev_idc_url = Column(String, comment="Dev idc bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
     pub_idc_url = Column(String, comment="Public idc bucket name")
+    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
 class All_Collections(Base):
     __tablename__ = 'all_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
-    pub_tcia_url = Column(String, comment="Public tcia bucket name")
     dev_idc_url = Column(String, comment="Dev idc bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
     pub_idc_url = Column(String, comment="Public idc bucket name")
+    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
 class All_Included_Collections(Base):
     __tablename__ = 'all_included_collections'
