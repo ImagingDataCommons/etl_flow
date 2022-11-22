@@ -14,12 +14,4 @@
 # limitations under the License.
 #
 
-rule detect_tcia_collection_id_changes:
-
-rule update_wsi_metadata_tables:
-
-rule ingest_from_all_sources:
-
-rule revise_collection_grouping_tables:
-
-
+collection_list = ['Prostate-3T', 'RIDER Breast MRI', 'TCGA-READ']

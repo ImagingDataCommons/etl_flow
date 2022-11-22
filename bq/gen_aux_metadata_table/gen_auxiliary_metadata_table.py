@@ -63,8 +63,8 @@ def build_table(args):
     query = f"""
 WITH
   collection_access AS (
---   SELECT DISTINCT m.idc_collection_id, o.premerge_tcia_url, o.premerge_path_url, o.{args.target}_url as url, o.access
-  SELECT DISTINCT g.tcia_api_collection_id, g.idc_collection_id, g.dev_tcia_url, g.dev_path_url, g.pub_tcia_url, g.pub_path_url, g.tcia_access	path_access
+--   SELECT DISTINCT m.idc_collection_id, o.premerge_tcia_url, o.premerge_idc_url, o.{args.target}_url as url, o.access
+  SELECT DISTINCT g.tcia_api_collection_id, g.idc_collection_id, g.dev_tcia_url, g.dev_idc_url, g.pub_tcia_url, g.pub_idc_url, g.tcia_access	idc_access
   FROM
     `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.version` as v
   JOIN 
@@ -87,8 +87,8 @@ WITH
 
   UNION ALL
 
---   SELECT DISTINCT m.idc_collection_id, cr.premerge_tcia_url, cr.premerge_path_url, cr.{args.target}_url as url, cr.access
-  SELECT DISTINCT g.tcia_api_collection_id, g.idc_collection_id, g.dev_tcia_url, g.dev_path_url, g.pub_tcia_url, g.pub_path_url, g.tcia_access	path_access
+--   SELECT DISTINCT m.idc_collection_id, cr.premerge_tcia_url, cr.premerge_idc_url, cr.{args.target}_url as url, cr.access
+  SELECT DISTINCT g.tcia_api_collection_id, g.idc_collection_id, g.dev_tcia_url, g.dev_idc_url, g.pub_tcia_url, g.pub_idc_url, g.tcia_access	idc_access
   FROM
     `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.version` as v
   JOIN 
@@ -111,8 +111,8 @@ WITH
 
   UNION ALL
 
---   SELECT DISTINCT m.idc_collection_id, r.premerge_tcia_url, r.premerge_path_url, r.{args.target}_url as url, r.access
-  SELECT DISTINCT g.tcia_api_collection_id, g.idc_collection_id, g.dev_tcia_url, g.dev_path_url, g.pub_tcia_url, g.pub_path_url, g.tcia_access	path_access
+--   SELECT DISTINCT m.idc_collection_id, r.premerge_tcia_url, r.premerge_idc_url, r.{args.target}_url as url, r.access
+  SELECT DISTINCT g.tcia_api_collection_id, g.idc_collection_id, g.dev_tcia_url, g.dev_idc_url, g.pub_tcia_url, g.pub_idc_url, g.tcia_access	idc_access
   FROM
     `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.version` as v
   JOIN 
@@ -135,8 +135,8 @@ WITH
  
   UNION ALL
 
---   SELECT DISTINCT m.idc_collection_id, d.premerge_tcia_url, d.premerge_path_url, d.{args.target}_url as url, d.access
-  SELECT DISTINCT g.tcia_api_collection_id, g.idc_collection_id, g.dev_tcia_url, g.dev_path_url, g.pub_tcia_url, g.pub_path_url, g.tcia_access	path_access
+--   SELECT DISTINCT m.idc_collection_id, d.premerge_tcia_url, d.premerge_idc_url, d.{args.target}_url as url, d.access
+  SELECT DISTINCT g.tcia_api_collection_id, g.idc_collection_id, g.dev_tcia_url, g.dev_idc_url, g.pub_tcia_url, g.pub_idc_url, g.tcia_access	idc_access
   FROM
     `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.version` as v
   JOIN 
@@ -173,7 +173,7 @@ WITH
   ON tl.idc_webapp_collection_id = oc.idc_webapp_collection_id
   WHERE tl.source = 'tcia'),
 --
-  path_licenses AS (
+  idc_licenses AS (
   SELECT
     oc.idc_webapp_collection_id, oc.DOI, oc.URL,
     tl.license_url,
@@ -186,7 +186,7 @@ WITH
   JOIN
     `idc-dev-etl.{settings.BQ_DEV_EXT_DATASET}.original_collections_metadata` oc
   ON tl.idc_webapp_collection_id = oc.idc_webapp_collection_id
-  WHERE tl.source = 'path'),
+  WHERE tl.source = 'idc'),
 --
   analysis_licenses AS (
   SELECT
@@ -235,7 +235,7 @@ SELECT
   CONCAT('gs://',
     # If we are generating gcs_url for the public auxiliary_metadata table 
     if('{args.target}' = 'pub', 
-        if( i.source='tcia', collection_access.pub_tcia_url, collection_access.pub_path_url), 
+        if( i.source='tcia', collection_access.pub_tcia_url, collection_access.pub_idc_url), 
     #else 
         # We are generating the dev auxiliary_metadata
         # If this instance is new in this version and we 
@@ -251,7 +251,7 @@ SELECT
 
         #else
             # This instance is not new so use the staging bucket prefix
-             if( i.source='tcia', collection_access.dev_tcia_url, collection_access.dev_path_url)
+             if( i.source='tcia', collection_access.dev_tcia_url, collection_access.dev_idc_url)
             )
         ), 
     '/', i.uuid, '.dcm') as gcs_url,
@@ -338,9 +338,9 @@ licensed as (
     li.license_long_name,
     li.license_short_name
   FROM pre_licensed p_l
-  JOIN path_licenses li
+  JOIN idc_licenses li
   ON IFNULL(lower(p_l.source_doi),'') = IFNULL(lower(li.DOI),'') 
-  AND IFNULL(lower(p_l.source_url),'') = IFNULL(lower(li.URL),'') AND p_l.i_source='path'
+  AND IFNULL(lower(p_l.source_url),'') = IFNULL(lower(li.URL),'') AND p_l.i_source='idc'
 
   UNION ALL
   SELECT 

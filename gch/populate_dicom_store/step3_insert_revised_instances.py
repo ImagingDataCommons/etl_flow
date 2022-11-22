@@ -106,29 +106,30 @@ def import_dicom_instances(project_id, cloud_region, dataset_id, dicom_store_id,
 
 def get_collection_groups(sess):
     dev_buckets = {}
-    collections = sess.query(CR_Collections.tcia_api_collection_id, CR_Collections.dev_tcia_url, CR_Collections.dev_path_url)
+    collections = sess.query(CR_Collections.tcia_api_collection_id, CR_Collections.dev_tcia_url, CR_Collections.dev_idc_url)
     for collection in collections:
         dev_buckets[collection.tcia_api_collection_id] = {
             'tcia': collection.dev_tcia_url,
-            'path': collection.dev_path_url
+            'idc': collection.dev_idc_url
         }
-    collections = sess.query(Defaced_Collections.tcia_api_collection_id, Defaced_Collections.dev_tcia_url, Defaced_Collections.dev_path_url)
+    collections = sess.query(Defaced_Collections.tcia_api_collection_id, Defaced_Collections.dev_tcia_url, Defaced_Collections.dev_idc_url)
     for collection in collections:
         dev_buckets[collection.tcia_api_collection_id] = {
             'tcia': collection.dev_tcia_url,
-            'path': collection.dev_path_url
+            'idc': collection.dev_idc_url
         }
-    collections = sess.query(Open_Collections.tcia_api_collection_id, Open_Collections.dev_tcia_url, Open_Collections.dev_path_url)
+    collections = sess.query(Open_Collections.tcia_api_collection_id, Open_Collections.dev_tcia_url, Open_Collections.dev_idc_url)
     for collection in collections:
         dev_buckets[collection.tcia_api_collection_id] = {
             'tcia': collection.dev_tcia_url,
-            'path': collection.dev_path_url
+            'idc': collection.dev_idc_url
         }
-    collections = sess.query(Redacted_Collections.tcia_api_collection_id, Redacted_Collections.dev_tcia_url, Redacted_Collections.dev_path_url)
+    breakpoint() # Delete the following?
+    collections = sess.query(Redacted_Collections.tcia_api_collection_id, Redacted_Collections.dev_tcia_url, Redacted_Collections.dev_idc_url)
     for collection in collections:
         dev_buckets[collection.tcia_api_collection_id] = {
             'tcia': collection.dev_tcia_url,
-            'path': collection.dev_path_url
+            'idc': collection.dev_idc_url
         }
     return dev_buckets
 
@@ -197,7 +198,7 @@ def insert_instances(args, dicomweb_sess):
     query = f"""
     SELECT DISTINCT aji.collection_id, aji.study_instance_uid, aji.series_instance_uid, aji.sop_instance_uid, aji.i_uuid uuid, 
     IF(i_rev_idc_version!={settings.CURRENT_VERSION},
-        IF(aji.i_source='tcia', ac.dev_tcia_url, ac.dev_path_url), CONCAT('idc_v', {settings.CURRENT_VERSION},'_',aji.i_source,REPLACE(REPLACE(LOWER(aji.collection_id), '-','_'),' ','_'))) bucket
+        IF(aji.i_source='tcia', ac.dev_tcia_url, ac.dev_idc_url), CONCAT('idc_v', {settings.CURRENT_VERSION},'_',aji.i_source,REPLACE(REPLACE(LOWER(aji.collection_id), '-','_'),' ','_'))) bucket
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_included` aji
     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac ON aji.collection_id=ac.tcia_api_collection_id
     WHERE i_rev_idc_version!=i_init_idc_version 

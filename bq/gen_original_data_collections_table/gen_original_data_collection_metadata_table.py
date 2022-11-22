@@ -45,12 +45,12 @@ def get_collections_in_version(client, args):
     query = f"""
     SELECT tcia_api_collection_id
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections`
-    WHERE tcia_access='{args.access}' OR path_access='{args.access}'
+    WHERE tcia_access='{args.access}' OR idc_access='{args.access}'
     """
     # result = client.query(query).result()
     # collection_ids = {collection['collection_id'].lower().replace(' ','_').replace('-','_'): \
     #     {'tcia_api_collection_id':collection['collection_id'], 'tcia_access':collection['tcia_access'], \
-    #      'path_access':collection['path_access']} for collection in result}
+    #      'idc_access':collection['idc_access']} for collection in result}
 
     collection_ids = {row.tcia_api_collection_id.lower().replace(' ','_').replace('-','_'): \
         row.tcia_api_collection_id for row in client.query(query)}
@@ -166,11 +166,11 @@ def get_image_types(client, args):
 
 def get_access_status(client, args):
     query = f"""
-        SELECT tcia_api_collection_id as collection_id, tcia_access, path_access
+        SELECT tcia_api_collection_id as collection_id, tcia_access, idc_access
         FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections`
         """
     access_status = {c['collection_id'].lower().replace(' ','_').replace('-','_'): \
-        {'tcia_access':c['tcia_access'], 'path_access': c['path_access']}\
+        {'tcia_access':c['tcia_access'], 'idc_access': c['idc_access']}\
         for c in client.query(query).result()}
     return access_status
 
@@ -311,20 +311,20 @@ def build_metadata(client, args):
                     collection_data['Subjects'] = case_counts[idc_collection_id]
                     try:
                         collection_data['licenses'] = []
-                        # if 'path' in licenses[idc_collection_id]:
-                        #     collection_data['licenses'].append(licenses[idc_collection_id]['path'])
+                        # if 'idc' in licenses[idc_collection_id]:
+                        #     collection_data['licenses'].append(licenses[idc_collection_id]['idc'])
                         #     if 'tcia' in licenses[idc_collection_id] and \
-                        #             licenses[idc_collection_id]['path'] != licenses[idc_collection_id]['tcia']:
+                        #             licenses[idc_collection_id]['idc'] != licenses[idc_collection_id]['tcia']:
                         #                 collection_data['licenses'].append(licenses[idc_collection_id]['tcia'])
                         # else:
                         #     collection_data['licenses'].append(licenses[idc_collection_id]['tcia'])
                         if 'tcia' in licenses[idc_collection_id]:
                             collection_data['licenses'].append(licenses[idc_collection_id]['tcia'])
-                            if 'path' in licenses[idc_collection_id] and \
-                                    licenses[idc_collection_id]['tcia'] != licenses[idc_collection_id]['path']:
-                                        collection_data['licenses'].append(licenses[idc_collection_id]['path'])
+                            if 'idc' in licenses[idc_collection_id] and \
+                                    licenses[idc_collection_id]['tcia'] != licenses[idc_collection_id]['idc']:
+                                        collection_data['licenses'].append(licenses[idc_collection_id]['idc'])
                         else:
-                            collection_data['licenses'].append(licenses[idc_collection_id]['path'])
+                            collection_data['licenses'].append(licenses[idc_collection_id]['idc'])
                     except:
                         collection_data['licenses'] = {}
                     # if args.gen_excluded:

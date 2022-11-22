@@ -20,8 +20,9 @@ contains the expected set of blobs.
 """
 
 import argparse
-import os
+import json
 import settings
+from utilities.logging_config import progresslogger
 
 from gcs.validate_bucket.validate_bucket_mp import check_all_instances
 
@@ -30,7 +31,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--bucket', default='idc-dev-open')
-    parser.add_argument('--src_project', default=settings.DEV_PROJECT)
+    # parser.add_argument('--src_project', default=settings.DEV_PROJECT)
     parser.add_argument('--dev_or_pub', default = 'dev', help='Validating a dev or pub bucket')
     parser.add_argument('--premerge', default=False, help='True when performing prior to merging premerge  buckets')
     parser.add_argument('--expected_blobs', default=f'{settings.LOG_DIR}/expected_blobs.txt', help='List of blobs names expected to be in above collections')
@@ -39,6 +40,6 @@ if __name__ == '__main__':
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/validate_open_buckets')
 
     args = parser.parse_args()
+    progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
-
-    check_all_instances(args, args.premerge, query=None)
+    check_all_instances(args, args.premerge, premerge=args.premerge)

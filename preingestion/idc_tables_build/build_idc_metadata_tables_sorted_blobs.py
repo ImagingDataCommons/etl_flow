@@ -172,20 +172,20 @@ if __name__ == '__main__':
                                                      'excluded_collections', 'cr_collections', 'defaced_collections'])
     parser.add_argument('--skipped_collections', default=[])
     parser.add_argument('--included_collections', default=['CPTAC-GBM', 'CPTAC-HNSCC'])
-    parser.add_argument('--dones', default='{}/logs/wsi_build_dones.txt'.format(os.environ['PWD']), help="Completed collections")
+    parser.add_argument('--dones', default='{}/logs/idc_build_dones.txt'.format(os.environ['PWD']), help="Completed collections")
     args = parser.parse_args()
 
     print("{}".format(args), file=sys.stdout)
 
     rootlogger = logging.getLogger('root')
-    root_fh = logging.FileHandler('{}/logs/wsi_metadata_log.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
+    root_fh = logging.FileHandler('{}/logs/idc_metadata_log.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
     rootformatter = logging.Formatter('%(levelname)s:root:%(message)s')
     rootlogger.addHandler(root_fh)
     root_fh.setFormatter(rootformatter)
     rootlogger.setLevel(INFO)
 
     errlogger = logging.getLogger('root.err')
-    err_fh = logging.FileHandler('{}/logs/wsi_metadata_err.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
+    err_fh = logging.FileHandler('{}/logs/idc_metadata_err.log'.format(os.environ['PWD'], settings.CURRENT_VERSION))
     errformatter = logging.Formatter('{%(pathname)s:%(lineno)d} %(levelname)s:err:%(message)s')
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)

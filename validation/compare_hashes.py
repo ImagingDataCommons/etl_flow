@@ -305,7 +305,7 @@ def compare_collection_hashes(sess, args):
     all_collections = sorted(version.collections, key=lambda collection: collection.collection_id)
 
     redacted_collections = [collection.tcia_api_collection_id for collection in
-                            sess.query(Redacted_Collections).all()]
+                            sess.query(Redacted_Collections.tcia_api_collection_id).all()]
 
     if args.collections == []:
         collections = [collection for collection in all_collections if
@@ -419,9 +419,9 @@ if __name__ == '__main__':
     parser.add_argument('--ignore_differing_patient_counts', default=True)
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
                         help='Levels at which to log')
-    parser.add_argument('--collections', default=['NLST'], \
+    parser.add_argument('--collections', default=[], \
         help='List of collections to compare. If empty, compare all collections')
-    parser.add_argument('--skips', default=['LDCT-and-Projection-data'])
+    parser.add_argument('--skips', default=['LDCT-and-Projection-data','NLST'])
 
     args = parser.parse_args()
     args.version = version

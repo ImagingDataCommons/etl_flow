@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Removes data from the wsi_collection/_patient/_study/_series/_instance DB tables.
+# Removes data from the idc_collection/_patient/_study/_series/_instance DB tables.
 # Metadata is extracted from a TSV file having columns Filename, "SOP Instance UID",
 # "Patient ID", "Clinical Trial Protocol ID", "Study Instance UID", and "Series Instance UID".
 # "Clinical Trial Protocol ID" is considered to be the collection ID.

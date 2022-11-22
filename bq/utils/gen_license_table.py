@@ -30,7 +30,7 @@ def get_collections_in_version(client, args):
     query = f"""
     SELECT replace(replace(lower(tcia_api_collection_id),'-','_'),' ','_') collection_id
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections`
-    WHERE tcia_access='{args.access}' OR path_access='{args.access}'
+    WHERE tcia_access='{args.access}' OR idc_access='{args.access}'
     """
     # collection_ids = dict(client.query(query))
     collection_ids = [row.collection_id for row in client.query(query)]
@@ -84,14 +84,14 @@ def get_original_collection_licenses(args):
             if collection.startswith('cptac') or collection.startswith('tcga'):
                 if collection in licenses:
                     # All cptac and tcga pathology is CC by 3.0
-                    licenses[collection]['path'] = {
+                    licenses[collection]['idc'] = {
                         'license_url': 'https://creativecommons.org/licenses/by/3.0/',
                         'license_long_name': 'Creative Commons Attribution 3.0 Unported License',
                         'license_short_name': 'CC BY 3.0'
                     }
                 else:
                     licenses[collection] = {
-                        'path': {
+                        'idc': {
                             'license_url': 'https://creativecommons.org/licenses/by/3.0/',
                             'license_long_name': 'Creative Commons Attribution 3.0 Unported License',
                             'license_short_name': 'CC BY 3.0'
@@ -100,7 +100,7 @@ def get_original_collection_licenses(args):
 
             elif collection == 'nlst':
                 # nlst pathology is CC by 4.0
-                licenses[collection]['path'] = {
+                licenses[collection]['idc'] = {
                     'license_url': 'https://creativecommons.org/licenses/by/4.0/',
                     'license_long_name': 'Creative Commons Attribution 4.0 International License',
                     'license_short_name': 'CC BY 4.0'
@@ -110,7 +110,7 @@ def get_original_collection_licenses(args):
     if args.access == 'Public':
         for collection, license in non_tcia_licenses.items():
             licenses[collection] = {
-                "path":
+                "idc":
                     {
                         'license_url': license['licenseURL'],
                         'license_long_name': license['longName'],

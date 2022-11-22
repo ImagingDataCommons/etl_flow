@@ -35,10 +35,10 @@ def gen_instance_manifest(args):
          FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_included` a
          WHERE
             collection_id in {args.collections} 
-            AND i_source='path'
+            AND i_source='idc'
             AND i_rev_idc_version < 9
 --          AND ((a.i_source='tcia' and i.pub_tcia_url='public-datasets-idc')
---          OR (a.i_source='path' and i.pub_path_url='public-datasets-idc'))
+--          OR (a.i_source='idc' and i.pub_idc_url='public-datasets-idc'))
          AND a.i_excluded=FALSE    
     """
 

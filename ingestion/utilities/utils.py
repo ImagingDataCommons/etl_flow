@@ -165,14 +165,14 @@ def copy_disk_to_gcs(args, collection, patient, study, series):
     shutil.rmtree("{}/{}".format(args.dicom_dir, series.series_instance_uid), ignore_errors=True)
 
 
-# Copy an instance from a source bucket to a destination bucket. Currently used when ingesting pathology
-# which is placed in some bucket after conversion from svs, etc. to DICOM WSI format
+# Copy an instance from a source bucket to a destination bucket. Currently used when ingesting IDC sourced data
+# which is placed in some bucket after preparation
 def copy_gcs_to_gcs(args, client, dst_bucket_name, instance, gcs_url):
     # storage_client = args.client
-    wsi_src_bucket = client.bucket(gcs_url.split('gs://')[1].split('/',1)[0])
+    idc_src_bucket = client.bucket(gcs_url.split('gs://')[1].split('/',1)[0])
     blob_id = gcs_url.split('gs://')[1].split('/',1)[1]
     dst_bucket = client.bucket(dst_bucket_name)
-    src_blob = wsi_src_bucket.blob(blob_id)
+    src_blob = idc_src_bucket.blob(blob_id)
     dst_blob = dst_bucket.blob(f'{instance.uuid}.dcm')
     token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob)
     while token:

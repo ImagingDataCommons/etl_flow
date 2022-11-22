@@ -14,9 +14,7 @@
 # limitations under the License.
 #
 
-# Validate that dicom_metadata, and therefore, dicom_metadata has expected set
-# of instances.
-
+# Validate that dicom_metadata, and therefore, a DICOM store has the expected number of instances
 from google.cloud import bigquery
 import settings
 import argparse
@@ -24,6 +22,7 @@ from utilities.logging_config import successlogger,errlogger
 
 def validate_dicom_metadata_counts():
     client = bigquery.Client()
+    breakpoint() # Is use of all_included_collections correct?
     query = f"""
     WITH sopinstanceuids AS (
     SELECT aj.sop_instance_uid as SOPInstanceUID

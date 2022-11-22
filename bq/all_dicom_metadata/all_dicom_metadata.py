@@ -15,6 +15,7 @@
 #
 
 # Generate a table of dicom metadata across all IDC versions
+# Obsolete??
 import argparse
 import os
 import json

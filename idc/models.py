@@ -26,7 +26,7 @@ import enum
 
 class instance_source(enum.Enum):
     tcia = 0
-    path = 1
+    idc = 1
     all_sources = 2
 
 Base = declarative_base()
@@ -45,8 +45,8 @@ class All_Joined(Base):
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
-                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('tcia', String, default="", comment="Hash of tcia data"),
+                Column('idc', String, default="", comment="Hash of idc data"),
                 Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
@@ -57,7 +57,7 @@ class All_Joined(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False),
-                Column('path', Boolean, default=False)
+                Column('idc', Boolean, default=False)
             ]
         ),
         nullable=True,
@@ -71,8 +71,8 @@ class All_Joined(Base):
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
-                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('tcia', String, default="", comment="Hash of tcia data"),
+                Column('idc', String, default="", comment="Hash of tcia idc data"),
                 Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
@@ -83,7 +83,7 @@ class All_Joined(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False),
-                Column('path', Boolean, default=False)
+                Column('idc', Boolean, default=False)
             ]
         ),
         nullable=True,
@@ -100,8 +100,8 @@ class All_Joined(Base):
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
-                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('tcia', String, default="", comment="Hash of tcia  data"),
+                Column('idc', String, default="", comment="Hash of idc data"),
                 Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
@@ -112,7 +112,7 @@ class All_Joined(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False),
-                Column('path', Boolean, default=False)
+                Column('idc', Boolean, default=False)
             ]
         ),
         nullable=True,
@@ -129,8 +129,8 @@ class All_Joined(Base):
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
-                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('tcia', String, default="", comment="Hash of tcia data"),
+                Column('idc', String, default="", comment="Hash of idc data"),
                 Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
@@ -141,7 +141,7 @@ class All_Joined(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False),
-                Column('path', Boolean, default=False)
+                Column('idc', Boolean, default=False)
             ]
         ),
         nullable=True,
@@ -160,8 +160,8 @@ class All_Joined(Base):
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
-                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('tcia', String, default="", comment="Hash of tcia  data"),
+                Column('idc', String, default="", comment="Hash of idc data"),
                 Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
@@ -172,7 +172,7 @@ class All_Joined(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False),
-                Column('path', Boolean, default=False)
+                Column('idc', Boolean, default=False)
             ]
         ),
         nullable=True,
@@ -204,8 +204,8 @@ class Version(Base):
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
-                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('tcia', String, default="", comment="Hash of tcia data"),
+                Column('idc', String, default="", comment="Hash of idc data"),
                 Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
@@ -216,7 +216,7 @@ class Version(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False),
-                Column('path', Boolean, default=False)
+                Column('idc', Boolean, default=False)
             ]
         ),
         nullable=True,
@@ -233,8 +233,8 @@ class Version(Base):
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
-                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('tcia', String, default="", comment="Hash of tcia data"),
+                Column('idc', String, default="", comment="Hash of idc data"),
                 Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
@@ -245,7 +245,7 @@ class Version(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False),
-                Column('path', Boolean, default=False)
+                Column('idc', Boolean, default=False)
             ]
         ),
         nullable=True,
@@ -256,7 +256,7 @@ class Version(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
-                Column('path', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+                Column('idc', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
             ]
         ),
         nullable=True,
@@ -290,7 +290,7 @@ class Collection(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False),
-                Column('path', Boolean, default=False)
+                Column('idc', Boolean, default=False)
             ]
         ),
         nullable=True,
@@ -300,8 +300,8 @@ class Collection(Base):
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
-                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('tcia', String, default="", comment="Hash of tcia data"),
+                Column('idc', String, default="", comment="Hash of idc data"),
                 Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
@@ -313,7 +313,7 @@ class Collection(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
-                Column('path', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+                Column('idc', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
             ]
         ),
         nullable=True,
@@ -351,7 +351,7 @@ class Patient(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False),
-                Column('path', Boolean, default=False)
+                Column('idc', Boolean, default=False)
             ]
         ),
         nullable=True,
@@ -361,8 +361,8 @@ class Patient(Base):
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
-                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('tcia', String, default="", comment="Hash of tcia data"),
+                Column('idc', String, default="", comment="Hash of tcia data"),
                 Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
@@ -374,7 +374,7 @@ class Patient(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
-                Column('path', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+                Column('idc', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
             ]
         ),
         nullable=True,
@@ -412,7 +412,7 @@ class Study(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False),
-                Column('path', Boolean, default=False)
+                Column('idc', Boolean, default=False)
             ]
         ),
         nullable=True,
@@ -422,8 +422,8 @@ class Study(Base):
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
-                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('tcia', String, default="", comment="Hash of tcia data"),
+                Column('idc', String, default="", comment="Hash of idc data"),
                 Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
@@ -435,7 +435,7 @@ class Study(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
-                Column('path', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+                Column('idc', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
             ]
         ),
         nullable=True,
@@ -473,7 +473,7 @@ class Series(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False),
-                Column('path', Boolean, default=False)
+                Column('idc', Boolean, default=False)
             ]
         ),
         nullable=True,
@@ -483,8 +483,8 @@ class Series(Base):
         CompositeType(
             'hashes',
             [
-                Column('tcia', String, default="", comment="Hash of tcia radiology data"),
-                Column('path', String, default="", comment="Hash of tcia pathology data"),
+                Column('tcia', String, default="", comment="Hash of tcia data"),
+                Column('idc', String, default="", comment="Hash of idc data"),
                 Column('all_sources', String, default="", comment="Hash of all data")
             ]
         ),
@@ -496,7 +496,7 @@ class Series(Base):
             'sources',
             [
                 Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
-                Column('path', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+                Column('idc', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
             ]
         ),
         nullable=True,
@@ -527,7 +527,7 @@ class Instance(Base):
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
-    source = Column(Enum(instance_source), nullable=True, comment='Source of this object; "tcia", "path"')
+    source = Column(Enum(instance_source), nullable=True, comment='Source of this object; "tcia", "idc"')
     timestamp = Column(DateTime, nullable=True, comment="Time when this object was last built")
     # Excluded instances are somehow invalid, but are included in the DB to maintain the hash
     excluded = Column(Boolean, default=False, comment="True if object should be excluded from auxiliary_metadata, etc.")
@@ -547,121 +547,133 @@ class Collection_id_map(Base):
     collection_id = Column(String, primary_key=True, \
                    comment="Collection ID used for ETL")
 
-class WSI_Collection(Base):
-    __tablename__ = 'wsi_collection'
+class IDC_Collection(Base):
+    __tablename__ = 'idc_collection'
     collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
     hash = Column(String, comment='Collection hash')
 
-    # vers = relationship("WSI_Version", back_populates="collections")
-    patients = relationship("WSI_Patient", back_populates="collection", order_by="WSI_Patient.submitter_case_id", cascade="all, delete")
+    # vers = relationship("IDC_Version", back_populates="collections")
+    patients = relationship("IDC_Patient", back_populates="collection", order_by="IDC_Patient.submitter_case_id", cascade="all, delete")
 
-class WSI_Patient(Base):
-    __tablename__ = 'wsi_patient'
+class IDC_Patient(Base):
+    __tablename__ = 'idc_patient'
     submitter_case_id = Column(String, nullable=False, unique=True, primary_key=True, comment="Submitter's patient ID")
-    collection_id = Column(ForeignKey('wsi_collection.collection_id'), comment="Containing object")
+    collection_id = Column(ForeignKey('idc_collection.collection_id'), comment="Containing object")
     hash = Column(String, comment='Patient hash')
 
-    collection = relationship("WSI_Collection", back_populates="patients")
-    studies = relationship("WSI_Study", back_populates="patient", order_by="WSI_Study.study_instance_uid", cascade="all, delete")
+    collection = relationship("IDC_Collection", back_populates="patients")
+    studies = relationship("IDC_Study", back_populates="patient", order_by="IDC_Study.study_instance_uid", cascade="all, delete")
 
-class WSI_Study(Base):
-    __tablename__ = 'wsi_study'
+class IDC_Study(Base):
+    __tablename__ = 'idc_study'
     study_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-    submitter_case_id = Column(ForeignKey('wsi_patient.submitter_case_id'), comment="Submitter's patient ID")
+    submitter_case_id = Column(ForeignKey('idc_patient.submitter_case_id'), comment="Submitter's patient ID")
     hash = Column(String, comment='Study hash')
 
-    patient = relationship("WSI_Patient", back_populates="studies")
-    seriess = relationship("WSI_Series", back_populates="study", order_by="WSI_Series.series_instance_uid", cascade="all, delete")
+    patient = relationship("IDC_Patient", back_populates="studies")
+    seriess = relationship("IDC_Series", back_populates="study", order_by="IDC_Series.series_instance_uid", cascade="all, delete")
 
-class WSI_Series(Base):
-    __tablename__ = 'wsi_series'
+class IDC_Series(Base):
+    __tablename__ = 'idc_series'
     series_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-    study_instance_uid = Column(ForeignKey('wsi_study.study_instance_uid'), comment="Containing object")
+    study_instance_uid = Column(ForeignKey('idc_study.study_instance_uid'), comment="Containing object")
     hash = Column(String, comment='Series hash')
 
-    study = relationship("WSI_Study", back_populates="seriess")
-    instances = relationship("WSI_Instance", back_populates="seriess", order_by="WSI_Instance.sop_instance_uid", cascade="all, delete")
+    study = relationship("IDC_Study", back_populates="seriess")
+    instances = relationship("IDC_Instance", back_populates="seriess", order_by="IDC_Instance.sop_instance_uid", cascade="all, delete")
 
-class WSI_Instance(Base):
-    __tablename__ = 'wsi_instance'
+class IDC_Instance(Base):
+    __tablename__ = 'idc_instance'
     sop_instance_uid = Column(String, primary_key=True, nullable=False)
-    series_instance_uid = Column(ForeignKey('wsi_series.series_instance_uid'), comment="Containing object")
+    series_instance_uid = Column(ForeignKey('idc_series.series_instance_uid'), comment="Containing object")
     hash = Column(String, comment='Instance hash')
     url = Column(String, comment='GCS URL of instance')
     size = Column(BigInteger, comment='Instance size in bytes')
 
-    seriess = relationship("WSI_Series", back_populates="instances")
+    seriess = relationship("IDC_Series", back_populates="instances")
 
-class All_WSI_Joined(Base):
-    __tablename__ = "all_wsi_joined"
-    version = Column(Integer, unique=True, primary_key=True, comment='NBIA collection ID')
-    v_hash = Column(String, comment='Version hash')
-    collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
-    c_hash = Column(String, comment='Collection hash')
-    submitter_case_id = Column(String, nullable=False, unique=True, primary_key=True, comment="Submitter's patient ID")
-    p_hash = Column(String, comment='Patient hash')
-    study_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-    st_hash = Column(String, comment='Study hash')
-    series_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-    se_hash = Column(String, comment='Series hash')
-    sop_instance_uid = Column(String, primary_key=True, nullable=False)
-    i_hash = Column(String, comment='Instance hash')
-    size = Column(Integer, comment='Instance size in bytes  ')
-    url = Column(String, comment='GCS URL of instance')
+# class All_IDC_Joined(Base):
+#     __tablename__ = "all_idc_joined"
+#     version = Column(Integer, unique=True, primary_key=True, comment='NBIA collection ID')
+#     v_hash = Column(String, comment='Version hash')
+#     collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
+#     c_hash = Column(String, comment='Collection hash')
+#     submitter_case_id = Column(String, nullable=False, unique=True, primary_key=True, comment="Submitter's patient ID")
+#     p_hash = Column(String, comment='Patient hash')
+#     study_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
+#     st_hash = Column(String, comment='Study hash')
+#     series_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
+#     se_hash = Column(String, comment='Series hash')
+#     sop_instance_uid = Column(String, primary_key=True, nullable=False)
+#     i_hash = Column(String, comment='Instance hash')
+#     size = Column(Integer, comment='Instance size in bytes  ')
+#     url = Column(String, comment='GCS URL of instance')
 
 class CR_Collections(Base):
     __tablename__ = 'cr_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    dev_idc_url = Column(String, comment="Dev idc bucket name")
     pub_tcia_url = Column(String, comment="Public tcia bucket name")
-    dev_path_url = Column(String, comment="Dev path bucket name")
-    pub_path_url = Column(String, comment="Public path bucket name")
+    pub_idc_url = Column(String, comment="Public idc bucket name")
+    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
 class Defaced_Collections(Base):
     __tablename__ = 'defaced_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    dev_idc_url = Column(String, comment="Dev idc bucket name")
     pub_tcia_url = Column(String, comment="Public tcia bucket name")
-    dev_path_url = Column(String, comment="Dev path bucket name")
-    pub_path_url = Column(String, comment="Public path bucket name")
+    pub_idc_url = Column(String, comment="Public idc bucket name")
+    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
 class Excluded_Collections(Base):
     __tablename__ = 'excluded_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    dev_idc_url = Column(String, comment="Dev idc bucket name")
     pub_tcia_url = Column(String, comment="Public tcia bucket name")
-    dev_path_url = Column(String, comment="Dev path bucket name")
-    pub_path_url = Column(String, comment="Public path bucket name")
+    pub_idc_url = Column(String, comment="Public idc bucket name")
+    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
 class Open_Collections(Base):
     __tablename__ = 'open_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    dev_idc_url = Column(String, comment="Dev idc bucket name")
     pub_tcia_url = Column(String, comment="Public tcia bucket name")
-    dev_path_url = Column(String, comment="Dev path bucket name")
-    pub_path_url = Column(String, comment="Public path bucket name")
+    pub_idc_url = Column(String, comment="Public idc bucket name")
+    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
 class Redacted_Collections(Base):
     __tablename__ = 'redacted_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    dev_idc_url = Column(String, comment="Dev idc bucket name")
     pub_tcia_url = Column(String, comment="Public tcia bucket name")
-    dev_path_url = Column(String, comment="Dev path bucket name")
-    pub_path_url = Column(String, comment="Public path bucket name")
+    pub_idc_url = Column(String, comment="Public idc bucket name")
+    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
 class All_Collections(Base):
     __tablename__ = 'all_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    dev_idc_url = Column(String, comment="Dev idc bucket name")
     pub_tcia_url = Column(String, comment="Public tcia bucket name")
-    dev_path_url = Column(String, comment="Dev path bucket name")
-    pub_path_url = Column(String, comment="Public path bucket name")
+    pub_idc_url = Column(String, comment="Public idc bucket name")
+    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
 class All_Included_Collections(Base):
     __tablename__ = 'all_included_collections'
@@ -669,11 +681,11 @@ class All_Included_Collections(Base):
     idc_webapp_collection_id = Column(String)
     idc_collection_id = Column(String)
     dev_tcia_url = Column(String)
-    dev_path_url = Column(String)
+    dev_idc_url = Column(String)
     pub_tcia_url = Column(String)
-    pub_path_url = Column(String)
+    pub_idc_url = Column(String)
     tcia_access = Column(String)
-    path_access = Column(String)
+    idc_access = Column(String)
 
 class Non_TCIA_Collection_Metadata(Base):
     __tablename__ = 'non_tcia_collection_metadata'

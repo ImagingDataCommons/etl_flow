@@ -35,7 +35,7 @@ if __name__ == '__main__':
     query = f"""
     SELECT distinct i_uuid FROM `idc-dev-etl.idc_v12_dev.all_joined_included` 
     where collection_id in ('CPTAC-CM', 'CPTAC-LSCC') 
-    and i_source='path'
+    and i_source='idc'
     and i_rev_idc_version<10
     order by i_uuid
     """

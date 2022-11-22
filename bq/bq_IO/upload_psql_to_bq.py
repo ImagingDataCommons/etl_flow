@@ -33,18 +33,18 @@ def upload_version(client, args, table, order_by):
       is_new,
       expanded,
       STRUCT(tcia,
-        path,
+        idc,
         all_sources) AS hashes,
       STRUCT(tcia_src AS tcia,
-        path_src AS path) AS sources,
+        idc_src AS idc) AS sources,
       STRUCT(tcia_revised AS tcia,
-        path_revised AS path) AS revised
+        idc_revised AS idc) AS revised
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT version, previous_version, min_timestamp, max_timestamp, done, 
-            is_new, expanded, (hashes).tcia, (hashes).path, (hashes).all_sources, 
-            (sources).tcia AS tcia_src, (sources).path AS path_src, (revised).tcia AS tcia_revised, 
-            (revised).path AS path_revised 
+            is_new, expanded, (hashes).tcia, (hashes).idc, (hashes).all_sources, 
+            (sources).tcia AS tcia_src, (sources).idc AS idc_src, (revised).tcia AS tcia_revised, 
+            (revised).idc AS idc_revised 
         FROM {table}''')
     ORDER BY {order_by}
     """
@@ -67,19 +67,19 @@ def upload_collection(client, args, table, order_by):
       is_new,
       expanded,
       STRUCT(tcia_hash,
-        path_hash,
+        idc_hash,
         all_hash) AS hashes,
       STRUCT(tcia_src AS tcia,
-        path_src AS path) AS sources,
+        idc_src AS idc) AS sources,
       STRUCT(tcia_rev AS tcia,
-        path_rev AS path) AS revised
+        idc_rev AS idc) AS revised
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT collection_id, idc_collection_id, uuid, min_timestamp, max_timestamp, 
             init_idc_version, rev_idc_version, final_idc_version, done, is_new, expanded, 
-            (hashes).tcia AS tcia_hash, (hashes).path AS path_hash, (hashes).all_sources AS all_hash, 
-            (sources).tcia AS tcia_src, (sources).path AS path_src, (revised).tcia AS tcia_rev, 
-            (revised).path AS path_rev 
+            (hashes).tcia AS tcia_hash, (hashes).idc AS idc_hash, (hashes).all_sources AS all_hash, 
+            (sources).tcia AS tcia_src, (sources).idc AS idc_src, (revised).tcia AS tcia_rev, 
+            (revised).idc AS idc_rev 
         FROM {table}''')
     ORDER BY {order_by}
     """
@@ -102,19 +102,19 @@ def upload_patient(client, args, table, order_by):
       is_new,
       expanded,
       STRUCT(tcia_hash,
-        path_hash,
+        idc_hash,
         all_hash) AS hashes,
       STRUCT(tcia_src AS tcia,
-        path_src AS path) AS sources,
+        idc_src AS idc) AS sources,
       STRUCT(tcia_rev AS tcia,
-        path_rev AS path) AS revised
+        idc_rev AS idc) AS revised
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT submitter_case_id, idc_case_id, uuid, min_timestamp, max_timestamp, 
             init_idc_version, rev_idc_version, final_idc_version, done, is_new, expanded, 
-            (hashes).tcia AS tcia_hash, (hashes).path AS path_hash, (hashes).all_sources AS all_hash, 
-            (sources).tcia AS tcia_src, (sources).path AS path_src, (revised).tcia AS tcia_rev, 
-            (revised).path AS path_rev 
+            (hashes).tcia AS tcia_hash, (hashes).idc AS idc_hash, (hashes).all_sources AS all_hash, 
+            (sources).tcia AS tcia_src, (sources).idc AS idc_src, (revised).tcia AS tcia_rev, 
+            (revised).idc AS idc_rev 
         FROM {table}''')
     ORDER BY {order_by}
     """
@@ -136,19 +136,19 @@ def upload_study(client, args, table, order_by):
       is_new,
       expanded,
       STRUCT(tcia_hash,
-        path_hash,
+        idc_hash,
         all_hash) AS hashes,
       STRUCT(tcia_src AS tcia,
-        path_src AS path) AS sources,
+        idc_src AS idc) AS sources,
       STRUCT(tcia_rev AS tcia,
-        path_rev AS path) AS revised
+        idc_rev AS idc) AS revised
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT study_instance_uid, uuid, study_instances, min_timestamp, 
             max_timestamp, init_idc_version, rev_idc_version, final_idc_version, 
-            done, is_new, expanded, (hashes).tcia AS tcia_hash, (hashes).path AS path_hash, 
+            done, is_new, expanded, (hashes).tcia AS tcia_hash, (hashes).idc AS idc_hash, 
             (hashes).all_sources AS all_hash, (sources).tcia AS tcia_src, 
-            (sources).path AS path_src, (revised).tcia AS tcia_rev, (revised).path AS path_rev 
+            (sources).idc AS idc_src, (revised).tcia AS tcia_rev, (revised).idc AS idc_rev 
         FROM {table}''')
     ORDER BY {order_by}
     """
@@ -172,12 +172,12 @@ def upload_series(client, args, table, order_by):
       is_new,
       expanded,
       STRUCT(tcia_hash,
-        path_hash,
+        idc_hash,
         all_hash) AS hashes,
       STRUCT(tcia_src AS tcia,
-        path_src AS path) AS sources,
+        idc_src AS idc) AS sources,
       STRUCT(tcia_rev AS tcia,
-        path_rev AS path) AS revised,
+        idc_rev AS idc) AS revised,
       source_url,
       excluded
     FROM
@@ -185,9 +185,9 @@ def upload_series(client, args, table, order_by):
         '''SELECT series_instance_uid, uuid, series_instances, source_doi, 
             min_timestamp, max_timestamp, init_idc_version, rev_idc_version, 
             final_idc_version, done, is_new, expanded, (hashes).tcia AS tcia_hash, 
-            (hashes).path AS path_hash, (hashes).all_sources AS all_hash, 
-            (sources).tcia AS tcia_src, (sources).path AS path_src, 
-            (revised).tcia AS tcia_rev, (revised).path AS path_rev,
+            (hashes).idc AS idc_hash, (hashes).all_sources AS all_hash, 
+            (sources).tcia AS tcia_src, (sources).idc AS idc_src, 
+            (revised).tcia AS tcia_rev, (revised).idc AS idc_rev,
             source_url, excluded
         FROM {table}''')
     ORDER BY {order_by}

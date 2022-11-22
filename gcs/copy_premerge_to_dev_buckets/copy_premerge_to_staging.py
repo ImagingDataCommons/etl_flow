@@ -16,7 +16,7 @@
 
 # Copy pre-staging buckets populated by ingestion to staging buckets.
 # Ingestion copies data into prestaging buckets named by version and
-# collection, e.g. idc_v9_path_tcga_brca. The data in these buckets must be
+# collection, e.g. idc_v9_idc_tcga_brca. The data in these buckets must be
 # copied to one of the idc-dev-etl staging buckets:
 # idc-dev-open, idc-dev-cr, idc-dev-defaced, idc-dev-redacted, idc-dev-excluded.
 
@@ -31,14 +31,15 @@ from gcs.copy_bucket_mp.copy_bucket_mp import copy_all_instances
 def get_collection_groups():
     client = bigquery.Client()
     collections = {}
+    breakpoint() # FROM all_collections instead of all_included_collections?
     query = f"""
-    SELECT idc_webapp_collection_id, dev_tcia_url, dev_path_url
+    SELECT idc_webapp_collection_id, dev_tcia_url, dev_idc_url
     FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_included_collections`
     """
 
     result = client.query(query).result()
     for row in result:
-        collections[row['idc_webapp_collection_id']] = {"dev_tcia_url": row["dev_tcia_url"], "dev_path_url": row["dev_path_url"]}
+        collections[row['idc_webapp_collection_id']] = {"dev_tcia_url": row["dev_tcia_url"], "dev_idc_url": row["dev_idc_url"]}
 
     return collections
 
@@ -54,8 +55,8 @@ def preview_copies(args, client, bucket_data):
     for collection_id in bucket_data:
         if client.bucket(f'idc_v{args.version}_tcia_{collection_id}').exists():
             progresslogger.info(f'Copying idc_v{args.version}_tcia_{collection_id} to {bucket_data[collection_id]["dev_tcia_url"]}')
-        if client.bucket(f'idc_v{args.version}_path_{collection_id}').exists():
-            progresslogger.info(f'Copying idc_v{args.version}_path_{collection_id} to {bucket_data[collection_id]["dev_path_url"]}')
+        if client.bucket(f'idc_v{args.version}_idc_{collection_id}').exists():
+            progresslogger.info(f'Copying idc_v{args.version}_idc_{collection_id} to {bucket_data[collection_id]["dev_idc_url"]}')
     return
 
 
@@ -76,11 +77,11 @@ def copy_dev_buckets(args):
                 progresslogger.info(f'Bucket idc_v{args.version}_tcia_{collection_id} previously copied')
                 continue
             copy_prestaging_to_staging(args, f'idc_v{args.version}_tcia_{collection_id}', bucket_data[collection_id]['dev_tcia_url'], dones)
-        if client.bucket(f'idc_v{args.version}_path_{collection_id}').exists():
-            if f'idc_v{args.version}_path_{collection_id}' in dones:
-                progresslogger.info(f'Bucket idc_v{args.version}_path_{collection_id} previously copied')
+        if client.bucket(f'idc_v{args.version}_idc_{collection_id}').exists():
+            if f'idc_v{args.version}_idc_{collection_id}' in dones:
+                progresslogger.info(f'Bucket idc_v{args.version}_idc_{collection_id} previously copied')
                 continue
-            copy_prestaging_to_staging(args, f'idc_v{args.version}_path_{collection_id}', bucket_data[collection_id]['dev_path_url'], dones)
+            copy_prestaging_to_staging(args, f'idc_v{args.version}_idc_{collection_id}', bucket_data[collection_id]['dev_idc_url'], dones)
     return
 
 
