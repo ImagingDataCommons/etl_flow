@@ -1,0 +1,210 @@
+{
+  "description": "Attributes of the segments stored in DICOM Segmentation objects",
+  "friendlyName": "segmentations",
+  "labels": {
+    "tbd_key_1": "value_1",
+    "tbd_key_2": "value_2"
+  },
+  "schema": {
+    "fields": [
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "PatientID",
+        "type": "STRING"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "SOPInstanceUID",
+        "type": "STRING"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "FrameOfReferenceUID",
+        "type": "STRING"
+      },
+      {
+        "fields": [
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeValue",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeDesignator",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeMeaning",
+            "type": "STRING"
+          }
+        ],
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "AnatomicRegion",
+        "type": "RECORD"
+      },
+      {
+        "fields": [
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeValue",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeDesignator",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeMeaning",
+            "type": "STRING"
+          }
+        ],
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "AnatomicRegionModifier",
+        "type": "RECORD"
+      },
+      {
+        "fields": [
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeValue",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeDesignator",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeMeaning",
+            "type": "STRING"
+          }
+        ],
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "SegmentedPropertyCategory",
+        "type": "RECORD"
+      },
+      {
+        "fields": [
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeValue",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeDesignator",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeMeaning",
+            "type": "STRING"
+          },
+          {
+            "fields": [
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "CodeValue",
+                "type": "STRING"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "CodingSchemeDesignator",
+                "type": "STRING"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "CodeMeaning",
+                "type": "STRING"
+              }
+            ],
+            "description": "TBD",
+            "mode": "REPEATED",
+            "name": "AnatomicRegionModifierSequence",
+            "type": "RECORD"
+          },
+          {
+            "fields": [
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "CodeValue",
+                "type": "STRING"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "CodingSchemeDesignator",
+                "type": "STRING"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "CodeMeaning",
+                "type": "STRING"
+              }
+            ],
+            "description": "TBD",
+            "mode": "REPEATED",
+            "name": "SegmentedPropertyTypeModifierCodeSequence",
+            "type": "RECORD"
+          }
+        ],
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "SegmentedPropertyType",
+        "type": "RECORD"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "SegmentAlgorithmType",
+        "type": "STRING"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "SegmentNumber",
+        "type": "INTEGER"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "TrackingUID",
+        "type": "STRING"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "TrackingID",
+        "type": "STRING"
+      }
+    ]
+  }
+}
