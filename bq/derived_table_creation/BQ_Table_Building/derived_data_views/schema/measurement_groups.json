@@ -1,0 +1,1038 @@
+{
+  "description": "Measurement group sequences extracted from the DICOM SR TID1500 objects",
+  "friendlyName": "measurement_groups",
+  "labels": {
+    "tbd_key_1": "value_1",
+    "tbd_key_2": "value_2"
+  },
+  "schema": {
+    "fields": [
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "SOPInstanceUID",
+        "type": "STRING"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "measurementGroup_number",
+        "type": "INTEGER"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "trackingUniqueIdentifier",
+        "type": "STRING"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "trackingIdentifier",
+        "type": "STRING"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "PatientID",
+        "type": "STRING"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "SeriesDescription",
+        "type": "STRING"
+      },
+      {
+        "fields": [
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeValue",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeDesignator",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeVersion",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeMeaning",
+            "type": "STRING"
+          }
+        ],
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "finding",
+        "type": "RECORD"
+      },
+      {
+        "fields": [
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeValue",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeDesignator",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeVersion",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeMeaning",
+            "type": "STRING"
+          }
+        ],
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "findingSite",
+        "type": "RECORD"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "sourceSegmentedSeriesUID",
+        "type": "STRING"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "segmentationInstanceUID",
+        "type": "STRING"
+      },
+      {
+        "description": "TBD",
+        "mode": "REPEATED",
+        "name": "segmentationSegmentNumber",
+        "type": "INTEGER"
+      },
+      {
+        "fields": [
+          {
+            "fields": [
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "ReferencedSOPClassUID",
+                "type": "STRING"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "ReferencedSOPInstanceUID",
+                "type": "STRING"
+              },
+              {
+                "description": "TBD",
+                "mode": "REPEATED",
+                "name": "ReferencedFrameNumber",
+                "type": "STRING"
+              }
+            ],
+            "description": "TBD",
+            "mode": "REPEATED",
+            "name": "ReferencedSOPSequence",
+            "type": "RECORD"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "RelationshipType",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "ValueType",
+            "type": "STRING"
+          },
+          {
+            "fields": [
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "CodeValue",
+                "type": "STRING"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "CodingSchemeDesignator",
+                "type": "STRING"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "CodeMeaning",
+                "type": "STRING"
+              }
+            ],
+            "description": "TBD",
+            "mode": "REPEATED",
+            "name": "ConceptNameCodeSequence",
+            "type": "RECORD"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "ContinuityOfContent",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "Date",
+            "type": "DATE"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "UID",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "TextValue",
+            "type": "STRING"
+          },
+          {
+            "fields": [
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "CodeValue",
+                "type": "STRING"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "CodingSchemeDesignator",
+                "type": "STRING"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "CodeMeaning",
+                "type": "STRING"
+              }
+            ],
+            "description": "TBD",
+            "mode": "REPEATED",
+            "name": "ConceptCodeSequence",
+            "type": "RECORD"
+          },
+          {
+            "fields": [
+              {
+                "fields": [
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "CodeValue",
+                    "type": "STRING"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "CodingSchemeDesignator",
+                    "type": "STRING"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "CodingSchemeVersion",
+                    "type": "STRING"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "CodeMeaning",
+                    "type": "STRING"
+                  }
+                ],
+                "description": "TBD",
+                "mode": "REPEATED",
+                "name": "MeasurementUnitsCodeSequence",
+                "type": "RECORD"
+              },
+              {
+                "description": "TBD",
+                "mode": "REPEATED",
+                "name": "NumericValue",
+                "type": "STRING"
+              }
+            ],
+            "description": "TBD",
+            "mode": "REPEATED",
+            "name": "MeasuredValueSequence",
+            "type": "RECORD"
+          },
+          {
+            "fields": [
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "MappingResource",
+                "type": "STRING"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "MappingResourceUID",
+                "type": "STRING"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "TemplateIdentifier",
+                "type": "STRING"
+              }
+            ],
+            "description": "TBD",
+            "mode": "REPEATED",
+            "name": "ContentTemplateSequence",
+            "type": "RECORD"
+          },
+          {
+            "fields": [
+              {
+                "fields": [
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "ReferencedSOPClassUID",
+                    "type": "STRING"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "ReferencedSOPInstanceUID",
+                    "type": "STRING"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "REPEATED",
+                    "name": "ReferencedSegmentNumber",
+                    "type": "INTEGER"
+                  }
+                ],
+                "description": "TBD",
+                "mode": "REPEATED",
+                "name": "ReferencedSOPSequence",
+                "type": "RECORD"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "RelationshipType",
+                "type": "STRING"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "ValueType",
+                "type": "STRING"
+              },
+              {
+                "fields": [
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "CodeValue",
+                    "type": "STRING"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "CodingSchemeDesignator",
+                    "type": "STRING"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "CodeMeaning",
+                    "type": "STRING"
+                  }
+                ],
+                "description": "TBD",
+                "mode": "REPEATED",
+                "name": "ConceptNameCodeSequence",
+                "type": "RECORD"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "ContinuityOfContent",
+                "type": "STRING"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "Date",
+                "type": "DATE"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "Time",
+                "type": "TIME"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "UID",
+                "type": "STRING"
+              },
+              {
+                "description": "TBD",
+                "mode": "NULLABLE",
+                "name": "TextValue",
+                "type": "STRING"
+              },
+              {
+                "fields": [
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "CodeValue",
+                    "type": "STRING"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "CodingSchemeDesignator",
+                    "type": "STRING"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "CodingSchemeVersion",
+                    "type": "STRING"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "CodeMeaning",
+                    "type": "STRING"
+                  }
+                ],
+                "description": "TBD",
+                "mode": "REPEATED",
+                "name": "ConceptCodeSequence",
+                "type": "RECORD"
+              },
+              {
+                "fields": [
+                  {
+                    "fields": [
+                      {
+                        "description": "TBD",
+                        "mode": "NULLABLE",
+                        "name": "CodeValue",
+                        "type": "STRING"
+                      },
+                      {
+                        "description": "TBD",
+                        "mode": "NULLABLE",
+                        "name": "CodingSchemeDesignator",
+                        "type": "STRING"
+                      },
+                      {
+                        "description": "TBD",
+                        "mode": "NULLABLE",
+                        "name": "CodingSchemeVersion",
+                        "type": "STRING"
+                      },
+                      {
+                        "description": "TBD",
+                        "mode": "NULLABLE",
+                        "name": "CodeMeaning",
+                        "type": "STRING"
+                      }
+                    ],
+                    "description": "TBD",
+                    "mode": "REPEATED",
+                    "name": "MeasurementUnitsCodeSequence",
+                    "type": "RECORD"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "REPEATED",
+                    "name": "NumericValue",
+                    "type": "STRING"
+                  }
+                ],
+                "description": "TBD",
+                "mode": "REPEATED",
+                "name": "MeasuredValueSequence",
+                "type": "RECORD"
+              },
+              {
+                "fields": [
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "RelationshipType",
+                    "type": "STRING"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "ValueType",
+                    "type": "STRING"
+                  },
+                  {
+                    "fields": [
+                      {
+                        "description": "TBD",
+                        "mode": "NULLABLE",
+                        "name": "CodeValue",
+                        "type": "STRING"
+                      },
+                      {
+                        "description": "TBD",
+                        "mode": "NULLABLE",
+                        "name": "CodingSchemeDesignator",
+                        "type": "STRING"
+                      },
+                      {
+                        "description": "TBD",
+                        "mode": "NULLABLE",
+                        "name": "CodeMeaning",
+                        "type": "STRING"
+                      }
+                    ],
+                    "description": "TBD",
+                    "mode": "REPEATED",
+                    "name": "ConceptNameCodeSequence",
+                    "type": "RECORD"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "ContinuityOfContent",
+                    "type": "STRING"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "DateTime",
+                    "type": "TIMESTAMP"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "Time",
+                    "type": "TIME"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "UID",
+                    "type": "STRING"
+                  },
+                  {
+                    "description": "TBD",
+                    "mode": "NULLABLE",
+                    "name": "TextValue",
+                    "type": "STRING"
+                  },
+                  {
+                    "fields": [
+                      {
+                        "description": "TBD",
+                        "mode": "NULLABLE",
+                        "name": "CodeValue",
+                        "type": "STRING"
+                      },
+                      {
+                        "description": "TBD",
+                        "mode": "NULLABLE",
+                        "name": "CodingSchemeDesignator",
+                        "type": "STRING"
+                      },
+                      {
+                        "description": "TBD",
+                        "mode": "NULLABLE",
+                        "name": "CodeMeaning",
+                        "type": "STRING"
+                      }
+                    ],
+                    "description": "TBD",
+                    "mode": "REPEATED",
+                    "name": "ConceptCodeSequence",
+                    "type": "RECORD"
+                  },
+                  {
+                    "fields": [
+                      {
+                        "fields": [
+                          {
+                            "description": "TBD",
+                            "mode": "NULLABLE",
+                            "name": "CodeValue",
+                            "type": "STRING"
+                          },
+                          {
+                            "description": "TBD",
+                            "mode": "NULLABLE",
+                            "name": "CodingSchemeDesignator",
+                            "type": "STRING"
+                          },
+                          {
+                            "description": "TBD",
+                            "mode": "NULLABLE",
+                            "name": "CodeMeaning",
+                            "type": "STRING"
+                          }
+                        ],
+                        "description": "TBD",
+                        "mode": "REPEATED",
+                        "name": "MeasurementUnitsCodeSequence",
+                        "type": "RECORD"
+                      },
+                      {
+                        "description": "TBD",
+                        "mode": "REPEATED",
+                        "name": "NumericValue",
+                        "type": "STRING"
+                      }
+                    ],
+                    "description": "TBD",
+                    "mode": "REPEATED",
+                    "name": "MeasuredValueSequence",
+                    "type": "RECORD"
+                  },
+                  {
+                    "fields": [
+                      {
+                        "description": "TBD",
+                        "mode": "NULLABLE",
+                        "name": "RelationshipType",
+                        "type": "STRING"
+                      },
+                      {
+                        "description": "TBD",
+                        "mode": "NULLABLE",
+                        "name": "ValueType",
+                        "type": "STRING"
+                      },
+                      {
+                        "fields": [
+                          {
+                            "description": "TBD",
+                            "mode": "NULLABLE",
+                            "name": "CodeValue",
+                            "type": "STRING"
+                          },
+                          {
+                            "description": "TBD",
+                            "mode": "NULLABLE",
+                            "name": "CodingSchemeDesignator",
+                            "type": "STRING"
+                          },
+                          {
+                            "description": "TBD",
+                            "mode": "NULLABLE",
+                            "name": "CodeMeaning",
+                            "type": "STRING"
+                          }
+                        ],
+                        "description": "TBD",
+                        "mode": "REPEATED",
+                        "name": "ConceptNameCodeSequence",
+                        "type": "RECORD"
+                      },
+                      {
+                        "description": "TBD",
+                        "mode": "NULLABLE",
+                        "name": "ContinuityOfContent",
+                        "type": "STRING"
+                      },
+                      {
+                        "fields": [
+                          {
+                            "description": "TBD",
+                            "mode": "NULLABLE",
+                            "name": "CodeValue",
+                            "type": "STRING"
+                          },
+                          {
+                            "description": "TBD",
+                            "mode": "NULLABLE",
+                            "name": "CodingSchemeDesignator",
+                            "type": "STRING"
+                          },
+                          {
+                            "description": "TBD",
+                            "mode": "NULLABLE",
+                            "name": "CodeMeaning",
+                            "type": "STRING"
+                          }
+                        ],
+                        "description": "TBD",
+                        "mode": "REPEATED",
+                        "name": "ConceptCodeSequence",
+                        "type": "RECORD"
+                      },
+                      {
+                        "fields": [
+                          {
+                            "fields": [
+                              {
+                                "description": "TBD",
+                                "mode": "NULLABLE",
+                                "name": "ReferencedSOPClassUID",
+                                "type": "STRING"
+                              },
+                              {
+                                "description": "TBD",
+                                "mode": "NULLABLE",
+                                "name": "ReferencedSOPInstanceUID",
+                                "type": "STRING"
+                              },
+                              {
+                                "fields": [
+                                  {
+                                    "description": "TBD",
+                                    "mode": "NULLABLE",
+                                    "name": "ReferencedSOPClassUID",
+                                    "type": "STRING"
+                                  },
+                                  {
+                                    "description": "TBD",
+                                    "mode": "NULLABLE",
+                                    "name": "ReferencedSOPInstanceUID",
+                                    "type": "STRING"
+                                  }
+                                ],
+                                "description": "TBD",
+                                "mode": "REPEATED",
+                                "name": "ReferencedSOPSequence",
+                                "type": "RECORD"
+                              }
+                            ],
+                            "description": "TBD",
+                            "mode": "REPEATED",
+                            "name": "ReferencedSOPSequence",
+                            "type": "RECORD"
+                          },
+                          {
+                            "description": "TBD",
+                            "mode": "NULLABLE",
+                            "name": "RelationshipType",
+                            "type": "STRING"
+                          },
+                          {
+                            "description": "TBD",
+                            "mode": "NULLABLE",
+                            "name": "ValueType",
+                            "type": "STRING"
+                          },
+                          {
+                            "fields": [
+                              {
+                                "description": "TBD",
+                                "mode": "NULLABLE",
+                                "name": "CodeValue",
+                                "type": "STRING"
+                              },
+                              {
+                                "description": "TBD",
+                                "mode": "NULLABLE",
+                                "name": "CodingSchemeDesignator",
+                                "type": "STRING"
+                              },
+                              {
+                                "description": "TBD",
+                                "mode": "NULLABLE",
+                                "name": "CodeMeaning",
+                                "type": "STRING"
+                              }
+                            ],
+                            "description": "TBD",
+                            "mode": "REPEATED",
+                            "name": "ConceptNameCodeSequence",
+                            "type": "RECORD"
+                          },
+                          {
+                            "fields": [
+                              {
+                                "description": "TBD",
+                                "mode": "NULLABLE",
+                                "name": "CodeValue",
+                                "type": "STRING"
+                              },
+                              {
+                                "description": "TBD",
+                                "mode": "NULLABLE",
+                                "name": "CodingSchemeDesignator",
+                                "type": "STRING"
+                              },
+                              {
+                                "description": "TBD",
+                                "mode": "NULLABLE",
+                                "name": "CodeMeaning",
+                                "type": "STRING"
+                              }
+                            ],
+                            "description": "TBD",
+                            "mode": "REPEATED",
+                            "name": "ConceptCodeSequence",
+                            "type": "RECORD"
+                          },
+                          {
+                            "fields": [
+                              {
+                                "fields": [
+                                  {
+                                    "description": "TBD",
+                                    "mode": "NULLABLE",
+                                    "name": "CodeValue",
+                                    "type": "STRING"
+                                  },
+                                  {
+                                    "description": "TBD",
+                                    "mode": "NULLABLE",
+                                    "name": "CodingSchemeDesignator",
+                                    "type": "STRING"
+                                  },
+                                  {
+                                    "description": "TBD",
+                                    "mode": "NULLABLE",
+                                    "name": "CodingSchemeVersion",
+                                    "type": "STRING"
+                                  },
+                                  {
+                                    "description": "TBD",
+                                    "mode": "NULLABLE",
+                                    "name": "CodeMeaning",
+                                    "type": "STRING"
+                                  }
+                                ],
+                                "description": "TBD",
+                                "mode": "REPEATED",
+                                "name": "MeasurementUnitsCodeSequence",
+                                "type": "RECORD"
+                              },
+                              {
+                                "description": "TBD",
+                                "mode": "REPEATED",
+                                "name": "NumericValue",
+                                "type": "STRING"
+                              }
+                            ],
+                            "description": "TBD",
+                            "mode": "REPEATED",
+                            "name": "MeasuredValueSequence",
+                            "type": "RECORD"
+                          },
+                          {
+                            "fields": [
+                              {
+                                "description": "TBD",
+                                "mode": "NULLABLE",
+                                "name": "RelationshipType",
+                                "type": "STRING"
+                              },
+                              {
+                                "description": "TBD",
+                                "mode": "NULLABLE",
+                                "name": "ValueType",
+                                "type": "STRING"
+                              },
+                              {
+                                "fields": [
+                                  {
+                                    "description": "TBD",
+                                    "mode": "NULLABLE",
+                                    "name": "CodeValue",
+                                    "type": "STRING"
+                                  },
+                                  {
+                                    "description": "TBD",
+                                    "mode": "NULLABLE",
+                                    "name": "CodingSchemeDesignator",
+                                    "type": "STRING"
+                                  },
+                                  {
+                                    "description": "TBD",
+                                    "mode": "NULLABLE",
+                                    "name": "CodeMeaning",
+                                    "type": "STRING"
+                                  }
+                                ],
+                                "description": "TBD",
+                                "mode": "REPEATED",
+                                "name": "ConceptNameCodeSequence",
+                                "type": "RECORD"
+                              },
+                              {
+                                "description": "TBD",
+                                "mode": "NULLABLE",
+                                "name": "TextValue",
+                                "type": "STRING"
+                              },
+                              {
+                                "fields": [
+                                  {
+                                    "description": "TBD",
+                                    "mode": "NULLABLE",
+                                    "name": "CodeValue",
+                                    "type": "STRING"
+                                  },
+                                  {
+                                    "description": "TBD",
+                                    "mode": "NULLABLE",
+                                    "name": "CodingSchemeDesignator",
+                                    "type": "STRING"
+                                  },
+                                  {
+                                    "description": "TBD",
+                                    "mode": "NULLABLE",
+                                    "name": "CodeMeaning",
+                                    "type": "STRING"
+                                  }
+                                ],
+                                "description": "TBD",
+                                "mode": "REPEATED",
+                                "name": "ConceptCodeSequence",
+                                "type": "RECORD"
+                              },
+                              {
+                                "fields": [
+                                  {
+                                    "fields": [
+                                      {
+                                        "description": "TBD",
+                                        "mode": "NULLABLE",
+                                        "name": "ReferencedSOPClassUID",
+                                        "type": "STRING"
+                                      },
+                                      {
+                                        "description": "TBD",
+                                        "mode": "NULLABLE",
+                                        "name": "ReferencedSOPInstanceUID",
+                                        "type": "STRING"
+                                      },
+                                      {
+                                        "description": "TBD",
+                                        "mode": "REPEATED",
+                                        "name": "ReferencedFrameNumber",
+                                        "type": "STRING"
+                                      },
+                                      {
+                                        "fields": [
+                                          {
+                                            "description": "TBD",
+                                            "mode": "NULLABLE",
+                                            "name": "ReferencedSOPClassUID",
+                                            "type": "STRING"
+                                          },
+                                          {
+                                            "description": "TBD",
+                                            "mode": "NULLABLE",
+                                            "name": "ReferencedSOPInstanceUID",
+                                            "type": "STRING"
+                                          }
+                                        ],
+                                        "description": "TBD",
+                                        "mode": "REPEATED",
+                                        "name": "ReferencedSOPSequence",
+                                        "type": "RECORD"
+                                      }
+                                    ],
+                                    "description": "TBD",
+                                    "mode": "REPEATED",
+                                    "name": "ReferencedSOPSequence",
+                                    "type": "RECORD"
+                                  },
+                                  {
+                                    "description": "TBD",
+                                    "mode": "NULLABLE",
+                                    "name": "RelationshipType",
+                                    "type": "STRING"
+                                  },
+                                  {
+                                    "description": "TBD",
+                                    "mode": "NULLABLE",
+                                    "name": "ValueType",
+                                    "type": "STRING"
+                                  }
+                                ],
+                                "description": "TBD",
+                                "mode": "REPEATED",
+                                "name": "ContentSequence",
+                                "type": "RECORD"
+                              },
+                              {
+                                "description": "TBD",
+                                "mode": "REPEATED",
+                                "name": "GraphicData",
+                                "type": "FLOAT"
+                              },
+                              {
+                                "description": "TBD",
+                                "mode": "NULLABLE",
+                                "name": "GraphicType",
+                                "type": "STRING"
+                              }
+                            ],
+                            "description": "TBD",
+                            "mode": "REPEATED",
+                            "name": "ContentSequence",
+                            "type": "RECORD"
+                          }
+                        ],
+                        "description": "TBD",
+                        "mode": "REPEATED",
+                        "name": "ContentSequence",
+                        "type": "RECORD"
+                      }
+                    ],
+                    "description": "TBD",
+                    "mode": "REPEATED",
+                    "name": "ContentSequence",
+                    "type": "RECORD"
+                  }
+                ],
+                "description": "TBD",
+                "mode": "REPEATED",
+                "name": "ContentSequence",
+                "type": "RECORD"
+              }
+            ],
+            "description": "TBD",
+            "mode": "REPEATED",
+            "name": "ContentSequence",
+            "type": "RECORD"
+          }
+        ],
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "contentSequence",
+        "type": "RECORD"
+      }
+    ]
+  }
+}

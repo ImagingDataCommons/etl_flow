@@ -1,0 +1,64 @@
+# Used for publish_bq_views.sh
+# Generate views for the collections in the _dev (complete) set of collections
+version: 1
+files_and_buckets_and_tables:
+
+  # What is the installation project:
+  TARGET_PROJECT: {project}
+
+  # What is the installation dataset:
+  DATASET: {dataset}
+
+  # Relative file path to data files, from working directory
+  DATA_FILE_PATH: derived_data_views
+
+  # Where is the dataset description file:
+  DATASET_METADATA_FILE: dataset_metadata/data_views_metadata.json
+
+  # For each view to install, what is the sql, json file with the schema and metadata, and table list for sql
+  INSTALL_LIST:
+    - dicom_all:
+        sql: sql/dicom_all.sql
+        metadata: schema/dicom_all.json
+        table_list:
+          - {project}.{dataset}.auxiliary_metadata
+          - {project}.{dataset}.dicom_metadata
+          - {project}.{dataset}.original_collections_metadata
+    - dicom_metadata_curated:
+        sql: sql/dicom_metadata_curated.sql
+        metadata: schema/dicom_metadata_curated.json
+        table_list:
+          - {project}.{dataset}.dicom_metadata
+    - measurement_groups:
+       sql: sql/measurement_groups.sql
+       metadata: schema/measurement_groups.json
+       table_list:
+         - {project}.{dataset}.dicom_metadata
+    - qualitative_measurements:
+       sql: sql/qualitative_measurements.sql
+       metadata: schema/qualitative_measurements.json
+       table_list:
+         - {project}.{dataset}.measurement_groups
+    - quantitative_measurements:
+       sql: sql/quantitative_measurements.sql
+       metadata: schema/quantitative_measurements.json
+       table_list:
+         - {project}.{dataset}.measurement_groups
+         - {project}.{dataset}.measurement_groups
+         - {project}.{dataset}.measurement_groups
+    - segmentations:
+       sql: sql/segmentations.sql
+       metadata: schema/segmentations.json
+       table_list:
+         - {project}.{dataset}.dicom_metadata # Debug: idc-tcia.lidc_idri_seg_sr.lidc_idri_seg_sr
+         - {project}.{dataset}.dicom_all # Debug: idc-tcia.lidc_idri_seg_sr.lidc_idri_seg_sr
+
+steps:
+  # delete existing dataset, if present:
+#  - delete_existing_dataset
+  # Create the target dataset:
+#  - create_dataset
+  # Delete all views in existing dataset
+#  - delete_all_views
+  # Install the views:
+  - install_views

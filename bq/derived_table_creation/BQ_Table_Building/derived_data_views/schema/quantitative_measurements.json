@@ -1,0 +1,214 @@
+{
+  "description": "A convenience view providing simplified access to the items within the DICOM SR TID 1500 documents that contain quantitative measurements. All attributes named following the CamelCase notation (except Quantity and Value) correspond to standard DICOM attributes and are documented in the DICOM standard.",
+  "friendlyName": "quantitative_measurements",
+  "labels": {
+    "tbd_key_1": "value_1",
+    "tbd_key_2": "value_2"
+  },
+  "schema": {
+    "fields": [
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "PatientID",
+        "type": "STRING"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "SOPInstanceUID",
+        "type": "STRING"
+      },
+      {
+        "description": "Measurement group number corresponding to the measurement groups within the TID 1500 report, starting from 0.",
+        "mode": "NULLABLE",
+        "name": "measurementGroup_number",
+        "type": "INTEGER"
+      },
+      {
+        "description": "SOPInstanceUID of the segmentation object defining the region of interest corresponding to the measurement.",
+        "mode": "NULLABLE",
+        "name": "segmentationInstanceUID",
+        "type": "STRING"
+      },
+      {
+        "description": "SegmentNumber of the segment within the segmentation object referenced by segmentationInstanceUID defining the region of interest corresponding to the measurement.",
+        "mode": "REPEATED",
+        "name": "segmentationSegmentNumber",
+        "type": "INTEGER"
+      },
+      {
+        "description": "SeriesInstanceUID corresponding to the image series over which the measurement was done.",
+        "mode": "NULLABLE",
+        "name": "sourceSegmentedSeriesUID",
+        "type": "STRING"
+      },
+      {
+        "description": "Value of the TID 1500 Measurement group row corresponding to the concept \"Tracking Identifier\" (e.g., row 2 in TID 1411)",
+        "mode": "NULLABLE",
+        "name": "trackingIdentifier",
+        "type": "STRING"
+      },
+      {
+        "description": "Value of the TID 1500 Measurement group row corresponding to the concept \"Tracking Unique Identifier\" (e.g., row 3 in TID 1411)",
+        "mode": "NULLABLE",
+        "name": "trackingUniqueIdentifier",
+        "type": "STRING"
+      },
+      {
+        "fields": [
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeValue",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeDesignator",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeMeaning",
+            "type": "STRING"
+          }
+        ],
+        "description": "Value of the concept code corresponding to TID 1500 Measurement group row where VT is NUM.",
+        "mode": "NULLABLE",
+        "name": "Quantity",
+        "type": "RECORD"
+      },
+      {
+        "fields": [
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeValue",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeDesignator",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeMeaning",
+            "type": "STRING"
+          }
+        ],
+        "description": "Value corresponding to the concept \"Derivation\" for the measurement within SR TID 1500 document (e.g., row 8 in TID 1419)",
+        "mode": "NULLABLE",
+        "name": "derivationModifier",
+        "type": "RECORD"
+      },
+      {
+        "description": "Value corresponding to the concept listed in the Quantity field.",
+        "mode": "NULLABLE",
+        "name": "Value",
+        "type": "NUMERIC"
+      },
+      {
+        "fields": [
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeValue",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeDesignator",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeVersion",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeMeaning",
+            "type": "STRING"
+          }
+        ],
+        "description": "Coded units for the value stored in the Value attribute.",
+        "mode": "NULLABLE",
+        "name": "Units",
+        "type": "RECORD"
+      },
+      {
+        "fields": [
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeValue",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeDesignator",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeVersion",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeMeaning",
+            "type": "STRING"
+          }
+        ],
+        "description": "Value of the TID 1500 Measurement group row corresponding to the concept \"Finding\" (e.g., row 3b in TID 1411)",
+        "mode": "NULLABLE",
+        "name": "finding",
+        "type": "RECORD"
+      },
+      {
+        "fields": [
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeValue",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeDesignator",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeVersion",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeMeaning",
+            "type": "STRING"
+          }
+        ],
+        "description": "Value of the TID 1500 Measurement group row corresponding to the concept \"Finding Site\" (e.g., row 2 in TID 1419)",
+        "mode": "NULLABLE",
+        "name": "findingSite",
+        "type": "RECORD"
+      }
+    ]
+  }
+}

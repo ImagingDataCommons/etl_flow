@@ -1,0 +1,24 @@
+{
+  "description": "dicom_all_curated consists of curated columns from dicom_metadata",
+  "friendlyName": "dicom_all",
+  "labels": {
+    "tbd_key_1": "value_1",
+    "tbd_key_2": "value_2"
+  },
+  "schema": {
+    "fields": [
+      {
+        "description": "DICOM SOPInstanceUID",
+        "mode": "NULLABLE",
+        "name": "SOPInstanceUID",
+        "type": "STRING"
+      },
+      {
+        "description": "Cast of Slice_Thickness to FLOAT64",
+        "mode": "NULLABLE",
+        "name": "SliceThickness",
+        "type": "STRING"
+      }
+    ]
+  }
+}
