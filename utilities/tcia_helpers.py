@@ -415,7 +415,7 @@ def get_internal_series_ids(collection, patient, third_party="yes", size=100000,
             criteriaType2="PatientCriteria",
             value2=patient,
             sortField="subject",
-            sortDirection="descending",
+            sortDirection="ascending",
             start=0,
             size=size)
     else:
@@ -425,7 +425,7 @@ def get_internal_series_ids(collection, patient, third_party="yes", size=100000,
             criteriaType1="CollectionCriteria",
             value1=collection,
             sortField="subject",
-            sortDirection="descending",
+            sortDirection="ascending",
             start=0,
             size=size)
 
@@ -614,6 +614,7 @@ if __name__ == "__main__":
 
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
     # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
+    r=get_internal_series_ids("NLST", "", third_party="no", size=100000, server="NLST" )
     hash = get_hash_nlst(
         {'Collection': 'NLST', 'PatientID': '123342'})
     p = get_TCIA_patients_per_collection('NLST')
@@ -625,14 +626,5 @@ if __name__ == "__main__":
     h = get_hash({'Collection': 'TCGA-BRCA'})
     h = get_hash({'Collection': 'ACRIN-6698'})
     d = get_collection_descriptions_and_licenses()
-    # s = get_updated_series('13/01/2021')
-    # studies = get_TCIA_studies_per_patient("PROSTATE-DIAGNOSIS", "ProstateDx-01-0035", server=NBIA_V1_URL)
-    # result = get_access_token()
-    # access_token, refresh_token = get_access_token()
-    # access_token, refresh_token = refresh_access_token(refresh_token)
-    # result=get_TCIA_instances_per_series('.', '1.3.6.1.4.1.14519.5.2.1.7009.9004.180224303090109944523368212991', 'NLST')
-    # table = get_collection_license_info()
-    # result = get_TCIA_series_per_study('TCGA-GBM', 'TCGA-02-0006', '1.3.6.1.4.1.14519.5.2.1.1706.4001.149500105036523046215258942545' )
-    # result = get_TCIA_patients_per_collection('APOLLO-5-LSCC', server=NBIA_V1_URL)
 
 
