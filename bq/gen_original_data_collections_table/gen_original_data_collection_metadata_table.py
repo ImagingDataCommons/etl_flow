@@ -175,10 +175,10 @@ def get_access_status(client, args):
     return access_status
 
 # Get metadata like that on the TCIA data collections page for collections that TCIA doesn't have
-def get_non_tcia_collection_metadata(client, args):
+def get_original_collections_metadata_idc_source(client, args):
     query = f"""
     SELECT * 
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.non_tcia_collection_metadata`
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_metadata_idc_source`
     ORDER BY idc_webapp_collection_id
     """
 
@@ -201,10 +201,10 @@ def get_non_tcia_collection_metadata(client, args):
     return metadata
 
 # Get collection metadata by scraping the TCIA Original Collections page
-# and/or from the non_tcia_collection_metadata table
+# and/or from the original_collections_metadata_idc_source table
 def get_collection_metadata(client, args):
     # Get metadata for collections that TCIA doesn't have
-    collection_metadata = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_non_tcia_collection_metadata(client, args).items()}
+    collection_metadata = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_original_collections_metadata_idc_source(client, args).items()}
 
     # Get the metadata for TCIA hosted collections
     # Collecting metadata takes a long time, so we sometimes cache it when
@@ -234,7 +234,7 @@ def get_collection_metadata(client, args):
 def get_non_tcia_descriptions(client, args):
     query = f"""
     SELECT * 
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.non_tcia_collection_metadata`
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_metadata_idc_source`
     ORDER BY idc_webapp_collection_id
     """
 

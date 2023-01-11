@@ -40,7 +40,7 @@ def get_collections_in_version(client, args):
 def get_non_tcia_license_info(client, args):
     query = f"""
     SELECT * 
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.non_tcia_collection_metadata`
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_metadata_idc_source`
     ORDER BY idc_webapp_collection_id
     """
     licenses = {}
