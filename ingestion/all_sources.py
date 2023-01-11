@@ -58,12 +58,12 @@ class All:
         version_hashes[-1] = get_merkle_hash([hash for hash in version_hashes[:-1]if hash])
         return version_hashes
 
-    # Compute object's hashes according to sources
-    def src_version_hashes(self, version):
-        version_hashes = ['','']
-        for source in self.sources:
-            version_hashes[source.value] = self.sources[source].src_version_hash(version)
-        return version_hashes
+    # # Compute object's hashes according to sources
+    # def src_version_hashes(self, version):
+    #     version_hashes = ['','']
+    #     for source in self.sources:
+    #         version_hashes[source.value] = self.sources[source].src_version_hash(version)
+    #     return version_hashes
 
     ###-------------------Collections-----------------###
 
@@ -162,6 +162,15 @@ class All:
                 collection_hashes[source.value] = get_merkle_hash(hashes)
         return collection_hashes
 
+    # Get all the DOIs of analysis results series in a collection
+    def get_analysis_collection_dois(self, sess, collection, server):
+        collection_dois = ['','']
+        for source in self.sources:
+             collection_dois[source.value] = self.sources[source].get_analysis_collection_dois(sess, collection, server)
+        return collection_dois
+
+
+
     ###-------------------Patients-----------------###
 
     # Get the patients in some collection from all sources
@@ -211,6 +220,21 @@ class All:
                 patient_hashes[source.value] = self.sources[source].src_patient_hash(collection_id,
                                                                              submitter_case_id)
         return patient_hashes
+
+
+    # Get the DOIs of all series in a patient
+    def get_patient_dois(self, collection, patient):
+        patient_dois = {}
+        for source in self.sources:
+             patient_dois =  patient_dois | self.sources[source].get_patient_dois(collection, patient)
+        return patient_dois
+
+    # Get the (wiki) URLs of all series in a patient
+    def get_patient_urls(self, collection, patient):
+        patient_urls = {}
+        for source in self.sources:
+             patient_urls = patient_urls | self.sources[source].get_patient_urls(collection, patient)
+        return patient_urls
 
     ###-------------------Studies-----------------###
 
@@ -285,6 +309,7 @@ class All:
         self.series_metadata = seriess
         return seriess
 
+
     # Get objects per-source hashes from DB
     def idc_series_hashes(self, series):
         objects = series.instances
@@ -341,13 +366,38 @@ class All:
         return instance_hash
 
 
+if __name__ == '__main__':
+    from utilities.sqlalchemy_helpers import sa_session
+    from multiprocessing import Lock, shared_memory
+    import argparse
+    import settings
 
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    args = parser.parse_args()
 
+    with sa_session() as sess:
+        # Get a sharable NBIA access token
+        access = shared_memory.ShareableList(get_access_token())
+        args.pid = 0
 
+        args.skipped_tcia_collections = []
+        args.skipped_idc_collections = []
 
+        # Now create a table of collections for which tcia or idc ingestion or both, are to be skipped.
+        # Populate with tcia skips
+        skipped_collections = []
+        # Now add idc skips
+        for collection_id in args.skipped_idc_collections:
+            if collection_id in skipped_collections:
+                skipped_collections[collection_id][1] = True
+            else:
+                skipped_collections[collection_id] = [False, True]
+        args.skipped_collections = skipped_collections
+        all_sources = All(args.pid, sess, settings.CURRENT_VERSION, access,
+                          args.skipped_tcia_collections, args.skipped_idc_collections, Lock())
 
-
-
+        r = all_sources.get_patient_urls('NSCLC-Radiomics', 'LUNG1-015' )
+        pass
 
 
 

@@ -27,6 +27,23 @@ successlogger = logging.getLogger('root.success')
 progresslogger = logging.getLogger('root.progress')
 errlogger = logging.getLogger('root.err')
 
+# Return a dictionary of the dois and urls of all series in the patient
+def get_dois_and_urls(all_sources, collection_id, patient_id):
+    # Get all the dois for this patient
+    dois = all_sources.get_patient_dois(collection_id, patient_id)
+    # Get all the urls for this patient
+    urls = all_sources.get_patient_urls(collection_id, patient_id)
+    # Populate the dictionary with any url that were found
+    dois_and_urls = {key: {"doi": "", "url": url} for key, url in urls.items()}
+    # Add dois.
+    for key, doi in dois.items():
+        if key in dois_and_urls:
+            dois_and_urls[key]["doi"] = doi
+        else:
+            # If there was no url for the series, create one from the doi
+            dois_and_urls[key] = {"doi": doi, "url": f"https://doi.org/{doi}"}
+    return dois_and_urls
+
 
 def clone_patient(patient, uuid):
     new_patient = Patient(uuid=uuid)
@@ -48,7 +65,12 @@ def retire_patient(args, patient):
 
 def expand_patient(sess, args, all_sources, version, collection, patient):
     skipped = is_skipped(args.skipped_collections, collection.collection_id)
+
     # Get the studies that the sources know about
+    # For each study, returns a vector of booleans, one for each source.
+    # A boolean is True if the hash of the corresponding source differs
+    # from the hash of the current version of the patient
+    # If the source is skipped, them the corresponding boolean will be False.
     studies = all_sources.studies(patient, skipped)    # patient_ids = [patient['PatientId'] for patient in patients]
 
     if len(studies) != len(set(studies)):
@@ -85,6 +107,9 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
         new_study.min_timestamp = datetime.utcnow()
         new_study.study_instances = 0
         new_study.revised = studies[study]
+        # The following line can probably be deleted because
+        # a object's sources are computed hierarchically after
+        # building all the children.
         new_study.source = studies[study]
         new_study.hashes = None
         new_study.max_timestamp = new_study.min_timestamp
@@ -116,6 +141,9 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
             rev_study.expanded = False
             rev_study.revised = revised
             rev_study.hashes = None
+            # The following line can probably be deleted because
+            # a object's sources are computed hierarchically after
+            # building all the children.
             rev_study.sources = studies[study.study_instance_uid]
             rev_study.rev_idc_version = settings.CURRENT_VERSION
             patient.studies.append(rev_study)
@@ -145,17 +173,21 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
     sess.commit()
     return
 
-def build_patient(sess, args, all_sources, patient_index, data_collection_doi_url, analysis_collection_dois, version, collection, patient):
+# def build_patient(sess, args, all_sources, patient_index, data_collection_doi_url, analysis_collection_dois, version, collection, patient):
+def build_patient(sess, args, all_sources, patient_index, version, collection, patient):
+
     try:
         begin = time.time()
         successlogger.debug("  p%s: Expand Patient %s, %s", args.pid, patient.submitter_case_id, patient_index)
         if not patient.expanded:
             expand_patient(sess, args, all_sources, version, collection, patient)
         successlogger.info("  p%s: Expanded Patient %s, %s, %s studies, expand_time: %s, %s", args.pid, patient.submitter_case_id, patient_index, len(patient.studies), time.time()-begin, time.asctime())
+        dois_and_urls = get_dois_and_urls(all_sources, collection.collection_id, patient.submitter_case_id)
         for study in patient.studies:
             study_index = f'{patient.studies.index(study) + 1} of {len(patient.studies)}'
             if not study.done:
-                build_study(sess, args, all_sources, study_index, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois)
+                # build_study(sess, args, all_sources, study_index, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois)
+                build_study(sess, args, all_sources, study_index, version, collection, patient, study, dois_and_urls)
             else:
                 successlogger.info("    p%s: Study %s, %s, previously built", args.pid, study.study_instance_uid, study_index)
         if all([study.done for study in patient.studies]):
@@ -178,5 +210,5 @@ def build_patient(sess, args, all_sources, patient_index, data_collection_doi_ur
                 duration = str(timedelta(seconds=(time.time() - begin)))
                 successlogger.info("  p%s: Completed Patient %s, %s, in %s, %s", args.pid, patient.submitter_case_id, patient_index, duration, time.asctime())
     except Exception as exc:
-        errlogger.info('  p%s build_patient failed: %s', args.pid, exc)
+        errlogger.error('  p%s build_patient failed: %s', args.pid, exc)
         raise exc

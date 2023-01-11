@@ -182,11 +182,13 @@ def copy_gcs_to_gcs(args, client, dst_bucket_name, instance, gcs_url):
     return dst_blob.size, b64decode(dst_blob.md5_hash).hex()
 
 
+# The sources of a parent (that is not a series) is the source-wise OR of its children
 def accum_sources(parent, children):
     sources = children[0].sources
     for child in children[1:]:
         sources = [x | y for (x, y) in zip(sources, child.sources)]
     return sources
+
 
 # Generate a list of skipped collections from a list of collection groups
 # and additional collections to be skipped

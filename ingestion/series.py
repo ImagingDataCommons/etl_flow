@@ -155,6 +155,11 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
                 return
         successlogger.info("      p%s: Expanded Series %s; %s; %s instances, expand: %s", args.pid, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
 
+        try:
+            assert sum(1 for source in series.sources if source) == 1
+        except Exception as exc:
+            errlogger.error(f'Series does not have exactly one source')
+
         if not all(instance.done for instance in series.instances):
             if series.sources.tcia:
                 build_instances_tcia(sess, args, collection, patient, study, series)
