@@ -536,6 +536,9 @@ class Instance(Base):
                           secondary=series_instance,
                           back_populates='instances')
 
+# collection_id_map maps an idc_collection_id to one or more tcia_api_collection_ids.
+# This mapping is meant to deal with the possibility that TCIA might rename a collection.
+# In that case, the IDC generated idc_collection_id binds those tcia_api_collection_ids.
 class Collection_id_map(Base):
     __tablename__ = 'collection_id_map'
     tcia_api_collection_id = Column(String, primary_key=True, \
@@ -547,6 +550,8 @@ class Collection_id_map(Base):
     collection_id = Column(String, primary_key=True, \
                    comment="Collection ID used for ETL")
 
+# Table that includes all IDC sourced collections.
+# This is a snapshot of what should be the current/next IDC version
 class IDC_Collection(Base):
     __tablename__ = 'idc_collection'
     collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
@@ -555,6 +560,9 @@ class IDC_Collection(Base):
     # vers = relationship("IDC_Version", back_populates="collections")
     patients = relationship("IDC_Patient", back_populates="collection", order_by="IDC_Patient.submitter_case_id", cascade="all, delete")
 
+
+# Table that includes all IDC sourced patients.
+# This is a snapshot of what should be the current/next IDC version
 class IDC_Patient(Base):
     __tablename__ = 'idc_patient'
     submitter_case_id = Column(String, nullable=False, unique=True, primary_key=True, comment="Submitter's patient ID")
@@ -564,6 +572,9 @@ class IDC_Patient(Base):
     collection = relationship("IDC_Collection", back_populates="patients")
     studies = relationship("IDC_Study", back_populates="patient", order_by="IDC_Study.study_instance_uid", cascade="all, delete")
 
+
+# Table that includes all IDC sourced studies.
+# This is a snapshot of what should be the current/next IDC version
 class IDC_Study(Base):
     __tablename__ = 'idc_study'
     study_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
@@ -573,22 +584,33 @@ class IDC_Study(Base):
     patient = relationship("IDC_Patient", back_populates="studies")
     seriess = relationship("IDC_Series", back_populates="study", order_by="IDC_Series.series_instance_uid", cascade="all, delete")
 
+
+# Table that includes all IDC sourced series.
+# This is a snapshot of what should be the current/next IDC version
 class IDC_Series(Base):
     __tablename__ = 'idc_series'
     series_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
     study_instance_uid = Column(ForeignKey('idc_study.study_instance_uid'), comment="Containing object")
     hash = Column(String, comment='Series hash')
+    excluded = Column(Boolean, comment='True of this series should be excluded from ingestion')
+    wiki_doi = Column(String, comment='Source DOI of this series\' wiki')
+    wiki_url = Column(String, comment='Source URL of this series\' wiki')
+    third_party = Column(Boolean, default=False, comment='True if from a third party analysis result')
 
     study = relationship("IDC_Study", back_populates="seriess")
     instances = relationship("IDC_Instance", back_populates="seriess", order_by="IDC_Instance.sop_instance_uid", cascade="all, delete")
 
+
+# Table that includes all IDC sourced instances.
+# This is a snapshot of what should be the current/next IDC version
 class IDC_Instance(Base):
     __tablename__ = 'idc_instance'
     sop_instance_uid = Column(String, primary_key=True, nullable=False)
     series_instance_uid = Column(ForeignKey('idc_series.series_instance_uid'), comment="Containing object")
     hash = Column(String, comment='Instance hash')
-    url = Column(String, comment='GCS URL of instance')
+    gcs_url = Column(String, comment='GCS URL of instance')
     size = Column(BigInteger, comment='Instance size in bytes')
+    idc_version = Column(Integer, comment='IDC version when this instance was added/revised')
 
     seriess = relationship("IDC_Series", back_populates="instances")
 
@@ -609,6 +631,7 @@ class IDC_Instance(Base):
 #     size = Column(Integer, comment='Instance size in bytes  ')
 #     url = Column(String, comment='GCS URL of instance')
 
+# A table of all collections having commercially restricted licenses
 class CR_Collections(Base):
     __tablename__ = 'cr_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
@@ -620,6 +643,7 @@ class CR_Collections(Base):
     tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
     idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
+# A table of collections having radiology which might contain faces that will need masking
 class Defaced_Collections(Base):
     __tablename__ = 'defaced_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
@@ -631,6 +655,8 @@ class Defaced_Collections(Base):
     tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
     idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
+# A table of collections that have been downloaded and included in the DB but are
+# not public due to being judged of poor quality
 class Excluded_Collections(Base):
     __tablename__ = 'excluded_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
@@ -642,17 +668,8 @@ class Excluded_Collections(Base):
     tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
     idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
-class Open_Collections(Base):
-    __tablename__ = 'open_collections'
-    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    idc_collection_id = Column(String, comment="idc_collection_id of this collection")
-    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
-    dev_idc_url = Column(String, comment="Dev idc bucket name")
-    pub_tcia_url = Column(String, comment="Public tcia bucket name")
-    pub_idc_url = Column(String, comment="Public idc bucket name")
-    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-
+# A tableof collections having radiology data that has been redacted due to containing
+# face scans
 class Redacted_Collections(Base):
     __tablename__ = 'redacted_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
@@ -664,6 +681,19 @@ class Redacted_Collections(Base):
     tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
     idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
+# A table of all collections not in the previous four tables.
+class Open_Collections(Base):
+    __tablename__ = 'open_collections'
+    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
+    idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+    dev_idc_url = Column(String, comment="Dev idc bucket name")
+    pub_tcia_url = Column(String, comment="Public tcia bucket name")
+    pub_idc_url = Column(String, comment="Public idc bucket name")
+    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+
+# The table that is the union of the previous five tables
 class All_Collections(Base):
     __tablename__ = 'all_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
@@ -675,6 +705,8 @@ class All_Collections(Base):
     tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
     idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
 
+# A table that is the union of cr_collections, defaced_collections and open_collections.
+# This table is probably not useful because it does not actually reflect all included data.
 class All_Included_Collections(Base):
     __tablename__ = 'all_included_collections'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
@@ -687,8 +719,9 @@ class All_Included_Collections(Base):
     tcia_access = Column(String)
     idc_access = Column(String)
 
-class Non_TCIA_Collection_Metadata(Base):
-    __tablename__ = 'non_tcia_collection_metadata'
+# This table is populated with metadata for collections that are not sourced from TCIA.
+class Original_Collections_Metadata_IDC_Source(Base):
+    __tablename__ = 'original_collections_metadata_idc_source'
     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID used by TCIA APIs')
     tcia_wiki_collection_id = Column(String, nullable=False, comment='TCIA Wiki page collection ID')
     idc_webapp_collection_id = Column(String, nullable=False, comment='Collection ID used by IDC webapp')
@@ -705,6 +738,24 @@ class Non_TCIA_Collection_Metadata(Base):
     license_long_name = Column(String, comment='Short name of license')
     license_short_name = Column(String, comment='Long name of license')
     Description = Column(String, comment='Description of collection')
+
+# This table is populated with metadata for collections that are not sourced from TCIA.
+class Analysis_Results_Metadata_IDC_Source(Base):
+    __tablename__ = 'analysis_results_metadata_idc_source'
+    ID = Column(String, primary_key=True, comment='Results ID')
+    Title = Column(String, comment='Descriptive title')
+    Access = Column(String, comment='Limited or Public')
+    DOI = Column(String,comment='DOI of collection description page')
+    CancerType = Column(String, comment='Types of cancer analyzed')
+    Location = Column(String, comment='Body location that was analyzed')
+    Subjects = Column(String, comment='Number of subjects whose data was analyzed')
+    Collections = Column(String, comment='idc_webapp_collection_ids of original data collections analyzed')
+    AnalysisArtifacts = Column(String, comment='Types of analysis artifacts produced')
+    Updated = Column(String, comment='Date of most recent update reported')
+    license_url = Column(String, comment='URL of license description')
+    license_long_name = Column(String, comment='Short name of license')
+    license_short_name = Column(String, comment='Long name of license')
+    Description = Column(String, comment='Description of analysis result')
 
 
 
