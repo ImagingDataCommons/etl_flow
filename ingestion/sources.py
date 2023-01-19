@@ -23,6 +23,8 @@ from idc.models  import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_
 from sqlalchemy import select
 from google.cloud import bigquery
 from ingestion.utilities.utils import get_merkle_hash
+from ingestion.utilities.get_collection_dois_and_urls import get_analysis_collection_dois_tcia, get_analysis_collection_dois_idc, \
+    get_patient_dois_idc, get_patient_urls_idc, get_patient_dois_tcia, get_patient_urls_tcia
 import logging
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
@@ -75,13 +77,13 @@ class TCIA(Source):
     ###-------------------Versions-----------------###
 
 
-    def src_version_hash(self):
-        collections = self.sess.execute(select(IDC_Collection.collection_id).distinct())
-        hashes = []
-        for collection in collections:
-            hashes.append(self.src_collection_hash(collection['collection_id']))
-        hash = get_merkle_hash(hashes)
-        return hash
+    # def src_version_hash(self):
+    #     collections = self.sess.execute(select(IDC_Collection.collection_id).distinct())
+    #     hashes = []
+    #     for collection in collections:
+    #         hashes.append(self.src_collection_hash(collection['collection_id']))
+    #     hash = get_merkle_hash(hashes)
+    #     return hash
 
 
     ###-------------------Collections-----------------###
@@ -114,6 +116,10 @@ class TCIA(Source):
             rootlogger.info('get_hash failed for collection %s', collection_id)
             raise Exception('get_hash failed for collection %s', collection_id)
 
+    # Get all the DOIs of analysis results series in a collection fromm TCIA
+    def get_analysis_collection_dois(self, sess, collection, patient="", server=""):
+        return get_analysis_collection_dois_tcia(collection)
+
     ###-------------------Patients-----------------###
 
     def patients(self, collection):
@@ -137,6 +143,16 @@ class TCIA(Source):
             rootlogger.info('get_hash failed for patient %s', submitter_case_id)
             # raise Exception('get_hash failed for patient %s', submitter_case_id)
             return -1
+
+    # Get the DOIs of all series in a patient
+    def get_patient_dois(self, collection, patient):
+        patient_dois = get_patient_dois_tcia(collection, patient)
+        return patient_dois
+
+    # Get the (wiki) URLs of all series in a patient
+    def get_patient_urls(self, collection, patient):
+        patient_urls = get_patient_urls_tcia(collection, patient)
+        return patient_urls
 
 
     ###-------------------Studies-----------------###
@@ -231,12 +247,6 @@ class IDC(Source):
         self.sess = sess
         self.skipped_collections = skipped_collections
 
-    ###-------------------Versions-----------------###
-
-    def src_version_hash(self):
-        query = select(IDC_Version.hash)
-        hash = self.sess.execute(query).fetchone().hash
-        return hash
 
     ###-------------------Collections-----------------###
 
@@ -256,6 +266,10 @@ class IDC(Source):
         hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
         return hash
 
+    # Get all the DOIs of analysis results series in a collection from IDC
+    def get_analysis_collection_dois(self, sess, collection, server):
+        return get_analysis_collection_dois_idc(sess, collection)
+
     ###-------------------Patients-----------------###
 
     def patients(self, collection):
@@ -273,6 +287,17 @@ class IDC(Source):
             breakpoint()
             raise exc
         return hash
+
+    # Get the DOIs of all series in a patient
+    def get_patient_dois(self, collection, patient):
+        patient_dois = get_patient_dois_idc(self.sess, collection, patient)
+        return patient_dois
+
+    # Get the (wiki) URLs of all series in a patient
+    def get_patient_urls(self, collection, patient):
+        patient_urls = get_patient_urls_idc(self.sess, collection, patient)
+        return patient_urls
+
 
     ###-------------------Studies-----------------###
 

@@ -10,7 +10,7 @@ WITH
       FrameOfReferenceUID,
       SegmentSequence
     FROM
-      `bigquery-public-data.idc_v{idc_version}.dicom_metadata`
+      `{0}`
     WHERE
       # more reliable than Modality = "SEG"
       SOPClassUID = "1.2.840.10008.5.1.4.1.1.66.4" )
@@ -76,7 +76,7 @@ WITH
     ReferencedImageSequence[SAFE_OFFSET(0)].ReferencedSOPInstanceUID AS ris_one,
     SourceImageSequence[SAFE_OFFSET(0)].ReferencedSOPInstanceUID AS sis_one
   FROM
-    `bigquery-public-data.idc_v{idc_version}.dicom_all`
+    `{1}`
   WHERE
     Modality="SEG"
     AND SOPClassUID = "1.2.840.10008.5.1.4.1.1.66.4" ),

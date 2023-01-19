@@ -19,7 +19,7 @@ import os
 import sys
 import argparse
 import csv
-from idc.models import Base, WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance
+from idc.models import Base, IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance
 from ingestion.utilities.utils import get_merkle_hash, list_skips
 
 from logging import INFO, DEBUG
@@ -37,7 +37,7 @@ def gen_hashes(args):
     sql_engine = create_engine(sql_uri)
 
     with Session(sql_engine) as sess:
-        collections = sess.query(WSI_Collection).all()
+        collections = sess.query(IDC_Collection).all()
         for collection in collections:
             for patient in collection.patients:
                 for study in patient.studies:

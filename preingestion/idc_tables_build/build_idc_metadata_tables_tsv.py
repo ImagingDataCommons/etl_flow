@@ -16,7 +16,10 @@
 
 # Adds/replaces data to the idc_collection/_patient/_study/_series/_instance DB tables.
 # Metadata is extracted from a TSV file having columns Filename, "SOP Instance UID",
-# "Patient ID", "Clinical Trial Protocol ID", "Study Instance UID", and "Series Instance UID".
+# "Patient ID", "Clinical Trial Protocol ID", "Study Instance UID", "Series Instance UID".
+# !!! The table should also probably include columns "doi", and "third_party"
+# !!! This script is currently broken because it does not deal with the "doi" and "third_party"
+# !!! attributes.
 # "Clinical Trial Protocol ID" is considered to be the collection ID.
 #
 # The expectation is that the TSV file will contain metadata of non-TCIA instances that is to
@@ -27,7 +30,7 @@ import os
 import sys
 import argparse
 import csv
-from idc.models import Base, WSI_Collection, WSI_Patient, WSI_Study, WSI_Series, WSI_Instance
+from idc.models import Base, IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance
 from ingestion.utilities.utils import get_merkle_hash, list_skips
 
 from logging import INFO, DEBUG
@@ -44,7 +47,7 @@ def build_instance(client, args, sess, series, row):
     try:
         instance = next(instance for instance in series.instances if instance.sop_instance_uid == instance_id)
     except StopIteration:
-        instance = WSI_Instance()
+        instance = IDC_Instance()
         instance.sop_instance_uid = instance_id
         series.instances.append(instance)
         successlogger.info('\t\t\t\tInstance %s', instance_id)
@@ -58,6 +61,7 @@ def build_instance(client, args, sess, series, row):
     new_hash = b64decode(blob.md5_hash).hex()
     if instance.hash != new_hash:
         instance.hash = new_hash
+        instance.idc_version = args.version
     progresslogger.info('\t\t\t\tInstance %s', instance_id)
 
 
@@ -66,10 +70,13 @@ def build_series(client, args, sess, study, row):
     try:
         series = next(series for series in study.seriess if series.series_instance_uid == series_id)
     except StopIteration:
-        series = WSI_Series()
+        series = IDC_Series()
         series.series_instance_uid = series_id
         study.seriess.append(series)
         successlogger.info('\t\t\tSeries %s', series_id)
+    # Always set/update the wiki_doi in case it has changed
+    series.wiki_doi = doi
+    series.third_party = args.third_party
     build_instance(client, args, sess, series, row)
     return
 
@@ -79,7 +86,7 @@ def build_study(client, args, sess, patient, row):
     try:
         study = next(study for study in patient.studies if study.study_instance_uid == study_id)
     except StopIteration:
-        study = WSI_Study()
+        study = IDC_Study()
         study.study_instance_uid = study_id
         patient.studies.append(study)
         successlogger.info('\t\tStudy %s', study_id)
@@ -92,7 +99,7 @@ def build_patient(client, args, sess, collection, row):
     try:
         patient = next(patient for patient in collection.patients if patient.submitter_case_id == patient_id)
     except StopIteration:
-        patient = WSI_Patient()
+        patient = IDC_Patient()
         patient.submitter_case_id = patient_id
         collection.patients.append(patient)
         successlogger.info('\tPatient %s', patient_id)
@@ -106,10 +113,10 @@ def build_collection(client, args, sess,row, skips):
         if collection_id=='NCT00047385':
             collection_id = 'NLST'
         # Get the collection from the DB
-        collection = sess.query(WSI_Collection).filter(WSI_Collection.collection_id == collection_id).first()
+        collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
         if not collection:
             # The collection is not currently in the DB, so add it
-            collection = WSI_Collection()
+            collection = IDC_Collection()
             collection.collection_id = collection_id
             sess.add(collection)
             successlogger.info('Collection %s',collection_id)
@@ -147,12 +154,12 @@ def prebuild(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--src_bucket', default='nlst-pathology-conversion-results-new', help='Bucket containing WSI instances')
+    parser.add_argument('--src_bucket', default='nlst-pathology-conversion-results-new', help='Bucket containing IDC instances')
     parser.add_argument('--src_path', default='', \
-        help='Folder in src_bucket that is the root of WSI data to be indexed. The Filename in the tsv is \
+        help='Folder in src_bucket that is the root of IDC data to be indexed. The Filename in the tsv is \
          concatenated onto this.')
     parser.add_argument('--tsv_blob_path', default = 'identifiers_NLST.txt',\
-                        help='A GCS blob that contains a TSV manifest of WSI DICOMs to be ingested')
+                        help='A GCS blob that contains a TSV manifest of IDC DICOMs to be ingested')
     parser.add_argument('--skipped_groups', default=[], nargs='*', \
                         help="A list of collection groups that should not be ingested. "\
                              "Can include open_collections, cr_collections, defaced_collections, redacted_collections, excluded_collections. "\

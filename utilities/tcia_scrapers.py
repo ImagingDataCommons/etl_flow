@@ -118,6 +118,7 @@ def scrape_tcia_analysis_collections_page():
             trow['DOI'] = trow['DOI'].split('doi.org/')[1].lower()
             try:
                 trow['license_url'], trow['license_long_name'], trow['license_short_name'] = get_license_from_wiki(trow['DOI'])
+                print(f'Get license succeeded for {trow["Collection"]}')
             except Exception as exc:
                 print(f'Get license data failed for {trow["Collection"]} ')
                 pass

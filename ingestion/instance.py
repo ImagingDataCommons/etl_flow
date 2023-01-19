@@ -207,10 +207,10 @@ def build_instances_idc(sess, args, collection, patient, study, series):
     now = datetime.now(timezone.utc)
     client=storage.Client()
 
-    stmt = select(IDC_Instance.sop_instance_uid, IDC_Instance.url, IDC_Instance.hash ). \
+    stmt = select(IDC_Instance.sop_instance_uid, IDC_Instance.gcs_url, IDC_Instance.hash ). \
         where(IDC_Instance.series_instance_uid == series.series_instance_uid)
     result = sess.execute(stmt)
-    src_instance_metadata = {i.sop_instance_uid:{'gcs_url':i.url, 'hash':i.hash} \
+    src_instance_metadata = {i.sop_instance_uid:{'gcs_url':i.gcs_url, 'hash':i.hash} \
                              for i in result.fetchall()}
     start = time.time()
     total_size = 0

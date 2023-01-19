@@ -48,7 +48,8 @@ def retire_study(args, study ):
     study.final_idc_version = settings.PREVIOUS_VERSION
 
 
-def expand_study(sess, args, all_sources, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois):
+# def expand_study(sess, args, all_sources, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois):
+def expand_study(sess, args, all_sources, version, collection, patient, study, dois_and_urls):
     skipped = is_skipped(args.skipped_collections, collection.collection_id)
     # Get the series that the sources know about
     seriess = all_sources.series(study, skipped)
@@ -85,11 +86,17 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
         new_series.series_instance_uid = series
         new_series.uuid = str(uuid4())
         new_series.min_timestamp = datetime.utcnow()
-        new_series.source_doi=analysis_collection_dois[series] \
-            if series in analysis_collection_dois \
-            else data_collection_doi_url['doi']
-        new_series.source_url = data_collection_doi_url['url'] \
-            if not series in analysis_collection_dois else None
+        # new_series.source_doi=analysis_collection_dois[series] \
+        #     if series in analysis_collection_dois \
+        #     else data_collection_doi_url['doi']
+        # new_series.source_url = data_collection_doi_url['url'] \
+        #     if not series in analysis_collection_dois else None
+        try:
+            new_series.source_doi = dois_and_urls[series]['doi']
+            new_series.source_url = dois_and_urls[series]['url']
+        except Exception as exc:
+            errlogger.error(f'No DOI/URL for series {series.series_instance_uid}')
+            return
         new_series.series_instances = 0
         new_series.revised = seriess[series]
         new_series.sources = seriess[series]
@@ -154,12 +161,15 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
     sess.commit()
     return
 
-def build_study(sess, args, all_sources, study_index, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois):
+# def build_study(sess, args, all_sources, study_index, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois):
+def build_study(sess, args, all_sources, study_index, version, collection, patient, study, dois_and_urls):
+
     try:
         begin = time.time()
         successlogger.debug("    p%s: Expand Study %s, %s", args.pid, study.study_instance_uid, study_index)
         if not study.expanded:
-            expand_study(sess, args, all_sources, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois)
+            # expand_study(sess, args, all_sources, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois)
+            expand_study(sess, args, all_sources, version, collection, patient, study, dois_and_urls)
         successlogger.info("    p%s: Expanded Study %s, %s, %s series, expand time: %s", args.pid, study.study_instance_uid, study_index, len(study.seriess), time.time()-begin)
         for series in study.seriess:
             series_index = f'{study.seriess.index(series) + 1} of {len(study.seriess)}'

@@ -26,7 +26,8 @@ import logging
 logger = logging.getLogger(__name__)
 from utilities.tcia_helpers import get_internal_series_ids, series_drill_down
 from ingestion.utilities.utils import to_webapp
-from idc.models import Non_TCIA_Collection_Metadata
+from idc.models import Original_Collections_Metadata_IDC_Source, IDC_Collection, IDC_Patient, \
+    IDC_Study, IDC_Series
 from python_settings import settings
 
 
@@ -73,7 +74,7 @@ def get_data_collection_doi(collection, server=""):
         elif collection == 'CPTAC-OV':
             uri = '10.7937/TCIA.ZS4A-JD58'
 
-        # NBIA does not return DOIs of redacted collections.
+        # NBIA does not return DOIs of redacted collections, but we have pathology data for them
         elif collection == 'CPTAC-GBM':
             uri = '10.7937/K9/TCIA.2018.3RJE41Q1'
         elif collection == 'CPTAC-HNSCC':
@@ -114,14 +115,15 @@ def get_data_collection_doi(collection, server=""):
 
     return uri
 
-
-def get_analysis_collection_dois(collection, patient= "", third_party="yes", server=""):
+# Get a list of "third party" series and their DOIs. Third party series are
+# those from a analysis result. This routine finds series in data sourced from TCIA.
+def get_analysis_collection_dois_tcia(collection, patient= "", server=""):
     third_party_series = []
     try:
         internal_ids = get_internal_series_ids(collection, patient, server=server)
     except Exception as exc:
-        print(f'Exception in get_analysis_collection_dois {exc}')
-        logger.error('Exception in get_analysis_collection_dois %s', exc)
+        print(f'Exception in get_analysis_collection_dois_tcia {exc}')
+        logger.error('Exception in get_analysis_collection_dois_tcia %s', exc)
         raise exc
     for subject in internal_ids["resultSet"]:
         seriesIDs = []
@@ -138,13 +140,89 @@ def get_analysis_collection_dois(collection, patient= "", third_party="yes", ser
                 third_party_series.append({"SeriesInstanceUID": seriesUID, "SourceDOI": uri})
     return third_party_series
 
-# Return a source_url associated with a collection
-def get_data_collection_url(collection, sess):
+# Get a list of "third party" series and their DOIs. Third party series are
+# those from a analysis result. This routine finds series in data sourced from TCIA.
+def get_collection_dois_tcia(collection, patient= "", third_party="no", server=""):
+    series_dois = []
     try:
-        url = sess.query(Non_TCIA_Collection_Metadata.URL).filter(Non_TCIA_Collection_Metadata.idc_webapp_collection_id == to_webapp(collection)).one()
+        internal_ids = get_internal_series_ids(collection, patient, third_party, server=server)
+    except Exception as exc:
+        print(f'Exception in get_analysis_collection_dois_tcia {exc}')
+        logger.error('Exception in get_analysis_collection_dois_tcia %s', exc)
+        raise exc
+    for subject in internal_ids["resultSet"]:
+        seriesIDs = []
+        for study in subject["studyIdentifiers"]:
+            seriesIDs.extend(study["seriesIdentifiers"])
+        study_metadata = series_drill_down(seriesIDs)
+        for study in study_metadata:
+            for series in study["seriesList"]:
+                uri = series["descriptionURI"]
+                # If it's a doi.org uri, keep just the DOI
+                if 'doi.org' in uri:
+                    uri = uri.split('doi.org/')[1]
+                seriesUID = series["seriesUID"]
+                series_dois.append({"SeriesInstanceUID": seriesUID, "SourceDOI": uri})
+    return series_dois
+
+# Get a list of "third party" series and their DOIs. Third party series are
+# those from a analysis result. This routine finds series in data sourced from IDC.
+def get_analysis_collection_dois_idc(sess, collection):
+    query = sess.query(IDC_Series.series_instance_uid.label('SeriesInstanceUID'), \
+            IDC_Series.wiki_doi.label('SourceDOI')). \
+            join(IDC_Collection.patients).join(IDC_Patient.studies).join(IDC_Study.seriess). \
+            filter(IDC_Collection.collection_id==collection).filter(IDC_Series.third_party==True)
+    third_party_series = [row._asdict() for row in query.all()]
+    return third_party_series
+
+# Return a source_url associated with a collection
+def get_data_collection_url(sess, collection):
+    try:
+        url = sess.query(Original_Collections_Metadata_IDC_Source.URL).filter(Original_Collections_Metadata_IDC_Source.idc_webapp_collection_id == to_webapp(collection)).one()
         return url[0]
     except:
         return None
+
+
+def get_patient_dois_tcia(collection, patient):
+    server = "NLST" if collection=="NLST" else ""
+    dois = get_collection_dois_tcia(collection, patient, third_party="no", server=server)
+    dois.extend(get_collection_dois_tcia(collection, patient, third_party="yes", server=server))
+    series_dois = {row['SeriesInstanceUID']: row['SourceDOI'] for row in dois}
+    return series_dois
+
+
+def get_patient_dois_idc(sess, collection, patient):
+    try:
+        query = sess.query(IDC_Series.series_instance_uid.label('SeriesInstanceUID'), \
+            IDC_Series.wiki_doi.label('SourceDOI')). \
+            join(IDC_Collection.patients).join(IDC_Patient.studies).join(IDC_Study.seriess). \
+            filter(IDC_Collection.collection_id == collection). \
+            filter(IDC_Patient.submitter_case_id == patient). \
+            filter(IDC_Series.wiki_doi != None)
+        series_dois = {row['SeriesInstanceUID']: row['SourceDOI'] for row in [row._asdict() for row in query.all()]}
+        return series_dois
+    except:
+        return {}
+
+
+def get_patient_urls_tcia(collection, patient):
+
+    return {}
+
+def get_patient_urls_idc(sess, collection, patient):
+    try:
+        query = sess.query(IDC_Series.series_instance_uid.label('SeriesInstanceUID'), \
+            IDC_Series.wiki_url.label('SourceURL')). \
+            join(IDC_Collection.patients).join(IDC_Patient.studies).join(IDC_Study.seriess). \
+            filter(IDC_Collection.collection_id == collection). \
+            filter(IDC_Patient.submitter_case_id == patient). \
+            filter(IDC_Series.wiki_url != None)
+        series_urls = {row['SeriesInstanceUID']: row['SourceURL'] for row in [row._asdict() for row in query.all()]}
+        return series_urls
+
+    except:
+        return {}
 
 
 if __name__ == "__main__":
@@ -168,10 +246,11 @@ if __name__ == "__main__":
     with Session(sql_engine) as sess:
 
         # access_token = get_access_token()
-        # result = get_analysis_collection_dois('DRO-Toolkit')
-        result = get_data_collection_doi('UPENN-GBM')
+        result = get_collection_dois_tcia('TCGA-BRCA')
+        result = get_analysis_collection_dois_idc(sess, 'NLST')
+        result = get_analysis_collection_dois_tcia('PROSTATEx')
         result = get_data_collection_url('tcga_dlbc', sess)
-        result = get_analysis_collection_dois('QIN-PROSTATE-Repeatability')
+        result = get_data_collection_doi('UPENN-GBM')
         from utilities.tcia_helpers import get_collection_values_and_counts
         collections = get_collection_values_and_counts()
         for collection in collections:

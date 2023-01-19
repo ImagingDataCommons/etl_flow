@@ -18,12 +18,11 @@ import time
 from datetime import datetime, timedelta
 import logging
 from uuid import uuid4
-from idc.models import Version, Collection, Patient
+from idc.models import instance_source, Version, Collection, Patient
 from ingestion.utilities.utils import accum_sources, empty_bucket, create_prestaging_bucket, is_skipped
 from ingestion.patient import clone_patient, build_patient, retire_patient
 from ingestion.all_sources import All
-from ingestion.utilities.get_collection_dois_and_urls import get_data_collection_doi, get_analysis_collection_dois,\
-    get_data_collection_url
+from ingestion.utilities.get_collection_dois_and_urls import get_data_collection_doi, get_data_collection_url
 from utilities.sqlalchemy_helpers import sa_session
 from python_settings import settings
 
@@ -55,9 +54,9 @@ def retire_collection(args, collection):
 
 
 PATIENT_TRIES=5
-def worker(input, output, args, data_collection_doi_url, analysis_collection_dois, access, lock):
+def worker(input, output, args, access, lock):
     with sa_session() as sess:
-        all_sources = All(args.pid, sess, settings.CURRENT_VERSION, args.access,
+        all_sources = All(args.pid, sess, settings.CURRENT_VERSION, access,
                           args.skipped_tcia_collections, args.skipped_idc_collections, lock)
 
         for more_args in iter(input.get, 'STOP'):
@@ -68,7 +67,7 @@ def worker(input, output, args, data_collection_doi_url, analysis_collection_doi
                     version = sess.query(Version).filter(Version.version==settings.CURRENT_VERSION).one()
                     collection = next(collection for collection in version.collections if collection.collection_id ==collection_id)
                     patient = next(patient for patient in collection.patients if patient.submitter_case_id==submitter_case_id)
-                    build_patient(sess, args, all_sources, index, data_collection_doi_url, analysis_collection_dois, version, collection, patient)
+                    build_patient(sess, args, all_sources, index, version, collection, patient)
                     break
                 except Exception as exc:
                     errlogger.error("p%s, exception %s; reattempt %s on patient %s/%s, %s; %s", args.pid, exc, attempt, collection.collection_id, patient.submitter_case_id, index, time.asctime())
@@ -81,9 +80,14 @@ def worker(input, output, args, data_collection_doi_url, analysis_collection_doi
 
 
 def expand_collection(sess, args, all_sources, collection):
+    # skipped is a vector of booleans, one for each source
     skipped = is_skipped(args.skipped_collections, collection.collection_id)
+
     # Get the patients that the sources know about
-    # Returned data includes a sources vector for each patient
+    # For each patient, returns a vector of booleans, one for each source.
+    # A boolean is True if the hash of the corresponding source differs
+    # from the hash of the current version of the patient
+    # If the source is skipped, then the corresponding boolean will be False.
     patients = all_sources.patients(collection, skipped)
 
     # Since we are starting, delete everything from the prestaging bucket.
@@ -130,7 +134,9 @@ def expand_collection(sess, args, all_sources, collection):
         new_patient.idc_case_id = str(uuid4())
         new_patient.min_timestamp = datetime.utcnow()
         new_patient.revised = patients[patient]
-        # new_patient.sources = (False, False)
+        # The following line can probably be deleted because
+        # a object's sources are computed hierarchically after
+        # building all the children.
         new_patient.sources = patients[patient]
         new_patient.hashes = None
         new_patient.uuid = str(uuid4())
@@ -165,7 +171,9 @@ def expand_collection(sess, args, all_sources, collection):
             rev_patient.expanded = False
             rev_patient.revised = revised
             rev_patient.hashes = None
-            # rev_patient.sources = [False, False]
+            # The following line can probably be deleted because
+            # a object's sources are computed hierarchically after
+            # building all the children.
             rev_patient.sources = patients[patient.submitter_case_id]
             rev_patient.rev_idc_version = settings.CURRENT_VERSION
             collection.patients.append(rev_patient)
@@ -207,28 +215,32 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         expand_collection(sess, args, all_sources, collection)
     successlogger.info("p%s: Expanded Collection %s, %s, %s patients", args.pid, collection.collection_id, collection_index, len(collection.patients))
 
-    # Get the lists of data and analyis series for this collection
-    data_collection_doi = get_data_collection_doi(collection.collection_id, server=args.server)
-    data_collection_url = get_data_collection_url(collection.collection_id, sess)
-    if data_collection_doi=="" and (data_collection_url=="" or data_collection_url is None):
-        errlogger.error('No DOI for collection %s', collection.collection_id)
-        breakpoint()
-        return
-    # If there is no URL, construct one from the DOI
-    if data_collection_url == None and data_collection_doi.split('/')[0]=='10.7937':
-        data_collection_url = f'https://doi.org/{data_collection_doi}'
-    data_collection_doi_url = {'doi': data_collection_doi, 'url': data_collection_url}
-
-    # Get all the analysis results DOIs.
-    pre_analysis_collection_dois = get_analysis_collection_dois(collection.collection_id, server=args.server)
-    analysis_collection_dois = {x['SeriesInstanceUID']: x['SourceDOI'] for x in pre_analysis_collection_dois}
+    ### DOIs and URLs are now collected at the patient level
+    # # Get the lists of data and analyis series for this collection
+    # data_collection_doi = get_data_collection_doi(collection.collection_id, server=args.server)
+    # data_collection_url = get_data_collection_url(collection.collection_id, sess)
+    # if data_collection_doi=="" and (data_collection_url=="" or data_collection_url is None):
+    #     errlogger.error('No DOI for collection %s', collection.collection_id)
+    #     breakpoint()
+    #     return
+    # # If there is no URL, construct one from the DOI
+    # if data_collection_url == None and data_collection_doi.split('/')[0]=='10.7937':
+    #     data_collection_url = f'https://doi.org/{data_collection_doi}'
+    # data_collection_doi_url = {'doi': data_collection_doi, 'url': data_collection_url}
+    #
+    # # Get all the analysis results DOIs.
+    # breakpoint()
+    # # pre_analysis_collection_dois = []
+    # dois = all_sources.get_analysis_collection_dois(sess, collection.collection_id, server=args.server)
+    # analysis_collection_dois = {item['SeriesInstanceUID']: item['SourceDOI'] for sublist in dois for item in sublist}
 
     if args.num_processes==0:
         patients = sorted(collection.patients, key=lambda patient: patient.done, reverse=True)
         for patient in patients:
             patient_index = f'{patients.index(patient) + 1} of {len(patients)}'
             if not patient.done:
-                build_patient(sess, args, all_sources, patient_index, data_collection_doi_url, analysis_collection_dois, version, collection, patient)
+                # build_patient(sess, args, all_sources, patient_index, data_collection_doi_url, analysis_collection_dois, version, collection, patient)
+                build_patient(sess, args, all_sources, patient_index, version, collection, patient)
             else:
                 if True:
                     successlogger.info("  p0: Patient %s, %s, previously built", patient.submitter_case_id,
@@ -250,7 +262,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         for process in range(num_processes):
             args.pid = process+1
             processes.append(
-                Process(target=worker, args=(task_queue, done_queue, args, data_collection_doi_url, analysis_collection_dois, args.access, lock )))
+                Process(target=worker, args=(task_queue, done_queue, args, args.access, lock )))
             processes[-1].start()
 
         # Enqueue each patient in the the task queue
