@@ -22,7 +22,6 @@ from idc.models import instance_source, Version, Collection, Patient
 from ingestion.utilities.utils import accum_sources, empty_bucket, create_prestaging_bucket, is_skipped
 from ingestion.patient import clone_patient, build_patient, retire_patient
 from ingestion.all_sources import All
-from ingestion.utilities.get_collection_dois_and_urls import get_data_collection_doi, get_data_collection_url
 from utilities.sqlalchemy_helpers import sa_session
 from python_settings import settings
 

@@ -26,8 +26,6 @@ from utilities.bq_helpers import query_BQ
 
 
 def gen_blob_table(args):
-    # This query is a hack to deal with V10 pathology in CPTAC-CM, -LSCC is in public-datasets-pdp
-    # but previous is in idc-open-idc1
     query = f"""
         SELECT
           DISTINCT CONCAT(a.i_uuid, '.dcm') AS blob_name

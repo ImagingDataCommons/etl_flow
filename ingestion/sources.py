@@ -23,8 +23,9 @@ from idc.models  import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_
 from sqlalchemy import select
 from google.cloud import bigquery
 from ingestion.utilities.utils import get_merkle_hash
-from ingestion.utilities.get_collection_dois_and_urls import get_analysis_collection_dois_tcia, get_analysis_collection_dois_idc, \
-    get_patient_dois_idc, get_patient_urls_idc, get_patient_dois_tcia, get_patient_urls_tcia
+from ingestion.utilities.get_collection_dois_urls_licenses import get_patient_dois_idc, \
+    get_patient_urls_idc, get_patient_dois_tcia, get_patient_urls_tcia, get_patient_licenses_tcia, \
+    get_patient_licenses_idc
 import logging
 rootlogger = logging.getLogger('root')
 errlogger = logging.getLogger('root.err')
@@ -116,9 +117,10 @@ class TCIA(Source):
             rootlogger.info('get_hash failed for collection %s', collection_id)
             raise Exception('get_hash failed for collection %s', collection_id)
 
-    # Get all the DOIs of analysis results series in a collection fromm TCIA
-    def get_analysis_collection_dois(self, sess, collection, patient="", server=""):
-        return get_analysis_collection_dois_tcia(collection)
+    # # # Deprecated
+    # # Get all the DOIs of analysis results series in a collection fromm TCIA
+    # def get_analysis_collection_dois(self, sess, collection, patient="", server=""):
+    #     return get_analysis_collection_dois_tcia(collection)
 
     ###-------------------Patients-----------------###
 
@@ -153,6 +155,12 @@ class TCIA(Source):
     def get_patient_urls(self, collection, patient):
         patient_urls = get_patient_urls_tcia(collection, patient)
         return patient_urls
+
+
+    # Get the licenses URLs of all series in a patient
+    def get_patient_licenses(self, collection, patient):
+        patient_licenses = get_patient_licenses_tcia(collection, patient)
+        return patient_licenses
 
 
     ###-------------------Studies-----------------###
@@ -266,9 +274,10 @@ class IDC(Source):
         hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
         return hash
 
-    # Get all the DOIs of analysis results series in a collection from IDC
-    def get_analysis_collection_dois(self, sess, collection, server):
-        return get_analysis_collection_dois_idc(sess, collection)
+    # ## Deprecated
+    # # Get all the DOIs of analysis results series in a collection from IDC
+    # def get_analysis_collection_dois(self, sess, collection, server):
+    #     return get_analysis_collection_dois_idc(sess, collection)
 
     ###-------------------Patients-----------------###
 
@@ -293,10 +302,17 @@ class IDC(Source):
         patient_dois = get_patient_dois_idc(self.sess, collection, patient)
         return patient_dois
 
+
     # Get the (wiki) URLs of all series in a patient
     def get_patient_urls(self, collection, patient):
         patient_urls = get_patient_urls_idc(self.sess, collection, patient)
         return patient_urls
+
+
+    # Get the licenses of all series in a patient
+    def get_patient_licenses(self, collection, patient):
+        patient_licenses = get_patient_licenses_idc(self.sess, collection, patient)
+        return patient_licenses
 
 
     ###-------------------Studies-----------------###

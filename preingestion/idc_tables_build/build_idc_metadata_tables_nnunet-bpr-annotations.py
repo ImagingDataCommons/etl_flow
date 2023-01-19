@@ -51,7 +51,7 @@ def build_instance(client, args, sess, series, instance_id, hash, blob_name):
     # Always set/update these values
     if instance.hash != hash:
         # Revise this instance's version
-        instance.version = args.version
+        instance.idc_version = args.version
         instance.gcs_url = f'gs://{args.src_bucket}/{blob_name}'
         instance.hash = hash
 
@@ -72,6 +72,9 @@ def build_series(client, args, sess, study, series_id, doi, instance_id, hash, b
     except StopIteration:
         series = IDC_Series()
         series.series_instance_uid = series_id
+        series.license_url =args.license['license_url']
+        series.license_long_name =args.license['license_long_name']
+        series.license_short_name =args.license['license_short_name']
         study.seriess.append(series)
     # Always set/update the wiki_doi in case it has changed
     series.wiki_doi = doi
@@ -132,30 +135,31 @@ def prebuild(args):
             if page.num_items:
                 for blob in page:
                     if not blob.name in dones:
-                        parts = blob.name.split('/')
-                        collection_id = args.collection_map[parts[0]]['collection_id']
-                        doi = args.collection_map[parts[0]]['doi']
-                        with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
+                        if blob.name.endswith('.dcm'):
+                            parts = blob.name.split('/')
+                            collection_id = args.collection_map[parts[0]]['collection_id']
+                            doi = args.collection_map[parts[0]]['doi']
+                            with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
+                                try:
+                                    r = dcmread(f)
+                                    patient_id = r.PatientID
+                                    study_id = r.StudyInstanceUID
+                                    series_id = r.SeriesInstanceUID
+                                    instance_id = r.SOPInstanceUID
+                                except Exception as exc:
+                                    print(f'pydicom failed for {blob.name}: {exc}')
                             try:
-                                r = dcmread(f)
-                                patient_id = r.PatientID
-                                study_id = r.StudyInstanceUID
-                                series_id = r.SeriesInstanceUID
-                                instance_id = r.SOPInstanceUID
-                            except Exception as exc:
-                                print(f'pydicom failed for {blob.name}: {exc}')
-                        try:
-                            assert patient_id == parts[2]
-                        except:
-                            errlogger.error(f'patient_id: {patient_id}, parts[2]: {parts[2]}')
-                            continue
-                        try:
-                            assert study_id == parts[3]
-                        except:
-                            errlogger.error(f'study_id: {study_id}, parts[3]: {parts[3]}')
-                            continue
-                        hash = b64decode(blob.md5_hash).hex()
-                        build_collection(client, args, sess, collection_id, patient_id, study_id, series_id, doi, instance_id, hash, blob.name)
+                                assert patient_id == parts[2]
+                            except:
+                                errlogger.error(f'patient_id: {patient_id}, parts[2]: {parts[2]}')
+                                continue
+                            try:
+                                assert study_id == parts[3]
+                            except:
+                                errlogger.error(f'study_id: {study_id}, parts[3]: {parts[3]}')
+                                continue
+                            hash = b64decode(blob.md5_hash).hex()
+                            build_collection(client, args, sess, collection_id, patient_id, study_id, series_id, doi, instance_id, hash, blob.name)
                     else:
                         progresslogger.info(f'Skipped {blob.name}')
 
@@ -167,11 +171,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--src_bucket', default='nnunet-bpr-annotations', help='Bucket containing WSI instances')
-    parser.add_argument('--collection_map', default={'nlst': {"collection_id": "NLST", "doi": "10.5281/zenodo.7473971"}, \
-            'nsclc': {"collection_id": "NSCLC-Radiomics", "doi": "10.5281/zenodo.7473971"}})
+    parser.add_argument('--collection_map', default={'nlst': {"collection_id": "NLST", "doi": "10.5281/zenodo.7539035"}, \
+            'nsclc': {"collection_id": "NSCLC-Radiomics", "doi": "10.5281/zenodo.7539035"}})
     parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/nnunet-bpr-annotations', help='Directory on which to mount the bucket')
     parser.add_argument('--skipped_collections', type=str, default=[], nargs='*', \
       help='A list of additional collections that should not be ingested.')
+    parser.add_argument('--license', default = {"license_url": "https://creativecommons.org/licenses/by/4.0",\
+            "license_long_name": "Creative Commons Attribution 4.0 International License", \
+            "license_short_name": "CC BY 4.0"})
     parser.add_argument('--third_party', type=bool, default=True, help='True if from a third party analysis result')
 
     args = parser.parse_args()

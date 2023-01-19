@@ -49,7 +49,7 @@ def retire_study(args, study ):
 
 
 # def expand_study(sess, args, all_sources, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois):
-def expand_study(sess, args, all_sources, version, collection, patient, study, dois_and_urls):
+def expand_study(sess, args, all_sources, version, collection, patient, study, dois_urls_licenses):
     skipped = is_skipped(args.skipped_collections, collection.collection_id)
     # Get the series that the sources know about
     seriess = all_sources.series(study, skipped)
@@ -92,8 +92,11 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
         # new_series.source_url = data_collection_doi_url['url'] \
         #     if not series in analysis_collection_dois else None
         try:
-            new_series.source_doi = dois_and_urls[series]['doi']
-            new_series.source_url = dois_and_urls[series]['url']
+            new_series.source_doi = dois_urls_licenses[series]['doi']
+            new_series.source_url = dois_urls_licenses[series]['url']
+            new_series.license_url = dois_urls_licenses[series]['license']['license_url']
+            new_series.license_long_name = dois_urls_licenses[series]['license']['license_long_name']
+            new_series.license_short_name = dois_urls_licenses[series]['license']['license_short_name']
         except Exception as exc:
             errlogger.error(f'No DOI/URL for series {series.series_instance_uid}')
             return
@@ -162,14 +165,14 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
     return
 
 # def build_study(sess, args, all_sources, study_index, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois):
-def build_study(sess, args, all_sources, study_index, version, collection, patient, study, dois_and_urls):
+def build_study(sess, args, all_sources, study_index, version, collection, patient, study, dois_urls_licenses):
 
     try:
         begin = time.time()
         successlogger.debug("    p%s: Expand Study %s, %s", args.pid, study.study_instance_uid, study_index)
         if not study.expanded:
             # expand_study(sess, args, all_sources, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois)
-            expand_study(sess, args, all_sources, version, collection, patient, study, dois_and_urls)
+            expand_study(sess, args, all_sources, version, collection, patient, study, dois_urls_licenses)
         successlogger.info("    p%s: Expanded Study %s, %s, %s series, expand time: %s", args.pid, study.study_instance_uid, study_index, len(study.seriess), time.time()-begin)
         for series in study.seriess:
             series_index = f'{study.seriess.index(series) + 1} of {len(study.seriess)}'

@@ -96,6 +96,21 @@ def refresh_access_token(refresh_token, auth_server = NBIA_AUTH_URL):
     access_token = result.json()['access_token']
     return (access_token, refresh_token)
 
+
+def get_collection_id_from_doi(doi):
+    access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
+    headers = dict(
+        Authorization=f'Bearer {access_token}'
+    )
+    url = f"{NBIA_URL}/getCollectionOrSeriesForDOI"
+    data = { "DOI": f'https://doi.org/{doi}', "CollectionOrSeries": 'collection' }
+    result = requests.post(url, headers=headers, data=data).json()
+    if len(result)>0:
+        return result[0]['collection']
+    else:
+        return None
+
+
 def get_instance_hash_nlst(sop_instance_uid, access_token=None):
     # if not access_token:
     #     access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
@@ -264,8 +279,8 @@ def get_TCIA_series_metadata(seriesInstanceUID, server=NBIA_V1_URL):
     headers = ''
     url = f'{server_url}/getSeriesMetaData?SeriesInstanceUID={seriesInstanceUID}'
     results = get_url(url, headers)
-    series = results.json() if results.content else []
-    return series
+    series = results.json() if results.content else {}
+    return series[0]
 
 def get_TCIA_instance_uids_per_series(collection_id, seriesInstanceUID, server=NBIA_V1_URL):
     if collection_id == "NLST":
@@ -530,7 +545,7 @@ def get_collection_descriptions_and_licenses(collection=None):
     return collection_descriptions
 
 
-def get_collection_licenses():
+def get_license_info():
     access_token, refresh_token = get_access_token()
     headers = dict(
         Authorization=f'Bearer {access_token}'
@@ -539,14 +554,14 @@ def get_collection_licenses():
         url='https://public.cancerimagingarchive.net/nbia-api/services/getLicenses',
         headers=headers
     )
-    licenses = result.json()
+    licenses = {license['longName']: license for license in result.json()}
 
     return licenses
 
 
 def get_collection_license_info():
     table = get_collection_descriptions_and_licenses()
-    license_info = {license['id']: license for license in get_collection_licenses()}
+    license_info = {license['id']: license for license in get_license_info()}
     for license in license_info:
         if license_info[license]['licenseURL'].split(':')[0] == 'http':
             license_info[license]['licenseURL'] = f'https:{license_info[license]["licenseURL"].split(":",1)[1]}'
@@ -614,6 +629,11 @@ if __name__ == "__main__":
 
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
     # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
+    i = get_collection_id_from_doi('10.7937/k9/tcia.2016.eln8ygle')
+    c=get_collection_values_and_counts()
+    i=get_license_info()
+    m=get_TCIA_series_metadata('1.2.246.352.71.2.494841863751.4253207.20190214211543')
+    d=get_collection_descriptions_and_licenses(collection='CT-vs-PET-Ventilation-Imaging')
     r=get_internal_series_ids("NLST", "", third_party="no", size=100000, server="NLST" )
     hash = get_hash_nlst(
         {'Collection': 'NLST', 'PatientID': '123342'})

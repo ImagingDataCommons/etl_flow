@@ -93,7 +93,7 @@ SELECT
 FROM
   coalesced_ref
 JOIN
-  `bigquery-public-data.idc_v{idc_version}.dicom_all` AS dicom_all
+  `{1}` AS dicom_all
 ON
   coalesced_ref.referenced_sop = dicom_all.SOPInstanceUID
 RIGHT JOIN

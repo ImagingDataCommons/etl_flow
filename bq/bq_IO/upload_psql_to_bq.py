@@ -179,7 +179,11 @@ def upload_series(client, args, table, order_by):
       STRUCT(tcia_rev AS tcia,
         idc_rev AS idc) AS revised,
       source_url,
-      excluded
+      excluded,
+      license_long_name,
+      license_url,
+      license_short_name
+      
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT series_instance_uid, uuid, series_instances, source_doi, 
@@ -188,7 +192,8 @@ def upload_series(client, args, table, order_by):
             (hashes).idc AS idc_hash, (hashes).all_sources AS all_hash, 
             (sources).tcia AS tcia_src, (sources).idc AS idc_src, 
             (revised).tcia AS tcia_rev, (revised).idc AS idc_rev,
-            source_url, excluded
+            source_url, excluded, license_long_name, license_url,
+            license_short_name
         FROM {table}''')
     ORDER BY {order_by}
     """

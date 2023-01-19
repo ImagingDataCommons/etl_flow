@@ -15,7 +15,7 @@
 #
 
 import difflib
-from utilities.tcia_helpers import get_collection_licenses
+from utilities.tcia_helpers import get_license_info
 
 import requests
 from bs4 import BeautifulSoup
@@ -54,7 +54,7 @@ def get_collection_id(doi):
 def get_license_from_wiki(doi):
 
     # Get a list of the licenses used by collections
-    licenses = get_collection_licenses()
+    licenses = get_license_info()
 
     # Get the wiki page for some collection/analysis result
     URL = f'https://doi.org/{doi}'
@@ -116,12 +116,6 @@ def scrape_tcia_analysis_collections_page():
         if len(trow):
             # Strip off the http server prefix
             trow['DOI'] = trow['DOI'].split('doi.org/')[1].lower()
-            try:
-                trow['license_url'], trow['license_long_name'], trow['license_short_name'] = get_license_from_wiki(trow['DOI'])
-                print(f'Get license succeeded for {trow["Collection"]}')
-            except Exception as exc:
-                print(f'Get license data failed for {trow["Collection"]} ')
-                pass
             collection = trow.pop('Collection')
             table[collection] = trow
             # table = table + [trow]
