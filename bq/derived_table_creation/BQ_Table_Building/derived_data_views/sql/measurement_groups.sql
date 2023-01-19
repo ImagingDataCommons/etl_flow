@@ -156,12 +156,19 @@ WITH
     UNNEST(contentSequence.ContentSequence) AS unnestedContentSequence
   WHERE
     unnestedContentSequence.ValueType = "CODE"
-    AND ( unnestedContentSequence.ConceptNameCodeSequence [
-    OFFSET
-      (0)].CodeValue = "G-C0E3"
-      AND unnestedContentSequence.ConceptNameCodeSequence [
-    OFFSET
-      (0)].CodingSchemeDesignator = "SRT" ) )
+	  AND ( (unnestedContentSequence.ConceptNameCodeSequence [
+	OFFSET
+	  (0)].CodeValue = "G-C0E3"
+	  AND unnestedContentSequence.ConceptNameCodeSequence [
+	OFFSET
+	  (0)].CodingSchemeDesignator = "SRT" ) OR  
+		   (unnestedContentSequence.ConceptNameCodeSequence [
+	OFFSET
+	  (0)].CodeValue = "363698007"
+	  AND unnestedContentSequence.ConceptNameCodeSequence [
+	OFFSET
+	  (0)].CodingSchemeDesignator = "SCT" ) ) )
+	  
 SELECT
   mWithUID.SOPInstanceUID,
   mWithUID.measurementGroup_number,
