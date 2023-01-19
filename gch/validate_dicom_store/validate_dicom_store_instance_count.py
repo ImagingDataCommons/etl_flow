@@ -22,15 +22,15 @@ from utilities.logging_config import successlogger,errlogger
 
 def validate_dicom_metadata_counts():
     client = bigquery.Client()
-    breakpoint() # Is use of all_included_collections correct?
     query = f"""
     WITH sopinstanceuids AS (
     SELECT aj.sop_instance_uid as SOPInstanceUID
     FROM `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined` as aj
-    JOIN `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_included_collections` ac
+    JOIN `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_collections` ac
     ON aj.collection_id = ac.tcia_api_collection_id
     WHERE aj.idc_version = {settings.CURRENT_VERSION}
     AND aj.i_excluded is False
+    AND ((i_source='tcia' AND ac.tcia_access='Public') OR (i_source='idc' AND ac.idc_access='Public'))
     )
     select count(siu.sopinstanceuid) as siu_cnt, count(dm.sopinstanceuid) as dcm_cnt
     FROM sopinstanceuids as siu

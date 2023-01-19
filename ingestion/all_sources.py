@@ -162,12 +162,13 @@ class All:
                 collection_hashes[source.value] = get_merkle_hash(hashes)
         return collection_hashes
 
-    # Get all the DOIs of analysis results series in a collection
-    def get_analysis_collection_dois(self, sess, collection, server):
-        collection_dois = ['','']
-        for source in self.sources:
-             collection_dois[source.value] = self.sources[source].get_analysis_collection_dois(sess, collection, server)
-        return collection_dois
+    # # # Deprecated
+    # # Get all the DOIs of analysis results series in a collection
+    # def get_analysis_collection_dois(self, sess, collection, server):
+    #     collection_dois = ['','']
+    #     for source in self.sources:
+    #          collection_dois[source.value] = self.sources[source].get_analysis_collection_dois(sess, collection, server)
+    #     return collection_dois
 
 
 
@@ -223,18 +224,28 @@ class All:
 
 
     # Get the DOIs of all series in a patient
-    def get_patient_dois(self, collection, patient):
+    def get_patient_dois(self, collection, patient, skipped_sources):
         patient_dois = {}
         for source in self.sources:
-             patient_dois =  patient_dois | self.sources[source].get_patient_dois(collection, patient)
+            if not skipped_sources[source.value]:
+                patient_dois =  patient_dois | self.sources[source].get_patient_dois(collection, patient)
         return patient_dois
 
     # Get the (wiki) URLs of all series in a patient
-    def get_patient_urls(self, collection, patient):
+    def get_patient_urls(self, collection, patient, skipped_sources):
         patient_urls = {}
         for source in self.sources:
-             patient_urls = patient_urls | self.sources[source].get_patient_urls(collection, patient)
+            if not skipped_sources[source.value]:
+                patient_urls = patient_urls | self.sources[source].get_patient_urls(collection, patient)
         return patient_urls
+
+    # Get the licenses data of all series in a patient
+    def get_patient_licenses(self, collection, patient, skipped_sources):
+        patient_licenses = {}
+        for source in self.sources:
+            if not skipped_sources[source.value]:
+                patient_licenses = patient_licenses | self.sources[source].get_patient_licenses(collection, patient)
+        return patient_licenses
 
     ###-------------------Studies-----------------###
 

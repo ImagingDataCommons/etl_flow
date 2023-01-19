@@ -39,7 +39,9 @@ def get_collections_programs(client, args):
 
 
 
-# Generate a list of included or excluded collections
+# Generate a dict of included or excluded collections,
+# indexed by "idc_webapp_collection_ids" and mapping to
+# "tcia_api_collection_id".
 def get_collections_in_version(client, args):
     # Return collections that have specified access
     query = f"""
@@ -47,10 +49,6 @@ def get_collections_in_version(client, args):
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections`
     WHERE tcia_access='{args.access}' OR idc_access='{args.access}'
     """
-    # result = client.query(query).result()
-    # collection_ids = {collection['collection_id'].lower().replace(' ','_').replace('-','_'): \
-    #     {'tcia_api_collection_id':collection['collection_id'], 'tcia_access':collection['tcia_access'], \
-    #      'idc_access':collection['idc_access']} for collection in result}
 
     collection_ids = {row.tcia_api_collection_id.lower().replace(' ','_').replace('-','_'): \
         row.tcia_api_collection_id for row in client.query(query)}
@@ -80,7 +78,7 @@ def get_cases_per_collection(client, args):
     return case_counts
 
 # Generate a per-collection list of the modalities across all instances in each collection
-def get_image_types(client, args):
+def get_image_modalities(client, args):
     query = f"""
     WITH
       siis AS (
@@ -203,7 +201,7 @@ def get_original_collections_metadata_idc_source(client, args):
 # Get collection metadata by scraping the TCIA Original Collections page
 # and/or from the original_collections_metadata_idc_source table
 def get_collection_metadata(client, args):
-    # Get metadata for collections that TCIA doesn't have
+    # Start with metadata for collections that TCIA doesn't have
     collection_metadata = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_original_collections_metadata_idc_source(client, args).items()}
 
     # Get the metadata for TCIA hosted collections
@@ -223,7 +221,7 @@ def get_collection_metadata(client, args):
     collection_metadata |= tcia_collection_metadata
 
     # Replace ImageTypes values with actual image types in IDC data
-    imageTypes = get_image_types(client, args)
+    imageTypes = get_image_modalities(client, args)
 
     for id, data in collection_metadata.items():
         if id in imageTypes:
@@ -255,12 +253,38 @@ def get_all_descriptions(client, args):
     return collection_descriptions
 
 
+# Get a list of the licenses associated with each collection
+def get_licenses(client, doi):
+    query = f"""
+    WITH unstruct as(
+    SELECT DISTINCT REPLACE(REPLACE(LOWER(collection_id),'-','_'),' ','_') collection_id, license_url, license_long_name, license_short_name
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined`
+    WHERE license_url is not null
+    )
+    SELECT collection_id, ARRAY_AGG(STRUCT(license_url, license_long_name, license_short_name)) as licenses
+    FROM unstruct
+    GROUP BY collection_id
+    ORDER BY collection_id
+     """
+    license_dicts = [dict(row) for row in client.query(query)]
+    licenses = {row['collection_id']: row['licenses'] for row in license_dicts}
+    return licenses
+
+
 def build_metadata(client, args):
     BQ_client = bigquery.Client(project=settings.DEV_PROJECT)
+
+    # Get a list of the licenses associated with each collection
+    licenses = get_licenses(BQ_client, args)
+    # licenses = get_original_collection_licenses(args)
+
+    # Now get most of the medadata for all collections
+    collection_metadata = get_collection_metadata(client, args)
+
     programs = get_collections_programs(BQ_client, args)
 
-    # Get a list of the collections that IDC knows about in this version and access
-    # differentiated by args.access
+    # Get a dict indexed by idc_webapp_collection_ids and mapping
+    # to "tcia_api_collection_id having access==args.access
     idc_collection_ids = get_collections_in_version(BQ_client, args)
 
     # Get collection descriptions for all collections
@@ -271,13 +295,6 @@ def build_metadata(client, args):
 
     # # Get the access status of each collection
     # access_status = get_access_status(client,args)
-
-    # Get a list of the licenses used by data collections
-    licenses = get_original_collection_licenses(args)
-
-    # Now get most of the medadata for all collections
-    collection_metadata = get_collection_metadata(client, args)
-
 
     rows = []
     json_rows = []
@@ -310,28 +327,20 @@ def build_metadata(client, args):
                         collection_data['Description'] = ""
                     collection_data['Subjects'] = case_counts[idc_collection_id]
                     try:
-                        collection_data['licenses'] = []
-                        # if 'idc' in licenses[idc_collection_id]:
-                        #     collection_data['licenses'].append(licenses[idc_collection_id]['idc'])
-                        #     if 'tcia' in licenses[idc_collection_id] and \
-                        #             licenses[idc_collection_id]['idc'] != licenses[idc_collection_id]['tcia']:
-                        #                 collection_data['licenses'].append(licenses[idc_collection_id]['tcia'])
-                        # else:
+                        # collection_data['licenses'] = [dict(row)['license'] for row in licenses if \
+                        #     row['collection_id'].lower().replace('-', '_').replace(' ', '_')  == idc_collection_id]
+                        collection_data['licenses'] = licenses[idc_collection_id]
+
+                        # collection_data['licenses'] = []
+                        # if 'tcia' in licenses[idc_collection_id]:
                         #     collection_data['licenses'].append(licenses[idc_collection_id]['tcia'])
-                        if 'tcia' in licenses[idc_collection_id]:
-                            collection_data['licenses'].append(licenses[idc_collection_id]['tcia'])
-                            if 'idc' in licenses[idc_collection_id] and \
-                                    licenses[idc_collection_id]['tcia'] != licenses[idc_collection_id]['idc']:
-                                        collection_data['licenses'].append(licenses[idc_collection_id]['idc'])
-                        else:
-                            collection_data['licenses'].append(licenses[idc_collection_id]['idc'])
+                        #     if 'idc' in licenses[idc_collection_id] and \
+                        #             licenses[idc_collection_id]['tcia'] != licenses[idc_collection_id]['idc']:
+                        #                 collection_data['licenses'].append(licenses[idc_collection_id]['idc'])
+                        # else:
+                        #     collection_data['licenses'].append(licenses[idc_collection_id]['idc'])
                     except:
                         collection_data['licenses'] = {}
-                    # if args.gen_excluded:
-                    #     collection_data['Access'] = ['Excluded']
-                    # else:
-                    #     collection_data['Access'] = list(set(['Limited' if 'TCIA' in license['license_short_name'] else 'Public' \
-                    #              for collection, license in licenses[idc_collection_id].items()]))
                     collection_data['Access'] = [args.access]
                     rows.append(collection_data)
                     json_rows.append(json.dumps(collection_data))

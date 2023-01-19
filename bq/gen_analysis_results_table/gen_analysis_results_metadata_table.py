@@ -38,46 +38,40 @@ def get_redacted_collections(client,args):
     redacted_collection_access = {c.tcia_api_collection_id.lower().replace(' ','_').replace('-','_'): c.access for c in client.query(query).result()}
     return redacted_collection_access
 
-# Get all source DOIs and the collections which they are in
-def get_all_idc_dois(client, args):
-    # query = f"""
-    #     SELECT DISTINCT c.collection_id AS collection_id, se.source_doi AS source_doi
-    #     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version` AS v
-    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version_collection` as vc
-    #     ON v.version = vc.version
-    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection` AS c
-    #     ON vc.collection_uuid = c.uuid
-    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection_patient` AS cp
-    #     ON c.uuid = cp.collection_uuid
-    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.patient` AS p
-    #     ON cp.patient_uuid = p.uuid
-    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.patient_study` AS ps
-    #     ON p.uuid = ps.patient_uuid
-    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.study` AS st
-    #     ON ps.study_uuid = st.uuid
-    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.study_series` AS ss
-    #     ON st.uuid = ss.study_uuid
-    #     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.series` AS se
-    #     ON ss.series_uuid = se.uuid
-    #     LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.excluded_collections` AS ex
-    #     ON LOWER (c.collection_id) = LOWER(ex.tcia_api_collection_id)
-    #     WHERE ex.tcia_api_collection_id IS NULL AND v.version = {settings.CURRENT_VERSION}
-    #     """
+# Get the license associated with a particular source DOI
+def get_license(client, doi):
     query = f"""
-        SELECT DISTINCT collection_id AS collection_id, source_doi AS source_doi
-        FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_included`
+    SELECT distinct license_url, license_long_name, license_short_name
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined`
+    WHERE lower(source_doi) = lower('{doi}')
+    """
+    licenses = [dict(row) for row in client.query(query)]
+    try:
+        assert len(licenses) == 1
+    except Exception as exc:
+        exit
+    return licenses[0]
+
+# Get all source DOIs, licenses and the collections which they are in
+def get_all_idc_dois_licenses(client, args):
+    query = f"""
+        SELECT DISTINCT collection_id AS collection_id, source_doi
+        FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined`
         WHERE idc_version = {settings.CURRENT_VERSION} 
+        AND license_short_name in ('CC BY 3.0', 'CC BY 4.0', 'CC BY-NC 3.0', 'CC BY-NC 4.0')
+        ORDER BY source_doi
         """
     result = client.query(query).result()
 
-    # Generate a dictionary indexed by doi, and where value is associated collection(s)
+    # Generate a dictionary indexed by doi, and where value is associated with collection(s)
     source_dois = {}
     for row in result:
-        collection_id = row['collection_id'].lower().replace(' ','_').replace('-','_')
-        if row['source_doi'] not in source_dois:
-            source_dois[row['source_doi'].lower()] = [collection_id]
-        else:
-            source_dois[row['source_doi'].lower()].append(collection_id)
+        if row['source_doi']:
+            collection_id = row['collection_id'].lower().replace(' ','_').replace('-','_')
+            if row['source_doi'].lower() not in source_dois:
+                source_dois[row['source_doi'].lower()] = [collection_id]
+            else:
+                source_dois[row['source_doi'].lower()].append(collection_id)
 
     for doi in source_dois:
         source_dois[doi] = ','.join(source_dois[doi])
@@ -99,18 +93,18 @@ def build_metadata(args, BQ_client):
     # # Get access status of potentially redacted collections
     # redacted_collection_access = get_redacted_collections(BQ_client,args)
 
-    # Get all source DOIS and collections they are in
-    source_dois = get_all_idc_dois(BQ_client, args)
+    # Get all source DOIs in IDC data the collections they are in
+    source_dois_license = get_all_idc_dois_licenses(BQ_client, args)
 
     # Scrape the TCIA analysis results page for metadata
     analysis_metadata = scrape_tcia_analysis_collections_page()
 
     rows = []
     for analysis_id, analysis_data in analysis_metadata.items():
-        # If the DOI of this analysis result is in source_dois, then it is in the series table
+        # If the DOI of this analysis result is in source_dois_license, then it is in the series table
         # and therefore we have a series from this analysis result, and therefor we should include
         # this analysis result in the analysis_results metadata table
-        if analysis_data["DOI"].lower() in source_dois:
+        if analysis_data["DOI"].lower() in source_dois_license:
             # analysis_data["Collection"] = analysis_id
             title_id = analysis_id.rsplit('(',1)
             title = title_id[0]
@@ -118,8 +112,12 @@ def build_metadata(args, BQ_client):
                 title = title[:-1]
             analysis_data['Title'] = title
             analysis_data['ID'] = title_id[1].split(')')[0]
-            analysis_data['Collections'] = source_dois[analysis_data['DOI']]
+            analysis_data['Collections'] = source_dois_license[analysis_data['DOI']]
             analysis_data['Access'] = 'Public'
+            license = get_license(BQ_client, analysis_data["DOI"])
+            for key, value in license.items():
+                analysis_data[key] = value
+
             # for collection in analysis_data["Collections"].split(','):
             #     if collection in redacted_collection_access:
             #         analysis_data['Access'] = redacted_collection_access[collection]

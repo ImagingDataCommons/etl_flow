@@ -28,21 +28,27 @@ progresslogger = logging.getLogger('root.progress')
 errlogger = logging.getLogger('root.err')
 
 # Return a dictionary of the dois and urls of all series in the patient
-def get_dois_and_urls(all_sources, collection_id, patient_id):
+def get_dois_urls_licenses(args, all_sources, collection_id, patient_id):
+    skipped_sources = is_skipped(args.skipped_collections, collection_id)
     # Get all the dois for this patient
-    dois = all_sources.get_patient_dois(collection_id, patient_id)
+    dois = all_sources.get_patient_dois(collection_id, patient_id, skipped_sources)
     # Get all the urls for this patient
-    urls = all_sources.get_patient_urls(collection_id, patient_id)
+    urls = all_sources.get_patient_urls(collection_id, patient_id, skipped_sources)
+    # Get all the licenses for this patient
+    licenses = all_sources.get_patient_licenses(collection_id, patient_id, skipped_sources)
     # Populate the dictionary with any url that were found
-    dois_and_urls = {key: {"doi": "", "url": url} for key, url in urls.items()}
+    dois_urls_licenses = {key: {"doi": "", "url": url} for key, url in urls.items()}
     # Add dois.
     for key, doi in dois.items():
-        if key in dois_and_urls:
-            dois_and_urls[key]["doi"] = doi
+        if key in dois_urls_licenses:
+            dois_urls_licenses[key]["doi"] = doi
         else:
             # If there was no url for the series, create one from the doi
-            dois_and_urls[key] = {"doi": doi, "url": f"https://doi.org/{doi}"}
-    return dois_and_urls
+            dois_urls_licenses[key] = {"doi": doi, "url": f"https://doi.org/{doi}"}
+    # Add licenses.
+    for key, license in licenses.items():
+        dois_urls_licenses[key]["license"] = license
+    return dois_urls_licenses
 
 
 def clone_patient(patient, uuid):
@@ -182,12 +188,13 @@ def build_patient(sess, args, all_sources, patient_index, version, collection, p
         if not patient.expanded:
             expand_patient(sess, args, all_sources, version, collection, patient)
         successlogger.info("  p%s: Expanded Patient %s, %s, %s studies, expand_time: %s, %s", args.pid, patient.submitter_case_id, patient_index, len(patient.studies), time.time()-begin, time.asctime())
-        dois_and_urls = get_dois_and_urls(all_sources, collection.collection_id, patient.submitter_case_id)
+
+        dois_urls_licenses = get_dois_urls_licenses(args, all_sources, collection.collection_id, patient.submitter_case_id)
         for study in patient.studies:
             study_index = f'{patient.studies.index(study) + 1} of {len(patient.studies)}'
             if not study.done:
                 # build_study(sess, args, all_sources, study_index, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois)
-                build_study(sess, args, all_sources, study_index, version, collection, patient, study, dois_and_urls)
+                build_study(sess, args, all_sources, study_index, version, collection, patient, study, dois_urls_licenses)
             else:
                 successlogger.info("    p%s: Study %s, %s, previously built", args.pid, study.study_instance_uid, study_index)
         if all([study.done for study in patient.studies]):

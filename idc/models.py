@@ -503,8 +503,9 @@ class Series(Base):
     )
     source_url = Column(String, nullable=True, comment="A url to the wiki page of this series")
     excluded = Column(Boolean, default=False, comment="True if object should be excluded from auxiliary_metadata, etc.")
-    license_name = Column(String, default=False, comment="License long name of this series.")
-    license_url = Column(String, default=False, comment="License URL of this series.")
+    license_long_name = Column(String, comment="Long name of license.")
+    license_url = Column(String, comment="License URL of this series.")
+    license_short_name = Column(String, comment='Short name of license')
 
     studies = relationship('Study',
                            secondary=study_series,
@@ -596,6 +597,9 @@ class IDC_Series(Base):
     wiki_doi = Column(String, comment='Source DOI of this series\' wiki')
     wiki_url = Column(String, comment='Source URL of this series\' wiki')
     third_party = Column(Boolean, default=False, comment='True if from a third party analysis result')
+    license_url = Column(String, comment='URL of license description')
+    license_long_name = Column(String, comment='Long name of license')
+    license_short_name = Column(String, comment='short name of license')
 
     study = relationship("IDC_Study", back_populates="seriess")
     instances = relationship("IDC_Instance", back_populates="seriess", order_by="IDC_Instance.sop_instance_uid", cascade="all, delete")
@@ -735,8 +739,8 @@ class Original_Collections_Metadata_IDC_Source(Base):
     Species = Column(String, comment='Species studies')
     Location = Column(String, comment='Cancer location ')
     license_url = Column(String, comment='URL of license description')
-    license_long_name = Column(String, comment='Short name of license')
-    license_short_name = Column(String, comment='Long name of license')
+    license_long_name = Column(String, comment='Long name of license')
+    license_short_name = Column(String, comment='Short name of license')
     Description = Column(String, comment='Description of collection')
 
 # This table is populated with metadata for collections that are not sourced from TCIA.
@@ -753,8 +757,8 @@ class Analysis_Results_Metadata_IDC_Source(Base):
     AnalysisArtifacts = Column(String, comment='Types of analysis artifacts produced')
     Updated = Column(String, comment='Date of most recent update reported')
     license_url = Column(String, comment='URL of license description')
-    license_long_name = Column(String, comment='Short name of license')
-    license_short_name = Column(String, comment='Long name of license')
+    license_long_name = Column(String, comment='Long name of license')
+    license_short_name = Column(String, comment='Short name of license')
     Description = Column(String, comment='Description of analysis result')
 
 

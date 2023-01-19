@@ -39,7 +39,7 @@ tables = {
         'excluded_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
         'idc_collection': {"func": upload_table, "order_by": "collection_id"},
         'idc_instance': {"func": upload_table, "order_by": "sop_instance_uid"},
-        'idc_patient': {"func": upload_table, "order_by": "patient_id"},
+        'idc_patient': {"func": upload_table, "order_by": "submitter_case_id"},
         'idc_series': {"func": upload_table, "order_by": "series_instance_uid"},
         'idc_study': {"func": upload_table, "order_by": "study_instance_uid"},
         'instance': {"func":upload_instance, "order_by":"sop_instance_uid"},
