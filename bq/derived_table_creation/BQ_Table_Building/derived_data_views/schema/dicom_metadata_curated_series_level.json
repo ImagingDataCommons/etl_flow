@@ -43,11 +43,12 @@
         "name": "primaryAnatomicStructure",
         "type": "STRING"
       },
-      "description": "Concatenated `CodeValue,CodingSchemeDesignator,CodeMeaning` from OpticalPathSequence[0].IlluminationTypeCodeSequence[0] (applicable in SM).",
-      "mode": "NULLABLE",
-      "name": "ObjectiveLensPower",
-      "type": "STRING"
-    },      
+      {
+        "description": "Concatenated `CodeValue,CodingSchemeDesignator,CodeMeaning` from OpticalPathSequence[0].IlluminationTypeCodeSequence[0] (applicable in SM).",
+        "mode": "NULLABLE",
+        "name": "ObjectiveLensPower",
+        "type": "STRING"
+      }
     ]
   }
 }
