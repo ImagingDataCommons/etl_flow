@@ -9,8 +9,8 @@ WITH
     MAX(DISTINCT(TotalPixelMatrixRows)) AS max_TotalPixelMatrixRows,
     MAX(DISTINCT(`Columns`)) AS max_Columns,
     MAX(DISTINCT(`Rows`)) AS max_Rows,
-    MIN(DISTINCT(ROUND(SAFE_CAST(PixelSpacing[SAFE_OFFSET(0)] AS FLOAT64), 2))) AS min_spacing_0,
-    MIN(DISTINCT(ROUND(SAFE_CAST(PixelSpacing[SAFE_OFFSET(1)] AS FLOAT64), 2))) AS min_spacing_1,
+    MIN(DISTINCT(SAFE_CAST(PixelSpacing[SAFE_OFFSET(0)] AS FLOAT64))) AS min_spacing_0,
+    MIN(DISTINCT(SAFE_CAST(PixelSpacing[SAFE_OFFSET(1)] AS FLOAT64))) AS min_spacing_1,
     MIN(SAFE_CAST(SharedFunctionalGroupsSequence[SAFE_OFFSET(0)].PixelMeasuresSequence[SAFE_OFFSET(0)]. PixelSpacing[SAFE_OFFSET(0)] AS FLOAT64)) AS fg_min_spacing_0,
     MIN(SAFE_CAST(SharedFunctionalGroupsSequence[SAFE_OFFSET(0)].PixelMeasuresSequence[SAFE_OFFSET(0)]. PixelSpacing[SAFE_OFFSET(1)] AS FLOAT64)) AS fg_min_spacing_1,
     ARRAY_AGG(DISTINCT(CONCAT(SpecimenDescriptionSequence[SAFE_OFFSET(0)].PrimaryAnatomicStructureSequence[SAFE_OFFSET(0)].CodeValue,",", SpecimenDescriptionSequence[SAFE_OFFSET(0)].PrimaryAnatomicStructureSequence[SAFE_OFFSET(0)].CodingSchemeDesignator,",", SpecimenDescriptionSequence[SAFE_OFFSET(0)].PrimaryAnatomicStructureSequence[SAFE_OFFSET(0)].CodeMeaning )) IGNORE NULLS) AS primaryAnatomicStructure,
@@ -23,11 +23,11 @@ WITH
 SELECT
   SeriesInstanceUID,
   COALESCE(min_spacing_0, fg_min_spacing_0) AS min_PixelSpacing0,
-  COALESCE(max_TotalPixelMatrixColumns, max_Columns) AS max_Columns,
-  COALESCE(max_TotalPixelMatrixRows, max_Rows) AS max_Rows,
+  COALESCE(max_TotalPixelMatrixColumns, max_Columns) AS max_TotalPixelMatrixColumns,
+  COALESCE(max_TotalPixelMatrixRows, max_Rows) AS max_TotalPixelMatrixRows,
   ObjectiveLensPower,
   primaryAnatomicStructure,
   illuminationType,
-  #if(Modality = "SM", slim_viewer_url, ohif_viewer_url) as viewer_url
+  Modality,
 FROM
   temp_table

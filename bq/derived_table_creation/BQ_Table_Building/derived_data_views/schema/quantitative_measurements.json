@@ -1,5 +1,5 @@
 {
-  "description": "A convenience view providing simplified access to the items within the DICOM SR TID 1500 documents that contain quantitative measurements. All attributes named following the CamelCase notation (except Quantity and Value) correspond to standard DICOM attributes and are documented in the DICOM standard.",
+  "description": "A convenience view providing simplified access to the items within the DICOM SR TID 1500 documents that contain quantitative measurements. All attributes named following the CamelCase notation (except Quantity and Value) correspond to standard DICOM attributes and are documented in the DICOM standard; see source code for the underlying query at https://github.com/ImagingDataCommons/etl_flow/blob/master/bq/derived_table_creation/BQ_Table_Building/derived_data_views/sql/dicom_quantitative_measurements.sql",
   "friendlyName": "quantitative_measurements",
   "labels": {
     "tbd_key_1": "value_1",
