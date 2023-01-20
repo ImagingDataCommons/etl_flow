@@ -24,7 +24,7 @@ WITH
     (0)] AS MeasurementUnits,
     contentSequence.ContentSequence
   FROM
-    `{0}`
+    `{project}.{dataset}.measurement_groups`
   CROSS JOIN
     UNNEST (contentSequence.ContentSequence) AS contentSequence
   WHERE
@@ -48,7 +48,7 @@ WITH
   SAFE_OFFSET
     (0)] AS ConceptCodeSequence
   FROM
-    `{1}`
+    `{project}.{dataset}.measurement_groups`
   CROSS JOIN
     UNNEST (contentSequence.ContentSequence) AS contentSequence
   WHERE
@@ -64,7 +64,7 @@ WITH
     (0)] AS ConceptCodeSequence,
     measurementGroup_number
   FROM
-    `{2}`
+    `{project}.{dataset}.measurement_groups`
   CROSS JOIN
     UNNEST (contentSequence.ContentSequence) AS contentSequence
   WHERE
