@@ -22,7 +22,6 @@ import settings
 from publish_bq_derived_tables import main
 
 sys.argv.extend(["ConfigFiles/BQViewInstall_template.yaml", settings.CURRENT_VERSION, \
-                 # "idc-dev-etl", f"idc_v{settings.CURRENT_VERSION}_pub"])
-                 "idc-dev-etl", 'whc_dev'])
+                 "idc-dev-etl", f"idc_v{settings.CURRENT_VERSION}_pub"])
 
 main(sys.argv)

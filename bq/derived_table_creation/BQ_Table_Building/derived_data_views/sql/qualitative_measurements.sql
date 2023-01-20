@@ -16,7 +16,7 @@ WITH
   OFFSET
     (0)] AS ConceptCodeSequence
   FROM
-    `{project}.{dataset}.measurement_groups`
+    `{0}`
   CROSS JOIN
     UNNEST (contentSequence.ContentSequence) AS contentSequence
   WHERE

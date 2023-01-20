@@ -38,9 +38,9 @@ WITH
     aux.license_short_name as license_short_name,
     dcm.* except(PatientID, StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID)
   FROM
-    `{project}.{dataset}.auxiliary_metadata` AS aux
+    `{0}` AS aux
   INNER JOIN
-    `{project}.{dataset}.dicom_metadata` AS dcm
+    `{1}` AS dcm
   ON
     aux.SOPInstanceUID = dcm.SOPInstanceUID)
 
@@ -52,6 +52,6 @@ WITH
   FROM
     pre_dicom_all
   INNER JOIN
-    `{project}.{dataset}.original_collections_metadata` AS data_collections
+    `{2}` AS data_collections
   ON
     pre_dicom_all.collection_id = data_collections.idc_webapp_collection_id
