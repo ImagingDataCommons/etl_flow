@@ -20,15 +20,15 @@
         "type": "FLOAT"
       },
       {
-        "description": "Minimum value of the Column attribute across instances within the series. Contains first non-null value between the top-level Column attribute and the one in TotalPixelMatrixColumns (encountered in SM modality).",
+        "description": "Minimum value of the Columns attribute across instances within the series. Contains first non-null value between the top-level Columns attribute and the one in TotalPixelMatrixColumns (encountered in SM modality).",
         "mode": "NULLABLE",
-        "name": "max_Columns",
+        "name": "max_TotalPixelMatrixColumns",
         "type": "INTEGER"
       },
       {
-        "description": "Minimum value of the Column attribute across instances within the series. Contains first non-null value between the top-level Rows attribute and the one in TotalPixelMatrixRows (encountered in SM modality).",
+        "description": "Minimum value of the Rows attribute across instances within the series. Contains first non-null value between the top-level Rows attribute and the one in TotalPixelMatrixRows (encountered in SM modality).",
         "mode": "NULLABLE",
-        "name": "max_Rows",
+        "name": "max_TotalPixelMatrixRows",
         "type": "INTEGER"
       },
       {
