@@ -18,7 +18,7 @@
 Validate that the idc-open-cr bucket contains the correct instances.
 """
 import argparse
-import os
+import json
 import settings
 
 from gcs.validate_bucket.validate_bucket_mp import check_all_instances
@@ -36,6 +36,6 @@ if __name__ == '__main__':
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/validate_open_buckets')
 
     args = parser.parse_args()
-    
+    print(f'args: {json.dumps(args.__dict__, indent=2)}')
 
     check_all_instances(args)

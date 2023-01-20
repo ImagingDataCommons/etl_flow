@@ -20,6 +20,8 @@
 import argparse
 import settings
 from dcf.gen_instance_manifest.instance_manifest import gen_instance_manifest
+import json
+from utilities.logging_config import successlogger, progresslogger, errlogger
 
 if __name__ == '__main__':
     version = settings.CURRENT_VERSION
@@ -36,6 +38,7 @@ if __name__ == '__main__':
     parser.add_argument('--temp_table', default=f'idc_v{settings.CURRENT_VERSION}_instance_manifest', \
             help='Temporary table in which to write query results')
     args = parser.parse_args()
+    progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
     gen_instance_manifest(args)
 

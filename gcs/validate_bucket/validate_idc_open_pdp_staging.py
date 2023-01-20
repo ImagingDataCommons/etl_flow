@@ -19,7 +19,7 @@ Validate that th idc-open-pdp-staging bucket holds the correct set of instance b
 """
 
 import argparse
-import os
+import json
 import settings
 
 from utilities.logging_config import successlogger, progresslogger, errlogger
@@ -93,4 +93,5 @@ if __name__ == '__main__':
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/validate_open_buckets')
 
     args = parser.parse_args()
+    print(f'args: {json.dumps(args.__dict__, indent=2)}')
     check_all_instances(args)

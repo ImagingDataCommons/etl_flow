@@ -20,8 +20,9 @@ contains the expected set of blobs.
 """
 
 import argparse
-import os
+import json
 import settings
+from utilities.logging_config import successlogger, progresslogger, errlogger
 
 from gcs.validate_bucket.validate_bucket_mp import check_all_instances
 
@@ -35,7 +36,9 @@ if __name__ == '__main__':
     parser.add_argument('--expected_blobs', default=f'{settings.LOG_DIR}/expected_blobs.txt', help='List of blobs names expected to be in above collections')
     parser.add_argument('--found_blobs', default=f'{settings.LOG_DIR}/found_blobs.txt', help='List of blobs names found in bucket')
     parser.add_argument('--batch', default=10000, help='Size of batch assigned to each process')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/validate_open_buckets')
+    # parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/validate_open_buckets')
 
     args = parser.parse_args()
+    progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
+
     check_all_instances(args)
