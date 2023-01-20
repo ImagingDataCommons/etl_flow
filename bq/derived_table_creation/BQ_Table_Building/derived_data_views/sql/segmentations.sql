@@ -62,6 +62,7 @@ WITH
     #unnested.SegmentedPropertyTypeCodeSequence,
     #unnested.SegmentedPropertyTypeModifierCodeSequence,
     unnested.SegmentAlgorithmType,
+	unnested.SegmentAlgorithmName,
     unnested.SegmentNumber,
     unnested.TrackingUID,
     unnested.TrackingID

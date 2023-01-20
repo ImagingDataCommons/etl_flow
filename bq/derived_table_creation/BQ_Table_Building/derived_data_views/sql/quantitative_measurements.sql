@@ -4,6 +4,7 @@ WITH
   SELECT
     PatientID,
     SOPInstanceUID,
+	SeriesDescription,
     measurementGroup_number,
     segmentationInstanceUID,
     segmentationSegmentNumber,
@@ -33,6 +34,7 @@ WITH
   SELECT
     PatientID,
     SOPInstanceUID,
+	SeriesDescription,
     measurementGroup_number,
     segmentationInstanceUID,
     segmentationSegmentNumber,
@@ -75,6 +77,7 @@ WITH
   SELECT
     PatientID,
     SOPInstanceUID,
+	SeriesDescription,
     ConceptCodeSequence AS finding,
     measurementGroup_number,
     segmentationInstanceUID,
@@ -92,18 +95,22 @@ WITH
   SELECT
     PatientID,
     SOPInstanceUID,
+	SeriesDescription,
     ConceptCodeSequence AS findingSite,
     measurementGroup_number
   FROM
     contentSequenceLevel3codes
   WHERE
-    ConceptNameCodeSequence.CodeValue = "G-C0E3"
-    AND ConceptNameCodeSequence.CodingSchemeDesignator = "SRT" ),
+    (ConceptNameCodeSequence.CodeValue = "G-C0E3"
+    AND ConceptNameCodeSequence.CodingSchemeDesignator = "SRT" ) OR 
+    (ConceptNameCodeSequence.CodeValue = "363698007"
+    AND ConceptNameCodeSequence.CodingSchemeDesignator = "SCT" ) ), 
   ---
   findingsAndFindingSites AS (
   SELECT
     findings.PatientID,
     findings.SOPInstanceUID,
+	findings.SeriesDescription,
     findings.finding,
     findingSites.findingSite,
     findingSites.measurementGroup_number,
@@ -131,6 +138,7 @@ WITH
   SELECT
     contentSequenceLevel3numeric.PatientID,
     contentSequenceLevel3numeric.SOPInstanceUID,
+	contentSequenceLevel3numeric.SeriesDescription,
     contentSequenceLevel3numeric.measurementGroup_number,
     findingsAndFindingSites.segmentationInstanceUID,
     findingsAndFindingSites.segmentationSegmentNumber,
