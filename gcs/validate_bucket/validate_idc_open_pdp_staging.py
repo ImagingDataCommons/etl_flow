@@ -28,10 +28,13 @@ from google.cloud import storage, bigquery
 def get_expected_blobs_in_bucket(args):
     client = bigquery.Client()
     query = f"""
-    SELECT distinct CONCAT(instance_uuid,'.dcm') as blob_name
-    FROM `{settings.PDP_PROJECT}.idc_v{settings.CURRENT_VERSION}.auxiliary_metadata` 
-    WHERE instance_revised_idc_version = {settings.CURRENT_VERSION}
+    SELECT distinct cur.blob_name as uuid
+    FROM `{settings.PDP_PROJECT}.idc_metadata.open_collections_blob_names_v{settings.CURRENT_VERSION}` cur
+    LEFT JOIN `{settings.PDP_PROJECT}.idc_metadata.open_collections_blob_names_v{settings.PREVIOUS_VERSION}` prev
+    ON cur.blob_name = prev.blob_name
+    WHERE prev.blob_name is NULL
     """
+
     query_job = client.query(query)  # Make an API request.
     query_job.result()  # Wait for the query to complete.
 
@@ -43,7 +46,7 @@ def get_expected_blobs_in_bucket(args):
     destination = client.get_table(destination)
     with open(args.expected_blobs, 'w') as f:
         for page in client.list_rows(destination, page_size=args.batch).pages:
-            rows = [f'{row["blob_name"]}\n' for row in page]
+            rows = [f'{row["uuid"]}\n' for row in page]
             f.write(''.join(rows))
 
 
