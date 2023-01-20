@@ -10,7 +10,7 @@ WITH
       FrameOfReferenceUID,
       SegmentSequence
     FROM
-      `{0}`
+      `{project}.{dataset}.dicom_metadata`
     WHERE
       # more reliable than Modality = "SEG"
       SOPClassUID = "1.2.840.10008.5.1.4.1.1.66.4" )
@@ -77,7 +77,7 @@ WITH
     ReferencedImageSequence[SAFE_OFFSET(0)].ReferencedSOPInstanceUID AS ris_one,
     SourceImageSequence[SAFE_OFFSET(0)].ReferencedSOPInstanceUID AS sis_one
   FROM
-    `{1}`
+    `{project}.{dataset}.dicom_all`
   WHERE
     Modality="SEG"
     AND SOPClassUID = "1.2.840.10008.5.1.4.1.1.66.4" ),
@@ -94,7 +94,7 @@ SELECT
 FROM
   coalesced_ref
 JOIN
-  `{1}` AS dicom_all
+  `{project}.{dataset}.dicom_all` AS dicom_all
 ON
   coalesced_ref.referenced_sop = dicom_all.SOPInstanceUID
 RIGHT JOIN
