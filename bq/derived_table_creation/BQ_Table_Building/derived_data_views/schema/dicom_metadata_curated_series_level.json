@@ -14,6 +14,12 @@
         "type": "STRING"
       },
       {
+        "description": "DICOM Modality",
+        "mode": "NULLABLE",
+        "name": "Modality",
+        "type": "STRING"
+      },
+      {
         "description": "Minimum value of the first component of pixel spacing across all instances in the series. Contains first non-null value between first component of the top-level PixelSpacing attribute and the one in SharedFunctionalGroupSequence[0] > PixelMeasuresSequence[0]",
         "mode": "NULLABLE",
         "name": "min_PixelSpacing0",
@@ -46,7 +52,7 @@
       {
         "description": "Concatenated `CodeValue,CodingSchemeDesignator,CodeMeaning` from OpticalPathSequence[0].IlluminationTypeCodeSequence[0] (applicable in SM).",
         "mode": "NULLABLE",
-        "name": "ObjectiveLensPower",
+        "name": "illuminationType",
         "type": "STRING"
       }
     ]
