@@ -29,6 +29,11 @@ files_and_buckets_and_tables:
         metadata: schema/dicom_metadata_curated.json
         table_list:
           - {project}.{dataset}.dicom_metadata
+    - dicom_metadata_curated_series_level:
+        sql: sql/dicom_metadata_curated_series_level.sql
+        metadata: schema/dicom_metadata_curated_series_level.json
+        table_list:
+          - {project}.{dataset}.dicom_metadata
     - measurement_groups:
        sql: sql/measurement_groups.sql
        metadata: schema/measurement_groups.json

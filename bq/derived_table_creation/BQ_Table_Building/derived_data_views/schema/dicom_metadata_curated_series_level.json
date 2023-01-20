@@ -1,0 +1,54 @@
+{
+  "description": "dicom_all_curated_series_level consists of per-series derived data from dicom_metadata",
+  "friendlyName": "dicom_all",
+  "labels": {
+    "tbd_key_1": "value_1",
+    "tbd_key_2": "value_2"
+  },
+  "schema": {
+    "fields": [
+      {
+        "description": "DICOM SeriesInstanceUID",
+        "mode": "NULLABLE",
+        "name": "SeriesInstanceUID",
+        "type": "STRING"
+      },
+      {
+        "description": "Minimum pixel spacing across all instances in the series",
+        "mode": "NULLABLE",
+        "name": "min_PixelSpacing0",
+        "type": "STRING"
+      },
+      {
+        "description": "",
+        "mode": "NULLABLE",
+        "name": "max_Columns",
+        "type": "STRING"
+      },
+      {
+        "description": "",
+        "mode": "NULLABLE",
+        "name": "max_Rows",
+        "type": "STRING"
+      },
+      {
+        "description": "",
+        "mode": "NULLABLE",
+        "name": "ObjectiveLensPower",
+        "type": "STRING"
+      },
+      {
+        "description": "",
+        "mode": "NULLABLE",
+        "name": "primaryAnatomicStructure",
+        "type": "STRING"
+      },
+      {
+        "description": "",
+        "mode": "NULLABLE",
+        "name": "illuminationType",
+        "type": "STRING"
+      }
+    ]
+  }
+}

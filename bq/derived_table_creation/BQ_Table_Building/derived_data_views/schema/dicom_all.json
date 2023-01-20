@@ -14,15 +14,33 @@
         "type": "STRING"
       },
       {
+        "description": "Source assigned tumor location of the collection containing this instance. Duplicate of tcia_tumorLocation",
+        "mode": "NULLABLE",
+        "name": "collection_tumorLocation",
+        "type": "STRING"
+      },
+      {
         "description": "TCIA assigned species of the collection containing this instance",
         "mode": "NULLABLE",
         "name": "tcia_species",
         "type": "STRING"
       },
       {
+        "description": "Source assigned species of the collection containing this instance. Duplicate of tcia_species.",
+        "mode": "NULLABLE",
+        "name": "collection_species",
+        "type": "STRING"
+      },
+      {
         "description": "TCIA assigned cancer type of the collection containing this instance",
         "mode": "NULLABLE",
         "name": "tcia_cancerType",
+        "type": "STRING"
+      },
+      {
+        "description": "Source assigned cancer type of the collection containing this instance. Duplicate of tcia_cancerType.",
+        "mode": "NULLABLE",
+        "name": "collection_cancerType",
         "type": "STRING"
       },
       {
