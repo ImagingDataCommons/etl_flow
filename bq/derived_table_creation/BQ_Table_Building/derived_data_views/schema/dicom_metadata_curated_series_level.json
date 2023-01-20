@@ -1,0 +1,53 @@
+{
+  "description": "dicom_metadata_curated_series_level contains metadata that has been aggregated/cleaned up to describe content at series level; see source code for the underlying query at https://github.com/ImagingDataCommons/etl_flow/blob/master/bq/derived_table_creation/BQ_Table_Building/derived_data_views/sql/dicom_metadata_curated_series_level.sql",
+  "friendlyName": "dicom_metadata_curated_series_level",
+  "labels": {
+    "tbd_key_1": "value_1",
+    "tbd_key_2": "value_2"
+  },
+  "schema": {
+    "fields": [
+      {
+        "description": "DICOM SeriesInstanceUID",
+        "mode": "NULLABLE",
+        "name": "SeriesInstanceUID",
+        "type": "STRING"
+      },
+      {
+        "description": "Minimum value of the first component of pixel spacing across all instances in the series. Contains first non-null value between first component of the top-level PixelSpacing attribute and the one in SharedFunctionalGroupSequence[0] > PixelMeasuresSequence[0]",
+        "mode": "NULLABLE",
+        "name": "min_PixelSpacing0",
+        "type": "FLOAT"
+      },
+      {
+        "description": "Minimum value of the Column attribute across instances within the series. Contains first non-null value between the top-level Column attribute and the one in TotalPixelMatrixColumns (encountered in SM modality).",
+        "mode": "NULLABLE",
+        "name": "max_Columns",
+        "type": "INTEGER"
+      },
+      {
+        "description": "Minimum value of the Column attribute across instances within the series. Contains first non-null value between the top-level Rows attribute and the one in TotalPixelMatrixRows (encountered in SM modality).",
+        "mode": "NULLABLE",
+        "name": "max_Rows",
+        "type": "INTEGER"
+      },
+      {
+        "description": "Value of OpticalPathSequence[0] > ObjectiveLensPower (applicable in SM).",
+        "mode": "NULLABLE",
+        "name": "ObjectiveLensPower",
+        "type": "STRING"
+      },
+      {
+        "description": "Concatenated `CodeValue,CodingSchemeDesignator,CodeMeaning` from SpecimenDescriptionSequence[0] > PrimaryAnatomicStructureSequence[0] (applicable in SM).",
+        "mode": "NULLABLE",
+        "name": "primaryAnatomicStructure",
+        "type": "STRING"
+      },
+      "description": "Concatenated `CodeValue,CodingSchemeDesignator,CodeMeaning` from OpticalPathSequence[0].IlluminationTypeCodeSequence[0] (applicable in SM).",
+      "mode": "NULLABLE",
+      "name": "ObjectiveLensPower",
+      "type": "STRING"
+    },      
+    ]
+  }
+}

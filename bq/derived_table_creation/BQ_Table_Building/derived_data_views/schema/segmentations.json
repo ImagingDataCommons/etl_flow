@@ -1,5 +1,5 @@
 {
-  "description": "Attributes of the segments stored in DICOM Segmentation objects",
+  "description": "Attributes of the segments stored in DICOM Segmentation objects; see source code for the underlying query at https://github.com/ImagingDataCommons/etl_flow/blob/master/bq/derived_table_creation/BQ_Table_Building/derived_data_views/sql/segmentations.sql",
   "friendlyName": "segmentations",
   "labels": {
     "tbd_key_1": "value_1",
