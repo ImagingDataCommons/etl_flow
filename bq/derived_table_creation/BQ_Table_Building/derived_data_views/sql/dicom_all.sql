@@ -46,8 +46,11 @@ WITH
 
   SELECT
     data_collections.Location AS tcia_tumorLocation,
+    data_collections.Location AS collection_tumorLocation,
     data_collections.Species AS tcia_species,
+    data_collections.Species AS collection_species,
     data_collections.CancerType AS tcia_cancerType,
+    data_collections.CancerType AS collection_cancerType,
     pre_dicom_all.*
   FROM
     pre_dicom_all
