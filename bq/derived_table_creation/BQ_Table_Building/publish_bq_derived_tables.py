@@ -403,11 +403,12 @@ def main(args):
                     sql_format = sql_format_file.read()
                 # use list as argument to format:
                 print(table_list)
-                view_sql = sql_format.format(*table_list)
+                # view_sql = sql_format.format(*table_list)
+                view_sql = sql_format.format(project=target_project, dataset=dataset_id)
                 with open(metadata_file_full_path, mode='r') as view_metadata_file:
                     view_schema = json_loads(view_metadata_file.read())
-                # success = create_view(target_client, target_project, dataset_id, view_name, view_schema, view_sql)
                 success = create_table(target_client, target_project, dataset_id, view_name, view_schema, view_sql)
+                success = create_view(target_client, target_project, dataset_id, f'{view_name}_view', view_schema, view_sql)
                 if not success:
                     print("shadow_datasets failed")
                     return
