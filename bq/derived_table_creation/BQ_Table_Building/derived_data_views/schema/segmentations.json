@@ -190,6 +190,12 @@
       {
         "description": "TBD",
         "mode": "NULLABLE",
+        "name": "SegmentAlgorithmName",
+        "type": "STRING"
+      },      
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
         "name": "SegmentNumber",
         "type": "INTEGER"
       },
