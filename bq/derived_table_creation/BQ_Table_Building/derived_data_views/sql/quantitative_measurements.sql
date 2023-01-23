@@ -4,6 +4,7 @@ WITH
   SELECT
     PatientID,
     SOPInstanceUID,
+	SeriesDescription,
     measurementGroup_number,
     segmentationInstanceUID,
     segmentationSegmentNumber,
@@ -33,6 +34,7 @@ WITH
   SELECT
     PatientID,
     SOPInstanceUID,
+	SeriesDescription,
     measurementGroup_number,
     segmentationInstanceUID,
     segmentationSegmentNumber,
@@ -75,6 +77,7 @@ WITH
   SELECT
     PatientID,
     SOPInstanceUID,
+	SeriesDescription,
     ConceptCodeSequence AS finding,
     measurementGroup_number,
     segmentationInstanceUID,
@@ -92,6 +95,7 @@ WITH
   SELECT
     PatientID,
     SOPInstanceUID,
+	SeriesDescription,
     ConceptCodeSequence AS findingSite,
     measurementGroup_number
   FROM
@@ -106,6 +110,7 @@ WITH
   SELECT
     findings.PatientID,
     findings.SOPInstanceUID,
+	findings.SeriesDescription,
     findings.finding,
     findingSites.findingSite,
     findingSites.measurementGroup_number,
@@ -120,7 +125,7 @@ WITH
     findingSites
   ON
     findings.SOPInstanceUID = findingSites.SOPInstanceUID
-    AND findings.measurementGroup_number = findingSites.measurementGroup_number ), ---
+    AND findings.measurementGroup_number = findingSites.measurementGroup_number ) ---
   # correctness check: the below should result in 11 rows (this is how many segments/measurement
     # groups are there for each QIN-HEADNCK-01-0139 segmentation
     #SELECT
@@ -129,18 +134,11 @@ WITH
     #  findingsAndFindingSites
     #WHERE
     #  SOPInstanceUID = "1.2.276.0.7230010.3.1.4.8323329.18336.1440004659.731760"
-  ---
-  seg_sops AS (
-  SELECT 
-    DISTINCT(SOPInstanceUID),
-    SegmentAlgorithmType,
-    SegmentAlgorithmName
-  FROM 
-    `{project}.{dataset}.segmentations`)
-  ---
+    ---
   SELECT
     contentSequenceLevel3numeric.PatientID,
     contentSequenceLevel3numeric.SOPInstanceUID,
+	contentSequenceLevel3numeric.SeriesDescription,
     contentSequenceLevel3numeric.measurementGroup_number,
     findingsAndFindingSites.segmentationInstanceUID,
     findingsAndFindingSites.segmentationSegmentNumber,
@@ -169,9 +167,7 @@ WITH
       (0)] AS NUMERIC ) AS Value,
     contentSequenceLevel3numeric.MeasurementUnits AS Units,
     findingsAndFindingSites.finding,
-    findingsAndFindingSites.findingSite,
-	seg_sops.SegmentAlgorithmType,
-    seg_sops.SegmentAlgorithmName
+    findingsAndFindingSites.findingSite
   FROM
     contentSequenceLevel3numeric
   JOIN
@@ -179,11 +175,6 @@ WITH
   ON
     contentSequenceLevel3numeric.SOPInstanceUID = findingsAndFindingSites.SOPInstanceUID
     AND contentSequenceLevel3numeric.measurementGroup_number = findingsAndFindingSites.measurementGroup_number ---
-  JOIN 
-    seg_sops 
-  ON 
-    seg_sops.SOPInstanceUID = findingsAndFindingSites.segmentationInstanceUID
-	
     # correctness check: for this patient, there should be 12 rows: 4 segmented nodules, with 3 numeric evaluations for each
     #WHERE
     #  contentSequenceLevel3numeric.PatientID = "LIDC-IDRI-0001"
