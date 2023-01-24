@@ -86,7 +86,32 @@ def get_descriptions(client,args):
     descriptions = {c.ID: c.Description for c in client.query(query).result()}
     return descriptions
 
+
+def get_idc_sourced_analysis_metadata(client):
+    query = f"""
+    SELECT DISTINCT *
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_metadata_idc_source`
+    """
+
+    results = [dict(row) for row in client.query(query).result()]
+    metadata = {f'{row["Title"]} ({row["ID"]})':row for row in results}
+    return metadata
+
+
+def get_all_analysis_metadata(client):
+    # Scrape the TCIA analysis results page for metadata
+    analysis_metadata = get_idc_sourced_analysis_metadata(client)
+    analysis_metadata = analysis_metadata | scrape_tcia_analysis_collections_page()
+
 def build_metadata(args, BQ_client):
+
+    all_idc_analysis_metadata = get_idc_sourced_analysis_metadata(BQ_client)
+    idc_analysis_metadata = {title: {'DOI':data['DOI'], 'CancerType':data['CancerType'], \
+            'Location':data['Location'], 'Subjects':data['Subjects'], 'Collections':data['Collections'], \
+            'AnalysisArtifactsonTCIA':data['AnalysisArtifacts'], 'Updated':data['Updated']} \
+            for title, data in all_idc_analysis_metadata.items()}
+    analysis_metadata = idc_analysis_metadata | scrape_tcia_analysis_collections_page()
+
     # Get analysis results descriptions
     descriptions = get_descriptions(BQ_client, args)
 
@@ -95,9 +120,8 @@ def build_metadata(args, BQ_client):
 
     # Get all source DOIs in IDC data the collections they are in
     source_dois_license = get_all_idc_dois_licenses(BQ_client, args)
-
-    # Scrape the TCIA analysis results page for metadata
-    analysis_metadata = scrape_tcia_analysis_collections_page()
+    for value in all_idc_analysis_metadata.values():
+        source_dois_license[value['DOI']] = value['ID']
 
     rows = []
     for analysis_id, analysis_data in analysis_metadata.items():
