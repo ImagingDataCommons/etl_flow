@@ -41,7 +41,7 @@
         "description": "Value of OpticalPathSequence[0] > ObjectiveLensPower (applicable in SM).",
         "mode": "NULLABLE",
         "name": "ObjectiveLensPower",
-        "type": "STRING"
+        "type": "INTEGER"
       },
       {
         "description": "Concatenated values of `CodingSchemeDesignator` and `CodeValue` separated by `:` from SpecimenDescriptionSequence[0] > PrimaryAnatomicStructureSequence[0] (applicable in SM).",
