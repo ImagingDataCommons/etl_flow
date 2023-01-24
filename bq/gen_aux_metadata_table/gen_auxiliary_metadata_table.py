@@ -61,6 +61,7 @@ def build_table(args):
       IF(source_url is Null OR source_url='', CONCAT('https://doi.org/', source_doi), source_url) AS source_url,
       series_instances,
       se_hashes.all_hash AS series_hash,
+      'Public' AS access,
       se_init_idc_version AS series_init_idc_version,
       se_rev_idc_version AS series_revised_idc_version,
       se_final_idc_version AS series_final_idc_version,
