@@ -20,9 +20,9 @@
         "type": "STRING"
       },
       {
-        "description": "Minimum value of the first component of pixel spacing across all instances in the series. Contains first non-null value between first component of the top-level PixelSpacing attribute and the one in SharedFunctionalGroupSequence[0] > PixelMeasuresSequence[0]",
+        "description": "Minimum value of the first component of pixel spacing across all instances in the series. Contains first non-null value between first component of the top-level PixelSpacing attribute and the one in SharedFunctionalGroupSequence[0] > PixelMeasuresSequence[0]. Rounded to two significant figures.",
         "mode": "NULLABLE",
-        "name": "min_PixelSpacing0",
+        "name": "min_PixelSpacing_2sf",
         "type": "FLOAT"
       },
       {
