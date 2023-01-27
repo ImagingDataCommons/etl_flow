@@ -16,12 +16,25 @@ limitations under the License.
 
 """
 
-import sys
 import settings
-
+import argparse
+import json
 from publish_bq_derived_tables import main
 
-sys.argv.extend(["ConfigFiles/BQViewInstall_template.yaml", settings.CURRENT_VERSION, \
-                 "idc-dev-etl", f"idc_v{settings.CURRENT_VERSION}_pub"])
+# sys.argv.extend(["ConfigFiles/BQViewInstall_template.yaml", settings.CURRENT_VERSION, \
+#                  "idc-dev-etl", f"idc_v{settings.CURRENT_VERSION}_pub"])
 
-main(sys.argv)
+if __name__ == '__main__':
+    # (sys.argv)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--yaml_template', default="ConfigFiles/BQViewInstall_template.yaml", \
+                        help='Template specifying tables/views to be generated')
+    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
+    parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
+    parser.add_argument('--dataset', default=f"idc_v{settings.CURRENT_VERSION}_pub", help="BQ dataset")
+    parser.add_argument('--view_name', default='dicom_metadata_curated_series_level', help='Build this table/view if specified, or all tables')
+    args = parser.parse_args()
+
+    print(f'args: {json.dumps(args.__dict__, indent=2)}')
+
+    main(args)

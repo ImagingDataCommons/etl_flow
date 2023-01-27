@@ -324,20 +324,21 @@ This allows you to e.g. skip previously run steps.
 
 def main(args):
 
-    if len(args) != 5:
-        print(" ")
-        print(" Usage : {} <configuration_yaml>".format(args[0]))
-        return
-
+    # if len(args) != 5:
+    #     print(" ")
+    #     print(" Usage : {} <configuration_yaml>".format(args[0]))
+    #     return
+    #
     print('job started')
 
     #
     # Get the YAML config loaded:
     #
 
-    with open(args[1], mode='r') as yaml_file:
+    with open(args.yaml_template, mode='r') as yaml_file:
         yaml_template = yaml_file.read()
-        formatted_yaml = yaml_template.format(version=args[2], project=args[3], dataset=args[4])
+        formatted_yaml = yaml_template.format(version=args.version, project=args.project, \
+                    dataset=args.dataset)
         params, steps = load_config(formatted_yaml)
         # params, steps = load_config(yaml_file.read())
 
@@ -393,25 +394,26 @@ def main(args):
     if 'install_views' in steps:
         for mydict in install_list:
             for view_name, view_dict in mydict.items():
-                print("creating view: {}".format(view_name))
-                sql_format_file = view_dict["sql"]
-                metadata_file = view_dict["metadata"]
-                table_list = view_dict["table_list"]
-                metadata_file_full_path = "{}/{}".format(data_file_path, metadata_file)
-                sql_format_file_full_path = "{}/{}".format(data_file_path, sql_format_file)
-                with open(sql_format_file_full_path, mode='r') as sql_format_file:
-                    sql_format = sql_format_file.read()
-                # use list as argument to format:
-                print(table_list)
-                # view_sql = sql_format.format(*table_list)
-                view_sql = sql_format.format(project=target_project, dataset=dataset_id)
-                with open(metadata_file_full_path, mode='r') as view_metadata_file:
-                    view_schema = json_loads(view_metadata_file.read())
-                success = create_table(target_client, target_project, dataset_id, view_name, view_schema, view_sql)
-                success = create_view(target_client, target_project, dataset_id, f'{view_name}_view', view_schema, view_sql)
-                if not success:
-                    print("shadow_datasets failed")
-                    return
+                if not args.view_name or args.view_name==view_name:
+                    print("creating view: {}".format(view_name))
+                    sql_format_file = view_dict["sql"]
+                    metadata_file = view_dict["metadata"]
+                    table_list = view_dict["table_list"]
+                    metadata_file_full_path = "{}/{}".format(data_file_path, metadata_file)
+                    sql_format_file_full_path = "{}/{}".format(data_file_path, sql_format_file)
+                    with open(sql_format_file_full_path, mode='r') as sql_format_file:
+                        sql_format = sql_format_file.read()
+                    # use list as argument to format:
+                    print(table_list)
+                    # view_sql = sql_format.format(*table_list)
+                    view_sql = sql_format.format(project=target_project, dataset=dataset_id)
+                    with open(metadata_file_full_path, mode='r') as view_metadata_file:
+                        view_schema = json_loads(view_metadata_file.read())
+                    success = create_table(target_client, target_project, dataset_id, view_name, view_schema, view_sql)
+                    success = create_view(target_client, target_project, dataset_id, f'{view_name}_view', view_schema, view_sql)
+                    if not success:
+                        print("shadow_datasets failed")
+                        return
 
     print('job completed')
 
