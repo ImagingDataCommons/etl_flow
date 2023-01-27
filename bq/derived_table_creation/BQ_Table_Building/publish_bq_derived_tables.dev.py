@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
     parser.add_argument('--dataset', default=f"idc_v{settings.CURRENT_VERSION}_pub", help="BQ dataset")
-    parser.add_argument('--view_name', default='dicom_metadata_curated_series_level', help='Build this table/view if specified, or all tables')
+    parser.add_argument('--view_name', default='', help='Build this table/view if specified, or all tables')
     args = parser.parse_args()
 
     print(f'args: {json.dumps(args.__dict__, indent=2)}')
