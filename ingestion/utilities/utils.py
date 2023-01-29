@@ -53,12 +53,16 @@ def md5_hasher(file_path):
 
 
 # Hash a sorted list of hashes
+# Return "" if the list is empty
 def get_merkle_hash(hashes):
-    md5 = hashlib.md5()
-    hashes.sort()
-    for hash in hashes:
-        md5.update(hash.encode())
-    return md5.hexdigest()
+    if hashes:
+        md5 = hashlib.md5()
+        hashes.sort()
+        for hash in hashes:
+            md5.update(hash.encode())
+        return md5.hexdigest()
+    else:
+        ""
 
 # Validate that instances were received correctly
 def validate_hashes(args, collection, patient, study, series, hashes):
