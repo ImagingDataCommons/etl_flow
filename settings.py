@@ -19,8 +19,8 @@ import sys
 from os.path import join, dirname, exists
 from dotenv import load_dotenv
 
-CURRENT_VERSION=13
-PREVIOUS_VERSION=12
+CURRENT_VERSION=14
+PREVIOUS_VERSION=13
 
 SECURE_LOCAL_PATH = os.environ.get('SECURE_LOCAL_PATH', '')
 
