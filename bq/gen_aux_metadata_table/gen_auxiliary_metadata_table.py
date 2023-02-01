@@ -71,7 +71,7 @@ def build_table(args):
       CONCAT('gs://',
         # If we are generating gcs_url for the public auxiliary_metadata table 
         if('{args.target}' = 'pub', 
-            if( i_source='tcia', ac.pub_tcia_url, ac.pub_idc_url), 
+            if( i_source='tcia', ac.pub_gcs_tcia_url, ac.pub_gcs_idc_url), 
         #else 
             # We are generating the dev auxiliary_metadata
             # If this instance is new in this version and we 
@@ -91,6 +91,12 @@ def build_table(args):
                 )
             ), 
         '/', i_uuid, '.dcm') as gcs_url,
+      
+      # There are no dev S3 buckets, so populate the aws_url 
+      # the same for both dev and pub versions of auxiliary_metadata
+      CONCAT('s3://',
+        if( i_source='tcia', ac.pub_aws_tcia_url, ac.pub_aws_idc_url),
+            '/', i_uuid, '.dcm') as aws_url,
       i_size AS instance_size,
       i_hash AS instance_hash,
 --       i_source AS instance_source,

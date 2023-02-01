@@ -200,6 +200,12 @@
         "type": "STRING"
       },
       {
+        "description": "URL to this object containing the current version of this instance in Amazon Web Services (AWS)",
+        "mode": "NULLABLE",
+        "name": "aws_url",
+        "type": "STRING"
+      },
+      {
         "description": "The DOI of a page that describes the original collection or analysis result that include this instance",
         "mode": "NULLABLE",
         "name": "Source_DOI",
