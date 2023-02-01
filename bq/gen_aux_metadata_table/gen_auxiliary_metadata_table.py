@@ -90,13 +90,13 @@ def build_table(args):
                  if( i_source='tcia', ac.dev_tcia_url, ac.dev_idc_url)
                 )
             ), 
-        '/', i_uuid, '.dcm') as gcs_url,
+        '/', se_uuid, '/', i_uuid, '.dcm') as gcs_url,
       
       # There are no dev S3 buckets, so populate the aws_url 
       # the same for both dev and pub versions of auxiliary_metadata
       CONCAT('s3://',
         if( i_source='tcia', ac.pub_aws_tcia_url, ac.pub_aws_idc_url),
-            '/', i_uuid, '.dcm') as aws_url,
+            '/', se_uuid, '/', i_uuid, '.dcm') as aws_url,
       i_size AS instance_size,
       i_hash AS instance_hash,
 --       i_source AS instance_source,
