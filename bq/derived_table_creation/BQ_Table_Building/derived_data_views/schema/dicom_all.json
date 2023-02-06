@@ -65,7 +65,7 @@
         "description": "Date when the current version of the collection containing this instance was revised",
         "mode": "NULLABLE",
         "name": "collection_timestamp",
-        "type": "STRING"
+        "type": "DATETIME"
       },
       {
         "description": "md5 hash of the of this version of the collection containing this instance",
