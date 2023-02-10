@@ -191,7 +191,7 @@ def clone_derived(args, table_id):
     return
 
 
-def revise_derived_tables(args):
+def revise_derived_views_tables(args):
     # revise_dicom_all(args)
     clone_derived(args, 'measurement_groups')
     clone_derived(args, 'qualitative_measurements')
@@ -200,6 +200,12 @@ def revise_derived_tables(args):
     clone_derived(args, 'dicom_metadata_curated')
     clone_derived(args, 'dicom_metadata_curated_series_level')
     clone_derived(args, 'dicom_all')
+
+    # Special for dicom_pivot_vX. We don't want to add _view to its name
+    client = bigquery.Client()
+    table_id = f'{args.project}.{args.trg_dataset}.dicom_pivot_v{args.dataset_version}'
+    view_id = f'{table_id}'
+    recreate_view(client, args, view_id, table_id)
 
 if __name__ == '__main__':
     # (sys.argv)
@@ -216,4 +222,4 @@ if __name__ == '__main__':
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
-    revise_derived_tables(args)
+    revise_derived_views_tables(args)

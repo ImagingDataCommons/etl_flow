@@ -25,7 +25,7 @@ import time
 from google.cloud import bigquery
 from utilities.logging_config import successlogger, progresslogger, errlogger
 
-def revise_auxiliary_metadata_gcs_urls(args):
+def populate_urls_in_auxiliary_metadata(args):
     client = bigquery.Client()
 
     # Some versions of auxiliary_metadata have gcs_bucket_column
@@ -140,4 +140,4 @@ if __name__ == '__main__':
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
-    revise_auxiliary_metadata_gcs_urls(args)
+    populate_urls_in_auxiliary_metadata(args)

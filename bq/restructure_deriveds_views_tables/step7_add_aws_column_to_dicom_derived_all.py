@@ -15,7 +15,7 @@
 #
 
 """
-Add an aws_url column to auxiliary_metadata table
+Add an aws_url column to dicom_derived_metadata table
 """
 import settings
 import argparse
@@ -30,37 +30,32 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 
 # We do a table update rather than regenerate the entire table.
 # This is necessary so that we do not need the SQL for each IDC version
-def add_aws_column_to_aux(args):
+def add_aws_url_column_to_dicom_derived_all(args):
+    table_name = "dicom_derived_all"
     client = bigquery.Client()
-    table_id = f'{args.project}.{args.trg_dataset}.auxiliary_metadata'
+    table_id = f'{args.project}.{args.trg_dataset}.{table_name}'
     try:
         table = client.get_table(table_id)
     except:
         exit(-1)
+
     # Add the aws_url column if we have not already done so
     if next((index for index, field in enumerate(table.schema) if field.name == 'aws_url'), -1) == -1:
-        client = bigquery.Client()
-        query = f"""
-        ALTER TABLE `{args.project}.{args.trg_dataset}.auxiliary_metadata`
-        ADD COLUMN aws_url STRING;
-        """
-        job = client.query(query)
-        # Wait for completion
-        result = job.result()
+        # We only add aws_url if the table has a gcs_url column
+        if next((index for index, field in enumerate(table.schema) if field.name == 'gcs_url'), -1 ) != -1:
+            client = bigquery.Client()
+            query = f"""
+            ALTER TABLE `{args.project}.{args.trg_dataset}.{table_name}`
+            ADD COLUMN aws_url STRING;
+            """
+            job = client.query(query)
+            # Wait for completion
+            result = job.result()
 
-        query = f"""
-        ALTER TABLE `{args.project}.{args.trg_dataset}.auxiliary_metadata`
-        ALTER COLUMN aws_url 
-        SET OPTIONS (
-            description='URL to this object containing the current version of this instance in Amazon Web Services (AWS)'
-        )
-        """
+            progresslogger.info(f'Added aws_url column to {table_name}')
+        else:
+            progresslogger.info(f'No gcs_url column in {table_name}')
 
-        job = client.query(query)
-        # Wait for completion
-        result = job.result()
-
-        progresslogger.info(f'Added aws_url column to auxiliary_metadata')
     return
 
 
@@ -76,4 +71,4 @@ if __name__ == '__main__':
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
-    add_aws_column_to_aux(args)
+    add_aws_url_column_to_dicom_derived_all(args)

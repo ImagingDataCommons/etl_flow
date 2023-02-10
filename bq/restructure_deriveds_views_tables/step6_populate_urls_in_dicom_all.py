@@ -155,7 +155,7 @@ def create_table_from_view(client, args, view_id, table_id):
     return
 
 
-def revise_dicom_all_gcs_urls(args):
+def populate_urls_in_dicom_all(args):
     client = bigquery.Client()
     table_id = f'{args.project}.{args.trg_dataset}.dicom_all'
     view_id = f'{table_id}_view'
@@ -177,4 +177,4 @@ if __name__ == '__main__':
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
-    revise_dicom_all_gcs_urls(args)
+    populate_urls_in_dicom_all(args)

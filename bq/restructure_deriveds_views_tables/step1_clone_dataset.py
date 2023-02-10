@@ -156,7 +156,8 @@ def clone_dataset(args):
             'measurement_groups', 'measurement_groups_view',
             'qualitative_measurements', 'qualitative_measurements_view',
             'quantitative_measurements', 'quantitative_measurements_view',
-            'segmentations', 'segmentations_view'
+            'segmentations', 'segmentations_view',
+            'dicom_derived_all', f'dicom_pivot_v{args.dataset_version}'
             ]:
             if table.table_type == 'TABLE':
                 copy_table(client, args, src_dataset, table)
@@ -173,6 +174,7 @@ if __name__ == '__main__':
     # parser.add_argument('--dataset', default=f"idc_v{settings.CURRENT_VERSION}_pub", help="BQ dataset")
     parser.add_argument('--src_dataset', default=f"idc_v5", help="BQ dataset")
     parser.add_argument('--dataset_prefix', default='whc_dev_')
+    parser.add_argument('--trg-version', default='', help='Dataset version to be cloned')
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')

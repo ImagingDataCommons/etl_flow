@@ -18,11 +18,14 @@ import argparse
 import json
 import settings
 from step1_clone_dataset import clone_dataset
-from step2_revise_derived_views_tables import revise_derived_tables
-from step3_add_aws_column_to_aux import add_aws_url_column_to_auxiliary_metadata_table
+from step2_revise_derived_views_tables import revise_derived_views_tables
+from step3_add_aws_column_to_aux import add_aws_column_to_aux
+from step7_add_aws_column_to_dicom_derived_all import add_aws_url_column_to_dicom_derived_all
 from step4_add_aws_column_to_dicom_all import add_aws_url_column_to_dicom_all
-from step5_populate_urls_in_auxiliary_metadata import revise_auxiliary_metadata_gcs_urls
-from step6_populate_urls_in_dicom_all import revise_dicom_all_gcs_urls
+from step8_add_aws_column_to_dicom_pivot import add_aws_url_column_to_dicom_pivot
+from step5_populate_urls_in_auxiliary_metadata import populate_urls_in_auxiliary_metadata
+from step6_populate_urls_in_dicom_all import populate_urls_in_dicom_all
+from step9_populate_urls_in_dicom_derived_all import revise_dicom_derived_all_urls
 from utilities.logging_config import successlogger, progresslogger
 
 
@@ -41,61 +44,122 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
-    versions = [ '1', '2', '3', '4', '5', '6', '7', '8_pub', '9_pub', '10_pub',
-        '11_pub', '12_pub', '13_pub']
-    for trg_version in [version for version in versions if not version in dones]:
-        args.src_dataset = f'idc_v{trg_version}'
+    # versions = [ '1', '2', '3', '4', '5', '6', '7', '8_pub', '9_pub', '10_pub',
+    #     '11_pub', '12_pub', '13_pub']
+    versions = [ '1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+        '11', '12', '13']
+    for dataset_version in [version for version in versions if not version in dones]:
+        args.dataset_version = dataset_version
+        args.src_dataset = f'idc_v{dataset_version}' if int(dataset_version) <=7 else f'idc_v{dataset_version}_pub'
         args.trg_dataset = f'{args.dataset_prefix}{args.src_dataset}'
 
         progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
-        # Step 1
-        if f'step1_{trg_version}' not in dones:
-            progresslogger.info(f'Begin step1_{trg_version}')
-            clone_dataset(args)
-            successlogger.info(f'step1_{trg_version}')
-        else:
-            progresslogger.info(f'Skipping step1_{trg_version}')
+        steps = [
+            clone_dataset, # 1
+            revise_derived_views_tables, # 2
+            add_aws_column_to_aux, # 3
+            add_aws_url_column_to_dicom_all, # 4
+            populate_urls_in_auxiliary_metadata, # 5
+            populate_urls_in_dicom_all, # 6
+            add_aws_url_column_to_dicom_derived_all, # 7
+            add_aws_url_column_to_dicom_pivot,
+            revise_dicom_derived_all_urls
+        ]
+        
+        for index, func in enumerate(steps):
+            step = index+1
+            if f'v{dataset_version}_step{step}' not in dones:
+                progresslogger.info(f'Begin v{dataset_version}_step{step}')
+                func(args)
+                successlogger.info(f'v{dataset_version}_step{step}')
+            else:
+                progresslogger.info(f'Skipping v{dataset_version}_step{step}')
+            step += 1
 
-        # Step 2
-        if f'step2_{trg_version}' not in dones:
-            progresslogger.info(f'Begin step2_{trg_version}')
-            revise_derived_tables(args)
-            successlogger.info(f'step2_{trg_version}')
-        else:
-            progresslogger.info(f'Skipping step2_{trg_version}')
+        # # Step 1
+        # if f'v{dataset_version}_step_{step}' not in dones:
+        #     progresslogger.info(f'Begin v{dataset_version}_step{step}')
+        #     clone_dataset(args)
+        #     successlogger.info(f'v{dataset_version}_step{step}')
+        # else:
+        #     progresslogger.info(f'Skipping v{dataset_version}_step{step}')
+        # step += 1
+        #
+        # # Step 2
+        # if f'v{dataset_version}_step{step}' not in dones:
+        #     progresslogger.info(f'Begin v{dataset_version}_step{step}')
+        #     revise_derived_views_tables(args)
+        #     successlogger.info(f'v{dataset_version}_step{step}')
+        # else:
+        #     progresslogger.info(f'Skipping v{dataset_version}_step{step}')
+        # step += 1
+        #
+        # # Step 3
+        # if f'v{dataset_version}_step{step}' not in dones:
+        #     progresslogger.info(f'Begin v{dataset_version}_step{step}')
+        #     add_aws_column_to_aux(args)
+        #     successlogger.info(f'v{dataset_version}_step{step}')
+        # else:
+        #     progresslogger.info(f'Skipping v{dataset_version}_step{step}')
+        # step += 1
+        #
+        # # Step 4
+        # if f'v{dataset_version}_step{step}' not in dones:
+        #     progresslogger.info(f'Begin v{dataset_version}_step{step}')
+        #     add_aws_url_column_to_dicom_all(args)
+        #     successlogger.info(f'v{dataset_version}_step{step}')
+        # else:
+        #     progresslogger.info(f'Skipping v{dataset_version}_step{step}')
+        # step += 1
+        #
+        # # Step 5
+        # if f'v{dataset_version}_step{step}' not in dones:
+        #     progresslogger.info(f'Begin v{dataset_version}_step{step}')
+        #     populate_urls_in_auxiliary_metadata(args)
+        #     successlogger.info(f'v{dataset_version}_step{step}')
+        # else:
+        #     progresslogger.info(f'Skipping v{dataset_version}_step{step}')
+        # step += 1
+        #
+        # # Step 6
+        # if f'v{dataset_version}_step{step}' not in dones:
+        #     progresslogger.info(f'Begin v{dataset_version}_step{step}')
+        #     populate_urls_in_dicom_all(args)
+        #     successlogger.info(f'v{dataset_version}_step{step}')
+        # else:
+        #     progresslogger.info(f'Skipping v{dataset_version}_step{step}')
+        # step += 1
+        #
+        # # Step 7
+        # if f'v{dataset_version}_step{step}' not in dones:
+        #     progresslogger.info(f'Begin v{dataset_version}_step{step}')
+        #     add_aws_url_column_to_dicom_pivot(args)
+        #     successlogger.info(f'v{dataset_version}_step{step}')
+        # else:
+        #     progresslogger.info(f'Skipping v{dataset_version}_step{step}')
+        # step += 1
+        #
+        # # Step 9
+        # if f'v{dataset_version}_step{step}' not in dones:
+        #     progresslogger.info(f'Begin v{dataset_version}_step{step}')
+        #     add_aws_url_column_to_dicom_derived_all(args)
+        #     successlogger.info(f'v{dataset_version}_step{step}')
+        # else:
+        #     progresslogger.info(f'Skipping v{dataset_version}_step{step}')
+        # step += 1
+        #
+        # # Step 9
+        # if f'v{dataset_version}_step{step}' not in dones:
+        #     progresslogger.info(f'Begin v{dataset_version}_step{step}')
+        #     revise_dicom_derived_all_urls(args)
+        #     successlogger.info(f'v{dataset_version}_step{step}')
+        # else:
+        #     progresslogger.info(f'Skipping v{dataset_version}_step{step}')
 
-        # Step3
-        if f'step3_{trg_version}' not in dones:
-            progresslogger.info(f'Begin step3_{trg_version}')
-            add_aws_url_column_to_auxiliary_metadata_table(args)
-            successlogger.info(f'step3_{trg_version}')
-        else:
-            progresslogger.info(f'Skipping step3_{trg_version}')
 
-        # Step 4
-        if f'step4_{trg_version}' not in dones:
-            progresslogger.info(f'Begin step4_{trg_version}')
-            add_aws_url_column_to_dicom_all(args)
-            successlogger.info(f'step4_{trg_version}')
-        else:
-            progresslogger.info(f'Skipping step4_{trg_version}')
 
-        # Step 5
-        if f'step5_{trg_version}' not in dones:
-            progresslogger.info(f'Begin step5_{trg_version}')
-            revise_auxiliary_metadata_gcs_urls(args)
-            successlogger.info(f'step5_{trg_version}')
-        else:
-            progresslogger.info(f'Skipping step5_{trg_version}')
 
-        # Step 6
-        if f'step6_{trg_version}' not in dones:
-            progresslogger.info(f'Begin step6_{trg_version}')
-            revise_dicom_all_gcs_urls(args)
-            successlogger.info(f'step6_{trg_version}')
-        else:
-            progresslogger.info(f'Skipping step6_{trg_version}')
 
-        successlogger.info(trg_version)
+        successlogger.info(dataset_version)
 
