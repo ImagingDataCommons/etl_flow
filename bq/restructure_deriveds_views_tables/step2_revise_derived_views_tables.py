@@ -36,7 +36,9 @@ def recreate_view(client, args, view_id, table_id):
     # view_id = f'{table.project}.{args.dataset}.{table.table_id}_view'
     old_view = client.get_table(table_id)
     new_view = bigquery.Table(view_id)
-    new_view.view_query = old_view.view_query.replace(args.src_dataset,args.trg_dataset)
+    # new_view.view_query = old_view.view_query.replace(args.src_dataset,args.trg_dataset) \
+    #     .replace(args.src_project,args.trg_project)
+    new_view.view_query = old_view.view_query
     new_view.friendly_name = old_view.friendly_name
     new_view.description = old_view.description
     new_view.labels = old_view.labels
@@ -91,7 +93,7 @@ def recreate_table(client, args, table_id):
     with open(f'../derived_table_creation/BQ_Table_Building/derived_data_views/schema/{old_table.table_id}.json') as f:
         schema = json.load(f)
     with open(f'../derived_table_creation/BQ_Table_Building/derived_data_views/sql/{old_table.table_id}.sql') as f:
-        sql = f'{f.read()}'.format(project=args.project, dataset=args.trg_dataset)
+        sql = f'{f.read()}'.format(project=args.trg_project, dataset=args.trg_dataset)
 
     # # For this step, if generating dicom_all_view, we need to remove aws_url from the schema and sql.
     # # They will be added later
@@ -124,14 +126,14 @@ def recreate_table(client, args, table_id):
     return
 
 
-# We have a table but not a view. In this case
-# we have get the SQL and schema from the files
+# In this IDC version, we have a table but not a corresponding view.
+# In this case we have get the SQL and schema from the files
 # used to create the table.
 def create_view(client, args, view_id, table_id):
     with open(f'../derived_table_creation/BQ_Table_Building/derived_data_views/schema/{table_id.split(".")[-1]}.json') as f:
         schema = json.load(f)
     with open(f'../derived_table_creation/BQ_Table_Building/derived_data_views/sql/{table_id.split(".")[-1]}.sql') as f:
-        sql = f'{f.read()}'.format(project=args.project, dataset=args.trg_dataset)
+        sql = f'{f.read()}'.format(project=args.trg_project, dataset=args.trg_dataset)
 
     # For this step, if generating dicom_all_view, we need to remove aws_url from the schema and sql.
     # They will be added later
@@ -168,7 +170,7 @@ def create_view(client, args, view_id, table_id):
 
 def clone_derived(args, table_id):
     client = bigquery.Client()
-    table_id = f'{args.project}.{args.trg_dataset}.{table_id}'
+    table_id = f'{args.trg_project}.{args.trg_dataset}.{table_id}'
     view_id = f'{table_id}_view'
     try:
         table = client.get_table(table_id)
@@ -179,8 +181,9 @@ def clone_derived(args, table_id):
         return
 
     if table.table_type == 'VIEW':
-        # Change view name; add _view
+        # Change view name, adding _view
         recreate_view(client, args, view_id, table_id)
+
         # We'll regenerate dicom_all later when we add reload aws and gcs urls
         if table_id.split('.')[-1] != 'dicom_all':
             create_table_from_view(client, args, view_id, table_id)
@@ -203,7 +206,7 @@ def revise_derived_views_tables(args):
 
     # Special for dicom_pivot_vX. We don't want to add _view to its name
     client = bigquery.Client()
-    table_id = f'{args.project}.{args.trg_dataset}.dicom_pivot_v{args.dataset_version}'
+    table_id = f'{args.trg_project}.{args.trg_dataset}.dicom_pivot_v{args.dataset_version}'
     view_id = f'{table_id}'
     recreate_view(client, args, view_id, table_id)
 

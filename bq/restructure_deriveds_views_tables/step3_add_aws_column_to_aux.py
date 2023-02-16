@@ -32,7 +32,7 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 # This is necessary so that we do not need the SQL for each IDC version
 def add_aws_column_to_aux(args):
     client = bigquery.Client()
-    table_id = f'{args.project}.{args.trg_dataset}.auxiliary_metadata'
+    table_id = f'{args.trg_project}.{args.trg_dataset}.auxiliary_metadata'
     try:
         table = client.get_table(table_id)
     except:
@@ -41,7 +41,7 @@ def add_aws_column_to_aux(args):
     if next((index for index, field in enumerate(table.schema) if field.name == 'aws_url'), -1) == -1:
         client = bigquery.Client()
         query = f"""
-        ALTER TABLE `{args.project}.{args.trg_dataset}.auxiliary_metadata`
+        ALTER TABLE `{args.trg_project}.{args.trg_dataset}.auxiliary_metadata`
         ADD COLUMN aws_url STRING;
         """
         job = client.query(query)
@@ -49,7 +49,7 @@ def add_aws_column_to_aux(args):
         result = job.result()
 
         query = f"""
-        ALTER TABLE `{args.project}.{args.trg_dataset}.auxiliary_metadata`
+        ALTER TABLE `{args.trg_project}.{args.trg_dataset}.auxiliary_metadata`
         ALTER COLUMN aws_url 
         SET OPTIONS (
             description='URL to this object containing the current version of this instance in Amazon Web Services (AWS)'

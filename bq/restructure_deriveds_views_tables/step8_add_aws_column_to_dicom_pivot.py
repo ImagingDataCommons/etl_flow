@@ -91,7 +91,7 @@ def revise_dicom_derived(client, args, view_id, view, metadata):
 
 def add_aws_url_column_to_dicom_pivot(args):
     client = bigquery.Client()
-    view_id = f'{args.project}.{args.trg_dataset}.dicom_pivot_v{args.dataset_version}'
+    view_id = f'{args.trg_project}.{args.trg_dataset}.dicom_pivot_v{args.dataset_version}'
     view = client.get_table(view_id)
 
     metadata = {}
@@ -111,11 +111,11 @@ if __name__ == '__main__':
     # (sys.argv)
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
-    parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
-    parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v5", help="BQ target dataset")
-    args = parser.parse_args()
-
-    progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
-
-    add_aws_url_column_to_dicom_pivot(args)
+    # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
+    # parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
+    # parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v5", help="BQ target dataset")
+    # args = parser.parse_args()
+    #
+    # progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
+    #
+    # add_aws_url_column_to_dicom_pivot(args)

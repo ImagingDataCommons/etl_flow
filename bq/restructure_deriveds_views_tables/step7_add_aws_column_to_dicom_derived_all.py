@@ -33,7 +33,7 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 def add_aws_url_column_to_dicom_derived_all(args):
     table_name = "dicom_derived_all"
     client = bigquery.Client()
-    table_id = f'{args.project}.{args.trg_dataset}.{table_name}'
+    table_id = f'{args.trg_project}.{args.trg_dataset}.{table_name}'
     try:
         table = client.get_table(table_id)
     except:
@@ -45,7 +45,7 @@ def add_aws_url_column_to_dicom_derived_all(args):
         if next((index for index, field in enumerate(table.schema) if field.name == 'gcs_url'), -1 ) != -1:
             client = bigquery.Client()
             query = f"""
-            ALTER TABLE `{args.project}.{args.trg_dataset}.{table_name}`
+            ALTER TABLE `{args.trg_project}.{args.trg_dataset}.{table_name}`
             ADD COLUMN aws_url STRING;
             """
             job = client.query(query)
@@ -63,12 +63,12 @@ if __name__ == '__main__':
     # (sys.argv)
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
-    parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
-    # parser.add_argument('--dataset', default=f"idc_v{settings.CURRENT_VERSION}_pub", help="BQ dataset")
-    parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v13_pub", help="BQ target dataset")
-    args = parser.parse_args()
-
-    progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
-
-    add_aws_url_column_to_dicom_derived_all(args)
+    # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
+    # parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
+    # # parser.add_argument('--dataset', default=f"idc_v{settings.CURRENT_VERSION}_pub", help="BQ dataset")
+    # parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v13_pub", help="BQ target dataset")
+    # args = parser.parse_args()
+    #
+    # progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
+    #
+    # add_aws_url_column_to_dicom_derived_all(args)

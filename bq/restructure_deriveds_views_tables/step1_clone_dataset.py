@@ -82,15 +82,15 @@ def delete_all_views(target_client, target_project, target_dataset):
     return True
 
 
-def copy_table(client, args,  src_dataset, table):
+def copy_table(client, args,  table_id):
 
-    src_table_id = f'idc-dev-etl.{args.src_dataset}.{table.table_id}'
-    dst_table_id = f'idc-dev-etl.{args.dataset_prefix}{args.src_dataset}.{table.table_id}'
+    src_table_id = f'{args.src_project}.{args.src_dataset}.{table_id}'
+    dst_table_id = f'{args.trg_project}.{args.trg_dataset}.{table_id}'
 
     job = client.copy_table(src_table_id, dst_table_id)
     while job.result().state != 'DONE':
         time.wait(1)
-    progresslogger.info(f'Copy of table {table.table_id}: {job.result().state} ')
+    progresslogger.info(f'Copy of table {table_id}: {job.result().state} ')
 
     dst_table = client.get_table(dst_table_id)
     pass
@@ -106,12 +106,13 @@ def add_missing_fields_to(trg_schema, src_schema):
             errlogger.error(f'{src_schema[i]} not found in dst_schema')
 
 
-def copy_view(client, args, src_dataset, src_view):
+def copy_view(client, args, view_id):
 
-    view = client.get_table(f'{src_view.project}.{src_view.dataset_id}.{src_view.table_id}')
+    view = client.get_table(f'{args.src_project}.{args.src_dataset}.{view_id}')
 
-    new_view = bigquery.Table(f'{view.project}.{args.dataset_prefix}{args.src_dataset}.{view.table_id}')
-    new_view.view_query = view.view_query
+    new_view = bigquery.Table(f'{args.trg_project}.{args.trg_dataset}.{view_id}')
+    new_view.view_query = view.view_query.replace(args.src_dataset,args.trg_dataset) \
+        .replace(args.src_project,args.trg_project)
     new_view.friendly_name = view.friendly_name
     new_view.description = view.description
     new_view.labels = view.labels
@@ -125,44 +126,46 @@ def copy_view(client, args, src_dataset, src_view):
     # installed_view.schema = view.schema
     client.update_table(installed_view,['schema'])
 
-    progresslogger.info(f'Copy of view {src_view.table_id}: DONE')
+    progresslogger.info(f'Copy of view {view_id}: DONE')
 
     pass
 
 
 def clone_dataset(args):
     client = bigquery.Client()
-    dataset_ref = bigquery.DatasetReference('idc-dev-etl', args.src_dataset)
-    src_dataset = client.get_dataset(dataset_ref)
+    # client = bigquery.Client(project=args.trg_project)
+    src_dataset_ref = bigquery.DatasetReference(args.src_project, args.src_dataset)
+    src_dataset = client.get_dataset(src_dataset_ref)
 
-    if bq_dataset_exists(client, 'idc-dev-etl', f'{args.trg_dataset}'):
-        delete_all_views(client, 'idc-dev-etl',f'{args.trg_dataset}')
+    if bq_dataset_exists(client, args.trg_project, args.trg_dataset):
+        delete_all_views(client, args.trg_project, args.trg_dataset)
     else:
         dataset_dict = dict(
             description = src_dataset.description,
             labels = src_dataset.labels
         )
-        create_dataset(client, 'idc-dev-etl',f'{args.trg_dataset}', dataset_dict)
+        create_dataset(client, args.trg_project, args.trg_dataset, dataset_dict)
 
-    tables = [ table for table in client.list_tables(f'idc-dev-etl.{args.src_dataset}')]
-    for table in tables:
-        if table.table_id in [
-            'auxiliary_metadata',
-            'dicom_metadata',
-            'original_collections_metadata',
-            'dicom_all', 'dicom_all_view',
-            'dicom_metadata_curated', 'dicom_metadata_curated_view',
-            'dicom_metadata_curated_series_level', 'dicom_metadata_curated_series_level_view',
-            'measurement_groups', 'measurement_groups_view',
-            'qualitative_measurements', 'qualitative_measurements_view',
-            'quantitative_measurements', 'quantitative_measurements_view',
-            'segmentations', 'segmentations_view',
-            'dicom_derived_all', f'dicom_pivot_v{args.dataset_version}'
-            ]:
-            if table.table_type == 'TABLE':
-                copy_table(client, args, src_dataset, table)
+    table_ids = {table.table_id: table.table_type for table in client.list_tables(f'{args.src_project}.{args.src_dataset}')}
+    for table_id in [
+        'auxiliary_metadata',
+        'dicom_metadata',
+        'original_collections_metadata',
+        'dicom_all', 'dicom_all_view',
+        'dicom_metadata_curated', 'dicom_metadata_curated_view',
+        'dicom_metadata_curated_series_level', 'dicom_metadata_curated_series_level_view',
+        'measurement_groups', 'measurement_groups_view',
+        'qualitative_measurements', 'qualitative_measurements_view',
+        'quantitative_measurements', 'quantitative_measurements_view',
+        'segmentations', 'segmentations_view',
+        'dicom_derived_all', f'dicom_pivot_v{args.dataset_version}'
+        ]:
+        if table_id in table_ids:
+
+            if table_ids[table_id] == 'TABLE':
+                copy_table(client, args, table_id)
             else:
-                copy_view(client, args, src_dataset, table)
+                copy_view(client, args, table_id)
 
 
 if __name__ == '__main__':
@@ -170,10 +173,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
-    parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
+    parser.add_argument('--src_project', default="idc-dev-etl", help='Project from which tables are copied')
+    parser.add_argument('--trg_project', default="idc-source-data", help='Project to which tables are copied')
     # parser.add_argument('--dataset', default=f"idc_v{settings.CURRENT_VERSION}_pub", help="BQ dataset")
-    parser.add_argument('--src_dataset', default=f"idc_v5", help="BQ dataset")
-    parser.add_argument('--dataset_prefix', default='whc_dev_')
+    parser.add_argument('--src_dataset', default=f"idc_v5", help="BQ source dataset")
+    parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v5", help="BQ target dataset")
+    parser.add_argument('--dataset_prefix', default='whc_dev_', help='Prefix added to target datasets')
     parser.add_argument('--trg-version', default='', help='Dataset version to be cloned')
     args = parser.parse_args()
 

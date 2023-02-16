@@ -29,13 +29,13 @@ def populate_urls_in_auxiliary_metadata(args):
     client = bigquery.Client()
 
     # Some versions of auxiliary_metadata have gcs_bucket_column
-    table_schema = client.get_table(f'{args.project}.{args.trg_dataset}.auxiliary_metadata').schema  # Make an API request.
+    table_schema = client.get_table(f'{args.trg_project}.{args.trg_dataset}.auxiliary_metadata').schema  # Make an API request.
     # Determine whether this version of auxiliary_metadata has a gcs_bucket column
     has_gcs_bucket = next((item for item in table_schema if item.name == 'gcs_bucket'),-1) != -1
 
     if has_gcs_bucket:
         query = f"""
-        UPDATE `{args.project}.{args.trg_dataset}.auxiliary_metadata` am
+        UPDATE `{args.trg_project}.{args.trg_dataset}.auxiliary_metadata` am
         SET 
         am.gcs_url = IF('{args.dev_or_pub}'='dev', uum.dev_gcs_url, uum.pub_gcs_url), 
         am.aws_url = IF('{args.dev_or_pub}'='dev', uum.dev_aws_url, uum.pub_aws_url), 
@@ -68,8 +68,8 @@ def populate_urls_in_auxiliary_metadata(args):
                       '/', aj.se_uuid, '/', aj.i_uuid, '.dcm')
                     AS pub_aws_url,
                     IF(aj.i_source='tcia', ac.tcia_access , ac.idc_access) AS access, i_source source
-                    FROM `{args.project}.{args.dev_dataset}.all_joined` aj
-                    JOIN `{args.project}.{args.dev_dataset}.all_collections` ac
+                    FROM `{args.dev_project}.{args.dev_dataset}.all_joined` aj
+                    JOIN `{args.dev_project}.{args.dev_dataset}.all_collections` ac
                     on aj.collection_id = ac.tcia_api_collection_id
                 ) as uum
         WHERE am.instance_uuid = uum.uuid
@@ -77,7 +77,7 @@ def populate_urls_in_auxiliary_metadata(args):
         """
     else:
         query = f"""
-        UPDATE `{args.project}.{args.trg_dataset}.auxiliary_metadata` am
+        UPDATE `{args.trg_project}.{args.trg_dataset}.auxiliary_metadata` am
         SET 
         am.gcs_url = IF('{args.dev_or_pub}'='dev', uum.dev_gcs_url, uum.pub_gcs_url), 
         am.aws_url = IF('{args.dev_or_pub}'='dev', uum.dev_aws_url, uum.pub_aws_url) 
@@ -109,8 +109,8 @@ def populate_urls_in_auxiliary_metadata(args):
                       '/', aj.se_uuid, '/', aj.i_uuid, '.dcm')
                     AS pub_aws_url,
                     IF(aj.i_source='tcia', ac.tcia_access , ac.idc_access) AS access, i_source source
-                    FROM `{args.project}.{args.dev_dataset}.all_joined` aj
-                    JOIN `{args.project}.{args.dev_dataset}.all_collections` ac
+                    FROM `{args.dev_project}.{args.dev_dataset}.all_joined` aj
+                    JOIN `{args.dev_project}.{args.dev_dataset}.all_collections` ac
                     on aj.collection_id = ac.tcia_api_collection_id
                 ) as uum
         WHERE am.instance_uuid = uum.uuid
@@ -121,7 +121,7 @@ def populate_urls_in_auxiliary_metadata(args):
     while not job.done():
         print('Waiting for job done. Status: {}'.format(job.state))
         time.sleep(5)
-    progresslogger.info(f'Populated urls in auxiliary_metadata; errors: {job.error_result}')
+    progresslogger.info(f'Populate urls in auxiliary_metadata; errors: {job.error_result}')
     return
 
 
@@ -129,13 +129,13 @@ if __name__ == '__main__':
     # (sys.argv)
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
-    parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
-    parser.add_argument('--dev_dataset', default=f"idc_v{settings.CURRENT_VERSION}_dev", help="BQ source dataset")
-    parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v1", help="BQ targetdataset")
-    # parser.add_argument('--uuid_url_map', default="idc-dev-etl.idc_v14_dev.uuid_url_map",
-    #                     help="Table that maps instance uuids to URLS")
-    parser.add_argument('--dev_or_pub', default='dev', help='Revising the dev or pub version of auxiliary_metadata')
+    # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
+    # parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
+    # parser.add_argument('--dev_dataset', default=f"idc_v{settings.CURRENT_VERSION}_dev", help="BQ source dataset")
+    # parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v1", help="BQ targetdataset")
+    # # parser.add_argument('--uuid_url_map', default="idc-dev-etl.idc_v14_dev.uuid_url_map",
+    # #                     help="Table that maps instance uuids to URLS")
+    # parser.add_argument('--dev_or_pub', default='dev', help='Revising the dev or pub version of auxiliary_metadata')
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')

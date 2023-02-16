@@ -720,6 +720,8 @@ class All_Collections(Base):
     aws_pub_idc_url = Column(String, comment="Public aws idc bucket name")
     tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
     idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+    tcia_metadata_sunset = Column(String, comment="Last version that metadata is published. 0==still visible'")
+    idc_metadata_sunset = Column(String, comment="Last version that metadata is published. 0==still visible'")
 
 # A table that is the union of cr_collections, defaced_collections and open_collections.
 # This table is probably not useful because it does not actually reflect all included data.
