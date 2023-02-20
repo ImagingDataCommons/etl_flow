@@ -122,8 +122,8 @@ SourceInstance as  (SELECT * from temp where cm2 ='Source')
 Select
 TrackingIdentifier.SOPInstanceUID, 
 TrackingIdentifier.measurementGroup_number,
-TrackingUniqueIdentifier.UID as trackingUniqueidentifier,
-TrackingIdentifier.TextValue as trackingidentifier,
+TrackingUniqueIdentifier.UID as trackingUniqueIdentifier,
+TrackingIdentifier.TextValue as trackingIdentifier,
 TrackingIdentifier.PatientID,
 --TrackingIdentifier.SeriesDescription,  --different from measurement groups query
 SourceSeriesforsegmentation.UID as sourceSegmentedSeriesUID,
