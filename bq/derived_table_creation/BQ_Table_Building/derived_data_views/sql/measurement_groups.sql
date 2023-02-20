@@ -105,8 +105,8 @@ TrackingUniqueIdentifier as  (SELECT * from temp where cm2 ='Tracking Unique Ide
 Select
 TrackingIdentifier.SOPInstanceUID, 
 TrackingIdentifier.measurementGroup_number,
-TrackingUniqueIdentifier.UID as trackingUniqueidentifier,
-TrackingIdentifier.TextValue as trackingidentifier,
+TrackingUniqueIdentifier.UID as trackingUniqueIdentifier,
+TrackingIdentifier.TextValue as trackingIdentifier,
 TrackingIdentifier.PatientID,
 TrackingIdentifier.SeriesDescription,
 finding.cs_l2_css as finding,
