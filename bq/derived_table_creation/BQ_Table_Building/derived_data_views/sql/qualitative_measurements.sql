@@ -29,7 +29,13 @@ cs_l2_rss.ReferencedSOPClassUID, -- Unique identifier for the referenced SOP cla
 cs_l2_rss.ReferencedSOPInstanceUID, -- Unique identifier for the referenced SOP instance
 cs_l2_rss.ReferencedSegmentNumber, -- Number assigned to a referenced segment
 cs_l2_css, -- concept Code sequence associated with the content sequence at level 2
-cs_l1 -- Content sequence at level 1
+cs_l1, -- Content sequence at level 1
+cs_l3.ValueType, 
+cs_l3_cncs.CodeValue,
+cs_l3_cncs.CodingSchemeDesignator,
+cs_l3_cncs.CodeMeaning as cm3,
+cs_l3_css,
+
 FROM
 idc-dev-etl.idc_v13_pub.dicom_metadata bid -- Data source
 -- Left join zeroth level of ContentTemplateSequence
@@ -59,9 +65,20 @@ unnest(cs_l2.ReferencedSOPSequence) cs_l2_rss
 -- Left join ConceptCodeSequence at level 2
 LEFT JOIN
 unnest(cs_l2.ConceptCodeSequence) cs_l2_css
+-- Unnest content sequence at level 3
+LEFT JOIN
+unnest(cs_l2.ContentSequence) cs_l3
+-- Left join ConceptNameCodeSequence at level 3
+LEFT JOIN
+unnest(cs_l3.ConceptNameCodeSequence) cs_l3_cncs
+-- Left join ConceptCodeSequence at level 2
+LEFT JOIN
+unnest(cs_l3.ConceptCodeSequence) cs_l3_css
+
+
 WHERE
 
---SeriesDescription in ("BPR landmark annotations") and
+--SeriesDescription not in ("BPR landmark annotations", "BPR region annotations") and
 -- We only want to include records where the TemplateIdentifier is 1500 and MappingResource is DCMR
 TemplateIdentifier IN ('1500')
 AND MappingResource IN ('DCMR')
@@ -79,7 +96,7 @@ AND (
   -- UIDREF value type with specific Code Value and Coding Scheme Designator
   OR (cs_l2.ValueType IN ('UIDREF') AND cs_l2_cncs.CodeValue IN ('112040')AND cs_l2_cncs.CodingSchemeDesignator IN ('DCM'))  
   -- IMAGE value type with specific Referenced SOP Class UID
-  OR (cs_l2.ValueType IN ('IMAGE') AND  cs_l2_rss.ReferencedSOPClassUID IN ("1.2.840.10008.5.1.4.1.1.66.4"))
+  OR (cs_l2.ValueType IN ('IMAGE') AND  cs_l2_rss.ReferencedSOPClassUID IN ("1.2.840.10008.5.1.4.1.1.66.4","1.2.840.10008.5.1.4.1.1.2"))
   -- UIDREF value type with specific Code Value and Coding Scheme Designator
   OR (cs_l2.ValueType IN ('UIDREF') AND cs_l2_cncs.CodeValue IN ('121232')AND cs_l2_cncs.CodingSchemeDesignator IN ('DCM')) 
   -- CODE value type with specific Code Value and Coding Scheme Designator
@@ -90,7 +107,7 @@ AND (
   OR (cs_l2.ValueType IN ('CODE') AND cs_l2_cncs.CodeValue IN ('363698007')AND cs_l2_cncs.CodingSchemeDesignator IN ('SCT'))  
 )
 -- We only want to include certain SOP Class UIDs
-AND SOPClassUID IN ("1.2.840.10008.5.1.4.1.1.88.11", "1.2.840.10008.5.1.4.1.1.88.22", "1.2.840.10008.5.1.4.1.1.88.33","1.2.840.10008.5.1.4.1.1.88.34","1.2.840.10008.5.1.4.1.1.88.35" )
+AND SOPClassUID IN ("1.2.840.10008.5.1.4.1.1.88.11", "1.2.840.10008.5.1.4.1.1.88.22", "1.2.840.10008.5.1.4.1.1.88.33","1.2.840.10008.5.1.4.1.1.88.34","1.2.840.10008.5.1.4.1.1.88.35") 
 
 -- We could activate the below line for testing
 -- AND SOPInstanceUID in ('1.2.276.0.7230010.3.1.4.0.11647.1553294587.292373'
@@ -100,7 +117,8 @@ findingsite as (SELECT * from temp where cm2 ='Finding Site'),
 ReferencedSegment as (SELECT * from temp where cm2 ='Referenced Segment'),
 SourceSeriesforsegmentation as (SELECT * from temp where cm2 ='Source series for segmentation'),
 TrackingIdentifier as (SELECT * from temp where cm2 ='Tracking Identifier'),
-TrackingUniqueIdentifier as  (SELECT * from temp where cm2 ='Tracking Unique Identifier')
+TrackingUniqueIdentifier as  (SELECT * from temp where cm2 ='Tracking Unique Identifier'),
+SourceInstance as  (SELECT * from temp where cm2 ='Source')
 
 Select
 TrackingIdentifier.SOPInstanceUID, 
@@ -108,8 +126,9 @@ TrackingIdentifier.measurementGroup_number,
 TrackingUniqueIdentifier.UID as trackingUniqueidentifier,
 TrackingIdentifier.TextValue as trackingidentifier,
 TrackingIdentifier.PatientID,
---TrackingIdentifier.SeriesDescription,  --different from measurements query
+TrackingIdentifier.SeriesDescription,  --different from measurements query
 SourceSeriesforsegmentation.UID as sourceSegmentedSeriesUID,
+SourceInstance.ReferencedSOPInstanceUID as sourceReferencedSOPInstanceUID,
 ReferencedSegment.ReferencedSOPInstanceUID as segmentationInstanceUID,
 ReferencedSegment.ReferencedSegmentNumber as segmentationSegmentNumber,
 ContentSequence1.ConceptNameCodeSequence as Quantity, --different from measurements query
@@ -117,7 +136,7 @@ ContentSequence1.ConceptCodeSequence as Value,--different from measurements quer
 
 finding.cs_l2_css as finding,
 findingsite.cs_l2_css as findingSite,
-
+findingsite.cs_l3_css as findingSite_topographicalModifier
 
 --TrackingIdentifier.cs_l1 as contentSequence --different from measurements query
 
@@ -127,7 +146,7 @@ left join finding using (SOPInstanceUID, measurementGroup_number)
 left join findingsite using (SOPInstanceUID, measurementGroup_number)
 left join ReferencedSegment using (SOPInstanceUID, measurementGroup_number)
 left join SourceSeriesforsegmentation using (SOPInstanceUID, measurementGroup_number)
-
+left join SourceInstance using (SOPInstanceUID, measurementGroup_number)
 
 --the bottom three lines are different from measurements query
 left join unnest(TrackingIdentifier.cs_l1.ContentSequence) as ContentSequence1
