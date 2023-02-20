@@ -30,11 +30,11 @@ with temp as (
   cs_l2_rss.ReferencedSegmentNumber, -- Number assigned to a referenced segment
   cs_l2_css, -- concept Code sequence associated with the content sequence at level 2
   cs_l1, -- Content sequence at level 1
-  cs_l3.ValueType, 
-  cs_l3_cncs.CodeValue,
-  cs_l3_cncs.CodingSchemeDesignator,
-  cs_l3_cncs.CodeMeaning as cm3,
-  cs_l3_css,
+  cs_l3.ValueType, -- Type of value associated with the content sequence at level 3
+  cs_l3_cncs.CodeValue,  -- Code value associated with the concept name coding sequence at level 3
+  cs_l3_cncs.CodingSchemeDesignator,  -- Coding scheme designator associated with the concept name coding sequence at level 3
+  cs_l3_cncs.CodeMeaning as cm3, -- Code meaning associated with the concept name coding sequence at level 3, with an alias of 'cm3'
+  cs_l3_css, -- concept Code sequence associated with the content sequence at level 3
 
   FROM
   idc-dev-etl.idc_v13_pub.dicom_metadata bid -- Data source
