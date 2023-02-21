@@ -53,7 +53,7 @@ def get_license(client, doi):
     return licenses[0]
 
 # Get all source DOIs, licenses and the collections which they are in
-def get_all_idc_dois_licenses(client, args):
+def get_collections_containing_a_doi(client, args):
     query = f"""
         SELECT DISTINCT collection_id AS collection_id, source_doi
         FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined`
@@ -118,15 +118,15 @@ def build_metadata(args, BQ_client):
     # # Get access status of potentially redacted collections
     # redacted_collection_access = get_redacted_collections(BQ_client,args)
 
-    # Get all source DOIs in IDC data the collections they are in
-    source_dois_license = get_all_idc_dois_licenses(BQ_client, args)
-    for value in all_idc_analysis_metadata.values():
-        source_dois_license[value['DOI']] = value['ID']
+    # For each source DOI, which collections contain it
+    source_dois_license = get_collections_containing_a_doi(BQ_client, args)
+    # for value in all_idc_analysis_metadata.values():
+    #     source_dois_license[value['DOI']] = value['ID']
 
     rows = []
     for analysis_id, analysis_data in analysis_metadata.items():
         # If the DOI of this analysis result is in source_dois_license, then it is in the series table
-        # and therefore we have a series from this analysis result, and therefor we should include
+        # and therefore we have a series from this analysis result, and therefore we should include
         # this analysis result in the analysis_results metadata table
         if analysis_data["DOI"].lower() in source_dois_license:
             # analysis_data["Collection"] = analysis_id
