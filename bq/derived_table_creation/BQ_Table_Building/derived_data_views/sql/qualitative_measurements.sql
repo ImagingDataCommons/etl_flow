@@ -30,14 +30,17 @@ with temp as (
   cs_l2_rss.ReferencedSegmentNumber, -- Number assigned to a referenced segment
   cs_l2_css, -- concept Code sequence associated with the content sequence at level 2
   cs_l1, -- Content sequence at level 1
-  cs_l3.ValueType, -- Type of value associated with the content sequence at level 3
-  cs_l3_cncs.CodeValue,  -- Code value associated with the concept name coding sequence at level 3
+  cs_l2,
+  cs_l2_cncs,
+  cs_l3.ValueType vt3, -- Type of value associated with the content sequence at level 3
+  cs_l3_cncs.CodeValue cv3,  -- Code value associated with the concept name coding sequence at level 3
   cs_l3_cncs.CodingSchemeDesignator,  -- Coding scheme designator associated with the concept name coding sequence at level 3
   cs_l3_cncs.CodeMeaning as cm3, -- Code meaning associated with the concept name coding sequence at level 3, with an alias of 'cm3'
   cs_l3_css, -- concept Code sequence associated with the content sequence at level 3
 
   FROM
   idc-dev-etl.idc_v13_pub.dicom_metadata bid -- Data source
+  --bigquery-public-data.idc_current.dicom_metadata bid -- Data source
   -- Left join zeroth level of ContentTemplateSequence
   LEFT JOIN
   UNNEST(bid.ContentTemplateSequence) cts_l0
@@ -76,8 +79,8 @@ with temp as (
   unnest(cs_l3.ConceptCodeSequence) cs_l3_css
   
   WHERE
-  --SeriesDescription in ("BPR landmark annotations", "BPR region annotations") and
-
+  --SeriesDescription not in ("BPR landmark annotations", "BPR region annotations") and
+  --PatientID in ('LUNG1-002') AND
   -- We only want to include records where the TemplateIdentifier is 1500 and MappingResource is DCMR
   TemplateIdentifier IN ('1500')
   AND MappingResource IN ('DCMR')
@@ -107,7 +110,7 @@ with temp as (
   )
   -- We only want to include certain SOP Class UIDs
   AND SOPClassUID IN ("1.2.840.10008.5.1.4.1.1.88.11", "1.2.840.10008.5.1.4.1.1.88.22", "1.2.840.10008.5.1.4.1.1.88.33","1.2.840.10008.5.1.4.1.1.88.34","1.2.840.10008.5.1.4.1.1.88.35") 
-
+and PatientID in ('LUNG1-002')
   -- We could activate the below line for testing
   -- AND SOPInstanceUID in ('1.2.276.0.7230010.3.1.4.0.11647.1553294587.292373'
 ),
@@ -130,8 +133,8 @@ SourceSeriesforsegmentation.UID as sourceSegmentedSeriesUID,
 SourceInstance.ReferencedSOPInstanceUID as sourceReferencedSOPInstanceUID,--newly introduced column compared to previous qualitative query
 ReferencedSegment.ReferencedSOPInstanceUID as segmentationInstanceUID,
 ReferencedSegment.ReferencedSegmentNumber as segmentationSegmentNumber,
-ContentSequence1.ConceptNameCodeSequence as Quantity, --different from measurements groups query
-ContentSequence1.ConceptCodeSequence as Value,--different from measurements groups query
+findingsite.cs_l2_cncs as Quantity, --different from measurements groups query
+findingsite.cs_l2_css as Value,--different from measurements groups query
 finding.cs_l2_css as finding,
 findingsite.cs_l2_css as findingSite,
 findingsite.cs_l3_css as findingSite_topographicalModifier--newly introduced array compared to previous qualitative query
@@ -146,7 +149,5 @@ left join ReferencedSegment using (SOPInstanceUID, measurementGroup_number)
 left join SourceSeriesforsegmentation using (SOPInstanceUID, measurementGroup_number)
 left join SourceInstance using (SOPInstanceUID, measurementGroup_number)
 
---the bottom three lines are different from measurement groups query
-left join unnest(findingsite.cs_l1.ContentSequence) as ContentSequence1
-left join unnest(ContentSequence1.ConceptNameCodeSequence) as ConceptNameCodeSequence2
-where ContentSequence1.ValueType in ('CODE') and ConceptNameCodeSequence2.CodeValue not in ('121071','G-C0E3') 
+--the bottom line are different from measurement groups query
+where findingsite.cs_l2.ValueType in ('CODE') and findingsite.cs_l2_cncs.CodeValue not in ('121071','G-C0E3') 
