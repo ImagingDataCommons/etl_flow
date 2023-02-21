@@ -110,7 +110,7 @@ with temp as (
   )
   -- We only want to include certain SOP Class UIDs
   AND SOPClassUID IN ("1.2.840.10008.5.1.4.1.1.88.11", "1.2.840.10008.5.1.4.1.1.88.22", "1.2.840.10008.5.1.4.1.1.88.33","1.2.840.10008.5.1.4.1.1.88.34","1.2.840.10008.5.1.4.1.1.88.35") 
-and PatientID in ('LUNG1-002')
+--and PatientID in ('LUNG1-002')
   -- We could activate the below line for testing
   -- AND SOPInstanceUID in ('1.2.276.0.7230010.3.1.4.0.11647.1553294587.292373'
 ),
