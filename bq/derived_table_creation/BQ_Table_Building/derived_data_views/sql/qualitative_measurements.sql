@@ -147,6 +147,6 @@ left join SourceSeriesforsegmentation using (SOPInstanceUID, measurementGroup_nu
 left join SourceInstance using (SOPInstanceUID, measurementGroup_number)
 
 --the bottom three lines are different from measurement groups query
-left join unnest(TrackingIdentifier.cs_l1.ContentSequence) as ContentSequence1
+left join unnest(findingsite.cs_l1.ContentSequence) as ContentSequence1
 left join unnest(ContentSequence1.ConceptNameCodeSequence) as ConceptNameCodeSequence2
 where ContentSequence1.ValueType in ('CODE') and ConceptNameCodeSequence2.CodeValue not in ('121071','G-C0E3') 
