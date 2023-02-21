@@ -84,7 +84,7 @@ with temp as (
     OR (cs_l2.ValueType IN ('UIDREF') AND cs_l2_cncs.CodeValue IN ('121232')AND cs_l2_cncs.CodingSchemeDesignator IN ('DCM')) 
     -- Finding--CODE value type with specific Code Value and Coding Scheme Designator
     OR (cs_l2.ValueType IN ('CODE') AND cs_l2_cncs.CodeValue IN ('121071')AND cs_l2_cncs.CodingSchemeDesignator IN ('DCM')) 
-    -- CODE value type with specific Code Value and Coding Scheme Designator
+    -- Finding Site--CODE value type with specific Code Value and Coding Scheme Designator
     OR (cs_l2.ValueType IN ('CODE') AND cs_l2_cncs.CodeValue IN ('G-C0E3')AND cs_l2_cncs.CodingSchemeDesignator IN ('SRT'))
     -- Finding Site--CODE value type with specific Code Value and Coding Scheme Designator
     OR (cs_l2.ValueType IN ('CODE') AND cs_l2_cncs.CodeValue IN ('363698007')AND cs_l2_cncs.CodingSchemeDesignator IN ('SCT'))  
