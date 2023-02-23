@@ -130,8 +130,8 @@ SourceSeriesforsegmentation.UID as sourceSegmentedSeriesUID,
 SourceInstance.ReferencedSOPInstanceUID as sourceReferencedSOPInstanceUID,--newly introduced column compared to previous qualitative query
 ReferencedSegment.ReferencedSOPInstanceUID as segmentationInstanceUID,
 ReferencedSegment.ReferencedSegmentNumber as segmentationSegmentNumber,
-ContentSequence1.ConceptNameCodeSequence as Quantity, --different from measurements groups query
-ContentSequence1.ConceptCodeSequence as Value,--different from measurements groups query
+ContentSequence1.ConceptNameCodeSequence[SAFE_OFFSET(0)] as Quantity, --different from measurements groups query
+ContentSequence1.ConceptCodeSequence[SAFE_OFFSET(0)] as Value,--different from measurements groups query
 finding.cs_l2_css as finding,
 findingsite.cs_l2_css as findingSite,
 findingsite.cs_l3_css as findingSite_topographicalModifier--newly introduced array compared to previous qualitative query

@@ -114,10 +114,10 @@ SourceSeriesforsegmentation.UID as sourceSegmentedSeriesUID,
 ReferencedSegment.ReferencedSOPInstanceUID as segmentationInstanceUID,
 ReferencedSegment.ReferencedSegmentNumber as segmentationSegmentNumber,
 
-ContentSequence1.ConceptNameCodeSequence as Quantity, --different from measurement groups query
-ContentSequence1.ConceptCodeSequence as derivationModifier,--different from measurement groups query and qualitative measurements
+ContentSequence1.ConceptNameCodeSequence[SAFE_OFFSET(0)] as Quantity, --different from measurement groups query
+ContentSequence1.ConceptCodeSequence[SAFE_OFFSET(0)] as derivationModifier,--different from measurement groups query and qualitative measurements
 (SAFE_CAST((MeasuredValueSequence.NumericValue[SAFE_OFFSET(0)]) AS NUMERIC )) AS Value,--different from measurement groups query and qualitative measurements
-MeasurementUnitsCodeSequence AS Units,--different from measurement groups query and qualitative measurements
+MeasurementUnitsCodeSequence[SAFE_OFFSET(0)] AS Units,--different from measurement groups query and qualitative measurements
 
 finding.cs_l2_css as finding,
 findingsite.cs_l2_css as findingSite,
