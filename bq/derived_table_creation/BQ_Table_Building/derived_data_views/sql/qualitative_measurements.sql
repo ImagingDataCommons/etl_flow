@@ -37,7 +37,7 @@ with temp as (
   cs_l3_css, -- concept Code sequence associated with the content sequence at level 3
 
   FROM
-  idc-dev-etl.idc_v13_pub.dicom_metadata bid -- Data source
+  `{project}.{dataset}.dicom_metadata` bid -- Data source
   -- Left join zeroth level of ContentTemplateSequence
   LEFT JOIN
   UNNEST(bid.ContentTemplateSequence) cts_l0
