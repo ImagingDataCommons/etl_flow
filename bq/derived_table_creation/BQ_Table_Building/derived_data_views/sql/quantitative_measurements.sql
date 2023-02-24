@@ -28,7 +28,7 @@ with temp as (
   cs_l2_rss.ReferencedSOPClassUID, -- Unique identifier for the referenced SOP class
   cs_l2_rss.ReferencedSOPInstanceUID, -- Unique identifier for the referenced SOP instance
   cs_l2_rss.ReferencedSegmentNumber, -- Number assigned to a referenced segment
-  cs_l2_css, -- concept Code sequence associated with the content sequence at level 2
+  cs_l2_ccs, -- concept Code sequence associated with the content sequence at level 2
   cs_l1 -- Content sequence at level 1
   FROM
   `{project}.{dataset}.dicom_metadata` bid -- Data source
@@ -58,7 +58,7 @@ with temp as (
   unnest(cs_l2.ReferencedSOPSequence) cs_l2_rss
   -- Left join ConceptCodeSequence at level 2
   LEFT JOIN
-  unnest(cs_l2.ConceptCodeSequence) cs_l2_css
+  unnest(cs_l2.ConceptCodeSequence) cs_l2_ccs
   WHERE
   --SeriesDescription in ("BPR landmark annotations") and
   -- We only want to include records where the TemplateIdentifier is 1500 and MappingResource is DCMR
@@ -119,8 +119,8 @@ ContentSequence1.ConceptCodeSequence[SAFE_OFFSET(0)] as derivationModifier,--dif
 (SAFE_CAST((MeasuredValueSequence.NumericValue[SAFE_OFFSET(0)]) AS NUMERIC )) AS Value,--different from measurement groups query and qualitative measurements
 MeasurementUnitsCodeSequence AS Units,--different from measurement groups query and qualitative measurements
 
-finding.cs_l2_css as finding,
-findingsite.cs_l2_css as findingSite,
+finding.cs_l2_ccs as finding,
+findingsite.cs_l2_ccs as findingSite,
 
 from TrackingIdentifier
 join TrackingUniqueIdentifier using (SOPInstanceUID, measurementGroup_number)
@@ -134,4 +134,6 @@ left join unnest(ContentSequence1.ConceptNameCodeSequence) as ConceptNameCodeSeq
 left join unnest(ContentSequence1.MeasuredValueSequence) as MeasuredValueSequence
 left join unnest(MeasuredValueSequence.MeasurementUnitsCodeSequence) as MeasurementUnitsCodeSequence
 --the filter applied is changed from CODE in qualitative measurements query to NUM in the quantitative query
-where ContentSequence1.ValueType in ('NUM') --and ConceptNameCodeSequence2.CodeValue not in ('121071','G-C0E3') --and finding.PatientID in ("LIDC-IDRI-0001")
+where ContentSequence1.ValueType in ('NUM') 
+--and finding.PatientID in ("LIDC-IDRI-0001") -- LIDC test patient
+--and finding.PatientID in ("100012") -- NLST test patient

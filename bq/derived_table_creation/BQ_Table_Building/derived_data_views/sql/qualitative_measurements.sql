@@ -28,13 +28,13 @@ with temp as (
   cs_l2_rss.ReferencedSOPClassUID, -- Unique identifier for the referenced SOP class
   cs_l2_rss.ReferencedSOPInstanceUID, -- Unique identifier for the referenced SOP instance
   cs_l2_rss.ReferencedSegmentNumber, -- Number assigned to a referenced segment
-  cs_l2_css, -- concept Code sequence associated with the content sequence at level 2
+  cs_l2_ccs, -- concept Code sequence associated with the content sequence at level 2
   cs_l1, -- Content sequence at level 1
   cs_l3.ValueType, -- Type of value associated with the content sequence at level 3
   cs_l3_cncs.CodeValue,  -- Code value associated with the concept name coding sequence at level 3
   cs_l3_cncs.CodingSchemeDesignator,  -- Coding scheme designator associated with the concept name coding sequence at level 3
   cs_l3_cncs.CodeMeaning as cm3, -- Code meaning associated with the concept name coding sequence at level 3, with an alias of 'cm3'
-  cs_l3_css, -- concept Code sequence associated with the content sequence at level 3
+  cs_l3_ccs, -- concept Code sequence associated with the content sequence at level 3
 
   FROM
   `{project}.{dataset}.dicom_metadata` bid -- Data source
@@ -64,7 +64,7 @@ with temp as (
   unnest(cs_l2.ReferencedSOPSequence) cs_l2_rss
   -- Left join ConceptCodeSequence at level 2
   LEFT JOIN
-  unnest(cs_l2.ConceptCodeSequence) cs_l2_css
+  unnest(cs_l2.ConceptCodeSequence) cs_l2_ccs
   -- Unnest content sequence at level 3
   LEFT JOIN
   unnest(cs_l2.ContentSequence) cs_l3
@@ -73,7 +73,7 @@ with temp as (
   unnest(cs_l3.ConceptNameCodeSequence) cs_l3_cncs
   -- Left join ConceptCodeSequence at level 2
   LEFT JOIN
-  unnest(cs_l3.ConceptCodeSequence) cs_l3_css
+  unnest(cs_l3.ConceptCodeSequence) cs_l3_ccs
   
   WHERE
   --SeriesDescription in ("BPR landmark annotations", "BPR region annotations") and
@@ -132,9 +132,9 @@ ReferencedSegment.ReferencedSOPInstanceUID as segmentationInstanceUID,
 ReferencedSegment.ReferencedSegmentNumber as segmentationSegmentNumber,
 ContentSequence1.ConceptNameCodeSequence[SAFE_OFFSET(0)] as Quantity, --different from measurements groups query
 ContentSequence1.ConceptCodeSequence[SAFE_OFFSET(0)] as Value,--different from measurements groups query
-finding.cs_l2_css as finding,
-findingsite.cs_l2_css as findingSite,
-findingsite.cs_l3_css as findingSite_topographicalModifier--newly introduced array compared to previous qualitative query
+finding.cs_l2_ccs as finding,
+findingsite.cs_l2_ccs as findingSite,
+findingsite.cs_l3_ccs as findingSite_topographicalModifier--newly introduced array compared to previous qualitative query
 
 --TrackingIdentifier.cs_l1 as contentSequence --different from measurements groups query
 
@@ -149,4 +149,12 @@ left join SourceInstance using (SOPInstanceUID, measurementGroup_number)
 --the bottom three lines are different from measurement groups query
 left join unnest(TrackingIdentifier.cs_l1.ContentSequence) as ContentSequence1
 left join unnest(ContentSequence1.ConceptNameCodeSequence) as ConceptNameCodeSequence2
-where ContentSequence1.ValueType in ('CODE') and ConceptNameCodeSequence2.CodeValue not in ('121071','G-C0E3') 
+-- 
+where ContentSequence1.ValueType in ('CODE') 
+  # the following conditions are not excluded, since for the annotations in the nnU-Net-BPR-annotations the only kind of assessment is 
+  # stored for the SCT Finding Site code
+  # and not (ConceptNameCodeSequence2.CodeValue = '121071' and ConceptNameCodeSequence2.CodingSchemeDesignator = "DCM") -- DCM Finding
+  # and not (ConceptNameCodeSequence2.CodeValue = 'G-C0E3' and ConceptNameCodeSequence2.CodingSchemeDesignator = "SRT") -- SRT Finding Site
+  # and not (ConceptNameCodeSequence2.CodeValue = '363698007' and ConceptNameCodeSequence2.CodingSchemeDesignator = "SCT") -- SCT Finding Site
+# test subjects from LIDC and NLST collections
+#and TrackingIdentifier.PatientID = "LIDC-IDRI-0001" # "100012" 
