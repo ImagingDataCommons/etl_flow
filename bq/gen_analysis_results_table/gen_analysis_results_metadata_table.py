@@ -124,7 +124,7 @@ def build_metadata(args, BQ_client):
     rows = []
     for analysis_id, analysis_data in analysis_metadata.items():
         # If the DOI of this analysis result is in source_dois_license, then it is in the series table
-        # and therefore we have a series from this analysis result, and therefor we should include
+        # and therefore we have a series from this analysis result, and therefore we should include
         # this analysis result in the analysis_results metadata table
         if analysis_data["DOI"].lower() in source_dois_collections:
             # analysis_data["Collection"] = analysis_id
