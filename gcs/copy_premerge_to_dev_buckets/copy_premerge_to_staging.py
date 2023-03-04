@@ -31,15 +31,14 @@ from gcs.copy_bucket_mp.copy_bucket_mp import copy_all_instances
 def get_collection_groups():
     client = bigquery.Client()
     collections = {}
-    breakpoint() # FROM all_collections instead of all_included_collections?
     query = f"""
-    SELECT idc_webapp_collection_id, dev_tcia_url, dev_idc_url
-    FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_included_collections`
+    SELECT tcia_api_collection_id, dev_tcia_url, dev_idc_url
+    FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_collections`
     """
 
     result = client.query(query).result()
     for row in result:
-        collections[row['idc_webapp_collection_id']] = {"dev_tcia_url": row["dev_tcia_url"], "dev_idc_url": row["dev_idc_url"]}
+        collections[row['tcia_api_collection_id'].lower().replace('-','_').replace(' ','_')] = {"dev_tcia_url": row["dev_tcia_url"], "dev_idc_url": row["dev_idc_url"]}
 
     return collections
 
@@ -88,7 +87,7 @@ def copy_dev_buckets(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
-    parser.add_argument('--processes', default=32, help="Number of concurrent processes")
+    parser.add_argument('--processes', default=1, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
     args = parser.parse_args()
     args.id = 0 # Default process ID
