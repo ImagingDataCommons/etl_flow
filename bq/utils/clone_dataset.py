@@ -159,8 +159,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--src_project', default="idc-dev-etl", help='Project from which tables are copied')
     parser.add_argument('--trg_project', default="idc-source-data", help='Project to which tables are copied')
-    parser.add_argument('--trg_dataset_prefix', default=f"dev_", help="BQ target dataset")
-    parser.add_argument('--dataset_prefix', default='idc-dev-etl_', help='Prefix added to source dataset name')
+    parser.add_argument('--trg_dataset_prefix', default=f"idc_dev_etl_", help="BQ target dataset")
     parser.add_argument('--trg-version', default='', help='Dataset version to be cloned')
     args = parser.parse_args()
 
@@ -182,5 +181,5 @@ if __name__ == '__main__':
             'idc_v13_pub'
     ):
         args.src_dataset = src_dataset
-        args.trg_dataset = args.dataset_prefix + src_dataset
+        args.trg_dataset = args.trg_dataset_prefix + src_dataset
         clone_dataset(args)
