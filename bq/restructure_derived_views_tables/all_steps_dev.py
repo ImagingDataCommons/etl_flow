@@ -17,7 +17,7 @@
 import argparse
 import json
 import settings
-from step1_clone_dataset import clone_dataset
+from step1_clone_limited_dataset import clone_dataset
 from step2_revise_derived_views_tables import revise_derived_views_tables
 from step3_add_aws_column_to_aux import add_aws_column_to_aux
 from step7_add_aws_column_to_dicom_derived_all import add_aws_url_column_to_dicom_derived_all
