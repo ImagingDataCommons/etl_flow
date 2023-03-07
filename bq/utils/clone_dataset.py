@@ -22,7 +22,7 @@ import time
 from google.cloud import bigquery
 from google.cloud.bigquery import SchemaField
 from google.cloud.exceptions import NotFound
-from google.api_core.exceptions import NotFound
+from google.api_core.exceptions import NotFound, BadRequest
 from utilities.logging_config import successlogger, progresslogger, errlogger
 
 '''
@@ -103,6 +103,8 @@ def add_missing_fields_to(trg_schema, src_schema):
         if next((j for j, trg_field in enumerate(trg_schema) if src_field.name == trg_field.name), -1) == -1:
             errlogger.error(f'{src_schema[i]} not found in dst_schema')
 
+    return trg_schema
+
 
 def copy_view(client, args, view_id):
 
@@ -120,11 +122,15 @@ def copy_view(client, args, view_id):
     # schema is missing from the src_view schema. We add those missing fields.
     installed_view.schema = add_missing_fields_to(view.schema, installed_view.schema)
 
-    # # Update the schema after creating the view
-    # installed_view.schema = view.schema
-    client.update_table(installed_view,['schema'])
+    try:
+        # # Update the schema after creating the view
+        # installed_view.schema = view.schema
+        client.update_table(installed_view,['schema'])
+        progresslogger.info(f'Copy of view {view_id}: DONE')
+    except BadRequest as exc:
+        errlogger.error(f'{exc}')
 
-    progresslogger.info(f'Copy of view {view_id}: DONE')
+
 
     pass
 
@@ -144,42 +150,43 @@ def clone_dataset(args):
         )
         create_dataset(client, args.trg_project, args.trg_dataset, dataset_dict)
 
+    progresslogger.info(f'Cloning {args.src_dataset} to {args.trg_dataset}')
     table_ids = {table.table_id: table.table_type for table in client.list_tables(f'{args.src_project}.{args.src_dataset}')}
+    # Create tables first
     for table_id in table_ids:
         if table_ids[table_id] == 'TABLE':
             copy_table(client, args, table_id)
-        else:
+    for table_id in table_ids:
+        if table_ids[table_id] == 'VIEW':
             copy_view(client, args, table_id)
 
 
-if __name__ == '__main__':
-    # (sys.argv)
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
-    parser.add_argument('--src_project', default="idc-dev-etl", help='Project from which tables are copied')
-    parser.add_argument('--trg_project', default="idc-source-data", help='Project to which tables are copied')
-    parser.add_argument('--trg_dataset_prefix', default=f"idc_dev_etl_", help="BQ target dataset")
-    parser.add_argument('--trg-version', default='', help='Dataset version to be cloned')
-    args = parser.parse_args()
-
-    progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
-
-    for src_dataset in (
-            'idc_v1',
-            'idc_v2',
-            'idc_v3',
-            'idc_v4',
-            'idc_v5',
-            'idc_v6',
-            'idc_v7',
-            'idc_v8',
-            'idc_v9_pub',
-            'idc_v10_pub',
-            'idc_v11_pub',
-            'idc_v12_pub',
-            'idc_v13_pub'
-    ):
-        args.src_dataset = src_dataset
-        args.trg_dataset = args.trg_dataset_prefix + src_dataset
-        clone_dataset(args)
+# if __name__ == '__main__':
+#     # (sys.argv)
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
+#     parser.add_argument('--src_project', default="idc-dev-etl", help='Project from which tables are copied')
+#     parser.add_argument('--trg_project', default="idc-source-data", help='Project to which tables are copied')
+#     parser.add_argument('--trg_dataset_prefix', default=f"idc_dev_etl_", help="BQ target dataset")
+#     args = parser.parse_args()
+#
+#     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
+#
+#     for src_dataset in (
+#             # 'idc_v1',
+#             # 'idc_v2',
+#             # 'idc_v3',
+#             'idc_v4',
+#             'idc_v5',
+#             'idc_v6',
+#             'idc_v7',
+#             'idc_v8_pub',
+#             'idc_v9_pub',
+#             'idc_v10_pub',
+#             'idc_v11_pub',
+#             'idc_v12_pub',
+#             'idc_v13_pub'
+#     ):
+#         args.src_dataset = src_dataset
+#         args.trg_dataset = args.trg_dataset_prefix + src_dataset
+#         clone_dataset(args)
