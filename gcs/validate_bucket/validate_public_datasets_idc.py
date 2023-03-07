@@ -28,12 +28,8 @@ from gcs.validate_bucket.validate_bucket_mp import check_all_instances
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    breakpoint() # remove temp version setting
     parser.add_argument('--version', default=f'{settings.CURRENT_VERSION}')
-    # parser.add_argument('--version', default=12)
     parser.add_argument('--bucket', default='public-datasets-idc', help='Bucket to be validated')
-    # parser.add_argument('--src_project', default=settings.PDP_PROJECT)
-    # parser.add_argument('--src_bqdataset_name', default=settings.BQ_PDP_DATASET)
     parser.add_argument('--dev_or_pub', default = 'pub', help='Validating a dev or pub bucket')
     parser.add_argument('--premerge', default=False, help='True when performing prior to merging premerge  buckets')
     parser.add_argument('--expected_blobs', default=f'{settings.LOG_DIR}/expected_blobs.txt', help='List of blobs names expected to be in above collections')

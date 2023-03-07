@@ -91,27 +91,10 @@ def copy_all_instances(args, dones):
     client = storage.Client()
     src_bucket = storage.Bucket(client, args.src_bucket)
 
-    # try:
-    #     # Create a set of previously copied blobs
-    #     # dones = set(open(f'{args.log_dir}/{args.src_bucket}_success.log').read().splitlines())
-    #     dones = set(open(successlogger.handlers[0].baseFilename).read().splitlines())
-    # except:
-    #     dones = set([])
-    # if args.src_bucket in dones:
-    #     progresslogger.info(f'Bucket {args.src_bucket} previously copied')
-    #     return
 
     n=len(dones)
-    # dones = []
-    # iterator = client.list_blobs(dst_bucket, page_size=args.batch)
-    # for page in iterator.pages:
-    #     blobs = [blob.name for blob in page]
-    #     dones.extend(blobs)
-    #     # if len(blobs) == 0:
-    #     #     break
 
     progresslogger.info(f"{len(dones)} blobs previously copied")
-    # dones = set(dones)
 
     progresslogger.info(f'Copying bucket {args.src_bucket} to {args.dst_bucket}, ')
 
@@ -160,7 +143,6 @@ def copy_all_instances(args, dones):
     if src_bucket in error_buckets:
         print(f'Bucket {args.src_bucket} had errors')
     else:
-        successlogger.info(f'{args.src_bucket}')
         progresslogger.info(f'Completed bucket {args.src_bucket}, {rate} instances/sec, {num_processes} processes')
 
 

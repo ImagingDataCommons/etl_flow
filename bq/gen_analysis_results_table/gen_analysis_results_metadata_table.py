@@ -59,7 +59,7 @@ def get_collections_containing_a_doi(client, args):
         FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined`
         WHERE idc_version = {settings.CURRENT_VERSION} 
         AND license_short_name in ('CC BY 3.0', 'CC BY 4.0', 'CC BY-NC 3.0', 'CC BY-NC 4.0')
-        ORDER BY source_doi
+        ORDER BY collection_id
         """
     result = client.query(query).result()
 

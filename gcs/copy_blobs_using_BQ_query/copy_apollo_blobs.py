@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# One time script to copy all APOLLOxx blobs from idc-dev-redacted to idc-dev-open
 import json
 import os
 import argparse
