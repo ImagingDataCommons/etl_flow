@@ -62,7 +62,7 @@ if __name__ == '__main__':
         progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
         steps = [
-            clone_dataset, # 1
+            # clone_dataset, # 1
             revise_derived_views_tables, # 2
             add_aws_column_to_aux, # 3
             add_aws_url_column_to_dicom_all, # 4

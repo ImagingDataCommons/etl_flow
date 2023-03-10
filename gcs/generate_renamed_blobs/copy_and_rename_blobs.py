@@ -16,7 +16,7 @@
 
 from google.cloud import bigquery, storage
 
-def build_src_and dst_table(args):
+def build_src_and_dst_table(args):
     client = bigquery.Client()
     query = f"""
     select 

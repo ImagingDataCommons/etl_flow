@@ -30,12 +30,12 @@ from google.api_core.exceptions import NotFound
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from bq.derived_table_creation.BQ_Table_Building.publish_bq_derived_tables import annotate_schema, make_schema_list
 
-# Recreate a view which we deleted in order to use its
+# Recreate a view which we delete in order to use its
 # name for a new table.
-def recreate_view(client, args, view_id, table_id):
+def recreate_view(client, args, new_view_id, old_table_id):
     # view_id = f'{table.project}.{args.dataset}.{table.table_id}_view'
-    old_view = client.get_table(table_id)
-    new_view = bigquery.Table(view_id)
+    old_view = client.get_table(old_table_id)
+    new_view = bigquery.Table(new_view_id)
     # new_view.view_query = old_view.view_query.replace(args.src_dataset,args.trg_dataset) \
     #     .replace(args.src_project,args.trg_project)
     new_view.view_query = old_view.view_query
@@ -44,14 +44,14 @@ def recreate_view(client, args, view_id, table_id):
     new_view.labels = old_view.labels
     schema = old_view.schema
     # Make sure the view does not already exist
-    client.delete_table(view_id, not_found_ok=True)
+    client.delete_table(new_view_id, not_found_ok=True)
     installed_view = client.create_table(new_view)
 
     # Update the schema after creating the view
     installed_view.schema = schema
     client.update_table(installed_view,['schema'])
 
-    progresslogger.info(f'Created view {view_id}')
+    progresslogger.info(f'Created view {new_view_id}')
 
     return
 
@@ -81,46 +81,6 @@ def create_table_from_view(client, args, view_id, table_id):
     # Update the schema after creating the view
     installed_table.schema = schema
     client.update_table(installed_table,['schema'])
-
-    progresslogger.info(f'Created table {table_id}')
-    return
-
-# We have a table but no view from which to get the SQL/Schema. In this case
-# we have get the SQL and schema from the files
-# used to create the table.
-def recreate_table(client, args, table_id):
-    old_table = client.get_table(table_id)
-    with open(f'../derived_table_creation/BQ_Table_Building/derived_data_views/schema/{old_table.table_id}.json') as f:
-        schema = json.load(f)
-    with open(f'../derived_table_creation/BQ_Table_Building/derived_data_views/sql/{old_table.table_id}.sql') as f:
-        sql = f'{f.read()}'.format(project=args.trg_project, dataset=args.trg_dataset)
-
-    # # For this step, if generating dicom_all_view, we need to remove aws_url from the schema and sql.
-    # # They will be added later
-    # if table.table_id == 'dicom_all':
-    #     sql = sql.replace('    aux.aws_url as aws_url,\n', '')
-    #     schema['schema']['fields'].pop(32)
-
-    new_table = bigquery.Table(table_id)
-    new_table.view_query = sql
-    new_table.friendly_name = schema['friendlyName']
-    new_table.description = schema['description']
-    new_table.labels = schema['labels']
-    client.delete_table(table_id, not_found_ok=True)
-    installed_view = client.create_table(new_table)
-
-    # Convert the dictionary into the tree of SchemaField objects:
-    targ_schema = make_schema_list(schema["schema"]["fields"])
-    # Convert the schema that was generated when we created the view into a tree of SchemaField objects
-    generated_schema = installed_view.schema
-    # Add annotations to the generated view
-    annotated_schema = annotate_schema(generated_schema, targ_schema)
-    # Update the schema after creation:
-    installed_view.schema = annotated_schema
-
-    # Update the schema after creating the view
-    # installed_view.schema = schema['schema']['fields']
-    client.update_table(installed_view,['schema'])
 
     progresslogger.info(f'Created table {table_id}')
     return
@@ -176,7 +136,7 @@ def clone_derived(args, table_id):
         table = client.get_table(table_id)
     except NotFound:
         # The table doesn't exist in this dataset
-        # This is an error
+        # This is not an error
         progresslogger.info(f'Table {table_id} does not exist')
         return
 
@@ -210,19 +170,19 @@ def revise_derived_views_tables(args):
     view_id = f'{table_id}'
     recreate_view(client, args, view_id, table_id)
 
-if __name__ == '__main__':
-    # (sys.argv)
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
-    parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
-    parser.add_argument('--src_dataset', default=f"idc_v1", help="BQ source dataset")
-    # parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v13_pub", help="BQ target dataset")
-    parser.add_argument('--dataset_prefix', default='whc_dev_')
-    args = parser.parse_args()
-
-    args.trg_dataset = f'{args.dataset_prefix}{args.src_prefix}'
-
-    progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
-
-    revise_derived_views_tables(args)
+# if __name__ == '__main__':
+#     # (sys.argv)
+#     parser = argparse.ArgumentParser()
+#
+#     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
+#     parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
+#     parser.add_argument('--src_dataset', default=f"idc_v1", help="BQ source dataset")
+#     # parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v13_pub", help="BQ target dataset")
+#     parser.add_argument('--dataset_prefix', default='whc_dev_')
+#     args = parser.parse_args()
+#
+#     args.trg_dataset = f'{args.dataset_prefix}{args.src_prefix}'
+#
+#     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
+#
+#     revise_derived_views_tables(args)
