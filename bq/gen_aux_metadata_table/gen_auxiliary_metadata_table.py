@@ -115,7 +115,8 @@ def build_table(args):
       WHERE
         i_excluded is False
       AND
-        ((i_source='tcia' AND ac.tcia_access='Public') OR (i_source='idc' AND ac.idc_access='Public'))
+        ((i_source='tcia' AND ac.tcia_access='Public' AND (ac.tcia_metadata_sunset=0 OR ({args.version} <= ac.tcia_metadata_sunset))) 
+        OR (i_source='idc' AND ac.idc_access='Public' AND (ac.idc_metadata_sunset=0 OR ({args.version} <= ac.idc_metadata_sunset))))
       AND
         idc_version = {args.version}
       ORDER BY
