@@ -34,9 +34,9 @@ if __name__ == '__main__':
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
     for src_dataset in (
-            # 'idc_v1',
-            # 'idc_v2',
-            # 'idc_v3',
+            'idc_v1',
+            'idc_v2',
+            'idc_v3',
             'idc_v4',
             'idc_v5',
             'idc_v6',

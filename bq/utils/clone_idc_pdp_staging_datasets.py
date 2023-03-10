@@ -37,16 +37,16 @@ if __name__ == '__main__':
             'idc_v1',
             'idc_v2',
             'idc_v3',
-            # 'idc_v4',
+            'idc_v4',
             'idc_v5',
             'idc_v6',
             'idc_v7',
-            'idc_v8_pub',
-            'idc_v9_pub',
-            'idc_v10_pub',
-            'idc_v11_pub',
-            'idc_v12_pub',
-            'idc_v13_pub'
+            'idc_v8',
+            'idc_v9',
+            'idc_v10',
+            'idc_v11',
+            'idc_v12',
+            'idc_v13'
     ):
         args.src_dataset = src_dataset
         args.trg_dataset = args.trg_dataset_prefix + src_dataset

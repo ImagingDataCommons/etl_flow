@@ -64,7 +64,7 @@ def bq_dataset_exists(client, project , target_dataset):
 Delete all views in exisiting dataset:
 '''
 
-def delete_all_views(target_client, target_project, target_dataset):
+def delete_views_or_tables(target_client, target_project, target_dataset, table_type):
 
     dataset_ref = bigquery.DatasetReference(target_project, target_dataset)
     # dataset_ref = target_client.dataset(target_dataset)
@@ -73,11 +73,11 @@ def delete_all_views(target_client, target_project, target_dataset):
     # table_list = list(target_client.list_tables(dataset.dataset_id))
     table_list = list(target_client.list_tables(f'{dataset.project}.{dataset.dataset_id}'))
     for tbl in table_list:
-        table_id = '{}.{}.{}'.format(target_project, dataset.dataset_id, tbl.table_id)
-        progresslogger.info("Deleting {}".format(table_id))
-        target_client.delete_table(table_id)
-
-    return True
+        if tbl.table_type == table_type:
+            table_id = '{}.{}.{}'.format(target_project, dataset.dataset_id, tbl.table_id)
+            progresslogger.info("Deleting {}".format(table_id))
+            target_client.delete_table(table_id)
+    return
 
 
 def copy_table(client, args,  table_id):
@@ -91,18 +91,16 @@ def copy_table(client, args,  table_id):
     progresslogger.info(f'Copy of table {table_id}: {job.result().state} ')
 
     dst_table = client.get_table(dst_table_id)
-    pass
+    return
 
 
-def add_missing_fields_to(trg_schema, src_schema):
+def add_descriptions_to_schema(src_schema, trg_schema):
     for i, src_field in enumerate(src_schema):
-        if next((j for j, trg_field in enumerate(trg_schema) if src_field.name == trg_field.name), -1) == -1:
-            trg_schema.insert(i, src_schema[i])
-
-    for i, src_field in enumerate(src_schema):
-        if next((j for j, trg_field in enumerate(trg_schema) if src_field.name == trg_field.name), -1) == -1:
-            errlogger.error(f'{src_schema[i]} not found in dst_schema')
-
+        if src_field.description and  ((j:=(next((j for j, trg_field in enumerate(trg_schema) if src_field.name == trg_field.name), -1))) != -1):
+            new_schemaField_dict = trg_schema[j].to_api_repr()
+            new_schemaField_dict['description'] = src_schema[i].description
+            new_schemaField = bigquery.SchemaField.from_api_repr(new_schemaField_dict)
+            trg_schema[j] = new_schemaField
     return trg_schema
 
 
@@ -118,22 +116,25 @@ def copy_view(client, args, view_id):
     new_view.labels = view.labels
     installed_view = client.create_table(new_view)
 
-    # For whatever reason, in at least one case, a field in the installed_view
-    # schema is missing from the src_view schema. We add those missing fields.
-    installed_view.schema = add_missing_fields_to(view.schema, installed_view.schema)
+    # Don't try to add descriptions to dicom_pivot_vX schema. There are no
+    # descriptions and some of the src schemas are broken, making revision
+    # difficult.
+    if not view.table_id.startswith('dicom_pivot'):
+        # For whatever reason, in at least one case, a field in the installed_view
+        # schema is missing from the src_view schema. We add those missing fields.
+        # installed_view.schema = add_missing_fields_to(view.schema, installed_view.schema)
+        installed_view.schema = add_descriptions_to_schema(view.schema, installed_view.schema)
 
-    try:
-        # # Update the schema after creating the view
-        # installed_view.schema = view.schema
-        client.update_table(installed_view,['schema'])
-        progresslogger.info(f'Copy of view {view_id}: DONE')
-    except BadRequest as exc:
-        errlogger.error(f'{exc}')
-
-
-
-    pass
-
+        try:
+            # # Update the schema after creating the view
+            # installed_view.schema = view.schema
+            client.update_table(installed_view,['schema'])
+            progresslogger.info(f'Copy of view {view_id}: DONE')
+        except BadRequest as exc:
+            errlogger.error(f'{exc}')
+    else:
+        progresslogger.info(f'Copy of view {view_id}: DONE; no schema update ')
+    return
 
 def clone_dataset(args):
     client = bigquery.Client()
@@ -142,7 +143,8 @@ def clone_dataset(args):
     src_dataset = client.get_dataset(src_dataset_ref)
 
     if bq_dataset_exists(client, args.trg_project, args.trg_dataset):
-        delete_all_views(client, args.trg_project, args.trg_dataset)
+        delete_views_or_tables(client, args.trg_project, args.trg_dataset, 'TABLE')
+        delete_views_or_tables(client, args.trg_project, args.trg_dataset, 'VIEW')
     else:
         dataset_dict = dict(
             description = src_dataset.description,
