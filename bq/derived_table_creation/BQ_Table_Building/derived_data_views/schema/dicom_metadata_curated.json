@@ -17,6 +17,12 @@
         "description": "Cast of Slice_Thickness to FLOAT64",
         "mode": "NULLABLE",
         "name": "SliceThickness",
+        "type": "FLOAT64"
+      },
+      {
+        "description": "Curated value of BodyPartExamined following the manually created mapping. For the mapping details, please refer to the query referenced in the series description.",
+        "mode": "NULLABLE",
+        "name": "BodyPartExamined",
         "type": "STRING"
       }
     ]
