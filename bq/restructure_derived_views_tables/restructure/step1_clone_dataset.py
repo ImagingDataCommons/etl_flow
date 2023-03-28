@@ -25,8 +25,6 @@ from google.cloud.exceptions import NotFound
 from google.api_core.exceptions import NotFound
 from utilities.logging_config import successlogger, progresslogger, errlogger
 
-
-
 '''
 ----------------------------------------------------------------------------------------------
 Create the target dataset:
@@ -130,6 +128,12 @@ def copy_view(client, args, view_id):
 
     pass
 
+# args.src_project: idc-dev-etl
+# args.src_dataset: idc_vX
+# args.trg_project: idc-pdp-staging
+# args.trg_dataset: idc_vX
+# args.dataset_version: N
+
 
 def clone_dataset(args):
     client = bigquery.Client()
@@ -168,28 +172,28 @@ def clone_dataset(args):
                 copy_view(client, args, table_id)
 
 
-if __name__ == '__main__':
-    # (sys.argv)
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
-    parser.add_argument('--src_project', default="idc-dev-etl", help='Project from which tables are copied')
-    parser.add_argument('--trg_project', default="idc-source-data", help='Project to which tables are copied')
-    # parser.add_argument('--dataset', default=f"idc_v{settings.CURRENT_VERSION}_pub", help="BQ dataset")
-    parser.add_argument('--src_dataset', default=f"idc_v5", help="BQ source dataset")
-    parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v5", help="BQ target dataset")
-    parser.add_argument('--dataset_prefix', default='whc_dev_', help='Prefix added to target datasets')
-    parser.add_argument('--trg-version', default='', help='Dataset version to be cloned')
-    args = parser.parse_args()
-
-    progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
-
-
-    for version in (
-            'idc_v1',
-            'idc_v5',
-            'idc_v12_pub',
-            'idc_v13_pub'
-    ):
-        args.src_dataset = version
-        clone_dataset(args)
+# if __name__ == '__main__':
+#     # (sys.argv)
+#     parser = argparse.ArgumentParser()
+#
+#     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
+#     parser.add_argument('--src_project', default="idc-dev-etl", help='Project from which tables are copied')
+#     parser.add_argument('--trg_project', default="idc-source-data", help='Project to which tables are copied')
+#     # parser.add_argument('--dataset', default=f"idc_v{settings.CURRENT_VERSION}_pub", help="BQ dataset")
+#     parser.add_argument('--src_dataset', default=f"idc_v5", help="BQ source dataset")
+#     parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v5", help="BQ target dataset")
+#     parser.add_argument('--dataset_prefix', default='whc_dev_', help='Prefix added to target datasets')
+#     parser.add_argument('--trg-version', default='', help='Dataset version to be cloned')
+#     args = parser.parse_args()
+#
+#     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
+#
+#
+#     for version in (
+#             'idc_v1',
+#             'idc_v5',
+#             'idc_v12_pub',
+#             'idc_v13_pub'
+#     ):
+#         args.src_dataset = version
+#         clone_dataset(args)

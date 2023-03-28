@@ -67,7 +67,8 @@ def populate_urls_in_auxiliary_metadata(args):
                       IF(aj.i_source='tcia', ac.pub_aws_tcia_url, ac.pub_aws_idc_url),
                       '/', aj.se_uuid, '/', aj.i_uuid, '.dcm')
                     AS pub_aws_url,
-                    IF(aj.i_source='tcia', ac.tcia_access , ac.idc_access) AS access, i_source source
+                    IF(aj.i_source='tcia', ac.tcia_access , ac.idc_access) AS access, 
+                    i_source AS source
                     FROM `{args.dev_project}.{args.dev_dataset}.all_joined` aj
                     JOIN `{args.dev_project}.{args.dev_dataset}.all_collections` ac
                     on aj.collection_id = ac.tcia_api_collection_id
@@ -125,19 +126,19 @@ def populate_urls_in_auxiliary_metadata(args):
     return
 
 
-if __name__ == '__main__':
-    # (sys.argv)
-    parser = argparse.ArgumentParser()
-
-    # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
-    # parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
-    # parser.add_argument('--dev_dataset', default=f"idc_v{settings.CURRENT_VERSION}_dev", help="BQ source dataset")
-    # parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v1", help="BQ targetdataset")
-    # # parser.add_argument('--uuid_url_map', default="idc-dev-etl.idc_v14_dev.uuid_url_map",
-    # #                     help="Table that maps instance uuids to URLS")
-    # parser.add_argument('--dev_or_pub', default='dev', help='Revising the dev or pub version of auxiliary_metadata')
-    args = parser.parse_args()
-
-    progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
-
-    populate_urls_in_auxiliary_metadata(args)
+# if __name__ == '__main__':
+#     # (sys.argv)
+#     parser = argparse.ArgumentParser()
+#
+#     # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
+#     # parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
+#     # parser.add_argument('--dev_dataset', default=f"idc_v{settings.CURRENT_VERSION}_dev", help="BQ source dataset")
+#     # parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v1", help="BQ targetdataset")
+#     # # parser.add_argument('--uuid_url_map', default="idc-dev-etl.idc_v14_dev.uuid_url_map",
+#     # #                     help="Table that maps instance uuids to URLS")
+#     # parser.add_argument('--dev_or_pub', default='dev', help='Revising the dev or pub version of auxiliary_metadata')
+#     args = parser.parse_args()
+#
+#     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
+#
+#     populate_urls_in_auxiliary_metadata(args)

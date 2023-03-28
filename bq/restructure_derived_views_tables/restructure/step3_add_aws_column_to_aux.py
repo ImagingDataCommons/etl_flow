@@ -29,7 +29,7 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 
 
 # We do a table update rather than regenerate the entire table.
-# This is necessary so that we do not need the SQL for each IDC version
+# By doing it this way, we do not need the SQL for each IDC version
 def add_aws_column_to_aux(args):
     client = bigquery.Client()
     table_id = f'{args.trg_project}.{args.trg_dataset}.auxiliary_metadata'
@@ -64,16 +64,16 @@ def add_aws_column_to_aux(args):
     return
 
 
-if __name__ == '__main__':
-    # (sys.argv)
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
-    parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
-    # parser.add_argument('--dataset', default=f"idc_v{settings.CURRENT_VERSION}_pub", help="BQ dataset")
-    parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v13_pub", help="BQ target dataset")
-    args = parser.parse_args()
-
-    progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
-
-    add_aws_column_to_aux(args)
+# if __name__ == '__main__':
+#     # (sys.argv)
+#     parser = argparse.ArgumentParser()
+#
+#     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
+#     parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
+#     # parser.add_argument('--dataset', default=f"idc_v{settings.CURRENT_VERSION}_pub", help="BQ dataset")
+#     parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v13_pub", help="BQ target dataset")
+#     args = parser.parse_args()
+#
+#     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
+#
+#     add_aws_column_to_aux(args)

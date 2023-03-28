@@ -17,11 +17,11 @@
 import argparse
 import json
 import settings
-from step1_clone_limited_dataset import clone_dataset
+from step1_clone_dataset import clone_dataset
 from step2_revise_derived_views_tables import revise_derived_views_tables
 from step3_add_aws_column_to_aux import add_aws_column_to_aux
 from step7_add_aws_column_to_dicom_derived_all import add_aws_url_column_to_dicom_derived_all
-from step4_add_aws_column_to_dicom_all import add_aws_url_column_to_dicom_all
+from step4_add_aws_column_to_dicom_all_view import add_aws_url_column_to_dicom_all
 from step8_add_aws_column_to_dicom_pivot import add_aws_url_column_to_dicom_pivot
 from step5_populate_urls_in_auxiliary_metadata import populate_urls_in_auxiliary_metadata
 from step6_populate_urls_in_dicom_all import populate_urls_in_dicom_all
@@ -29,6 +29,9 @@ from step9_populate_urls_in_dicom_derived_all import revise_dicom_derived_all_ur
 from utilities.logging_config import successlogger, progresslogger
 
 
+def skip(args):
+    progresslogger.info("Skipped stage")
+    return
 
 
 if __name__ == '__main__':
@@ -36,18 +39,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
-    parser.add_argument('--dev_project', default="idc-dev-etl", help='Project from which tables are copied')
+    parser.add_argument('--dev_project', default="idc-dev-etl", help='Project  from which to get some -dev tables/views')
+    parser.add_argument('--dev_dataset', default=f"idc_v{settings.CURRENT_VERSION}_dev", help="Dataset from which to get some -dev tables/views")
     parser.add_argument('--src_project', default="idc-dev-etl", help='Project from which tables are copied')
-    parser.add_argument('--trg_project', default="idc-source-data", help='Project to which tables are copied')
-    # parser.add_argument('--dataset', default=f"idc_v{settings.CURRENT_VERSION}_pub", help="BQ dataset")
-    parser.add_argument('--dataset_prefix', default='whc_dev_')
-    parser.add_argument('--dev_dataset', default=f"idc_v{settings.CURRENT_VERSION}_dev", help="Were to get some -dev tables/vies")
+    parser.add_argument('--trg_project', default="idc-dev-etl", help='Project to which tables are copied')
+    # parser.add_argument('--trg_project', default="idc-source-data", help='Project to which tables are copied')
+    parser.add_argument('--dataset_prefix', default='')
+    # parser.add_argument('--dataset_prefix', default='idc_dev_etl_')
     parser.add_argument('--dev_or_pub', default='dev', help='Revising the dev or pub version of auxiliary_metadata')
     args = parser.parse_args()
 
     dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
-    # versions = [ '1', '2', '3', '4', '5', '6', '7', '8_pub', '9_pub', '10_pub',
-    #     '11_pub', '12_pub', '13_pub']
     versions = [ '1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
         '11', '12', '13']
     for dataset_version in [version for version in versions if not version in dones]:
@@ -62,7 +64,7 @@ if __name__ == '__main__':
         progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
         steps = [
-            # clone_dataset, # 1
+            skip,    # clone_dataset, # 1
             revise_derived_views_tables, # 2
             add_aws_column_to_aux, # 3
             add_aws_url_column_to_dicom_all, # 4

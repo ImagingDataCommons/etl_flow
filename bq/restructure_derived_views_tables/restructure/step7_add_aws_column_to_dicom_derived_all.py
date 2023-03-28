@@ -59,16 +59,16 @@ def add_aws_url_column_to_dicom_derived_all(args):
     return
 
 
-if __name__ == '__main__':
-    # (sys.argv)
-    parser = argparse.ArgumentParser()
-
-    # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
-    # parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
-    # # parser.add_argument('--dataset', default=f"idc_v{settings.CURRENT_VERSION}_pub", help="BQ dataset")
-    # parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v13_pub", help="BQ target dataset")
-    # args = parser.parse_args()
-    #
-    # progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
-    #
-    # add_aws_url_column_to_dicom_derived_all(args)
+# if __name__ == '__main__':
+#     # (sys.argv)
+#     parser = argparse.ArgumentParser()
+#
+#     # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
+#     # parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
+#     # # parser.add_argument('--dataset', default=f"idc_v{settings.CURRENT_VERSION}_pub", help="BQ dataset")
+#     # parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v13_pub", help="BQ target dataset")
+#     # args = parser.parse_args()
+#     #
+#     # progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
+#     #
+#     # add_aws_url_column_to_dicom_derived_all(args)

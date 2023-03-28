@@ -30,25 +30,50 @@ from google.api_core.exceptions import NotFound
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from bq.derived_table_creation.BQ_Table_Building.publish_bq_derived_tables import annotate_schema, make_schema_list
 
+
+def annotate_schema(generated_schema, annotation_schema):
+    a=1
+    for src_field in annotation_schema:
+        # Only annotate in the case that the source description is not empty
+        if src_field.description and src_field.description != "TBD":
+            # Search for a field with matching name
+            gen_field = next((trg_field for trg_field in generated_schema if src_field.name == trg_field.name ), None)
+            if gen_field:
+                new_gen_field = bigquery.SchemaField(
+                        gen_field.name,
+                        gen_field.field_type,
+                        description = src_field.description,
+                        fields = gen_field.fields if src_field.field_type != "RECORD" else \
+                            annotate_schema(list(gen_field.fields), list(src_field.fields)),
+                        mode = gen_field.mode,
+                        policy_tags = gen_field.policy_tags
+                    )
+                # if src_field.field_type == "RECORD":
+                #     annotate_schema(list(new_gen_field.fields), list(src_field.fields))
+                generated_schema[generated_schema.index(gen_field)] = new_gen_field
+            else:
+                errlogger.error("Failed to find target analog of source field {}".format(src_field.name))
+    return generated_schema
+
+
+
 # Recreate a view which we delete in order to use its
 # name for a new table.
 def recreate_view(client, args, new_view_id, old_table_id):
-    # view_id = f'{table.project}.{args.dataset}.{table.table_id}_view'
     old_view = client.get_table(old_table_id)
     new_view = bigquery.Table(new_view_id)
-    # new_view.view_query = old_view.view_query.replace(args.src_dataset,args.trg_dataset) \
-    #     .replace(args.src_project,args.trg_project)
     new_view.view_query = old_view.view_query
     new_view.friendly_name = old_view.friendly_name
     new_view.description = old_view.description
     new_view.labels = old_view.labels
-    schema = old_view.schema
+    # new_schema = annotate_schema(old_view.schema
     # Make sure the view does not already exist
     client.delete_table(new_view_id, not_found_ok=True)
     installed_view = client.create_table(new_view)
 
-    # Update the schema after creating the view
-    installed_view.schema = schema
+    new_schema = annotate_schema(installed_view.schema, old_view.schema, )
+    # Update the schema after creating the view, if the schema has descriptions
+    installed_view.schema = new_schema
     client.update_table(installed_view,['schema'])
 
     progresslogger.info(f'Created view {new_view_id}')
@@ -67,7 +92,7 @@ def create_table_from_view(client, args, view_id, table_id):
     new_table.labels = view.labels
     view_query = view.view_query
     schema = view.schema
-    # Ensure that the table does not already exist
+    # Ensure that the table/view does not already exist
     client.delete_table(table_id, not_found_ok=True)
     client.create_table(new_table)
 
@@ -78,7 +103,7 @@ def create_table_from_view(client, args, view_id, table_id):
 
     installed_table = client.get_table(table_id)
 
-    # Update the schema after creating the view
+     # Update the schema after creating the view
     installed_table.schema = schema
     client.update_table(installed_table,['schema'])
 
@@ -135,7 +160,7 @@ def clone_derived(args, table_id):
     try:
         table = client.get_table(table_id)
     except NotFound:
-        # The table doesn't exist in this dataset
+        # The table/view doesn't exist in this dataset
         # This is not an error
         progresslogger.info(f'Table {table_id} does not exist')
         return
@@ -144,13 +169,18 @@ def clone_derived(args, table_id):
         # Change view name, adding _view
         recreate_view(client, args, view_id, table_id)
 
-        # We'll regenerate dicom_all later when we add reload aws and gcs urls
+        # Create the table corresponding to this view
+        # We'll create the dicom_all table later when we add aws and gcs urls
         if table_id.split('.')[-1] != 'dicom_all':
             create_table_from_view(client, args, view_id, table_id)
     else:
         # A table by this name exists.
-        # we only need to create the view
-        create_view(client, args, view_id, table_id)
+        # We need to create the view
+        try:
+            # If the corresponding view already exists, we are done
+            view = client.get_table(view_id)
+        except NotFound:
+            create_view(client, args, view_id, table_id)
     return
 
 
@@ -164,11 +194,11 @@ def revise_derived_views_tables(args):
     clone_derived(args, 'dicom_metadata_curated_series_level')
     clone_derived(args, 'dicom_all')
 
-    # Special for dicom_pivot_vX. We don't want to add _view to its name
-    client = bigquery.Client()
-    table_id = f'{args.trg_project}.{args.trg_dataset}.dicom_pivot_v{args.dataset_version}'
-    view_id = f'{table_id}'
-    recreate_view(client, args, view_id, table_id)
+    # # Special for dicom_pivot_vX. We don't want to add _view to its name
+    # client = bigquery.Client()
+    # table_id = f'{args.trg_project}.{args.trg_dataset}.dicom_pivot_v{args.dataset_version}'
+    # view_id = f'{table_id}'
+    # recreate_view(client, args, view_id, table_id)
 
 # if __name__ == '__main__':
 #     # (sys.argv)

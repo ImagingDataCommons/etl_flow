@@ -82,27 +82,27 @@ def revise_dicom_all_view(client, view_id, view, metadata):
     return
 
 
-def revise_dicom_all_table(client, table_id, metadata):
-    new_table = bigquery.Table(table_id)
-    new_table.friendly_name = metadata['friendly_name']
-    new_table.description = metadata['description']
-    new_table.labels = metadata['labels']
-
-    client.delete_table(table_id, not_found_ok=True)
-    client.create_table(new_table)
-    job_config = bigquery.QueryJobConfig(destination=table_id)
-    job = client.query(metadata['view_query'], job_config=job_config)
-    # Wait for the query to complete
-    result = job.result()
-
-    installed_table = client.get_table(table_id)
-
-    # Update the schema after creating the table
-    installed_table.schema = metadata['schema']
-    client.update_table(installed_table,['schema'])
-    progresslogger.info(f'Added aws_url column to table dicom_all')
-
-    return
+# def revise_dicom_all_table(client, table_id, metadata):
+#     new_table = bigquery.Table(table_id)
+#     new_table.friendly_name = metadata['friendly_name']
+#     new_table.description = metadata['description']
+#     new_table.labels = metadata['labels']
+#
+#     client.delete_table(table_id, not_found_ok=True)
+#     client.create_table(new_table)
+#     job_config = bigquery.QueryJobConfig(destination=table_id)
+#     job = client.query(metadata['view_query'], job_config=job_config)
+#     # Wait for the query to complete
+#     result = job.result()
+#
+#     installed_table = client.get_table(table_id)
+#
+#     # Update the schema after creating the table
+#     installed_table.schema = metadata['schema']
+#     client.update_table(installed_table,['schema'])
+#     progresslogger.info(f'Added aws_url column to table dicom_all')
+#
+#     return
 
 
 def add_aws_url_column_to_dicom_all(args):
@@ -110,10 +110,10 @@ def add_aws_url_column_to_dicom_all(args):
     table_id = f'{args.trg_project}.{args.trg_dataset}.dicom_all'
     view_id = f'{args.trg_project}.{args.trg_dataset}.dicom_all_view'
     view = client.get_table(view_id)
-    try:
-        table = client.get_table(table_id)
-    except:
-        table = None
+    # try:
+    #     table = client.get_table(table_id)
+    # except:
+    #     table = None
 
     metadata = {}
     metadata['schema'] = revise_dicom_all_schema(view)
@@ -124,19 +124,19 @@ def add_aws_url_column_to_dicom_all(args):
 
     # Now create table/view pair as needed
     revise_dicom_all_view(client, view_id, view, metadata)
-    # revise_dicom_all_table(client, table_id, metadata)
+    # Note, we revise dicom_all (table) schema when we populate its urls
     return
 
 
-if __name__ == '__main__':
-    # (sys.argv)
-    parser = argparse.ArgumentParser()
-
-    # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
-    # parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
-    # parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v5", help="BQ target dataset")
-    args = parser.parse_args()
-
-    progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
-
-    # add_aws_url_column_to_dicom_all(args)
+# if __name__ == '__main__':
+#     # (sys.argv)
+#     parser = argparse.ArgumentParser()
+#
+#     # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
+#     # parser.add_argument('--project', default="idc-dev-etl", help='Project in which tables live')
+#     # parser.add_argument('--trg_dataset', default=f"whc_dev_idc_v5", help="BQ target dataset")
+#     args = parser.parse_args()
+#
+#     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
+#
+#     # add_aws_url_column_to_dicom_all(args)
