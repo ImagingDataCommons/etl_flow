@@ -43,12 +43,12 @@ if __name__ == '__main__':
     parser.add_argument('--dev_project', default="idc-dev-etl", help='Project from which to get some -dev tables/views')
     parser.add_argument('--dev_dataset', default=f"idc_v{settings.CURRENT_VERSION}_dev", help="Dataset from which to get some -dev tables/views")
     # parser.add_argument('--src_project', default="idc-source_data", help='Project from which tables are copied')
-    parser.add_argument('--src_project', default="idc-pdp-staging", help='Project from which tables are copied')
+    parser.add_argument('--src_project', default="idc-dev-etl", help='Project from which tables are copied')
     # parser.add_argument('--trg_project', default="idc-source-data", help='Project to which tables are copied')
-    parser.add_argument('--trg_project', default="idc-source-data", help='Project to which tables are copied')
+    parser.add_argument('--trg_project', default="idc-dev-etl", help='Project to which tables are copied')
     # parser.add_argument('--dataset_prefix', default='idc_pdp_staging_')
-    parser.add_argument('--dataset_prefix', default='idc_pdp_staging_')
-    parser.add_argument('--dev_or_pub', default='pub', help='Revising the dev or pub version of auxiliary_metadata')
+    parser.add_argument('--dataset_prefix', default='')
+    parser.add_argument('--dev_or_pub', default='dev', help='Revising the dev or pub version of auxiliary_metadata')
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
@@ -66,17 +66,16 @@ if __name__ == '__main__':
         args.trg_dataset = f'{args.dataset_prefix}{args.src_dataset}'
 
         steps = [
-            skip, # restore_dataset, # 1
-            skip, # add_aws_column_to_aux, # 4
-            skip, # rename_views, # 2
-            skip, # remove_views, #3
-            skip, # populate_urls_in_auxiliary_metadata, # 5
-            skip, # add_aws_url_column_to_dicom_derived_all, # 6
-            skip, # revise_dicom_derived_all_urls, # 7
-            skip, # add_aws_column_to_dicom_all_table, # 8
-            skip, # populate_urls_in_dicom_all_table  # 9
-            revise_dicom_all_view_schema #10
-
+            restore_dataset, # 1
+            add_aws_column_to_aux, # 2
+            rename_views, # 3
+            remove_views, # 4
+            populate_urls_in_auxiliary_metadata, # 5
+            add_aws_url_column_to_dicom_derived_all, # 6
+            revise_dicom_derived_all_urls, # 7
+            add_aws_column_to_dicom_all_table, # 8
+            populate_urls_in_dicom_all_table,  # 9
+            revise_dicom_all_view_schema # 10
         ]
         
         for index, func in enumerate(steps):
@@ -89,5 +88,5 @@ if __name__ == '__main__':
                 progresslogger.info(f'Skipping v{dataset_version}_step{step}')
             step += 1
 
-        # successlogger.info(dataset_version)
+        successlogger.info(dataset_version)
 

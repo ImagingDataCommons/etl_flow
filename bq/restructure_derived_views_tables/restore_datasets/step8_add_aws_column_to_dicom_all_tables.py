@@ -32,10 +32,11 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 # args.trg_dataset: idc_vX
 # We do a table update rather than regenerate the entire table.
 # By doing it this way, we do not need the SQL for each IDC version
-def add_aws_column_to_dicom_all(args, dones):
+def add_aws_column_to_dicom_all_table(args, dones):
     if args.dataset_version < 10:
-        progresslogger.info(f'Skipping add_aws_column_to_dicom_all_{args.trg_dataset}')
-    if f'add_aws_column_to_dicom_all_{args.trg_dataset}' not in dones:
+        progresslogger.info(f'Skipping add_aws_column_to_dicom_all_table_{args.trg_dataset}')
+        return
+    if f'add_aws_column_to_dicom_all_table_{args.trg_dataset}' not in dones:
         client = bigquery.Client()
         table_id = f'{args.trg_project}.{args.trg_dataset}.dicom_all'
         try:
@@ -65,9 +66,9 @@ def add_aws_column_to_dicom_all(args, dones):
             # Wait for completion
             result = job.result()
 
-        successlogger.info(f'add_aws_column_to_dicom_all_{args.trg_dataset}' )
+        successlogger.info(f'add_aws_column_to_dicom_all_table_{args.trg_dataset}' )
     else:
-        progresslogger.info(f'Skipping add_aws_column_to_dicom_all_{args.trg_dataset}' )
+        progresslogger.info(f'Skipping add_aws_column_to_dicom_all_table_{args.trg_dataset}' )
     return
 
 

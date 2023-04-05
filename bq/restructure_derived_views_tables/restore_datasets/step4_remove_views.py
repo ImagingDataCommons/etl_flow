@@ -59,13 +59,13 @@ def remove_views(args, dones):
     if f'remove_views_{args.trg_dataset}' not in dones:
         client = bigquery.Client()
         # idc_v13 has both tables and views so we don't delete the xxx_view
-        if args.dataset_version >= 12:
+        if int(args.dataset_version) >= 13:
             progresslogger.info(f'step3_remove_views skipping version {args.dataset_version}')
-
+            return
         table_ids = {table.table_id: table.table_type for table in client.list_tables(f'{args.trg_project}.{args.trg_dataset}')}
         for table_id in [
             'dicom_all_view',
-            'dicom_metadata_curated_view'
+            'dicom_metadata_curated_view',
             'measurement_groups_view',
             'qualitative_measurements_view',
             'quantitative_measurements_view',

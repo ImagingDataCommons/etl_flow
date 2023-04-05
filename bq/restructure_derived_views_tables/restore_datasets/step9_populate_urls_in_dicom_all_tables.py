@@ -28,10 +28,11 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 # args.trg_project: idc_pdp_staging
 # args.trg_dataset: idc_vX
 # args.dev_or_pub: 'dev' or 'pub'
-def populate_urls_in_dicom_all(args, dones):
+def populate_urls_in_dicom_all_table(args, dones):
     if args.dataset_version < 10:
-        progresslogger.info(f'Skipping add_aws_column_to_dicom_all_{args.trg_dataset}')
-    if f'populate_urls_in_dicom_all_{args.trg_dataset}' not in dones:
+        progresslogger.info(f'Skipping add_aws_column_to_dicom_all_table_{args.trg_dataset}')
+        return
+    if f'populate_urls_in_dicom_all_table_table_{args.trg_dataset}' not in dones:
         client = bigquery.Client()
 
         # Some versions of dicom_all have gcs_bucket column
@@ -79,8 +80,8 @@ def populate_urls_in_dicom_all(args, dones):
                         JOIN `{args.dev_project}.{args.dev_dataset}.all_collections` ac
                         on aj.collection_id = ac.tcia_api_collection_id
                     ) as uum
-            WHERE am.instance_uuid = uum.uuid
-            AND am.series_uuid = uum.se_uuid
+            WHERE am.crdc_instance_uuid = uum.uuid
+            AND am.crdc_series_uuid = uum.se_uuid
             """
         else:
             query = f"""
@@ -120,8 +121,8 @@ def populate_urls_in_dicom_all(args, dones):
                         JOIN `{args.dev_project}.{args.dev_dataset}.all_collections` ac
                         on aj.collection_id = ac.tcia_api_collection_id
                     ) as uum
-            WHERE am.instance_uuid = uum.uuid
-            AND am.series_uuid = uum.se_uuid
+            WHERE am.crdc_instance_uuid = uum.uuid
+            AND am.crdc_series_uuid = uum.se_uuid
             """
 
         job = client.query(query)
@@ -129,7 +130,7 @@ def populate_urls_in_dicom_all(args, dones):
             print('Waiting for job done. Status: {}'.format(job.state))
             time.sleep(5)
         progresslogger.info(f'Populate urls in dicom_all; errors: {job.error_result}')
-        successlogger.info(f'populate_urls_in_dicom_all_{args.trg_dataset}')
+        successlogger.info(f'populate_urls_in_dicom_all_table_{args.trg_dataset}')
     else:
-        progresslogger.info(f'Skipping populate_urls_in_dicom_all_{args.trg_dataset}')
+        progresslogger.info(f'Skipping populate_urls_in_dicom_all_table_{args.trg_dataset}')
         return

@@ -25,8 +25,9 @@ from step2_add_aws_column_to_aux import add_aws_column_to_aux
 from step5_populate_urls_in_auxiliary_metadata import populate_urls_in_auxiliary_metadata
 from step6_add_aws_column_to_dicom_derived_all import add_aws_url_column_to_dicom_derived_all
 from step7_populate_urls_in_dicom_derived_all import revise_dicom_derived_all_urls
-from step8_add_aws_column_to_dicom_all import add_aws_column_to_dicom_all
-from step9_populate_urls_in_dicom_all import populate_urls_in_dicom_all
+from step8_add_aws_column_to_dicom_all_tables import add_aws_column_to_dicom_all_table
+from step9_populate_urls_in_dicom_all_tables import populate_urls_in_dicom_all_table
+from step10_revise_dicom_all_view_schema import revise_dicom_all_view_schema
 
 
 def skip(args):
@@ -56,7 +57,7 @@ if __name__ == '__main__':
     versions = [ '1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
         '11', '12', '13']
     for dataset_version in [version for version in versions if not version in dones]:
-        args.dataset_version = dataset_version
+        args.dataset_version = int(dataset_version)
         if args.dev_or_pub == 'dev':
             args.src_dataset = f'idc_v{dataset_version}' if int(dataset_version) <=7 else f'idc_v{dataset_version}_pub'
         else:
@@ -67,13 +68,15 @@ if __name__ == '__main__':
         steps = [
             skip, #restore_dataset, # 1
             skip, #add_aws_column_to_aux, # 4
-            rename_views, # 2
-            # remove_views, #3
-            # populate_urls_in_auxiliary_metadata, # 5
-            # add_aws_url_column_to_dicom_derived_all, # 6
-            # revise_dicom_derived_all_urls, # 7
-            # add_aws_column_to_dicom_all, # 8
-            # populate_urls_in_dicom_all  # 9
+            skip, # rename_views, # 2
+            skip, # remove_views, #3
+            populate_urls_in_auxiliary_metadata, # 5
+            add_aws_url_column_to_dicom_derived_all, # 6
+            revise_dicom_derived_all_urls, # 7
+            add_aws_column_to_dicom_all_table, # 8
+            populate_urls_in_dicom_all_table,  # 9
+            revise_dicom_all_view_schema  # 10
+
         ]
         
         for index, func in enumerate(steps):
@@ -86,5 +89,5 @@ if __name__ == '__main__':
                 progresslogger.info(f'Skipping v{dataset_version}_step{step}')
             step += 1
 
-        # successlogger.info(dataset_version)
+        successlogger.info(dataset_version)
 

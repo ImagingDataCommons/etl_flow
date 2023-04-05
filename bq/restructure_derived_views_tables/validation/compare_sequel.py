@@ -101,8 +101,8 @@ def compare_tables(args, ref_name, table_name, has_urls, min_version, has_view):
 
        # Validate the view in prod
         project = args.pub_project
-        # full_name = f'{project}.idc_v{dataset_version}.{table_name}_view'
-        full_name = f'{project}.idc_v{dataset_version}.{table_name}{"_view" if has_view else ""}'
+        full_name = f'{project}.idc_v{dataset_version}.{table_name}'
+        # full_name = f'{project}.idc_v{dataset_version}.{table_name}{"_view" if has_view else ""}'
         if f'{ref_name} == {full_name}' not in dones and full_name not in errors:
             test_hash = compare_sql(
                 ref_name,
@@ -130,19 +130,19 @@ if __name__ == '__main__':
     dones = open(f'{successlogger.handlers[0].baseFilename}').read().splitlines()
     errors = [row.split(':')[-1] for row in open(f'{errlogger.handlers[0].baseFilename}').read().splitlines()]
 
-    for dataset_version in [str(i) for i in range(1,14)]:
+    for dataset_version in [str(i) for i in range(13,14)]:
         # if dataset_version in dones:
         #     continue
         progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
         steps = [
-            ("dicom_all", True, 1, True),
-            ("dicom_metadata_curated", False, 7, True),
-            ("dicom_metadata_curated_series_level", False, 13, True),
-            ("measurement_groups", False, 1, True),
-            ("qualitative_measurements", False, 1, True),
-            ("quantitative_measurements", False, 1, True),
-            ("segmentations", False, 1, True),
+            ("dicom_all_view", True, 1, True),
+            ("dicom_metadata_curated_view", False, 7, True),
+            ("dicom_metadata_curated_series_level_view", False, 13, True),
+            ("measurement_groups_view", False, 1, True),
+            ("qualitative_measurements_view", False, 1, True),
+            ("quantitative_measurements_view", False, 1, True),
+            ("segmentations_view", False, 1, True),
             (f"dicom_pivot_v{dataset_version}", True, 1, False),
         ]
         

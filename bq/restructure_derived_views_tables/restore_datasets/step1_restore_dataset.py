@@ -68,20 +68,22 @@ def restore_dataset(args, dones):
         # src_dataset = client.get_dataset(src_dataset_ref)
         progresslogger.info(f'Restoring {args.src_dataset} to {args.trg_dataset}')
         for table_id in (
-                # 'auxiliary_metadata',
-                # 'dicom_derived_all',
+                'auxiliary_metadata',
+                'dicom_derived_all',
                 # 'dicom_all',
-                'measurement_groups',
-                'qualitative_measurements',
-                'quantitative_measurements',
-                'segmentations'):
+                # 'measurement_groups',
+                # 'qualitative_measurements',
+                # 'quantitative_measurements',
+                # 'segmentations'
+                            ):
             # dicom_all is a view in versions 1-9
-            if table_id == 'dicom_all' and int(args.dataset_version) < 10:
+            if table_id in ['dicom_all', 'measurement_groups', 'qualitative_measurements',  'quantitative_measurements',
+                'segmentations'] and int(args.dataset_version) < 10:
                 progresslogger.info(f'Skipping restore_dataset_{args.trg_dataset}')
-                return
             else:
-                restore_table(client, args, table_id)
-                successlogger.info(f'restore_dataset_{args.trg_dataset}')
+                if f'restore_dataset_{args.trg_dataset}_{table_id}' not in dones:
+                    restore_table(client, args, table_id)
+                    successlogger.info(f'restore_dataset_{args.trg_dataset}_{table_id}')
     else:
         progresslogger.info(f'Skipping restore_dataset_{args.trg_dataset}')
 
