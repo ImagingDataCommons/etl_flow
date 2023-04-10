@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# This script generates a BQ table that is the names, <uuid>.dcm,
+# This script generates a BQ table that is the names, <series_uuid>/<instance_uuid>.dcm,
 # of all blobs of instances in the open collections...those collections
 # hosted by Google PDP. The script creates it directly in the
 # idc_metadata dataset in idc-pdp-staging
@@ -26,6 +26,7 @@ from utilities.bq_helpers import query_BQ
 
 
 def gen_blob_table(args):
+
     query = f"""
         SELECT
           DISTINCT CONCAT(a.i_uuid, '.dcm') AS blob_name
@@ -37,10 +38,26 @@ def gen_blob_table(args):
           a.collection_id = i.tcia_api_collection_id
         WHERE
           ( (a.i_source='tcia'
-              AND i.pub_tcia_url='public-datasets-idc')
+              AND i.pub_gcs_tcia_url='public-datasets-idc')
             OR (a.i_source='idc'
-              AND i.pub_idc_url='public-datasets-idc') )
+              AND i.pub_gcs_idc_url='public-datasets-idc') )
           AND a.i_excluded=FALSE
+        UNION ALL
+            SELECT
+          DISTINCT CONCAT(a.se_uuid, '/', a.i_uuid, '.dcm') AS blob_name
+        FROM
+          `{args.src_project}.{args.src_bqdataset_name}.all_joined` a
+        JOIN
+          `{args.src_project}.{args.src_bqdataset_name}.all_collections` i
+        ON
+          a.collection_id = i.tcia_api_collection_id
+        WHERE
+          ( (a.i_source='tcia'
+              AND i.pub_gcs_tcia_url='public-datasets-idc')
+            OR (a.i_source='idc'
+              AND i.pub_gcs_idc_url='public-datasets-idc') )
+          AND a.i_excluded=FALSE
+        ORDER BY blob_name
      """
 
     client = bigquery.Client(project=args.dst_project)
