@@ -17,16 +17,11 @@
 import argparse
 import json
 import settings
-from step1_clone_dataset import clone_dataset
-from step2_revise_derived_views_tables import revise_derived_views_tables
-from step3_add_aws_column_to_aux import add_aws_column_to_aux
-from step7_add_aws_column_to_dicom_derived_all import add_aws_url_column_to_dicom_derived_all
-from step4_add_aws_column_to_dicom_all_view import add_aws_url_column_to_dicom_all
-from step8_add_aws_column_to_dicom_pivot import add_aws_url_column_to_dicom_pivot
-from step5_populate_urls_in_auxiliary_metadata import populate_urls_in_auxiliary_metadata
-from step6_populate_urls_in_dicom_all import populate_urls_in_dicom_all
-from step9_populate_urls_in_dicom_derived_all import revise_dicom_derived_all_urls
+
 from utilities.logging_config import successlogger, progresslogger
+from step1_restore_tables import restore_tables
+from step2_remove_aws_column_from_dicom_all_view import remove_aws_url_column_from_dicom_all_view
+from step3_remove_aws_column_from_dicom_pivot import remove_aws_url_column_from_dicom_pivot
 
 
 def skip(args):
@@ -41,10 +36,11 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--dev_project', default="idc-dev-etl", help='Project  from which to get some -dev tables/views')
     parser.add_argument('--dev_dataset', default=f"idc_v{settings.CURRENT_VERSION}_dev", help="Dataset from which to get some -dev tables/views")
-    parser.add_argument('--src_project', default="idc-dev-etl", help='Project from which tables are copied')
+    parser.add_argument('--src_project', default="idc-source-data", help='Project from which tables are copied')
+    parser.add_argument('--src_prefix', default='ide_tt_')
     parser.add_argument('--trg_project', default="idc-dev-etl", help='Project to which tables are copied')
     # parser.add_argument('--trg_project', default="idc-source-data", help='Project to which tables are copied')
-    parser.add_argument('--dataset_prefix', default='')
+    parser.add_argument('--trg_prefix', default='')
     # parser.add_argument('--dataset_prefix', default='idc_dev_etl_')
     parser.add_argument('--dev_or_pub', default='dev', help='Revising the dev or pub version of auxiliary_metadata')
     args = parser.parse_args()
@@ -54,32 +50,24 @@ if __name__ == '__main__':
         '11', '12', '13']
     for dataset_version in [version for version in versions if not version in dones]:
         args.dataset_version = dataset_version
-        if args.dev_or_pub == 'dev':
-            args.src_dataset = f'idc_v{dataset_version}' if int(dataset_version) <=7 else f'idc_v{dataset_version}_pub'
-        else:
-            args.src_dataset = f'idc_v{dataset_version}'
-
-        args.trg_dataset = f'{args.dataset_prefix}{args.src_dataset}'
+        args.src_dataset = f'{args.src_prefix}idc_v{dataset_version}' if int(dataset_version) <= 7 or args.trg_project != 'idc-dev-etl' \
+            else f'{args.src_prefix}idc_v{dataset_version}_pub'
+        args.trg_dataset = f'{args.trg_prefix}idc_v{dataset_version}' if int(dataset_version) <= 7 or args.trg_project != 'idc-dev-etl' \
+            else f'{args.trg_prefix}idc_v{dataset_version}_pub'
 
         progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
         steps = [
-            skip,    # clone_dataset, # 1
-            revise_derived_views_tables, # 2
-            add_aws_column_to_aux, # 3
-            add_aws_url_column_to_dicom_all, # 4
-            populate_urls_in_auxiliary_metadata, # 5
-            populate_urls_in_dicom_all, # 6
-            add_aws_url_column_to_dicom_derived_all, # 7
-            add_aws_url_column_to_dicom_pivot,
-            revise_dicom_derived_all_urls
+            restore_tables,
+            remove_aws_url_column_from_dicom_all_view,
+            remove_aws_url_column_from_dicom_pivot
         ]
         
         for index, func in enumerate(steps):
             step = index+1
             if f'v{dataset_version}_step{step}' not in dones:
                 progresslogger.info(f'Begin v{dataset_version}_step{step}')
-                func(args)
+                func(args, dones)
                 successlogger.info(f'v{dataset_version}_step{step}')
             else:
                 progresslogger.info(f'Skipping v{dataset_version}_step{step}')

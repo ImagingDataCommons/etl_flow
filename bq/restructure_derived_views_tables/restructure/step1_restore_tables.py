@@ -21,46 +21,38 @@ import settings
 import argparse
 import json
 import time
+from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
 from google.cloud.bigquery import SchemaField
 from google.cloud.exceptions import NotFound
 from google.api_core.exceptions import NotFound
+from utilities.bq_helpers import copy_BQ_table
 from utilities.logging_config import successlogger, progresslogger, errlogger
 
 
 # We do a table update rather than regenerate the entire table.
 # By doing it this way, we do not need the SQL for each IDC version
-def add_aws_column_to_aux(args):
+def restore_tables(args, dones):
     client = bigquery.Client()
-    table_id = f'{args.trg_project}.{args.trg_dataset}.auxiliary_metadata'
-    try:
-        table = client.get_table(table_id)
-    except:
-        exit(-1)
-    # Add the aws_url column if we have not already done so
-    if next((index for index, field in enumerate(table.schema) if field.name == 'aws_url'), -1) == -1:
-        client = bigquery.Client()
-        query = f"""
-        ALTER TABLE `{args.trg_project}.{args.trg_dataset}.auxiliary_metadata`
-        ADD COLUMN aws_url STRING;
-        """
-        job = client.query(query)
-        # Wait for completion
-        result = job.result()
+    src_client = bigquery.Client(args.src_project)
+    trg_client = bigquery.Client(args.trg_project)
 
-        query = f"""
-        ALTER TABLE `{args.trg_project}.{args.trg_dataset}.auxiliary_metadata`
-        ALTER COLUMN aws_url 
-        SET OPTIONS (
-            description='URL to this object containing the current version of this instance in Amazon Web Services (AWS)'
-        )
-        """
+    src_dataset = src_client.get_dataset(args.src_dataset)
+    trg_dataset = trg_client.get_dataset(args.trg_dataset)
 
-        job = client.query(query)
-        # Wait for completion
-        result = job.result()
+    for table_name in ['auxiliary_metadata', 'dicom_all', 'dicom_derived_all']:
+        table_id = f'{args.trg_project}.{args.trg_dataset}.{table_name}'
+        if not table_id in dones:
+            try:
+                table = client.get_table(table_id)
+                if table.table_type == 'TABLE':
+                    src_table = src_dataset.table(table_name)
+                    trg_table = trg_dataset.table(table_name)
+                    copy_BQ_table(client, src_table, trg_table)
+                    successlogger.info(f"{table_id}")
+            except NotFound:
+                progresslogger.info(f"Table {table_id} doesn't exist")
 
-        progresslogger.info(f'Added aws_url column to auxiliary_metadata')
     return
 
 
@@ -76,4 +68,4 @@ def add_aws_column_to_aux(args):
 #
 #     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 #
-#     add_aws_column_to_aux(args)
+#     remove_aws_column_from_aux(args)

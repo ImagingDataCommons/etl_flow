@@ -43,6 +43,7 @@ def gen_select(client, table_id_1, excepts, table_id_2):
     flatten = []
     for name in excepts:
         progresslogger.info(f'Excluded {name} from both tables')
+
     for row in schema_1:
         if not schema_has(schema_2, row.name):
             progresslogger.info(f'Excluded {table_id_1}:{row.name}')
@@ -54,32 +55,38 @@ def gen_select(client, table_id_1, excepts, table_id_2):
             progresslogger.info(f'Excluded RECORD {row.name}')
             excepts.append(row.name)
         elif row.mode == 'REPEATED' and not row.field_type=='RECORD':
+            progresslogger.info(f'Flattening {row.name}')
             flatten.append(f'CROSS JOIN UNNEST({row.name}) AS {row.name}')
 
     for row in schema_2:
         if not schema_has(schema_1, row.name):
-            progresslogger.info(f'Excluded {table_id_2}:{row.name}')
+            progresslogger.info(f'Excluded {table_id_2}:{row.name}, not in {table_id_1}')
 
-    selects = [row.name for row in schema_1]
+    selects = [row.name if row.name != 'Rows' else '"Rows"' for row in schema_1]
 
-    try:
-        for name in excepts:
+    for name in excepts:
+        if name in selects:
+            selects.remove(name)
+
+    # Ensure that columns have the same order
+    reordered_columns = ''
+    if args.reordered_columns:
+        for name in args.reordered_columns:
             if name in selects:
                 selects.remove(name)
-    except Exception as exc:
-        pass
+        reordered_columns = ','+','.join(args.reordered_columns)
 
-    # Always remove gcs_url, aws_url
-    if 'gcs_url' in selects:
-        selects.remove('gcs_url')
-    if 'aws_url' in selects:
-        selects.remove('aws_url')
+    if args.exclude_urls:
+        if 'gcs_url' in selects:
+            selects.remove('gcs_url')
+        if 'aws_url' in selects:
+            selects.remove('aws_url')
 
     selects = ','.join(selects)
 
     flattens = '\n\t  '.join(flatten)
 
-    return selects, flattens
+    return selects, flattens, reordered_columns
 
 
 
@@ -90,20 +97,20 @@ def compare(table_1, excepts, table_2, order_by):
     progresslogger.info(f'{table_1}:{table_2}')
 
     # Exclude columns that are not common to both tables
-    select, flattens = gen_select(client, table_1, excepts, table_2 )
+    select, flattens, reordered_columns = gen_select(client, table_1, excepts, table_2 )
 
     query = f"""
   (
   WITH
     t1 AS (
     SELECT DISTINCT
-      {select}
+      {select} {reordered_columns}
     FROM
       `{table_1}` 
       {flattens}
     EXCEPT DISTINCT
     SELECT DISTINCT
-      {select}
+      {select} {reordered_columns}
     FROM
       `{table_2}`
       {flattens})
@@ -116,13 +123,13 @@ UNION ALL (
   WITH
     t2 AS (
     SELECT
-      {select}
+      {select} {reordered_columns}
     FROM
       `{table_2}` 
       {flattens}
     EXCEPT DISTINCT
     SELECT
-      {select}
+      {select} {reordered_columns}
     FROM
       `{table_1}`
       {flattens})
@@ -137,15 +144,17 @@ ORDER BY
   src
    """
 
-    table_hash =  [dict(row) for row in client.query(query)][0]['table_hash']
+    table_hash = [dict(row) for row in client.query(query)][0]['table_hash']
     return table_hash
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--table1', default="bigquery-public-data.idc_v4.dicom_pivot_v4")
-    parser.add_argument('--except_clause', default = [])
-    parser.add_argument('--table2', default="idc-pdp-staging.idc_v4.dicom_pivot_v4")
+    parser.add_argument('--table1', default="idc-pdp-staging.idc_v6.dicom_derived_all")
+    parser.add_argument('--exclude_urls', default=False, help='Exclude gcs_url, aws_url if True')
+    parser.add_argument('--except_clause', default = ['gcs_url'])
+    parser.add_argument('--reordered_columns', default=["SPLIT(gcs_url,'/')[offset(3)]"])
+    parser.add_argument('--table2', default="bigquery-public-data.idc_v6.dicom_derived_all")
     parser.add_argument('--order_by', default='SeriesInstanceUID,  SOPInstanceUID, src')
     args = parser.parse_args()
 
