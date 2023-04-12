@@ -23,138 +23,78 @@ from utilities.logging_config import successlogger, progresslogger,errlogger
 from google.cloud import bigquery,storage
 
 
-def skip(args):
-    progresslogger.info("Skipped stage")
-    return
-
-def get_table_hash(table, except_clause):
-
-    client = bigquery.Client()
-    query = f"""
-    WITH no_urls AS (
-        SELECT * {except_clause}
-        FROM `{table}`
-    )
-    SELECT BIT_XOR(DISTINCT FARM_FINGERPRINT(TO_JSON_STRING(t))) as table_hash
-    FROM no_urls  AS t
-    """
-
-    table_hash =  [dict(row) for row in client.query(query)][0]['table_hash']
-    return table_hash
-    # job = client.query(query)
-    # # Wait for completion
-    # result = job.result()
-    # return result.json()
-
-def compare_sql(pdp_table_name, idc_table_name, has_urls, has_view):
-    progresslogger.info(f'Compare {pdp_table_name} == {idc_table_name}')
+def compare_sql(table1_name, table2_name):
+    progresslogger.info(f'Compare {table1_name} == {table2_name}')
     client = bigquery.Client()
     # try:
-    #     pdp_table = client.get_table(f'{pdp_table_name}_view')
+    #     table1 = client.get_table(f'{pdp_table_name}_view')
     # except:
-    #     pdp_table = client.get_table(pdp_table_name)
-    pdp_table = client.get_table(pdp_table_name)
-    if pdp_table.table_type == 'TABLE':
-        progresslogger.info(f'No view form of {pdp_table_name}')
+    #     table1 = client.get_table(pdp_table_name)
+    table1 = client.get_table(table1_name)
+    if table1.table_type == 'TABLE':
+        progresslogger.info(f'No view form of {table1_name}')
         return
-    idc_table = client.get_table(idc_table_name)
-    # pdp_schema = {row.name:row for row in pdp_table.schema}
-    # idc_schema = {row.name:row for row in idc_table.schema}
-    pdp_sql = pdp_table.view_query
-    idc_sql = idc_table.view_query
-    pdp_sql = pdp_sql.replace('bigquery-public-data', 'idc-pdp-staging')
-    pdp_sql = pdp_sql.split('\n')
-    idc_sql = idc_sql.split('\n')
+    table2 = client.get_table(table2_name)
+    # pdp_schema = {row.name:row for row in table1.schema}
+    # idc_schema = {row.name:row for row in table2.schema}
+    sql1 = table1.view_query
+    sql2 = table2.view_query
+    sql1 = sql1.replace('bigquery-public-data', 'idc-pdp-staging')
+    sql2 = sql2.replace('bigquery-public-data', 'idc-pdp-staging')
+    sql1 = sql1.split('\n')
+    sql2 = sql2.split('\n')
 
-    if has_urls:
-        # Delete the aws_url schema element
-        idc_sql.pop(
-            next(index for index, row in enumerate(idc_sql) if 'aws_url' in row)
-        )
-    if pdp_sql == idc_sql:
-        successlogger.info(f'{pdp_table_name} == {idc_table_name}')
+    if sql1 == sql2:
+        successlogger.info(f'{table1_name} == {table2_name}')
     else:
-        for line in difflib.unified_diff(pdp_sql, idc_sql, fromfile='pdp', tofile='idc', lineterm='\n'):
+        for line in difflib.unified_diff(sql1, sql2, fromfile='pdp', tofile='idc', lineterm='\n'):
             print(line)
 
-def compare_tables(args, ref_name, table_name, has_urls, min_version, has_view):
-    if int(dataset_version) >= min_version:
-        # index = next((index for index, row in enumerate(dones) if row.split(',')[0] == ref_name), -1)
-        # if index == -1:
-        #     if table_name == 'auxiliary_metadata' and int(dataset_version) <= 2:
-        #         excepts = 'EXCEPT(gcs_url, gcs_bucket)'
-        #     else:
-        #         excepts = 'EXCEPT(gcs_url)' if has_urls else ''
-        #     ref_hash = get_table_hash(
-        #         ref_name,
-        #         excepts
-        #     )
-        #     successlogger.info(f'{ref_name},{ref_hash}')
-        # else:
-        #     ref_hash = dones[index].split(',')[1]
-        # # continue
-
-        if table_name == 'original_collections_metadata' and int(dataset_version) <= 2:
-            excepts = 'EXCEPT(gcs_url, aws_url, gcs_bucket)'
-        else:
-            excepts = 'EXCEPT(gcs_url, aws_url)' if has_urls else ''
-
-       # Validate the view in prod
-        project = args.pub_project
-        full_name = f'{project}.idc_v{dataset_version}.{table_name}'
-        # full_name = f'{project}.idc_v{dataset_version}.{table_name}{"_view" if has_view else ""}'
-        if f'{ref_name} == {full_name}' not in dones and full_name not in errors:
-            test_hash = compare_sql(
-                ref_name,
-                full_name,
-                has_urls,
-                has_view)
-            # progresslogger.info(f'{ref_name}:{ref_hash}, {full_name}:{test_hash}')
-            # if str(ref_hash) == str(test_hash):
-            #     successlogger.info(full_name)
-            # else:
-            #     errlogger.error(full_name)
-        else:
-            progresslogger.info(f'Skipping {full_name}')
+def compare_views(dones, table1_name, table2_name):
+    if f'{table1_name} == {table2_name}' not in dones and f'{table1_name} != {table2_name}' not in errors:
+        compare_sql(table1_name, table2_name)
+    else:
+        progresslogger.info(f'Skipping {table1_name} == {table2_name}')
 
 
 if __name__ == '__main__':
     # (sys.argv)
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--ref_project', default="bigquery-public-data", help='Project of reference datasets')
-    parser.add_argument('--dev_project', default="idc-dev-etl", help='Project of dev datasets')
-    parser.add_argument('--pub_project', default="idc-pdp-staging", help='Project of pub datasets')
+    parser.add_argument('--project_1', default="bigquery-public-data")
+    parser.add_argument('--project_2', default="idc-pdp-staging")
     args = parser.parse_args()
 
     dones = open(f'{successlogger.handlers[0].baseFilename}').read().splitlines()
     errors = [row.split(':')[-1] for row in open(f'{errlogger.handlers[0].baseFilename}').read().splitlines()]
 
-    for dataset_version in [str(i) for i in range(13,14)]:
+    for dataset_version in range(1,14):
         # if dataset_version in dones:
         #     continue
         progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
         steps = [
-            ("dicom_all_view", True, 1, True),
-            ("dicom_metadata_curated_view", False, 7, True),
-            ("dicom_metadata_curated_series_level_view", False, 13, True),
-            ("measurement_groups_view", False, 1, True),
-            ("qualitative_measurements_view", False, 1, True),
-            ("quantitative_measurements_view", False, 1, True),
-            ("segmentations_view", False, 1, True),
-            (f"dicom_pivot_v{dataset_version}", True, 1, False),
+            ("dicom_all", 1, 9),
+            ("dicom_all_view", 13, 13),
+            ("dicom_metadata_curated", 5, 12),
+            ("dicom_metadata_curated_view", 13, 13),
+            ("dicom_metadata_curated_series_level_view", 13, 13),
+            ("measurement_groups", 1, 12),
+            ("measurement_groups_view", 13, 13),
+            ("qualitative_measurements", 1, 12),
+            ("qualitative_measurements_view", 13, 13),
+            ("quantitative_measurements", 1, 12),
+            ("quantitative_measurements_view", 13, 13),
+            ("segmentations", 1, 12),
+            ("segmentations_view", 13, 13),
+            (f"dicom_pivot_v{dataset_version}", 1, 13),
         ]
         
-        for table_name, has_urls, min_version, has_view in steps:
-            if (table_name == 'dicom_derived_all') & (int(dataset_version) < 4):
-                continue
-        #     if has_view:
-        #         ref_name = f'{args.ref_project}.idc_v{dataset_version}.{table_name}'
-        #         compare_tables(args, ref_name, table_name, has_urls, min_version, has_view)
-        #
-            ref_name = f'{args.ref_project}.idc_v{dataset_version}.{table_name}'
-            compare_tables(args, ref_name, table_name, has_urls, min_version, has_view)
+        for table_name, min_version, max_version in steps:
+            if dataset_version >= min_version and dataset_version <= max_version:
+                table1_name = f'{args.project_1}.idc_v{dataset_version}.{table_name}'
+                table2_name = f'{args.project_2}.idc_v{dataset_version}.{table_name}'
+                compare_views(dones, table1_name, table2_name)
 
         # successlogger.info(dataset_version)
 

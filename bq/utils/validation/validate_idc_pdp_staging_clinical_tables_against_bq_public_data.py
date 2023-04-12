@@ -76,67 +76,49 @@ if __name__ == '__main__':
     parser.add_argument('--version2_delta', default=0)
     args = parser.parse_args()
 
+    client = bigquery.Client()
     dones = open(f'{successlogger.handlers[0].baseFilename}').read().splitlines()
     errors = [row.split(':')[-1] for row in open(f'{errlogger.handlers[0].baseFilename}').read().splitlines()]
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
-    for dataset_version in [i for i in range(1,14)]:
+    for dataset_version in [i for i in range(11,14)]:
         if str(dataset_version) in dones:
             continue
 
-        steps = [
-            ("dicom_all", 1),
-            ("dicom_all_view", 13),
-            ("dicom_metadata_curated",5),
-            ("dicom_metadata_curated_view",13),
-            ("dicom_metadata_curated_series_level",13),
-            ("dicom_metadata_curated_series_level_view",13),
-            ("measurement_groups",2),
-            ("measurement_groups_view",13),
-            ("qualitative_measurements",2),
-            ("qualitative_measurements_view",13),
-            ("quantitative_measurements",2),
-            ("quantitative_measurements_view",13),
-            ("segmentations",1),
-            ("segmentations_view",13),
-            ("dicom_derived_all",1),
-            ("auxiliary_metadata", 1),
-            (f"dicom_pivot_v{dataset_version}", 1),
-        ]
-        
-        for table_name, min_version in steps:
+        project1_table_ids = [table.table_id for table in
+                     client.list_tables(f'{args.project1}.idc_v{dataset_version}_clinical')]
+        project2_table_ids = [table.table_id for table in
+                     client.list_tables(f'{args.project2}.idc_v{dataset_version}_clinical')]
+
+        if set(project1_table_ids) != set(project2_table_ids):
+            errlogger.error(f'Datasets idc_v{dataset_version} are different')
+
+        for table_name in project1_table_ids:
             # if (table_name == 'dicom_derived_all') & (int(dataset_version) < 4):
             #     continue
-            ref_name = f'{args.project1}.idc_v{dataset_version}.{table_name}'
-            if dataset_version >= min_version:
-                # See if we've already done this table/view
-                index = next((index for index, row in enumerate(dones) if row.split(',')[0] == ref_name), -1)
-                excepts = []
-                project = args.project2
-                if dataset_version < 8 or project != 'idc-dev-etl':
-                    full_name = f'{project}.idc_v{dataset_version+args.version2_delta}.{table_name}'
-                else:
-                    full_name = f'{project}.idc_v{dataset_version+args.version2_delta}_pub.{table_name}'
-                if full_name not in dones and full_name not in errors:
+            table1 = f'{args.project1}.idc_v{dataset_version}_clinical.{table_name}'
+            # See if we've already done this table/view
 
-                    ref_hash = get_table_hash(
-                        ref_name,
-                        excepts
-                    )
-                    # Validate the view in prod
-                    test_hash = get_table_hash( \
-                        full_name,
-                        excepts)
-                    progresslogger.info(f'{ref_name}:{ref_hash}, {full_name}:{test_hash}')
-                    if str(ref_hash) == str(test_hash):
-                        successlogger.info(full_name)
-                    else:
-                        errlogger.error(full_name)
-                else:
-                    progresslogger.info(f'Skipping {full_name} previously verified')
+            excepts = []
+            table2 = f'{args.project2}.idc_v{dataset_version}_clinical.{table_name}'
+            if table2 not in dones and table2 not in errors:
 
+                ref_hash = get_table_hash(
+                    table1,
+                    excepts
+                )
+                # Validate the view in prod
+                test_hash = get_table_hash( \
+                    table2,
+                    excepts)
+                progresslogger.info(f'{table1}:{ref_hash}, {table2}:{test_hash}')
+                if str(ref_hash) == str(test_hash):
+                    successlogger.info(table2)
+                else:
+                    errlogger.error(table2)
             else:
-                progresslogger.info(f'Skipping {ref_name} not in this version')
+                progresslogger.info(f'Skipping {table2} previously verified')
+
 
         # successlogger.info(dataset_version)
 
