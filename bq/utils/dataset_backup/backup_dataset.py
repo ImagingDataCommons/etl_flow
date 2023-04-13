@@ -84,7 +84,7 @@ def snapshot_table(client, args,  table_id):
             job_config=job_config,
         )  # Make an API request.
         job.result()  # Wait for the job to complete.
-        progresslogger.info("Backed up deleted table {} to {}".format(src_table_id, trg_table_id)
+        progresslogger.info("Backed up table {} to {}".format(src_table_id, trg_table_id)
         )
 
 def add_descriptions_to_schema(src_schema, trg_schema):
@@ -115,7 +115,7 @@ def copy_view(client, args, view_id):
             # # Update the schema after creating the view
             installed_view.schema = view.schema
             client.update_table(installed_view, ['schema'])
-            progresslogger.info(f'Copy of view {view_id}: DONE')
+            progresslogger.info(f'Copied view {view_id}: DONE')
         except BadRequest as exc:
             errlogger.error(f'{exc}')
     return

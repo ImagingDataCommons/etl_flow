@@ -32,6 +32,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
+    dones = open(f'{successlogger.handlers[0].baseFilename}').read().splitlines()
 
     for src_dataset in (
             'idc_v1',
@@ -54,4 +55,6 @@ if __name__ == '__main__':
     ):
         args.src_dataset = src_dataset
         args.trg_dataset = args.trg_dataset_prefix + src_dataset
-        backup_dataset(args)
+        if src_dataset not in dones:
+            backup_dataset(args)
+            successlogger.info(src_dataset)
