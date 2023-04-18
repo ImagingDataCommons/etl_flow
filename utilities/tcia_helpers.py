@@ -233,11 +233,6 @@ def get_TCIA_studies_per_patient(collection_id, patientID, server=NBIA_V1_URL):
 
 
 def get_TCIA_studies_per_collection(collection_id, server=NBIA_V1_URL):
-    # server_url = NBIA_V1_URL if nbia_server else TCIA_URL
-    # url = f'{server_url}/getPatientStudy?Collection={collection}'
-    # results = get_url(url)
-    # studies = results.json()
-    # return studies
     if collection_id == "NLST":
         server_url = NLST_V2_URL
         access_token, refresh_token = get_access_token(NLST_AUTH_URL)
@@ -301,24 +296,6 @@ def get_TCIA_instance_uids_per_series(collection_id, seriesInstanceUID, server=N
     return instance_uids
 
 
-def get_TCIA_single_instance(seriesInstanceUID, sopInstanceUID, server=NBIA_V1_URL):
-    if server == "NLST":
-        server_url = NLST_V2_URL
-        access_token, refresh_token = get_access_token(NLST_AUTH_URL)
-        headers = dict(
-            Authorization=f'Bearer {access_token}'
-        )
-    elif server == "NBIA":
-        server_url = NBIA_V1_URL
-        headers = ''
-    else:
-        server_url = server
-        headers = ''
-    url = f'{server_url}/getSingleImage?SeriesInstanceUID={seriesInstanceUID}&SOPInstanceUID={sopInstanceUID}'
-    results = get_url(url, headers)
-    return results
-
-
 def get_TCIA_instances_per_series_with_hashes(dicom, series_instance_uid):
     filename = "{}/{}.zip".format(dicom, series_instance_uid)
     dirname = "{}/{}".format(dicom, series_instance_uid)
@@ -343,6 +320,7 @@ def get_TCIA_instances_per_series_with_hashes(dicom, series_instance_uid):
 
     return hashes
 
+# Not used
 def get_TCIA_instances_per_series(dicom, series_instance_uid, server=NBIA_V1_URL):
     filename = "{}/{}.zip".format(dicom, series_instance_uid)
     if server == "NLST":
@@ -590,32 +568,8 @@ def get_collection_license_info():
                 longName = "None",
                 shortName = "None"
             )
-    # # These collections are pathology only. NBIA server doesn't know about them
-    # for collection_id in ['CPTAC-AML', 'CPTAC-BRCA', 'CPTAC-COAD', 'CPTAC-OV']:
-    #     if not collection_id in table:
-    #         licenses[collection_id] = dict(
-    #             licenseURL="https://creativecommons.org/licenses/by/3.0/",
-    #             longName="Creative Commons Attribution 3.0 Unported License",
-    #             shortName="CC BY 3.0"
-    #         )
 
     return licenses
-
-
-def get_updated_series(date):
-    # access_token, refresh_token = get_access_token()
-    # headers = dict(
-    #     Authorization = f'Bearer {access_token}'
-    # )
-    # url = f'https://services.cancerimagingarchive.net/nbia-api/services/v2/getUpdatedSeries?fromDate={date}'
-    url = f'https://services.cancerimagingarchive.net/nbia-api/services/v1/getUpdatedSeries?fromDate={date}'
-    # result = requests.get(url, headers=headers)
-    result = requests.get(url)
-    if result.status_code == 500 and result.text == 'No data found.':
-        series = []
-    else:
-        series = result.json()
-    return series
 
 
 if __name__ == "__main__":

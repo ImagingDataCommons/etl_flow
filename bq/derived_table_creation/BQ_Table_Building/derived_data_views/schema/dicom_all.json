@@ -65,7 +65,7 @@
         "description": "Date when the current version of the collection containing this instance was revised",
         "mode": "NULLABLE",
         "name": "collection_timestamp",
-        "type": "STRING"
+        "type": "DATETIME"
       },
       {
         "description": "md5 hash of the of this version of the collection containing this instance",
@@ -197,6 +197,12 @@
         "description": "URL to this object containing the current version of this instance in Google Cloud Storage (GCS)",
         "mode": "NULLABLE",
         "name": "gcs_url",
+        "type": "STRING"
+      },
+      {
+        "description": "URL to this object containing the current version of this instance in Amazon Web Services (AWS)",
+        "mode": "NULLABLE",
+        "name": "aws_url",
         "type": "STRING"
       },
       {

@@ -27,6 +27,7 @@ WITH
     dcm.SOPInstanceUID AS SOPInstanceUID,
     aux.instance_uuid as crdc_instance_uuid,
     aux.gcs_url as gcs_url,
+    aux.aws_url as aws_url,
     aux.instance_size as instance_size,
     aux.instance_hash as instance_hash,
     aux.instance_init_idc_version AS instance_init_idc_version,

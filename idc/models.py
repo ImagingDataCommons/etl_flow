@@ -618,85 +618,6 @@ class IDC_Instance(Base):
 
     seriess = relationship("IDC_Series", back_populates="instances")
 
-# class All_IDC_Joined(Base):
-#     __tablename__ = "all_idc_joined"
-#     version = Column(Integer, unique=True, primary_key=True, comment='NBIA collection ID')
-#     v_hash = Column(String, comment='Version hash')
-#     collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
-#     c_hash = Column(String, comment='Collection hash')
-#     submitter_case_id = Column(String, nullable=False, unique=True, primary_key=True, comment="Submitter's patient ID")
-#     p_hash = Column(String, comment='Patient hash')
-#     study_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-#     st_hash = Column(String, comment='Study hash')
-#     series_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-#     se_hash = Column(String, comment='Series hash')
-#     sop_instance_uid = Column(String, primary_key=True, nullable=False)
-#     i_hash = Column(String, comment='Instance hash')
-#     size = Column(Integer, comment='Instance size in bytes  ')
-#     url = Column(String, comment='GCS URL of instance')
-
-# A table of all collections having commercially restricted licenses
-class CR_Collections(Base):
-    __tablename__ = 'cr_collections'
-    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    idc_collection_id = Column(String, comment="idc_collection_id of this collection")
-    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
-    dev_idc_url = Column(String, comment="Dev idc bucket name")
-    pub_tcia_url = Column(String, comment="Public tcia bucket name")
-    pub_idc_url = Column(String, comment="Public idc bucket name")
-    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-
-# A table of collections having radiology which might contain faces that will need masking
-class Defaced_Collections(Base):
-    __tablename__ = 'defaced_collections'
-    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    idc_collection_id = Column(String, comment="idc_collection_id of this collection")
-    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
-    dev_idc_url = Column(String, comment="Dev idc bucket name")
-    pub_tcia_url = Column(String, comment="Public tcia bucket name")
-    pub_idc_url = Column(String, comment="Public idc bucket name")
-    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-
-# A table of collections that have been downloaded and included in the DB but are
-# not public due to being judged of poor quality
-class Excluded_Collections(Base):
-    __tablename__ = 'excluded_collections'
-    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    idc_collection_id = Column(String, comment="idc_collection_id of this collection")
-    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
-    dev_idc_url = Column(String, comment="Dev idc bucket name")
-    pub_tcia_url = Column(String, comment="Public tcia bucket name")
-    pub_idc_url = Column(String, comment="Public idc bucket name")
-    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-
-# A tableof collections having radiology data that has been redacted due to containing
-# face scans
-class Redacted_Collections(Base):
-    __tablename__ = 'redacted_collections'
-    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    idc_collection_id = Column(String, comment="idc_collection_id of this collection")
-    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
-    dev_idc_url = Column(String, comment="Dev idc bucket name")
-    pub_tcia_url = Column(String, comment="Public tcia bucket name")
-    pub_idc_url = Column(String, comment="Public idc bucket name")
-    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-
-# A table of all collections not in the previous four tables.
-class Open_Collections(Base):
-    __tablename__ = 'open_collections'
-    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    idc_collection_id = Column(String, comment="idc_collection_id of this collection")
-    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
-    dev_idc_url = Column(String, comment="Dev idc bucket name")
-    pub_tcia_url = Column(String, comment="Public tcia bucket name")
-    pub_idc_url = Column(String, comment="Public idc bucket name")
-    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-
 # The table that is the union of the previous five tables
 class All_Collections(Base):
     __tablename__ = 'all_collections'
@@ -704,24 +625,15 @@ class All_Collections(Base):
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
     dev_idc_url = Column(String, comment="Dev idc bucket name")
-    pub_tcia_url = Column(String, comment="Public tcia bucket name")
-    pub_idc_url = Column(String, comment="Public idc bucket name")
+    gcs_pub_tcia_url = Column(String, comment="Public gcs tcia bucket name")
+    gcs_pub_idc_url = Column(String, comment="Public gcs idc bucket name")
+    aws_pub_tcia_url = Column(String, comment="Public aws tcia bucket name")
+    aws_pub_idc_url = Column(String, comment="Public aws idc bucket name")
     tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
     idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+    tcia_metadata_sunset = Column(String, comment="Last version that metadata is published. 0==still visible'")
+    idc_metadata_sunset = Column(String, comment="Last version that metadata is published. 0==still visible'")
 
-# A table that is the union of cr_collections, defaced_collections and open_collections.
-# This table is probably not useful because it does not actually reflect all included data.
-class All_Included_Collections(Base):
-    __tablename__ = 'all_included_collections'
-    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    idc_webapp_collection_id = Column(String)
-    idc_collection_id = Column(String)
-    dev_tcia_url = Column(String)
-    dev_idc_url = Column(String)
-    pub_tcia_url = Column(String)
-    pub_idc_url = Column(String)
-    tcia_access = Column(String)
-    idc_access = Column(String)
 
 # This table is populated with metadata for collections that are not sourced from TCIA.
 class Original_Collections_Metadata_IDC_Source(Base):

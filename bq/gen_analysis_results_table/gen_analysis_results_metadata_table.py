@@ -59,7 +59,7 @@ def get_collections_containing_a_doi(client, args):
         FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined`
         WHERE idc_version = {settings.CURRENT_VERSION} 
         AND license_short_name in ('CC BY 3.0', 'CC BY 4.0', 'CC BY-NC 3.0', 'CC BY-NC 4.0')
-        ORDER BY source_doi
+        ORDER BY collection_id
         """
     result = client.query(query).result()
 
@@ -119,16 +119,14 @@ def build_metadata(args, BQ_client):
     # redacted_collection_access = get_redacted_collections(BQ_client,args)
 
     # For each source DOI, which collections contain it
-    source_dois_license = get_collections_containing_a_doi(BQ_client, args)
-    # for value in all_idc_analysis_metadata.values():
-    #     source_dois_license[value['DOI']] = value['ID']
+    source_dois_collections = get_collections_containing_a_doi(BQ_client, args)
 
     rows = []
     for analysis_id, analysis_data in analysis_metadata.items():
         # If the DOI of this analysis result is in source_dois_license, then it is in the series table
         # and therefore we have a series from this analysis result, and therefore we should include
         # this analysis result in the analysis_results metadata table
-        if analysis_data["DOI"].lower() in source_dois_license:
+        if analysis_data["DOI"].lower() in source_dois_collections:
             # analysis_data["Collection"] = analysis_id
             title_id = analysis_id.rsplit('(',1)
             title = title_id[0]
@@ -136,7 +134,7 @@ def build_metadata(args, BQ_client):
                 title = title[:-1]
             analysis_data['Title'] = title
             analysis_data['ID'] = title_id[1].split(')')[0]
-            analysis_data['Collections'] = source_dois_license[analysis_data['DOI']]
+            analysis_data['Collections'] = source_dois_collections[analysis_data['DOI']]
             analysis_data['Access'] = 'Public'
             license = get_license(BQ_client, analysis_data["DOI"])
             for key, value in license.items():

@@ -28,25 +28,10 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 import settings
 
 
-# Get a the dev_url and pub_url of all new instances. The dev_url is the url of the
-# premerge bucket or staging bucket holding the new instance. The pub_url is the
-# url of the bucket to which to copy it
+# The query should return a table with a single column, 'blobs'
+# basically <instance_uuid>.dcm
 def get_urls(args, query):
     client = bigquery.Client()
-    # query = f"""
-    # SELECT
-    #   dev.gcs_url as dev_url,
-    #   pub.gcs_url as pub_url
-    # FROM
-    #   `idc-dev-etl.idc_v{args.version}_pub.auxiliary_metadata` dev
-    # JOIN
-    #   `idc-pdp-staging.idc_v{args.version}.auxiliary_metadata` pub
-    # ON
-    #   dev.instance_uuid = pub.instance_uuid
-    # WHERE
-    #   dev.instance_revised_idc_version = {args.version}
-    # """
-    # urls = list(client.query(query))
     query_job = client.query(query)  # Make an API request.
     query_job.result()  # Wait for the query to complete.
     destination = query_job.destination
@@ -97,6 +82,13 @@ def worker(input, args, dones):
         else:
             progresslogger.info(f'p{args.id}: Blobs {n}:{n+len(blob_names)-1} previously copied')
 
+# Copy the blobs resulting from the BQ query
+# args must have the following components:
+# version: Version to work on)
+# src_bucket: Bucket from which to copy)
+# dst_bucket: Bucket to which to copy)
+# batch: Batch sizw to workers)
+# processes: Number of processes to run)
 
 def copy_all_blobs(args, query):
     bq_client = bigquery.Client()

@@ -64,7 +64,7 @@ if __name__ == '__main__':
         'all_collections',
         'analysis_id_map',
         'analysis_results_descriptions',
-        'analysis_results_metadata_idc_source'
+        'analysis_results_metadata_idc_source',
         'collection',
         'collection_id_map',
         'collection_patient',
@@ -72,7 +72,7 @@ if __name__ == '__main__':
         'defaced_collections',
         'excluded_collections',
         'idc_collection',
-        'idc_instance'
+        'idc_instance',
         'idc_patient',
         'idc_series',
         'idc_study',

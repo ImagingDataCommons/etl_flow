@@ -15,14 +15,11 @@
 #
 import time
 
-from utilities.tcia_helpers import  get_access_token, get_hash, get_TCIA_studies_per_patient, get_TCIA_patients_per_collection,\
-    get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_TCIA_instances_per_series, get_collection_values_and_counts,\
-    get_updated_series, get_instance_hash, refresh_access_token
-from uuid import uuid4
+from utilities.tcia_helpers import  get_hash, get_TCIA_studies_per_patient, get_TCIA_patients_per_collection,\
+    get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_collection_values_and_counts,\
+    get_instance_hash, refresh_access_token
 from idc.models  import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, instance_source
 from sqlalchemy import select
-from google.cloud import bigquery
-from ingestion.utilities.utils import get_merkle_hash
 from ingestion.utilities.get_collection_dois_urls_licenses import get_patient_dois_idc, \
     get_patient_urls_idc, get_patient_dois_tcia, get_patient_urls_tcia, get_patient_licenses_tcia, \
     get_patient_licenses_idc

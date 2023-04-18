@@ -35,7 +35,7 @@ if __name__ == '__main__':
     # parser.add_argument('--pub_bqdataset_name', default=f'idc_v{args.version}_pub', help='BQ dataset containing public tables')
     parser.add_argument('--trg_bqdataset_name', default=f'idc_v{settings.CURRENT_VERSION}_pub', help='BQ dataset of resulting table')
     parser.add_argument('--bqtable_name', default='auxiliary_metadata', help='BQ table name')
-    parser.add_argument('--temp_license_table_name', default='temp_license', help='BQ table name')
+    parser.add_argument('--temp_license_table_name', default='temp_licenses', help='BQ table name')
     args = parser.parse_args()
 
     args.access ='Public' # Fixed value

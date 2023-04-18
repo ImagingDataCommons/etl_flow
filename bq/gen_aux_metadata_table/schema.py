@@ -65,6 +65,7 @@ auxiliary_metadata_schema = [
     bigquery.SchemaField('SOPInstanceUID', 'STRING', mode='NULLABLE', description='DICOM instance containing this instance version'),
     bigquery.SchemaField('instance_uuid', 'STRING', mode='NULLABLE', description='UUID of this version of this instance'),
     bigquery.SchemaField('gcs_url', 'STRING', mode='NULLABLE', description='URL to this object containing the current version of this instance in Google Cloud Storage (GCS)'),
+    bigquery.SchemaField('aws_url', 'STRING', mode='NULLABLE', description='URL to this object containing the current version of this instance in Amazon Web Services (AWS)'),
     bigquery.SchemaField('instance_size', 'INTEGER', mode='NULLABLE', description='Size in bytes of this version of this instance'),
     bigquery.SchemaField('instance_hash', 'STRING', mode='NULLABLE', description='md5 hash of the data in the this version of this instance'),
     # bigquery.SchemaField('instance_source', 'STRING', mode='NULLABLE', description='Source of the instance, either tcia or idc'),
