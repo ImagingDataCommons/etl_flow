@@ -61,14 +61,15 @@ if __name__ == '__main__':
     # (sys.argv)
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--project_1', default="bigquery-public-data")
-    parser.add_argument('--project_2', default="idc-pdp-staging")
+    parser.add_argument('--project_1', default="idc-dev-etl")
+    parser.add_argument('--project_2', default="idc-dev-etl")
+    parser.add_argument('--version_delta', default=1)
     args = parser.parse_args()
 
     dones = open(f'{successlogger.handlers[0].baseFilename}').read().splitlines()
     errors = [row.split(':')[-1] for row in open(f'{errlogger.handlers[0].baseFilename}').read().splitlines()]
 
-    for dataset_version in range(1,14):
+    for dataset_version in range(13,14):
         # if dataset_version in dones:
         #     continue
         progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
@@ -92,8 +93,8 @@ if __name__ == '__main__':
         
         for table_name, min_version, max_version in steps:
             if dataset_version >= min_version and dataset_version <= max_version:
-                table1_name = f'{args.project_1}.idc_v{dataset_version}.{table_name}'
-                table2_name = f'{args.project_2}.idc_v{dataset_version}.{table_name}'
+                table1_name = f'{args.project_1}.idc_v{dataset_version}_pub.{table_name}'
+                table2_name = f'{args.project_2}.idc_v{dataset_version+args.version_delta}_pub.{table_name}'
                 compare_views(dones, table1_name, table2_name)
 
         # successlogger.info(dataset_version)

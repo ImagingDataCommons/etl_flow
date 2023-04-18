@@ -27,7 +27,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--src_project', default="idc-pdp-staging", help='Project from which tables are copied')
-    parser.add_argument('--trg_project', default="??", help='Project to which tables are copied')
+    parser.add_argument('--trg_project', default="bigquery-public-data", help='Project to which tables are copied')
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')

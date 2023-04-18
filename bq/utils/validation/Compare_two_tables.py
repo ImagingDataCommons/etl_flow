@@ -150,11 +150,11 @@ ORDER BY
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--table1', default="idc-pdp-staging.idc_v6.dicom_derived_all")
+    parser.add_argument('--table1', default="idc-dev-etl.idc_v13_pub.dicom_derived_all")
     parser.add_argument('--exclude_urls', default=False, help='Exclude gcs_url, aws_url if True')
-    parser.add_argument('--except_clause', default = ['gcs_url'])
-    parser.add_argument('--reordered_columns', default=["SPLIT(gcs_url,'/')[offset(3)]"])
-    parser.add_argument('--table2', default="bigquery-public-data.idc_v6.dicom_derived_all")
+    parser.add_argument('--except_clause', default = [])
+    parser.add_argument('--reordered_columns', default=[])
+    parser.add_argument('--table2', default="bigquery-public-data.idc_v13.dicom_derived_all")
     parser.add_argument('--order_by', default='SeriesInstanceUID,  SOPInstanceUID, src')
     args = parser.parse_args()
 
