@@ -22,7 +22,7 @@
 import argparse
 import settings
 from bq.bq_IO.upload_psql_to_bq import upload_to_bq, upload_version, upload_collection, upload_patient, upload_study, \
-    upload_series, upload_instance, upload_table
+    upload_series, upload_instance, upload_table, create_all_joined
 from google.cloud import bigquery
 from utilities.bq_helpers import create_BQ_dataset
 
@@ -55,40 +55,37 @@ tables = {
         'study_series': {"func": upload_table, "order_by": "study_uuid"},
         'version': {"func":upload_version, "order_by":"version"},
         'version_collection': {"func": upload_table, "order_by": "version"},
+        'all_joined': {"func": create_all_joined, "order_by": ""}
     }
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--federated_query', default=f'idc-dev-etl.us.etl_federated_query_idc_v{settings.CURRENT_VERSION}')
     parser.add_argument('--upload', nargs='*', default= [
-        'all_collections',
-        'analysis_id_map',
-        'analysis_results_descriptions',
-        'analysis_results_metadata_idc_source',
-        'collection',
-        'collection_id_map',
-        'collection_patient',
-        'cr_collections',
-        'defaced_collections',
-        'excluded_collections',
-        'idc_collection',
-        'idc_instance',
-        'idc_patient',
-        'idc_series',
-        'idc_study',
-        'instance',
-        'open_collections',
-        'original_collections_metadata_idc_source',
-        'patient',
-        'patient_study',
-        'program',
-        'redacted_collections',
-        'series',
-        'series_instance',
-        'study',
-        'study_series',
-        'version',
-        'version_collection',
+        # 'all_collections',
+        # 'analysis_id_map',
+        # 'analysis_results_descriptions',
+        # 'analysis_results_metadata_idc_source',
+        # 'collection',
+        # 'collection_id_map',
+        # 'collection_patient',
+        # 'idc_collection',
+        # 'idc_instance',
+        # 'idc_patient',
+        # 'idc_series',
+        # 'idc_study',
+        # 'instance',
+        # 'original_collections_metadata_idc_source',
+        # 'patient',
+        # 'patient_study',
+        # 'program',
+        # 'series',
+        # 'series_instance',
+        # 'study',
+        # 'study_series',
+        # 'version',
+        # 'version_collection',
+        'all_joined'
     ], help="Tables to upload")
     args = parser.parse_args()
     print('args: {}'.format(args))
