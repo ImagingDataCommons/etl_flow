@@ -18,7 +18,7 @@ import os
 from pathlib import Path
 import time
 from datetime import datetime, timezone
-import logging
+from utilities.logging_config import successlogger, progresslogger, errlogger
 import pydicom
 import shutil
 from pydicom.errors import InvalidDicomError
@@ -28,11 +28,9 @@ from google.cloud import storage
 from utilities.tcia_helpers import  get_TCIA_instances_per_series_with_hashes
 from ingestion.utilities.utils import validate_hashes, md5_hasher, copy_disk_to_gcs, copy_gcs_to_gcs
 
-
-
-successlogger = logging.getLogger('root.success')
-progresslogger = logging.getLogger('root.progress')
-errlogger = logging.getLogger('root.err')
+# successlogger = logging.getLogger('root.success')
+# progresslogger = logging.getLogger('root.progress')
+# errlogger = logging.getLogger('root.err')
 
 def clone_instance(instance, uuid):
     new_instance = Instance(uuid=uuid)
@@ -90,7 +88,6 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         for dcm in dcms:
             try:
                 pydicom_times.append(time.time_ns())
-                breakpoint() # Validate new DICOM ID validation code
                 reader = pydicom.dcmread("{}/{}/{}".format(args.dicom_dir, series.series_instance_uid, dcm), stop_before_pixels=True)
                 SOPInstanceUID = reader.SOPInstanceUID
                 pydicom_times.append(time.time_ns())

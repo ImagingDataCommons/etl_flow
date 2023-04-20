@@ -28,20 +28,10 @@ from idc.models import Base, Version, Collection
 from utilities.tcia_helpers import get_access_token
 from utilities.sqlalchemy_helpers import sa_session
 from utilities.logging_config import successlogger, errlogger, progresslogger, rootlogger
-
 from ingestion.utilities.utils import list_skips
 from ingestion.version import clone_version, build_version
-
 from python_settings import settings
-
 from ingestion.all_sources import All
-# from http.client import HTTPConnection
-# HTTPConnection.debuglevel = 0
-
-# rootlogger = logging.getLogger('root')
-# successlogger = logging.getLogger('root.success')
-# progresslogger = logging.getLogger('root.progress')
-# errlogger = logging.getLogger('root.err')
 
 DICOM_DIR = '/mnt/disks/idc-etl/dicom' # Directory in which to expand downloaded zip files')
 
@@ -58,8 +48,8 @@ def ingest(args):
         access = shared_memory.ShareableList(get_access_token())
         args.access = access
 
-        args.skipped_tcia_collections = list_skips(sess, Base, args.skipped_tcia_groups, args.skipped_tcia_collections, args.included_tcia_collections)
-        args.skipped_idc_collections = list_skips(sess, Base, args.skipped_idc_groups, args.skipped_idc_collections, args.included_idc_collections)
+        args.skipped_tcia_collections = list_skips(sess, 'tcia', args.skipped_tcia_groups, args.skipped_tcia_collections, args.included_tcia_collections)
+        args.skipped_idc_collections = list_skips(sess, 'idc', args.skipped_idc_groups, args.skipped_idc_collections, args.included_idc_collections)
 
         # Now create a table of collections for which tcia or idc ingestion or both, are to be skipped.
         # Populate with tcia skips
@@ -120,12 +110,12 @@ def ingest(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--num_processes', type=int, default=16, help="Number of concurrent processes")
+    parser.add_argument('--num_processes', type=int, default=8, help="Number of concurrent processes")
 
     parser.add_argument('--skipped_tcia_groups', nargs='*', default=['redacted_collections', 'excluded_collections'],\
                         help="List of tables containing tcia_api_collection_ids of tcia collections to be skipped")
     parser.add_argument('--skipped_tcia_collections', nargs='*', \
-            default=['NLST','APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-THYM', 'Colorectal-Liver-Metastases'], \
+            default=['NLST','APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-THYM', 'APOLLO-5-ESCA', 'APOLLO-5-PAAD'], \
                         help='List of additional tcia collections to be skipped')
     parser.add_argument('--included_tcia_collections', nargs='*', default=[], help='List of tcia collections to exclude from skipped groups')
     parser.add_argument('--prestaging_tcia_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_tcia_', help='Copy tcia instances here before forwarding to --staging_bucket')
@@ -133,7 +123,7 @@ if __name__ == '__main__':
     parser.add_argument('--skipped_idc_groups', nargs='*', default=['redacted_collections', 'excluded_collections'],\
                         help="List of tables containing tcia_api_collection_ids of idc collections to be skipped")
     parser.add_argument('--skipped_idc_collections', nargs='*',\
-            default=['APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-THYM'], \
+            default=['APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-THYM', 'APOLLO-5-ESCA', 'APOLLO-5-PAAD'], \
                         help='List of additional idc collections to be skipped')
     parser.add_argument('--included_idc_collections', nargs='*', \
             default=[], help='List of idc collections to include (exclude from skipped groups)')

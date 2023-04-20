@@ -17,7 +17,7 @@
 
 import time
 from datetime import datetime, timedelta
-import logging
+from utilities.logging_config import successlogger, progresslogger, errlogger
 from uuid import uuid4
 from idc.models import Study, Series
 from ingestion.utilities.utils import accum_sources, get_merkle_hash, is_skipped
@@ -25,9 +25,9 @@ from ingestion.series import clone_series, build_series, retire_series
 
 from python_settings import settings
 
-successlogger = logging.getLogger('root.success')
-progresslogger = logging.getLogger('root.progressr')
-errlogger = logging.getLogger('root.err')
+# successlogger = logging.getLogger('root.success')
+# progresslogger = logging.getLogger('root.progressr')
+# errlogger = logging.getLogger('root.err')
 
 
 def clone_study(study, uuid):
@@ -156,7 +156,6 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
             progresslogger.debug('      p%s: Series %s unchanged',  args.pid, series.series_instance_uid)
 
     for series in retired_objects:
-        breakpoint()
         retire_series(args, series)
         study.seriess.remove(series)
 
@@ -198,9 +197,9 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
                 study.done = True
                 sess.commit()
                 duration = str(timedelta(seconds=(time.time() - begin)))
-                successlogger.info("    p%s: Completed Study %s, %s,  in %s", args.pid, study.study_instance_uid, study_index, duration)
+                successlogger.info("    p%s: Built Study %s, %s,  in %s", args.pid, study.study_instance_uid, study_index, duration)
     except Exception as exc:
-        errlogger.info('  p%s build_patient failed: %s', args.pid, exc)
+        errlogger.info('  p%s build_study failed: %s', args.pid, exc)
         raise exc
 
 

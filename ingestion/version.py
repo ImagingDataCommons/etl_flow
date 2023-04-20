@@ -16,7 +16,7 @@
 
 import time
 from datetime import datetime, timedelta
-import logging
+from utilities.logging_config import successlogger, progresslogger, errlogger
 from uuid import uuid4
 from idc.models import Version, Collection
 from ingestion.utilities.utils import accum_sources, is_skipped
@@ -25,9 +25,9 @@ from egestion.egest import egest_version
 
 from python_settings import settings
 
-successlogger = logging.getLogger('root.success')
-progresslogger = logging.getLogger('root.progress')
-errlogger = logging.getLogger('root.err')
+# successlogger = logging.getLogger('root.success')
+# progresslogger = logging.getLogger('root.progress')
+# errlogger = logging.getLogger('root.err')
 
 
 def clone_version(previous_version, new_version):
@@ -59,7 +59,8 @@ def expand_version(sess, args, all_sources, version):
     # We exclude collections that are excluded from all sources
     for idc_object in list(idc_objects):
         if idc_objects[idc_object].collection_id in args.skipped_collections \
-            and all(args.skipped_collections[idc_objects[idc_object].collection_id]):
+                and all(args.skipped_collections[idc_objects[idc_object].collection_id]):
+            progresslogger.info(f'p%s: Excluding collection {idc_objects[idc_object].collection_id}. Skipped in all sources.')
             idc_objects.pop(idc_object)
 
     # Collections that are not previously known about by any source.
@@ -116,15 +117,6 @@ def expand_version(sess, args, all_sources, version):
         # have been reliable.
         # if src_hashes[all_sources.]
         if any(revised):
-            # skipped = is_skipped(args.skipped_collections, collection.collection_id)
-            # src_hashes = all_sources.src_collection_hashes_from_patient_hashes(collection.collection_id,
-            #                                                                    [patient.submitter_case_id for patient in
-            #                                                                     collection.patients], skipped,
-            #                                                                    collection.sources)
-            # revised = [(x != y) and not z for x, y, z in \
-            #            zip(idc_hashes[:-1], src_hashes, skipped)]
-            # if any(revised):
-            # If any sources has an updated version of this object, create a new version.
             rev_collection = clone_collection(collection, uuid=str(uuid4()))
 
             # Here is where we update the collecton ID in case it has changed
@@ -184,6 +176,7 @@ def expand_version(sess, args, all_sources, version):
         # Mark the now previous version of this object as having been retired
         retire_collection(args, collection)
         version.collections.remove(collection)
+        progresslogger.info(f'p{args.pid}: Collection {collection.collection_id} is retired')
 
     progresslogger.info(f'\n\nVersion expansion summary')
     new_collections = []
@@ -239,7 +232,7 @@ def build_version(sess, args, all_sources, version):
             version.done = True
             version.revised = [True, True]
             duration = str(timedelta(seconds=(time.time() - begin)))
-            progresslogger.info("Completed Version %s, in %s", version.version, duration)
+            progresslogger.info("Built Version %s, in %s", version.version, duration)
         else:
             # Revert the version
             breakpoint()

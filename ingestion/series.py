@@ -16,7 +16,7 @@
 
 import time
 from datetime import datetime, timedelta
-import logging
+from utilities.logging_config import successlogger, progresslogger, errlogger
 from uuid import uuid4
 from idc.models import Series, Instance, instance_source
 from ingestion.instance import clone_instance, build_instances_idc, build_instances_tcia
@@ -24,9 +24,9 @@ from ingestion.utilities.utils import is_skipped
 from python_settings import settings
 
 
-successlogger = logging.getLogger('root.success')
-progresslogger = logging.getLogger('root.progress')
-errlogger = logging.getLogger('root.err')
+# successlogger = logging.getLogger('root.success')
+# progresslogger = logging.getLogger('root.progress')
+# errlogger = logging.getLogger('root.err')
 
 
 def clone_series(series, uuid):
@@ -136,7 +136,6 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
 
     for instance in retired_objects:
         # rootlogger.debug('        p%s: Instance %s:%s retiring', instance.sop_instance_uid, instance.uuid)
-        breakpoint()
         instance.final_idc_version = settings.PREVIOUS_VERSION
         series.instances.remove(instance)
 
@@ -186,7 +185,7 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
                 series.done = True
                 sess.commit()
                 duration = str(timedelta(seconds=(time.time() - begin)))
-                successlogger.info("      p%s: Completed Series %s, %s, in %s", args.pid, series.series_instance_uid, series_index, duration)
+                successlogger.info("      p%s: Built Series %s, %s, in %s", args.pid, series.series_instance_uid, series_index, duration)
     except Exception as exc:
-        errlogger.info('  p%s build_patient failed: %s', args.pid, exc)
+        errlogger.error('  p%s build_series failed: %s', args.pid, exc)
         raise exc
