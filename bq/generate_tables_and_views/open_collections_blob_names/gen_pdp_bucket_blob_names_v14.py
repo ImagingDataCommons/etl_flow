@@ -20,6 +20,7 @@
 # idc_metadata dataset in idc-pdp-staging
 # Note: During the V14 transition to hierarchical names, the generated table includes
 # both <series_uuid>/<instance_uuid>.dcm and <instance_uuid>.dcm names.
+
 import argparse
 import sys
 import settings

@@ -21,7 +21,7 @@ import json
 import time
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json
-from bq.gen_original_data_collections_table.schema import data_collections_metadata_schema
+from bq.original_data_collections.schema import data_collections_metadata_schema
 from bq.utils.gen_license_table import get_original_collection_licenses
 from utilities.tcia_helpers import get_collection_descriptions_and_licenses, get_collection_license_info
 from utilities.tcia_scrapers import scrape_tcia_data_collections_page

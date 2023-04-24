@@ -20,7 +20,7 @@
 import argparse
 import sys
 import settings
-from bq.gen_aux_metadata_table.gen_auxiliary_metadata_table import gen_aux_table
+from bq.auxiliary_metadata_table.gen_auxiliary_metadata_table import gen_aux_table
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()

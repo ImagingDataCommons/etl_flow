@@ -27,7 +27,7 @@ from time import sleep
 from utilities.bq_helpers import load_BQ_from_json, query_BQ, create_BQ_table, delete_BQ_Table
 from utilities.logging_config import successlogger,progresslogger
 from bq.utils.gen_license_table import get_original_collection_licenses
-from bq.gen_aux_metadata_table.schema import auxiliary_metadata_schema
+from bq.auxiliary_metadata_table.schema import auxiliary_metadata_schema
 
 
 def build_table(args):

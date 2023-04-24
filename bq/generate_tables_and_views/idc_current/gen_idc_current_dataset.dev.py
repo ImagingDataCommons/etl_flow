@@ -19,16 +19,16 @@
 
 import argparse
 import sys
-import settings
-from bq.gen_idc_current.gen_idc_current_dataset import gen_idc_current_dataset
+from python_settings import settings
+from bq.idc_current.gen_idc_current_dataset import gen_idc_current_dataset
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Current IDC version')
-    parser.add_argument('--src_project', default=settings.PDP_PROJECT)
-    parser.add_argument('--trg_project', default=settings.PDP_PROJECT)
-    parser.add_argument('--src_bqdataset', default=settings.BQ_PUB_DATASET, help='BQ dataset name')
+    parser.add_argument('--src_project', default=settings.DEV_PROJECT)
+    parser.add_argument('--trg_project', default=settings.DEV_PROJECT)
+    parser.add_argument('--src_bqdataset', default=settings.BQ_DEV_EXT_DATASET, help='BQ dataset name')
     parser.add_argument('--current_bqdataset', default=f'idc_current', help='current dataset name')
 
     args = parser.parse_args()
