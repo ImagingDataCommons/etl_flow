@@ -15,7 +15,7 @@
 #
 
 # Upload tables from Cloud SQL to BQ
-
+import google.cloud.bigquery
 from google.cloud import bigquery
 from utilities.bq_helpers import BQ_table_exists, delete_BQ_Table, query_BQ
 from utilities.logging_config import successlogger, errlogger
@@ -60,6 +60,7 @@ def create_all_joined(client, args, table, order_by):
     se.series_instances,
     se.source_doi,
     se.source_url,
+    se.third_party,
     se.hashes AS se_hashes,
     se.sources AS se_sources,
     se.init_idc_version AS se_init_idc_version,
@@ -93,7 +94,7 @@ def create_all_joined(client, args, table, order_by):
     # Make an API request to create the view.
     view = client.create_table(view, exists_ok=True)
     print(f"Created {view.table_type}: {str(view.reference)}")
-    return
+    return view
 
 def upload_version(client, args, table, order_by):
     sql = f"""
@@ -255,7 +256,8 @@ def upload_series(client, args, table, order_by):
       excluded,
       license_long_name,
       license_url,
-      license_short_name
+      license_short_name,
+      third_party
       
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
@@ -266,7 +268,7 @@ def upload_series(client, args, table, order_by):
             (sources).tcia AS tcia_src, (sources).idc AS idc_src, 
             (revised).tcia AS tcia_rev, (revised).idc AS idc_rev,
             source_url, excluded, license_long_name, license_url,
-            license_short_name
+            license_short_name, third_party
         FROM {table}''')
     ORDER BY {order_by}
     """
@@ -324,16 +326,20 @@ def upload_to_bq(args, tables):
         if BQ_table_exists(client, settings.DEV_PROJECT, settings.BQ_DEV_INT_DATASET, table):
             delete_BQ_Table(client, settings.DEV_PROJECT, settings.BQ_DEV_INT_DATASET, table)
         result = tables[table]['func'](client, args, table, tables[table]['order_by'])
-        job_id = result.path.split('/')[-1]
-        job = client.get_job(job_id, location='US')
-        while job.state != 'DONE':
-            successlogger.info('Waiting...')
-            sleep(15)
+        if type(result) != google.cloud.bigquery.Table:
+            job_id = result.path.split('/')[-1]
             job = client.get_job(job_id, location='US')
-        if not job.error_result==None:
-            errlogger.error(f'{table} upload failed')
+            while job.state != 'DONE':
+                successlogger.info('Waiting...')
+                sleep(15)
+                job = client.get_job(job_id, location='US')
+            if not job.error_result==None:
+                errlogger.error(f'{table} upload failed')
+            else:
+                successlogger.info(f'{table} upload completed in {time()-b:.2f}s')
         else:
-            successlogger.info(f'{table} upload completed in {time()-b:.2f}s')
+            successlogger.info(f'{table} upload completed in {time() - b:.2f}s')
+
 
 
 
