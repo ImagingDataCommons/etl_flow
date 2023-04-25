@@ -185,6 +185,7 @@ class All_Joined(Base):
     sop_instance_uid = Column(String, nullable=False, unique=False, comment='DICOM SOPInstanceUID')
     i_uuid = Column(String, primary_key=True, comment="IDC assigned UUID of a version of this object")
     i_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of TCIA data at this level")
+    i_source = Column(String, nullable=True, comment="'tcia' or 'idc'")
     i_size = Column(BigInteger, nullable=True, comment='Instance blob size (bytes)')
     i_excluded = Column(Boolean, default=False, comment="True if instance should be excluded from auxiliary_metacata, etc.")
     i_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
@@ -506,6 +507,7 @@ class Series(Base):
     license_long_name = Column(String, comment="Long name of license.")
     license_url = Column(String, comment="License URL of this series.")
     license_short_name = Column(String, comment='Short name of license')
+    third_party = Column(Boolean, comment='True if this series is from a third party, else False')
 
     studies = relationship('Study',
                            secondary=study_series,

@@ -56,7 +56,7 @@ auxiliary_metadata_schema = [
     bigquery.SchemaField('SeriesInstanceUID', 'STRING', mode='NULLABLE', description='DICOM series containing this instance'),
     bigquery.SchemaField('series_uuid', 'STRING', mode='NULLABLE', description='UUID of this version of the series containing this instance'),
     bigquery.SchemaField('source_doi', 'STRING', mode='NULLABLE', description='The DOI of a wiki page that describes the original collection or analysis result that includes this instance'),
-    bigquery.SchemaField('source_url', 'STRING', mode='NULLABLE', description='The URK of a wiki page that describes the original collection or analysis result that includes this instance'),
+    bigquery.SchemaField('source_url', 'STRING', mode='NULLABLE', description='The URL of a wiki page that describes the original collection or analysis result that includes this instance'),
     bigquery.SchemaField('series_instances', 'INTEGER', mode='NULLABLE', description='Number of instances in the version of the study containing this instance'),
     bigquery.SchemaField('series_hash', 'STRING', mode='NULLABLE', description='md5 hash of the data in the this version of the series containing this instance'),
     bigquery.SchemaField('series_init_idc_version', 'INTEGER', mode='NULLABLE', description='The IDC version in which the series containing this instance first appeared'),
