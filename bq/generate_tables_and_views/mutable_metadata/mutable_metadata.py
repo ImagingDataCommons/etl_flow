@@ -22,13 +22,16 @@ import argparse
 import sys
 import settings
 from google.cloud import bigquery
-from utilities.bq_helpers import query_BQ
+from utilities.bq_helpers import create_BQ_table, delete_BQ_Table, query_BQ
+from utilities.logging_config import successlogger
+from schema import mutable_metadata_schema
 
 def gen_blob_table(args):
 
     query = f"""
     SELECT
-      DISTINCT st_uuid crdc_study_uuid,
+      DISTINCT 
+      st_uuid crdc_study_uuid,
       se_uuid crdc_series_uuid,
       i_uuid crdc_instance_uuid,
       CONCAT('gs://',
@@ -38,7 +41,7 @@ def gen_blob_table(args):
       IF
         (aj.i_source='tcia', pub_aws_tcia_url, pub_aws_idc_url), '/', se_uuid, '/', i_uuid, '.dcm') aws_url,
     IF
-      (aj.i_source='tcia', ac.tcia_access, ac.idc_access) ACCESS,
+      (aj.i_source='tcia', ac.tcia_access, ac.idc_access) access,
       source_url,
       source_doi,
       license_long_name,
@@ -56,8 +59,20 @@ def gen_blob_table(args):
       crdc_instance_uuid    
     """
 
+    # client = bigquery.Client(project=args.dst_project)
+    # result=query_BQ(client, args.trg_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
+
     client = bigquery.Client(project=args.dst_project)
-    result=query_BQ(client, args.trg_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
+    result = delete_BQ_Table(client, args.dst_project, args.trg_bqdataset_name, args.bqtable_name)
+    # Create a table to get the schema defined
+    created_table = create_BQ_table(client, args.dst_project, args.trg_bqdataset_name, args.bqtable_name, mutable_metadata_schema, exists_ok=True)
+    # Perform the query and save results in specified table
+    results = query_BQ(client, args.trg_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
+    populated_table = client.get_table(f"{args.dst_project}.{args.trg_bqdataset_name}.{args.bqtable_name}")
+    populated_table.schema = mutable_metadata_schema
+    populated_table.description = "Current values of metadata that might change over time"
+    client.update_table(populated_table, fields=["schema", "description"])
+    successlogger.info('Created mutable_metadata table')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

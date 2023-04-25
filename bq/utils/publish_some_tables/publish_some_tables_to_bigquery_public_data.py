@@ -25,7 +25,6 @@ from publish_some_tables import publish_tables
 if __name__ == '__main__':
     # (sys.argv)
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--src_project', default="idc-pdp-staging", help='Project from which tables are copied')
     parser.add_argument('--trg_project', default="bigquery-public-data", help='Project to which tables are copied')
     args = parser.parse_args()
@@ -44,7 +43,4 @@ if __name__ == '__main__':
     ]
 
     for table_name, min_version, max_version in tables:
-
-        args.src_dataset = args.src_dataset
-        args.trg_dataset = args.trg_dataset
         publish_tables(args, table_name, min_version, max_version, dones)
