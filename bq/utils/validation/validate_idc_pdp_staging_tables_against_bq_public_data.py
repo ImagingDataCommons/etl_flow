@@ -80,7 +80,7 @@ if __name__ == '__main__':
     errors = [row.split(':')[-1] for row in open(f'{errlogger.handlers[0].baseFilename}').read().splitlines()]
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
-    for dataset_version in [i for i in range(1,14)]:
+    for dataset_version in [i for i in range(14,15)]:
         if str(dataset_version) in dones:
             continue
 
@@ -91,11 +91,11 @@ if __name__ == '__main__':
             ("dicom_metadata_curated_view",13),
             ("dicom_metadata_curated_series_level",13),
             ("dicom_metadata_curated_series_level_view",13),
-            ("measurement_groups",2),
+            ("measurement_groups",1),
             ("measurement_groups_view",13),
-            ("qualitative_measurements",2),
+            ("qualitative_measurements",1),
             ("qualitative_measurements_view",13),
-            ("quantitative_measurements",2),
+            ("quantitative_measurements",1),
             ("quantitative_measurements_view",13),
             ("segmentations",1),
             ("segmentations_view",13),

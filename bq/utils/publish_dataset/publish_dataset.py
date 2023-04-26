@@ -101,7 +101,7 @@ def copy_view(client, args, view_id):
         view = client.get_table(f'{args.src_project}.{args.src_dataset}.{view_id}')
 
         new_view = bigquery.Table(f'{args.trg_project}.{args.trg_dataset}.{view_id}')
-        new_view.view_query = view.view_query.replace(args.src_project,args.pdp_project). \
+        new_view.view_query = view.view_query.replace(args.src_project,args.trg_project). \
             replace(args.src_dataset,args.trg_dataset)
 
         new_view.friendly_name = view.friendly_name
@@ -135,7 +135,7 @@ def publish_dataset(args):
         )
         create_dataset(client, args.trg_project, args.trg_dataset, dataset_dict)
 
-    progresslogger.info(f'Backing up {args.src_dataset} to {args.trg_dataset}')
+    progresslogger.info(f'Publishing {args.src_dataset} to {args.trg_dataset}')
     table_ids = {table.table_id: table.table_type for table in client.list_tables(f'{args.src_project}.{args.src_dataset}')}
     # Create tables first
     for table_id in table_ids:
