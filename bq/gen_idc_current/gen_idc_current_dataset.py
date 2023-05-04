@@ -72,7 +72,7 @@ def gen_idc_current_dataset(args):
         print("Target dataset already exists")
 
     # Delete any views in the target dataset
-    delete_all_views_in_target_dataset(trg_client, args)
+    # delete_all_views_in_target_dataset(trg_client, args)
 
     # Get a list of the tables in the source dataset
     src_tables = [table for table in trg_client.list_tables (f'{args.src_project}.{args.src_bqdataset}')]
@@ -83,8 +83,10 @@ def gen_idc_current_dataset(args):
         table_id = src_table.table_id
         print(f'View: {table_id}')
 
-        # Create the view object
+
         trg_view = bigquery.Table(f'{args.trg_project}.{args.current_bqdataset}.{table_id}')
+        # Delete the existing view
+        trg_client.delete_table(trg_view, not_found_ok=True)
         # Form the view SQL
         view_sql = f"""
             select * from `{args.src_project}.{args.src_bqdataset}.{table_id}`"""
