@@ -21,7 +21,7 @@
 
 import argparse
 import settings
-from bq.bq_IO.upload_psql_to_bq import upload_to_bq, upload_version, upload_collection, upload_patient, upload_study, \
+from upload_psql_to_bq import upload_to_bq, upload_version, upload_collection, upload_patient, upload_study, \
     upload_series, upload_instance, upload_table, create_all_joined
 from google.cloud import bigquery
 from utilities.bq_helpers import create_BQ_dataset
