@@ -32,6 +32,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=f'{settings.CURRENT_VERSION}')
     parser.add_argument('--bucket', default='idc-open-idc1')
     parser.add_argument('--dev_or_pub', default = 'pub', help='Validating a dev or pub bucket')
+    parser.add_argument('--both_hierarchical_and_flat', default=True, help='Expect noth hierarchical and flat names if True')
     # parser.add_argument('--collection_group_table', default='defaced_collections', help='BQ table containing list of collections')
     parser.add_argument('--expected_blobs', default=f'{settings.LOG_DIR}/expected_blobs.txt', help='List of blobs names expected to be in above collections')
     parser.add_argument('--found_blobs', default=f'{settings.LOG_DIR}/found_blobs.txt', help='List of blobs names found in bucket')

@@ -197,37 +197,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()
-    #
-    # if not os.path.exists(settings.LOGGING_BASE):
-    #     os.mkdir(settings.LOGGING_BASE)
-    # if not os.path.exists(args.log_dir):
-    #     os.mkdir(args.log_dir)
-    #
-    # successlogger = logging.getLogger('root.success')
-    # successlogger.setLevel(INFO)
-    # for hdlr in successlogger.handlers[:]:
-    #     successlogger.removeHandler(hdlr)
-    # success_fh = logging.FileHandler('{}/success.log'.format(args.log_dir))
-    # successlogger.addHandler(success_fh)
-    # successformatter = logging.Formatter('%(message)s')
-    # success_fh.setFormatter(successformatter)
-    #
-    # progresslogger = logging.getLogger('root.progress')
-    # progresslogger.setLevel(INFO)
-    # for hdlr in progresslogger.handlers[:]:
-    #     progresslogger.removeHandler(hdlr)
-    # success_fh = logging.FileHandler('{}/progress.log'.format(args.log_dir))
-    # progresslogger.addHandler(success_fh)
-    # successformatter = logging.Formatter('%(message)s')
-    # success_fh.setFormatter(successformatter)
-    #
-    #
-    # errlogger = logging.getLogger('root.err')
-    # for hdlr in errlogger.handlers[:]:
-    #     errlogger.removeHandler(hdlr)
-    # err_fh = logging.FileHandler('{}/error.log'.format(args.log_dir))
-    # errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
-    # errlogger.addHandler(err_fh)
-    # err_fh.setFormatter(errformatter)
 
     prebuild(args)

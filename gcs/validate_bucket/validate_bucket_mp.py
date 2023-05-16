@@ -24,7 +24,7 @@ from google.cloud import storage, bigquery
 def get_expected_blobs_in_bucket(args, premerge=False):
     client = bigquery.Client()
     query = f"""
-      SELECT distinct concat(i.uuid, '.dcm') as blob_name
+      SELECT distinct concat(se.uuid, '/', i.uuid, '.dcm') as blob_name
       FROM `idc-dev-etl.idc_v{args.version}_dev.version` v
           JOIN `idc-dev-etl.idc_v{args.version}_dev.version_collection` vc ON v.version = vc.version
           JOIN `idc-dev-etl.idc_v{args.version}_dev.collection` c ON vc.collection_uuid = c.uuid
@@ -38,13 +38,11 @@ def get_expected_blobs_in_bucket(args, premerge=False):
           JOIN `idc-dev-etl.idc_v{args.version}_dev.instance` i ON si.instance_uuid = i.uuid
           JOIN `idc-dev-etl.idc_v{args.version}_dev.all_collections` aic
           ON c.collection_id = aic.tcia_api_collection_id
-          WHERE ((i.source='tcia' and aic.{args.dev_or_pub}_tcia_url="{args.bucket}")
-          OR (i.source='idc' and aic.{args.dev_or_pub}_idc_url="{args.bucket}"))
+          WHERE ((i.source='tcia' and aic.{args.dev_or_pub}_gcs_tcia_url="{args.bucket}")
+          OR (i.source='idc' and aic.{args.dev_or_pub}_gcs_idc_url="{args.bucket}"))
           AND i.excluded = False
           AND if({premerge}, i.rev_idc_version < {args.version}, i.rev_idc_version <= {args.version})
       """
-
-
     query_job = client.query(query)  # Make an API request.
     query_job.result()  # Wait for the query to complete.
 
@@ -63,6 +61,10 @@ def get_expected_blobs_in_bucket(args, premerge=False):
         for page in client.list_rows(destination, page_size=args.batch).pages:
             rows = [f'{row["blob_name"]}\n' for row in page]
             f.write(''.join(rows))
+            if args.both_hierarchical_and_flat:
+                flats = [f"{row.split('/')[-1]}" for row in rows]
+                f.write(''.join(flats))
+
 
 def get_found_blobs_in_bucket(args):
     client = storage.Client()
