@@ -98,11 +98,11 @@ if __name__ == '__main__':
         # Presume the dataset already exists
         pass
 
-    try:
-        dataset = create_BQ_dataset(BQ_client, settings.BQ_DEV_EXT_DATASET)
-    except:
-        # Presume the dataset already exists
-        pass
+    # try:
+    #     dataset = create_BQ_dataset(BQ_client, settings.BQ_DEV_EXT_DATASET)
+    # except:
+    #     # Presume the dataset already exists
+    #     pass
 
     upload_to_bq(args, tables)
 

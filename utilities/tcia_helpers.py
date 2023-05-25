@@ -296,11 +296,11 @@ def get_TCIA_instance_uids_per_series(collection_id, seriesInstanceUID, server=N
     return instance_uids
 
 
-def get_TCIA_instances_per_series_with_hashes(dicom, series_instance_uid):
-    filename = "{}/{}.zip".format(dicom, series_instance_uid)
-    dirname = "{}/{}".format(dicom, series_instance_uid)
+def get_TCIA_instances_per_series_with_hashes(dicom, series):
+    filename = "{}/{}.zip".format(dicom, series.uuid)
+    dirname = "{}/{}".format(dicom, series.uuid)
 
-    url = f'{NBIA_V1_URL}/getImageWithMD5Hash?SeriesInstanceUID={series_instance_uid}'
+    url = f'{NBIA_V1_URL}/getImageWithMD5Hash?SeriesInstanceUID={series.series_instance_uid}'
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
         with open(filename, 'wb') as f:

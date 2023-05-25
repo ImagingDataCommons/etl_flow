@@ -616,9 +616,11 @@ class IDC_Instance(Base):
     hash = Column(String, comment='Instance hash')
     gcs_url = Column(String, comment='GCS URL of instance')
     size = Column(BigInteger, comment='Instance size in bytes')
+    excluded = Column(Boolean, comment='True of this series should be excluded from ingestion')
     idc_version = Column(Integer, comment='IDC version when this instance was added/revised')
 
     seriess = relationship("IDC_Series", back_populates="instances")
+
 
 # The table that is the union of the previous five tables
 class All_Collections(Base):
@@ -627,10 +629,10 @@ class All_Collections(Base):
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
     dev_idc_url = Column(String, comment="Dev idc bucket name")
-    gcs_pub_tcia_url = Column(String, comment="Public gcs tcia bucket name")
-    gcs_pub_idc_url = Column(String, comment="Public gcs idc bucket name")
-    aws_pub_tcia_url = Column(String, comment="Public aws tcia bucket name")
-    aws_pub_idc_url = Column(String, comment="Public aws idc bucket name")
+    pub_gcs_tcia_url = Column(String, comment="Public gcs tcia bucket name")
+    pub_gcs_idc_url = Column(String, comment="Public gcs idc bucket name")
+    pub_aws_tcia_url = Column(String, comment="Public aws tcia bucket name")
+    pub_aws_idc_url = Column(String, comment="Public aws idc bucket name")
     tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
     idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
     tcia_metadata_sunset = Column(String, comment="Last version that metadata is published. 0==still visible'")
@@ -640,9 +642,9 @@ class All_Collections(Base):
 # This table is populated with metadata for collections that are not sourced from TCIA.
 class Original_Collections_Metadata_IDC_Source(Base):
     __tablename__ = 'original_collections_metadata_idc_source'
-    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID used by TCIA APIs')
-    tcia_wiki_collection_id = Column(String, nullable=False, comment='TCIA Wiki page collection ID')
-    idc_webapp_collection_id = Column(String, nullable=False, comment='Collection ID used by IDC webapp')
+    tcia_api_collection_id = Column(String, comment='Collection ID used by TCIA APIs')
+    tcia_wiki_collection_id = Column(String, nullable=True, comment='TCIA Wiki page collection ID')
+    idc_webapp_collection_id = Column(String,primary_key=True, nullable=False, comment='Collection ID used by IDC webapp')
     Status = Column(String, nullable=False, comment='Public or Limited')
     Updated = Column(String, comment='Date of last update')
     ImageTypes = Column(String, comment='List of image types')
@@ -673,7 +675,7 @@ class Analysis_Results_Metadata_IDC_Source(Base):
     license_url = Column(String, comment='URL of license description')
     license_long_name = Column(String, comment='Long name of license')
     license_short_name = Column(String, comment='Short name of license')
-    Description = Column(String, comment='Description of analysis result')
+    URL = Column(String,comment='URL of collection description page')
 
 
 

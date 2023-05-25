@@ -144,20 +144,20 @@ if __name__ == '__main__':
         progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
         steps = [
-            # ("original_collections_metadata", False, 1, False),
-            # ("analysis_results_metadata", False, 1, False),
+            ("original_collections_metadata", False, 1, False),
+            ("analysis_results_metadata", False, 1, False),
             ("dicom_all", True, 1, True),
-            # ("dicom_metadata_curated", False, 7, True),
-            # ("dicom_metadata_curated_series_level", False, 13, True),
-            # ("measurement_groups", False, 1, True),
-            # ("qualitative_measurements", False, 1, True),
-            # ("quantitative_measurements", False, 1, True),
-            # ("segmentations", False, 1, True),
-            # ("dicom_derived_all", True, 1, True),
-            # (f"dicom_pivot_v{dataset_version}", True, 1, True)
-            # ("dicom_derived_all", True, 1, False),
-            # (f"dicom_pivot_v{dataset_version}", True, 1, False),
-            # ("auxiliary_metadata", True, 1, False),
+            ("dicom_metadata_curated", False, 7, True),
+            ("dicom_metadata_curated_series_level", False, 13, True),
+            ("measurement_groups", False, 1, True),
+            ("qualitative_measurements", False, 1, True),
+            ("quantitative_measurements", False, 1, True),
+            ("segmentations", False, 1, True),
+            ("dicom_derived_all", True, 1, True),
+            (f"dicom_pivot_v{dataset_version}", True, 1, True)
+            ("dicom_derived_all", True, 1, False),
+            (f"dicom_pivot_v{dataset_version}", True, 1, False),
+            ("auxiliary_metadata", True, 1, False),
         ]
         
         for table_name, has_urls, min_version, has_view in steps:

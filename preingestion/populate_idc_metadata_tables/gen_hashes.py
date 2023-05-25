@@ -31,13 +31,16 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, update
 from google.cloud import storage
 
-def gen_hashes(args):
+def gen_hashes(collection_id=''):
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
     # sql_engine = create_engine(sql_uri, echo=True)
     sql_engine = create_engine(sql_uri)
 
     with Session(sql_engine) as sess:
-        collections = sess.query(IDC_Collection).all()
+        if collection_id:
+             collections = sess.query(IDC_Collection).filter(IDC_Collection.collection_id==collection_id)
+        else:
+            collections = sess.query(IDC_Collection).all()
         for collection in collections:
             for patient in collection.patients:
                 for study in patient.studies:
@@ -60,6 +63,7 @@ def gen_hashes(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
+    parser.add_argument('--collection', default='', help='If not null, gen hash of this collection, else all collections')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

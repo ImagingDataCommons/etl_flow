@@ -112,7 +112,7 @@ def get_patient_urls_idc(sess, collection, patient):
 
 # Get a per-series list of licenses for a patient. This routine finds series in
 # data sourced from TCIA.
-def get_patient_licenses_tcia(collection, patient, third_party="no", server=""):
+def get_licenses_tcia(collection, patient, third_party="no", server=""):
     license_types = get_license_info()
     series_licenses = {}
     try:
@@ -146,10 +146,26 @@ def get_patient_licenses_tcia(collection, patient, third_party="no", server=""):
                         "license_long_name": license_types['Creative Commons Attribution 3.0 Unported License']["longName"],
                         "license_short_name": license_types['Creative Commons Attribution 3.0 Unported License']["shortName"]
                     }
+                elif collection == 'Adrenal-ACC-Ki67-Seg':
+                    series_licenses[seriesUID] = {
+                        "license_url": license_types['Creative Commons Attribution 4.0 International License']['licenseURL'],
+                        "license_long_name": license_types['Creative Commons Attribution 4.0 International License']['longName'],
+                        "license_short_name": license_types['Creative Commons Attribution 4.0 International License']['shortName']
+                    }
                 else:
                     breakpoint()
                     errlogger.error(f'No license info for {collection}/{patient}')
     return series_licenses
+
+
+# Get a per-series list of licenses for a patient. This routine finds series in
+# data sourced from TCIA.
+def get_patient_licenses_tcia(collection, patient, third_party="no", server=""):
+    server = "NLST" if collection == "NLST" else ""
+    series_licences = get_licenses_tcia(collection, patient, third_party="no", server=server)
+    series_licences = series_licences | \
+                      get_licenses_tcia(collection, patient, third_party="yes", server=server)
+    return series_licences
 
 
 # Get a per-series list of licenses for a patient. This routine finds series in
