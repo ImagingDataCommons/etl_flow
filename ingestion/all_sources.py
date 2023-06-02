@@ -41,7 +41,6 @@ class All:
     ###-------------------Versions-----------------###
 
     def idc_version_hashes(self, version):
-        breakpoint() # Verify
         childrens_hashes = [object.hashes for object in version.collections]
         # parent_hashes = [get_merkle_hash([childrens_hashes[source.value] for source in instance_source])]
         parent_hashes = [get_merkle_hash([row[source.value] for row in childrens_hashes]) if set(
