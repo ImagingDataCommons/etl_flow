@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Remove a patients of a collection from
+# Remove a collection from
 # the idc_xxx hierarchy
 
 import sys
@@ -24,9 +24,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, update
 from google.cloud import storage
 
-from idc.models import IDC_Collection, IDC_Patient
-from remove_elements import remove_patient
-from preingestion.populate_idc_metadata_tables.gen_hashes import gen_hashes
+from idc.models import IDC_Collection
+from remove_elements import remove_collection
 
 def prebuild(args):
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
@@ -35,33 +34,20 @@ def prebuild(args):
 
     with Session(sql_engine) as sess:
         client = storage.Client()
-        collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == args.collection_id).first()
-        for submitter_case_id in args.submitter_case_ids:
-            if patient := next((patient for patient in collection.patients if patient.submitter_case_id == submitter_case_id),0):
-                remove_patient(client, args, sess, collection, patient)
+        for collection_id in args.collection_ids:
+            # print(f'{reader.line_num-1}/{rows}: {row}')
+            collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
+            remove_collection(client, args, sess, collection)
         sess.commit()
-        gen_hashes(args.collection_id)
     return
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--collection_id', type=str, default='CPTAC-GBM', nargs='*', \
-      help='A list of collections to remove.')
-    parser.add_argument('--wiki_url', default='https://doi.org/10.7937/K9/TCIA.2018.3RJE41Q1', \
+    parser.add_argument('--wiki_url', default='https://doi.org/10.5281/zenodo.7539035', \
                         help='Only delete instances having this wiki_url')
-    parser.add_argument('--submitter_case_ids', type=str, default=['C3L-03547',
-'C3L-03549',
-'C3L-03554',
-'C3L-03557',
-'C3L-03559',
-'C3L-03588',
-'C3L-04815',
-'C3L-04817',
-'C3L-04819',
-'C3L-04838',
-'C3L-04843'], nargs='*', \
-      help='A list of submitter_case_ids to remove.')
+    parser.add_argument('--collection_ids', type=str, default=['NLST', 'NSCLC-Radiomics'], nargs='*', \
+      help='A list of collections to remove.')
     # parser.add_argument('--log_dir', default=f'{settings.LOGGING_BASE}/{settings.BASE_NAME}')
 
     args = parser.parse_args()

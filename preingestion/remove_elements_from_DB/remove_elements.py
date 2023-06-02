@@ -14,8 +14,11 @@
 # limitations under the License.
 #
 
-# Removes an instance, series, study, patient or collection from
-# the idc_xxx hierarchy
+# Conditionally and hierarchically removes an instance, series, study, patient or collection from
+# the idc_xxx hierarchy.
+# A series is only removed if its wiki_url matches a specified URL. This enables removing data
+# that, for example is from a particular analysis result.
+# An element at a level is only removed if all its children have been removed.
 
 import os
 import io
@@ -41,42 +44,103 @@ def remove_instance(client, args, sess, series, instance):
         # Instance no longer in series
         return
 
+
 def remove_series(client, args, sess, study, series):
     try:
-        while series.instances:
-            remove_instance(client, args, sess, series, series.instances[0])
-            # Series is empty now. Remove it from study and delete it
-        study.seriess.remove(series)
-        sess.delete(series)
-        progresslogger.info('\t\t\tSeries %s', series.series_instance_uid)
+        if series.wiki_url == args.wiki_url:
+            index = 0
+            for instance in series.instances:
+                instance = series.instances[index]
+                remove_instance(client, args, sess, series, instance)
+                # if index > 0 and len(series.instances) >= index and instance == series.instances[index]:
+                #     index += 1
+            # If the series is empty, remove it from study and delete it
+            if len(series.instances) == 0:
+                study.seriess.remove(series)
+                sess.delete(series)
+                progresslogger.info('\t\t\tSeries %s deleted', series.series_instance_uid)
+            else:
+                progresslogger.info('\t\t\tSeries %s retained', series.series_instance_uid)
+        else:
+            progresslogger.info('\t\t\tSeries %s skipped', series.series_instance_uid)
         return
     except StopIteration:
         # Series no longer in study
         return
 
 
+# def remove_study(client, args, sess, patient, study):
+#     try:
+#         while study.seriess:
+#             if study.seriess
+#             remove_series(client, args, sess, study, study.seriess[0])
+#             # Study is empty now. Remove it from patient and delete it
+#         if not study.seriess:
+#             patient.studies.remove(study)
+#             sess.delete(study)
+#         progresslogger.info('\t\tStudy %s', study.study_instance_uid)
+#         return
+#     except StopIteration:
+#         # Study no longer in patient
+#         return
+
+
 def remove_study(client, args, sess, patient, study):
     try:
-        while study.seriess:
-            remove_series(client, args, sess, study, study.seriess[0])
-            # Study is empty now. Remove it from patient and delete it
-        patient.studies.remove(study)
-        sess.delete(study)
-        progresslogger.info('\t\tStudy %s', study.study_instance_uid)
+        index = 0
+        while index < len(study.seriess):
+            series = study.seriess[index]
+            remove_series(client, args, sess, study, series)
+            # if index > 0 and len(study.seriess) >= index and series == study.seriess[index]:
+            if series in study.seriess:
+                # We didn't remove the series
+                index += 1
+        # If the study is empty now, remove it from patient and delete it
+        if len(study.seriess) == 0:
+            patient.studies.remove(study)
+            sess.delete(study)
+            progresslogger.info('\t\tStudy %s deleted', study.study_instance_uid)
+        else:
+            progresslogger.info('\t\tStudy %s retained', study.study_instance_uid)
         return
     except StopIteration:
         # Study no longer in patient
         return
 
 
+# def remove_patient(client, args, sess, collection, patient):
+#     try:
+#         while patient.studies:
+#             remove_study(client,args, sess, patient, patient.studies[0])
+#             # The patient is empty. Remove it from collection and delete it
+#         if not patient.studies:
+#            collection.patients.remove(patient)
+#            sess.delete(patient)
+#         progresslogger.info('\tPatient %s', patient.submitter_case_id)
+#         return
+#     except StopIteration:
+#         # Patient no longer in collection
+#         return
+
+
 def remove_patient(client, args, sess, collection, patient):
     try:
-        while patient.studies:
-            remove_study(client,args, sess, patient, patient.studies[0])
-            # The patient is empty. Remove it from collection and delete it
-        collection.patients.remove(patient)
-        sess.delete(patient)
-        progresslogger.info('\tPatient %s', patient.submitter_case_id)
+        index = 0
+        while index < len(patient.studies):
+            study = patient.studies[index]
+            remove_study(client,args, sess, patient, study)
+            if study in patient.studies:
+            # if index > 0 and len(patient.studies) >= index and study == patient.studies[index]:
+                # We didn't remove the study
+                index += 1
+        # If the patient is empty, remove it from collection and delete it
+        if len(patient.studies) == 0:
+            collection.patients.remove(patient)
+            sess.delete(patient)
+            progresslogger.info('\tPatient %s deleted', patient.submitter_case_id)
+        else:
+            progresslogger.info('\tPatient %s retained', patient.submitter_case_id)
+
         return
     except StopIteration:
         # Patient no longer in collection
@@ -85,11 +149,22 @@ def remove_patient(client, args, sess, collection, patient):
 
 def remove_collection(client, args, sess, collection):
     try:
-        while collection.patients:
-            remove_patient(client, args, sess, collection, collection.patients[0])
-            # Collection is empty. Delete it
-        sess.delete(collection)
-        progresslogger.info('Collection %s', collection.collection_id)
+        # Try to remove all patients in the collection
+        index = 0
+        while index < len(collection.patients):
+            patient = collection.patients[index]
+            remove_patient(client, args, sess, collection, patient)
+            # If the patient was not removed, advance the index
+            # if index > 0 and len(collection.patients) >= index and patient == collection.patients[index]:
+            if patient in collection.patients:
+                # We didn't remove the patient
+                index += 1
+        # If the collection is empty. Delete it
+        if len(collection.patients) == 0:
+            sess.delete(collection)
+            progresslogger.info('Collection %s deleted', collection.collection_id)
+        else:
+            progresslogger.info('Collection %s retained', collection.collection_id)
         return
     except StopIteration:
         # Collection no longer in DB

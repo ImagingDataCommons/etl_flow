@@ -39,10 +39,13 @@ def build_instance(client, args, sess, series, instance_id, hash, size, blob_nam
     try:
         # Get the record of this instance if it exists
         instance = next(instance for instance in series.instances if instance.sop_instance_uid == instance_id)
+        progresslogger.info(f'\t\t\t\tInstance {blob_name} exists')
     except StopIteration:
         instance = IDC_Instance()
         instance.sop_instance_uid = instance_id
         series.instances.append(instance)
+        progresslogger.info(f'\t\t\t\tInstance {blob_name} added')
+
     # Always set/update these values
     if instance.hash != hash:
         # Revise this instance's version
@@ -51,22 +54,17 @@ def build_instance(client, args, sess, series, instance_id, hash, size, blob_nam
         instance.hash = hash
         instance.size = size
         instance.idc_version = args.version
-    instance.excluded = False
-
-    # blob_name = f'{args.src_path}/{row["Filename"].strip()}' if args.src_path else \
-    #     f'{row["Filename"].strip().split("/", 1)[1]}'
-    # instance.url = f'gs://{args.src_bucket}/{blob_name}'
-    # bucket = client.bucket(args.src_bucket)
-    # blob = bucket.blob(blob_name)
-    # blob.reload()
-    # new_hash = b64decode(blob.md5_hash).hex()
-
+        instance.excluded = False
+        progresslogger.info(f'\t\t\t\tInstance {blob_name} new or revised')
+    else:
+        progresslogger.info(f'\t\t\t\tInstance {blob_name} unchanged')
     successlogger.info(blob_name)
 
 
 def build_series(client, args, sess, study, series_id, instance_id, hash, size, blob_name):
     try:
         series = next(series for series in study.seriess if series.series_instance_uid == series_id)
+        progresslogger.info(f'\t\t\tSeries {series_id} exists')
     except StopIteration:
         series = IDC_Series()
         series.series_instance_uid = series_id
@@ -76,6 +74,7 @@ def build_series(client, args, sess, study, series_id, instance_id, hash, size, 
         series.license_short_name =args.license['license_short_name']
         series.third_party = args.third_party
         study.seriess.append(series)
+        progresslogger.info(f'\t\t\tSeries {series_id} added')
     # Always set/update the wiki_doi in case it has changed
     series.wiki_doi = args.wiki_doi
     series.wiki_url = args.wiki_url
@@ -87,10 +86,12 @@ def build_series(client, args, sess, study, series_id, instance_id, hash, size, 
 def build_study(client, args, sess, patient, study_id, series_id, instance_id, hash, size, blob_name):
     try:
         study = next(study for study in patient.studies if study.study_instance_uid == study_id)
+        progresslogger.info(f'\t\tStudy {study_id} exists')
     except StopIteration:
         study = IDC_Study()
         study.study_instance_uid = study_id
         patient.studies.append(study)
+        progresslogger.info(f'\t\tStudy {study_id} added')
     build_series(client, args, sess, study, series_id, instance_id, hash, size, blob_name)
     return
 
@@ -98,10 +99,12 @@ def build_study(client, args, sess, patient, study_id, series_id, instance_id, h
 def build_patient(client, args, sess, collection, patient_id, study_id, series_id, instance_id, hash, size, blob_name):
     try:
         patient = next(patient for patient in collection.patients if patient.submitter_case_id == patient_id)
+        progresslogger.info(f'\tPatient {patient_id} exists')
     except StopIteration:
         patient = IDC_Patient()
         patient.submitter_case_id = patient_id
         collection.patients.append(patient)
+        progresslogger.info(f'\tPatient {patient_id} added')
     build_study(client, args, sess, patient, study_id, series_id, instance_id, hash, size, blob_name)
     return
 
@@ -113,6 +116,9 @@ def build_collection(client, args, sess, patient_id, study_id, series_id, instan
         collection = IDC_Collection()
         collection.collection_id = args.collection_id
         sess.add(collection)
+        progresslogger.info(f'Collection {args.collection_id} added')
+    else:
+        progresslogger.info(f'Collection {args.collection_id} exists')
     build_patient(client, args, sess, collection, patient_id, study_id, series_id, instance_id, hash, size, blob_name)
     return
 
