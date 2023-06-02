@@ -17,12 +17,9 @@
 # Delete all blobs from some bucket
 # empty_bucket_mp.py is faster
 
-from google.cloud import storage
 from subprocess import run, PIPE
-from google.api_core.exceptions import Conflict
 import sys
 import argparse
-from utilities.gcs_helpers import list_buckets
 
 def empty_bucket(args):
     try:
