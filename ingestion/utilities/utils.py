@@ -18,22 +18,21 @@ import shutil
 import os
 import hashlib
 from base64 import b64decode
-import logging
+# import logging
 from subprocess import run
 from google.cloud import storage
-from google.cloud.storage import blob, bucket
 from google.api_core.exceptions import Conflict
 
-from sqlalchemy import or_
+from sqlalchemy import and_
 
 from python_settings import settings
 
 from idc.models import All_Collections
 
-# rootlogger = logging.getLogger('root')
-successlogger = logging.getLogger('root.success')
-debuglogger = logging.getLogger('root.prog')
-errlogger = logging.getLogger('root.err')
+from utilities.logging_config import successlogger, progresslogger, errlogger
+# successlogger = logging.getLogger('root.success')
+# debuglogger = logging.getLogger('root.prog')
+# errlogger = logging.getLogger('root.err')
 
 def is_skipped(skipped_collections, collection_id):
     if collection_id in skipped_collections:
@@ -69,7 +68,7 @@ def get_merkle_hash(hashes):
     else:
         ""
 
-# Validate that instances were received correctly
+# Validate that instances were received correctly from TCIA
 def validate_hashes(args, collection, patient, study, series, hashes):
     for instance in hashes:
         instance = instance.split(',')
@@ -80,7 +79,9 @@ def validate_hashes(args, collection, patient, study, series, hashes):
             return False
     return True
 
-
+# Remove any instances in a series from a prestaging bucket.
+# Executed when some problem was detected after copy series
+# files to a bucket.
 def rollback_copy_to_prestaging_bucket(client, args, series):
     bucket = client.bucket(args.prestaging_tcia_bucket)
     for instance in series.instances:
@@ -145,7 +146,7 @@ def empty_bucket(bucket):
     try:
         src = "gs://{}/*".format(bucket)
         run(["gsutil", "-m", "-q", "rm", src])
-        debuglogger.debug("Emptied bucket %s", bucket)
+        progresslogger.debug("Emptied bucket %s", bucket)
     except Exception as exc:
         errlogger.error("Failed to empty bucket %s", bucket)
         raise RuntimeError("Failed to empty bucket %s", bucket) from exc
@@ -170,6 +171,8 @@ def create_prestaging_bucket(args, bucket):
         return(-1)
 
 
+# Copy all files of a series, that are in a disk directory, to a GCS bucket.
+# Used when a series has been downloaded from TCIA.
 def copy_disk_to_gcs(args, collection, patient, study, series):
     # storage_client = storage.Client(project=settings.DEV_PROJECT)
 
@@ -197,7 +200,7 @@ def copy_gcs_to_gcs(args, client, dst_bucket_name, series, instance, gcs_url):
     dst_blob = dst_bucket.blob(f'{series.uuid}/{instance.uuid}.dcm')
     token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob)
     while token:
-        debuglogger.debug('******p%s: Rewrite bytes_rewritten %s, total_bytes %s', args.pid, bytes_rewritten, total_bytes)
+        progresslogger.debug('******p%s: Rewrite bytes_rewritten %s, total_bytes %s', args.pid, bytes_rewritten, total_bytes)
         token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob, token=token)
     dst_blob.reload()
     return dst_blob.size, b64decode(dst_blob.md5_hash).hex()
@@ -220,9 +223,9 @@ def list_skips(sess, source, skipped_groups, skipped_collections, included_colle
     #     for collection in collections:
     #         skips.append(collection.tcia_api_collection_id)
     if source == 'tcia':
-        collections = sess.query(All_Collections.tcia_api_collection_id).filter(or_(All_Collections.tcia_access != 'Public', All_Collections.tcia_access == None)).all()
+        collections = sess.query(All_Collections.tcia_api_collection_id).filter(and_(All_Collections.tcia_access != 'Public', All_Collections.tcia_access != None)).all()
     else:
-        collections = sess.query(All_Collections.tcia_api_collection_id).filter(or_(All_Collections.idc_access != 'Public', All_Collections.idc_access == None)).all()
+        collections = sess.query(All_Collections.tcia_api_collection_id).filter(and_(All_Collections.idc_access != 'Public', All_Collections.idc_access != None)).all()
     for collection in collections:
         skips.append(collection.tcia_api_collection_id)
     skips = list(set(skips) - set(included_collections))
