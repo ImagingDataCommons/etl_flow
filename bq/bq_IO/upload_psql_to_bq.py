@@ -22,6 +22,49 @@ from utilities.logging_config import successlogger, errlogger
 from time import time, sleep
 from python_settings import settings
 
+def create_idc_all_joined(client, args, table, order_by):
+    view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_all_joined"
+    view = bigquery.Table(view_id)
+    view.view_query = f"""
+    SELECT 
+     c.collection_id, 
+     c.hash 
+     c_hash,
+     p.submitter_case_id, 
+     p.hash p_hash,
+     st.study_instance_uid, 
+     st.hash st_hash,
+     se.series_instance_uid, 
+     se.hash se_hash, 
+     se.excluded se_excluded, 
+     wiki_doi, 
+     wiki_url, 
+     third_party, 
+     license_long_name,
+     license_short_name, 
+     license_url,
+     sop_instance_uid, 
+     i.hash i_hash, 
+     gcs_url, 
+     size,
+     i.excluded i_excluded, 
+     idc_version
+    FROM idc_collection c
+     JOIN idc_patient p
+     ON c.collection_id = p.collection_id
+     JOIN idc_study st
+     ON p.submitter_case_id = st.submitter_case_id
+     JOIN idc_series se
+     ON st.study_instance_uid = se.study_instance_uid
+     JOIN idc_instance i
+     ON se.series_instance_uid = i.series_instance_uid
+   """
+    # Make an API request to create the view.
+    view = client.create_table(view, exists_ok=True)
+    print(f"Created {view.table_type}: {str(view.reference)}")
+    return view
+
+
 def create_all_joined(client, args, table, order_by):
     view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined"
     view = bigquery.Table(view_id)
@@ -95,6 +138,7 @@ def create_all_joined(client, args, table, order_by):
     view = client.create_table(view, exists_ok=True)
     print(f"Created {view.table_type}: {str(view.reference)}")
     return view
+
 
 def upload_version(client, args, table, order_by):
     sql = f"""
