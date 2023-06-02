@@ -22,7 +22,7 @@ import sys
 import json
 
 import settings
-from bq.auxiliary_metadata_table.gen_auxiliary_metadata_table import gen_aux_table
+from bq.generate_tables_and_views.auxiliary_metadata_table.gen_auxiliary_metadata_table import gen_aux_table
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()

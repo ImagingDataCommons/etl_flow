@@ -24,7 +24,7 @@ import hashlib
 import settings
 from utilities.bq_helpers import load_BQ_from_json
 from utilities.logging_config import successlogger
-from bq.version_metadata.version_metadata_schema import version_metadata_schema
+from bq.generate_tables_and_views.version_metadata.version_metadata_schema import version_metadata_schema
 
 
 # Hash a sorted list of hashes

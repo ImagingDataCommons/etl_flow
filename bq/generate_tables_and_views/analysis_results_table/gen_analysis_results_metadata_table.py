@@ -21,7 +21,7 @@ import json
 import time
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json
-from bq.analysis_results_table.schema import analysis_results_metadata_schema
+from bq.generate_tables_and_views.analysis_results_table.schema import analysis_results_metadata_schema
 from utilities.tcia_scrapers import scrape_tcia_analysis_collections_page
 from utilities.logging_config import successlogger, progresslogger
 from python_settings import settings
