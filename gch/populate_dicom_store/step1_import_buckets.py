@@ -139,7 +139,7 @@ def import_buckets(args):
                     try:
                         # print('Importing {}'.format(bucket))
                         progresslogger.info('\nImporting %s', bucket)
-                        content_uri = '{}/*'.format(bucket)
+                        content_uri = '{}/*/*'.format(bucket)
                         response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
                                                           settings.GCH_DICOMSTORE, content_uri)
                         # print(f'Response: {response}')
@@ -159,7 +159,7 @@ def import_buckets(args):
             if not bucket in dones:
                 try:
                     progresslogger.info('\nImporting %s', bucket)
-                    content_uri = '{}/*'.format(bucket)
+                    content_uri = '{}/*/*'.format(bucket)
                     response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
                                     settings.GCH_DICOMSTORE, content_uri)
                     progresslogger.info('Response: %s', response)
@@ -175,7 +175,7 @@ def import_buckets(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--src_buckets', default=[f'idc_v{settings.CURRENT_VERSION}_*', 'idc-dev-defaced', 'idc-dev-cr', 'idc-dev-open'],
-            help="List of buckets from which to import. This list should include all buckets except idc-dev-excluded")
+            help="List of buckets from which to import.")
     parser.add_argument('--period', default=60, help="seconds to sleep between checking operation status")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
