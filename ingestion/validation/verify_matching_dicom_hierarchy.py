@@ -31,13 +31,14 @@ def validate_UIDs_match(args):
     SELECT distinct aji.collection_id collection_id, aji.submitter_case_id bq_patientID, dm.patientid dm_patientID, 
         aji.Study_Instance_UID bq_study, dm.StudyInstanceUID dm_study, aji.Series_Instance_UID bq_series, 
         dm.SeriesInstanceUID dm_series, aji.SOP_Instance_UID instance 
-    FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_included` aji
+    FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined` aji
     JOIN `idc-dev-etl.{settings.BQ_DEV_EXT_DATASET}.dicom_metadata` dm
     ON aji.SOP_Instance_UID=dm.SOPInstanceUID
     WHERE 
-    aji.submitter_case_id!=dm.patientid
+    idc_version = {settings.CURRENT_VERSION}
+    AND (aji.submitter_case_id!=dm.patientid
     OR aji.Study_Instance_UID!=dm.StudyInstanceUID
-    OR aji.Series_Instance_UID!=dm.SeriesInstanceUID
+    OR aji.Series_Instance_UID!=dm.SeriesInstanceUID)
     """
     dups = [row for row in client.query(query)]
     if not dups:
