@@ -539,20 +539,6 @@ class Instance(Base):
                           secondary=series_instance,
                           back_populates='instances')
 
-# collection_id_map maps an idc_collection_id to one or more tcia_api_collection_ids.
-# This mapping is meant to deal with the possibility that TCIA might rename a collection.
-# In that case, the IDC generated idc_collection_id binds those tcia_api_collection_ids.
-class Collection_id_map(Base):
-    __tablename__ = 'collection_id_map'
-    tcia_api_collection_id = Column(String, primary_key=True, \
-                    comment="Collection ID used by TCIA")
-    idc_collection_id = Column(String, primary_key=True,
-                   comment="IDC assigned collection ID (UUID4)")
-    idc_webapp_collection_id = Column(String, primary_key=True, \
-                  comment="Collection ID used by IDC webapp")
-    collection_id = Column(String, primary_key=True, \
-                   comment="Collection ID used for ETL")
-
 # Table that includes all IDC sourced collections.
 # This is a snapshot of what should be the current/next IDC version
 class IDC_Collection(Base):
@@ -639,6 +625,20 @@ class All_Collections(Base):
     idc_metadata_sunset = Column(String, comment="Last version that metadata is published. 0==still visible'")
 
 
+# collection_id_map maps an idc_collection_id to one or more tcia_api_collection_ids.
+# This mapping is meant to deal with the possibility that TCIA might rename a collection.
+# In that case, the IDC generated idc_collection_id binds those tcia_api_collection_ids.
+class Collection_id_map(Base):
+    __tablename__ = 'collection_id_map'
+    tcia_api_collection_id = Column(String, primary_key=True, \
+                    comment="Collection ID used by TCIA")
+    idc_collection_id = Column(String, primary_key=True,
+                   comment="IDC assigned collection ID (UUID4)")
+    idc_webapp_collection_id = Column(String, primary_key=True, \
+                  comment="Collection ID used by IDC webapp")
+    collection_id = Column(String, primary_key=True, \
+                   comment="Collection ID used for ETL")
+
 # This table is populated with metadata for collections that are not sourced from TCIA.
 class Original_Collections_Metadata_IDC_Source(Base):
     __tablename__ = 'original_collections_metadata_idc_source'
@@ -677,9 +677,24 @@ class Analysis_Results_Metadata_IDC_Source(Base):
     license_short_name = Column(String, comment='Short name of license')
     URL = Column(String,comment='URL of collection description page')
 
+# This table is populated with a description of each analysis result.
+class Analysis_Results_Descriptions(Base):
+    __tablename__ = 'analysis_results_descriptions'
+    id = Column(String, primary_key=True, comment='Analysis result id')
+    description = Column(String, comment='Analysis result description')
 
+# This table is populated with IDC assigned UUID of each analysis result.
+class Analysis_Id_Map(Base):
+    __tablename__ = 'analysis_id_map'
+    collection_id = Column(String, primary_key=True, comment='Analysis result ID')
+    idc_id = Column(String, comment='IDC assigned UUID')
 
-
+# This table gives the program to which collection, as identified by its
+# tcia_wiki_collection_id, belongs.
+class Program(Base):
+    __tablename__ = 'program'
+    tcia_wiki_collection_id = Column(String, primary_key=True, comment='Results ID')
+    program = Column(String, comment='Descriptive title')
 
 
 

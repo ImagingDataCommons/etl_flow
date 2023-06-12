@@ -47,7 +47,8 @@ def get_collections_in_version(client, args):
     query = f"""
     SELECT tcia_api_collection_id
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections`
-    WHERE tcia_access='{args.access}' OR idc_access='{args.access}'
+    WHERE (tcia_access='{args.access}' OR idc_access='{args.access}')
+    AND (tcia_metadata_sunset = 0 OR idc_metadata_sunset = 0)
     """
 
     collection_ids = {row.tcia_api_collection_id.lower().replace(' ','_').replace('-','_'): \

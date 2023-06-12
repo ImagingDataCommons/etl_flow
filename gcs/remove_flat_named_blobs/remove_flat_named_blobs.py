@@ -58,15 +58,14 @@ def build_src_and_trg_table(args):
     with alls as (
         SELECT 
         DISTINCT
-        CONCAT(i_uuid,'.dcm') src_name,
-        CONCAT(se_uuid,'/',i_uuid,'.dcm') trg_name
+        CONCAT(i_uuid,'.dcm') trg_name,
         FROM `{args.project}.{args.dataset}.all_joined` aj
         JOIN `{args.project}.{args.dataset}.all_collections` ac
         ON aj.idc_collection_id = ac.idc_collection_id
         WHERE ((i_source='tcia' AND dev_tcia_url='{args.bucket}') OR (i_source='idc' AND dev_idc_url='{args.bucket}'))
         AND aj.i_rev_idc_version < {int(settings.CURRENT_VERSION)}
         )
-    SELECT alls.src_name, alls.trg_name
+    SELECT alls.trg_name
     FROM alls
     LEFT JOIN {args.dones_table_id} dones
     ON alls.trg_name = dones.trg_name
@@ -80,39 +79,32 @@ def build_src_and_trg_table(args):
     destination = client.get_table(destination)
     return destination, dones
 
-def copy_some_blobs(args, client, uuids, n):
+def delete_some_blobs(args, client, blobs_names, n):
     done = 0
-    for uuid in uuids:
-        bucket = client.bucket(args.bucket)
-        src_blob = bucket.blob(uuid['src_name'])
-        trg_blob = bucket.blob(uuid['trg_name'])
-        for attempt in range(3):
-            try:
-                rewrite_token = False
-                while True:
-                    rewrite_token, bytes_rewritten, bytes_to_rewrite = trg_blob.rewrite(
-                        src_blob, token=rewrite_token
-                    )
-                    if not rewrite_token:
-                        break
-                successlogger.info('%s', uuid['trg_name'])
-                progresslogger.info(f"p{args.id}: {done+n}of{len(uuids) + n}")
-                break
-            except Exception as exc:
-                errlogger.error(f"p{args.id}: Blob: {uuid[args.bucket]}/{uuid['src_name']}, attempt: {attempt};  {exc}")
+    copied = 0
+    bucket = client.bucket(args.bucket)
+    for blob_name in blobs_names:
+        try:
+            bucket.blob(blob_name).delete()
+            successlogger.info(blob_name)
+        except Exception as exc:
+            errlogger.error(f"p{args.id}: Blob: {args.bucket}/{blob_name}")
         done += 1
+    return
+    # if copied == 0:
+    #     progresslogger.info(f'p{args.id}: Skipped {n}:{n+done-1}')
 
 
 def worker(input, args):
     client = storage.Client()
-    for uuids, n in iter(input.get, 'STOP'):
+    for blobs, n in iter(input.get, 'STOP'):
         try:
-            copy_some_blobs(args, client, uuids, n)
+            delete_some_blobs(args, client, blobs, n)
         except Exception as exc:
             errlogger.error(f'p{args.id}: {exc}')
 
 
-def copy_all_blobs(args):
+def delete_all_blobs(args):
     bq_client = bigquery.Client()
     destination, dones = build_src_and_trg_table(args)
     progresslogger.info(f'Copying {destination.num_rows-dones} of {destination.num_rows}')
@@ -132,12 +124,16 @@ def copy_all_blobs(args):
     # Distribute the work across the task_queues
     n = dones
     for page in bq_client.list_rows(destination, page_size=args.batch).pages:
-        uuids = [
-            {"src_name": row.src_name, "trg_name": row.trg_name}
-            for row in page]
-        task_queue.put((uuids, n))
-        # print(f'Queued {n}:{n+args.batch-1}')
-        n += page.num_items
+        blobs = [row.trg_name for row in page]
+        # Make sure no blob name is a hierarchical name
+        if next((blob for blob in blobs if '/' in blob),-1) == -1:
+            task_queue.put((blobs, n))
+            n += page.num_items
+        else:
+            breakpoint()
+            errlogger.error(f'p0: Blob name is hierarchical ')
+            exit(-1)
+
     print('Primary work distribution complete; {} blobs'.format(n))
 
     # Tell child processes to stop

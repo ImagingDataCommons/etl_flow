@@ -30,8 +30,6 @@ from google.cloud import bigquery
 from googleapiclient.errors import HttpError
 from google.api_core.exceptions import NotFound
 from utilities.bq_helpers import create_BQ_dataset, copy_BQ_table
-
-import logging
 from utilities.logging_config import successlogger, progresslogger, errlogger
 
 
@@ -41,7 +39,7 @@ def export_dicom_metadata(args):
     bearer = str(results.stdout,encoding='utf-8').strip()
 
     # BQ table to which to export metadata
-    destination = f'bq://{args.project}.{args.bq_dataset}.dicom_metadata'
+    destination = f'bq://{args.bq_project}.{args.bq_dataset}.dicom_metadata'
     data = {
         'bigqueryDestination': {
             'tableUri': destination,
@@ -53,7 +51,7 @@ def export_dicom_metadata(args):
         'Authorization': f'Bearer {bearer}',
         'Content-Type': 'application/json; charset=utf-8'
     }
-    url = f'https://healthcare.googleapis.com/v1/projects/{args.pub_project}/locations/{args.gch_region}/datasets/{args.gch_dataset}/dicomStores/{args.gch_dicomstore}:export'
+    url = f'https://healthcare.googleapis.com/v1/projects/{args.gch_project}/locations/{args.gch_region}/datasets/{args.gch_dataset}/dicomStores/{args.gch_dicomstore}:export'
     results = requests.post(url, headers=headers, json=data)
 
     # Get the operation ID so we can track progress
@@ -68,7 +66,7 @@ def export_dicom_metadata(args):
         headers = {
             'Authorization': f'Bearer {bearer}'
         }
-        url = f'https://healthcare.googleapis.com/v1/projects/{args.pub_project}/locations/{args.gch_region}/datasets/{args.gch_dataset}/operations/{operation_id}'
+        url = f'https://healthcare.googleapis.com/v1/projects/{args.gch_project}/locations/{args.gch_region}/datasets/{args.gch_dataset}/operations/{operation_id}'
         results = requests.get(url, headers=headers)
 
         details = results.json()
@@ -83,6 +81,7 @@ def export_dicom_metadata(args):
         else:
             progresslogger.info(details)
             time.sleep(5*60)
+
 
 def get_job(args):
     results = subprocess.run(['gcloud', 'auth', 'application-default', 'print-access-token'], stdout=PIPE, stderr=PIPE)
@@ -121,8 +120,9 @@ def get_job(args):
             progresslogger.info(details)
             time.sleep(5*60)
 
+
 def export_metadata(args):
-    client = bigquery.Client(project=args.dev_project)
+    client = bigquery.Client(project=args.bq_project)
     # Create the BQ dataset if it does not already exist
     try:
         dst_dataset = client.get_dataset(args.bq_dataset)
@@ -144,9 +144,9 @@ def export_metadata(args):
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
     parser.add_argument('--dataset_description', default = f'IDC V{settings.CURRENT_VERSION} BQ tables and views')
-    parser.add_argument('--dev_project', default=settings.DEV_PROJECT)
+    parser.add_argument('--bq_project', default=settings.DEV_PROJECT)
     parser.add_argument('--bq_dataset', default=settings.BQ_DEV_EXT_DATASET)
-    parser.add_argument('--pub_project', default=settings.PUB_PROJECT)
+    parser.add_argument('--gch_project', default=settings.PUB_PROJECT)
     parser.add_argument('--gch_region', default=settings.GCH_REGION)
     parser.add_argument('--gch_dataset', default=settings.GCH_DATASET)
     parser.add_argument('--gch_dicomstore', default=settings.GCH_DICOMSTORE)

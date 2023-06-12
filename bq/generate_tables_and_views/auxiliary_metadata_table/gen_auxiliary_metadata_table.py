@@ -53,7 +53,7 @@ def build_table(args):
       st_hashes.all_hash AS study_hash,
       st_init_idc_version AS study_init_idc_version,
       st_rev_idc_version AS study_revised_idc_version,
---       st_final_idc_version AS study_final_idc_version,
+      st_final_idc_version AS study_final_idc_version,
     --
       series_instance_uid AS SeriesInstanceUID,
       se_uuid AS series_uuid,
@@ -64,7 +64,7 @@ def build_table(args):
       'Public' AS access,
       se_init_idc_version AS series_init_idc_version,
       se_rev_idc_version AS series_revised_idc_version,
---       se_final_idc_version AS series_final_idc_version,
+      se_final_idc_version AS series_final_idc_version,
     --
       sop_instance_uid AS SOPInstanceUID,
       i_uuid AS instance_uuid,
@@ -102,7 +102,7 @@ def build_table(args):
 --       i_source AS instance_source,
       i_init_idc_version AS instance_init_idc_version,
       i_rev_idc_version AS instance_revised_idc_version,
---       i_final_idc_version AS instance_final_idc_version,
+      i_final_idc_version AS instance_final_idc_version,
       license_url,
       license_long_name,
       license_short_name

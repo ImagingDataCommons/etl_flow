@@ -15,38 +15,22 @@
 #
 
 """
-Script to empty the PDP staging bucket, which is a "delta" bucket
-containing only the instances that are new to a version. Therefore
-it must be emptied before the instances for the next version are
-copied to it.
+Script to empty the PDP staging buckets.
 """
 
 import argparse
-import os
-import logging
-# from logging import INFO
 from gcs.empty_bucket_mp.empty_bucket_mp import del_all_instances
-# proglogger = logging.getLogger('root.prog')
-# successlogger = logging.getLogger('root.success')
-# errlogger = logging.getLogger('root.err')
-
-
-from python_settings import settings
-import settings as etl_settings
-
-if not settings.configured:
-    settings.configure(etl_settings)
-assert settings.configured
+from utilities.logging_config import successlogger, progresslogger, errlogger
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bucket', default='idc-open-pdp-staging')
-    parser.add_argument('--processes', default=16, help="Number of concurrent processes")
+    parser.add_argument('--processes', default=1, help="Number of concurrent processes")
     parser.add_argument('--batch', default=1000, help='Size of batch assigned to each process')
     parser.add_argument('--project', default='idc-pdp-staging')
-    parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/empty_pdp_staging_bucket_mp')
 
     args = parser.parse_args()
 
+    for bucket in ['public_datasets_idc_staging', 'idc-open-cr-staging', 'idc-open-idc1-staging']:
+        args.bucket = bucket
     del_all_instances  (args)

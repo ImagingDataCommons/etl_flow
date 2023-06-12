@@ -27,8 +27,7 @@ import json
 from time import sleep
 from googleapiclient import discovery
 from google.api_core.exceptions import Conflict
-from idc.models import Base, Version, Patient, Study, Series, Instance, Collection, CR_Collections, Defaced_Collections, Open_Collections, Redacted_Collections
-from ingestion.utilities.utils import empty_bucket, to_webapp
+from step1_import_buckets import import_buckets
 from utilities.logging_config import successlogger, progresslogger, errlogger
 import settings
 import google
@@ -104,36 +103,6 @@ def import_dicom_instances(project_id, cloud_region, dataset_id, dicom_store_id,
     return response
 
 
-def get_collection_groups(sess):
-    dev_buckets = {}
-    collections = sess.query(CR_Collections.tcia_api_collection_id, CR_Collections.dev_tcia_url, CR_Collections.dev_idc_url)
-    for collection in collections:
-        dev_buckets[collection.tcia_api_collection_id] = {
-            'tcia': collection.dev_tcia_url,
-            'idc': collection.dev_idc_url
-        }
-    collections = sess.query(Defaced_Collections.tcia_api_collection_id, Defaced_Collections.dev_tcia_url, Defaced_Collections.dev_idc_url)
-    for collection in collections:
-        dev_buckets[collection.tcia_api_collection_id] = {
-            'tcia': collection.dev_tcia_url,
-            'idc': collection.dev_idc_url
-        }
-    collections = sess.query(Open_Collections.tcia_api_collection_id, Open_Collections.dev_tcia_url, Open_Collections.dev_idc_url)
-    for collection in collections:
-        dev_buckets[collection.tcia_api_collection_id] = {
-            'tcia': collection.dev_tcia_url,
-            'idc': collection.dev_idc_url
-        }
-    breakpoint() # Delete the following?
-    collections = sess.query(Redacted_Collections.tcia_api_collection_id, Redacted_Collections.dev_tcia_url, Redacted_Collections.dev_idc_url)
-    for collection in collections:
-        dev_buckets[collection.tcia_api_collection_id] = {
-            'tcia': collection.dev_tcia_url,
-            'idc': collection.dev_idc_url
-        }
-    return dev_buckets
-
-
 def create_staging_bucket(args):
     client = storage.Client(project='idc-dev-etl')
 
@@ -153,63 +122,86 @@ def create_staging_bucket(args):
         return(-1)
 
 # Populate a bucket with instances to be inserted in the DICOM store
-def populate_staging_bucket(args, uids):
+def copy_some_instances(args, uids, dones):
     client = storage.Client()
     dst_bucket = client.bucket(args.staging_bucket)
     for row in uids:
-        bucket = client.bucket(row['bucket'])
-        dst_blob = dst_bucket.blob(f'{row["uuid"]}.dcm')
-        if not dst_blob.exists():
+        blob_id = row['blob_id']
+        if not blob_id in dones:
             src_bucket = client.bucket(row['bucket'])
-            blob_id = f'{row["uuid"]}.dcm'
             src_blob = src_bucket.blob(blob_id)
             dst_blob = dst_bucket.blob(blob_id)
-            try:
-                token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob)
-                while token:
-                    progresslogger.debug('******p%s: Rewrite bytes_rewritten %s, total_bytes %s', args.pid, bytes_rewritten,
-                                      total_bytes)
-                    token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob, token=token)
-                successlogger.info(f'{row["uuid"]}')
-            except Exception as exc:
-               errlogger.error(f'{blob_id}: {exc}')
+            TRIES = 3
+            for attempt in range(TRIES):
+                try:
+                    token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob)
+                    while token:
+                        progresslogger.debug('******p%s: Rewrite bytes_rewritten %s, total_bytes %s', args.pid, bytes_rewritten,
+                                          total_bytes)
+                        token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob, token=token)
+                    successlogger.info(blob_id)
+                    break
+                except Exception as exc:
+                    if attempt == (TRIES - 1):
+                        errlogger.error(f'p{args.id}:{blob_id}: {exc}')
         else:
-            progresslogger.info(f'{row["uuid"]} exists')
+            progresslogger.info(f'p{args.id} {blob_id} exists')
 
-def worker(input, args):
+
+def worker(input, args, dones):
     # client = storage.Client()
     for uids, n in iter(input.get, 'STOP'):
         progresslogger.info(f'p{args.id}: {n}')
-        populate_staging_bucket(args, uids)
+        copy_some_instances(args, uids, dones)
 
 
-def insert_instances(args, dicomweb_sess):
+def populate_staging_bucket(args, dicomweb_sess):
     client = bigquery.Client()
 
     try:
         # Get the previously copied blobs
         # done_instances = set(open(f'{args.log_dir}/insert_success.log').read().splitlines())
-        done_instances = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
+        dones = open(f'{successlogger.handlers[0].baseFilename}').read().splitlines()
     except:
-        done_instances = set()
+        dones = []
 
     # The following generates the source bucket of each instance. If the instance's rev_idc_version is the current
     # version, then the instance is still in a premerge bucket. Otherwise it is in one of the dev merged buckets.
+    # query = f"""
+    # SELECT DISTINCT CONCAT(aj.se_uuid, '/', aj.i_uuid, '.dcm') blob_id,
+    # IF(i_rev_idc_version!={settings.CURRENT_VERSION},
+    #     IF(aj.i_source='tcia', ac.dev_tcia_url, ac.dev_idc_url), CONCAT('idc_v', {settings.CURRENT_VERSION},'_',aj.i_source,REPLACE(REPLACE(LOWER(aj.collection_id), '-','_'),' ','_'))) bucket
+    # FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
+    # JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac ON aj.collection_id=ac.tcia_api_collection_id
+    # WHERE i_rev_idc_version!=i_init_idc_version
+    #   AND i_final_idc_version=0
+    #   AND ((aj.i_source='tcia' AND ac.tcia_access='Public') OR (aj.i_source='idc' AND ac.idc_access='Public'))
+    #   AND NOT aj.collection_id LIKE 'APOLLO%'
+    #   AND NOT i_excluded
+    # ORDER BY blob_id
+    # """
+
     query = f"""
-    SELECT DISTINCT aji.collection_id, aji.study_instance_uid, aji.series_instance_uid, aji.sop_instance_uid, aji.i_uuid uuid, 
+    SELECT DISTINCT CONCAT(aj.se_uuid, '/', aj.i_uuid, '.dcm') blob_id, 
     IF(i_rev_idc_version!={settings.CURRENT_VERSION},
-        IF(aji.i_source='tcia', ac.dev_tcia_url, ac.dev_idc_url), CONCAT('idc_v', {settings.CURRENT_VERSION},'_',aji.i_source,REPLACE(REPLACE(LOWER(aji.collection_id), '-','_'),' ','_'))) bucket
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_included` aji
-    JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac ON aji.collection_id=ac.tcia_api_collection_id
+        IF(aj.i_source='tcia', ac.dev_tcia_url, ac.dev_idc_url), CONCAT('idc_v', {settings.CURRENT_VERSION},'_',aj.i_source,REPLACE(REPLACE(LOWER(aj.collection_id), '-','_'),' ','_'))) bucket
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
+    JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac ON aj.collection_id=ac.tcia_api_collection_id
     WHERE i_rev_idc_version!=i_init_idc_version 
       AND i_final_idc_version=0
-      AND idc_version={settings.CURRENT_VERSION}
+      AND ((aj.i_source='tcia' AND ac.tcia_access='Public') OR (aj.i_source='idc' AND ac.idc_access='Public'))
+      AND NOT aj.collection_id LIKE 'APOLLO%'
+      AND NOT i_excluded
+    ORDER BY blob_id
     """
-    result = client.query(query).result()
-    # todo_uids = [{'collection_id':row.collection_id, 'study_instance_uid':row.study_instance_uid, 'series_instance_uid':row.series_instance_uid,
-    #              'sop_instance_uid':row.sop_instance_uid, 'uuid':row.uuid, 'bucket':row.bucket} for row in result if row.sop_instance_uid not in done_instances]
-    todo_uids = [ dict(row) for row in result]
-    dones = set(open(successlogger.handlers[0].baseFilename).read().splitlines())
+
+    query_job = client.query(query)
+    query_job.result()
+    destination = query_job.destination
+    destination = client.get_table(destination)
+
+    # todo_uids = [{'se_uuid':row.se_uuid, 'i_uuid':row.i_uuid, 'bucket':row.bucket} for row in result \
+    #              if f'{row.se_uuid}/{row.i_uuid}' not in dones]
 
     num_processes = args.processes
     processes = []
@@ -218,44 +210,15 @@ def insert_instances(args, dicomweb_sess):
     for process in range(num_processes):
         args.id = process + 1
         processes.append(
-            Process(group=None, target=worker, args=(task_queue, args)))
+            Process(group=None, target=worker, args=(task_queue, args, dones)))
         processes[-1].start()
 
-    # # Collections that are included in the DICOM store are in one of four groups
-    # collections = sorted(
-    #     [row.tcia_api_collection_id for row in sess.query(Open_Collections.tcia_api_collection_id).union(
-    #         sess.query(Defaced_Collections.tcia_api_collection_id),
-    #         sess.query(CR_Collections.tcia_api_collection_id),
-    #         sess.query(Redacted_Collections.tcia_api_collection_id)).all()])
-
-    # # dev_staging_buckets tells us which staging bucket has a collection's instances
-    # dev_buckets = get_collection_groups(sess)
-
-    # try:
-    #     uids = json.load(open(f'{args.log_dir}/inserted_uids.txt'))
-    # except:
-    #     rows =  sess.query(Collection.collection_id,Study.study_instance_uid, Series.series_instance_uid,
-    #         Instance.sop_instance_uid,Instance.uuid, Instance.source, Instance.init_idc_version, Instance.rev_idc_version).join(Version.collections).join(Collection.patients).\
-    #         join(Patient.studies).join(Study.seriess).join(Series.instances).filter(Instance.init_idc_version !=
-    #         Instance.rev_idc_version).filter(Instance.final_idc_version == 0).\
-    #         filter(Version.version == settings.CURRENT_VERSION).all()
-    #     uids = [{'collection_id':row.collection_id, 'study_instance_uid':row.study_instance_uid, 'series_instance_uid':row.series_instance_uid,
-    #              'sop_instance_uid':row.sop_instance_uid,'uuid':row.uuid,
-    #              'bucket': dev_buckets[row.collection_id][row.source.name] if row.rev_idc_version != settings.CURRENT_VERSION else \
-    #                     f'idc_v{settings.CURRENT_VERSION}_{row.source.name}_{to_webapp(row.collection_id)}'} \
-    #                     for row in rows if row.collection_id in collections]
-    #     with open(f'{args.log_dir}/inserted_uids.txt','w') as f:
-    #         json.dump(uids,f)
-    # todo_uids = [row for row in uids if row['uuid'] not in done_instances]
-
-
-    # Populate thestaging bucket
-    n=0
-    while todo_uids:
-        some_uids = [row for row in todo_uids[0:args.batch] if not row['uuid'] in dones]
-        todo_uids = todo_uids[args.batch:]
-        if some_uids:
-            task_queue.put((some_uids,n))
+   # Populate thestaging bucket
+    n=len(dones)
+    for page in client.list_rows(destination, page_size=args.batch).pages:
+        uuids = [{'blob_id':row.blob_id, 'bucket':row.bucket} \
+            for row in page]
+        task_queue.put((uuids,n))
         n += args.batch
 
     # Tell child processes to stop
@@ -268,15 +231,20 @@ def insert_instances(args, dicomweb_sess):
         process.join()
 
 
-    # Import the staging bucket into the DICOM store
-    print('Importing {}'.format(args.staging_bucket))
-    content_uri = '{}/*'.format(args.staging_bucket)
-    response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
-                                      settings.GCH_DICOMSTORE, content_uri)
-    print(f'Response: {response}')
-    result = wait_done(response, args, args.period)
+    # # Import the staging bucket into the DICOM store
+    # print('Importing {}'.format(args.staging_bucket))
+    # content_uri = '{}/*'.format(args.staging_bucket)
+    # response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
+    #                                   settings.GCH_DICOMSTORE, content_uri)
+    # print(f'Response: {response}')
+    # result = wait_done(response, args, args.period)
+    #
+    # # Don't forget to delete the staging bucket
 
-    # Don't forget to delete the staging bucket
+def import_staging_bucket(args):
+    args.src_buckets = [args.staging_bucket]
+    args.period = 60
+    import_buckets(args)
 
 def repair_store(args):
     # sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
@@ -295,14 +263,13 @@ def repair_store(args):
     dicomweb_sess = requests.AuthorizedSession(scoped_credentials)
 
     create_staging_bucket(args)
-    # with Session(sql_engine) as sess:
-    # insert_instances(args, sess, dicomweb_sess)
-    insert_instances(args, dicomweb_sess)
+    populate_staging_bucket(args, dicomweb_sess)
+    import_staging_bucket(args)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--client', default=storage.Client())
-    parser.add_argument('--processes', default=8)
+    parser.add_argument('--processes', default=16)
     parser.add_argument('--batch', default=100)
     parser.add_argument('--log_dir', default=settings.LOG_DIR)
     parser.add_argument('--period',default=60)

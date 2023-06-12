@@ -48,11 +48,28 @@ def list_buckets(project):
     buckets = storage_client.list_buckets()
     return buckets
 
+
+def list_blobs(project):
+    """Lists all buckets."""
+    series = set()
+    blobs = set()
+    storage_client = storage.Client(project=project)
+    iterator = storage_client.list_blobs('idc-dev-defaced', prefix='', delimiter='/')
+    # iterator = storage_client.list_blobs('idc-dev-defaced', delimiter='/')
+    for page in iterator.pages:
+        if page.num_items:
+            # series = series.union(set([series for series in page.prefixes]))
+            for prefix in page.prefixes:
+                blobs_iterator = storage_client.list_blobs('idc-dev-defaced', prefix=prefix)
+                for blob_page in blobs_iterator.pages:
+                    blobs = blobs.union(set([f'{prefix}/{blob.name}' for blob in blob_page]))
+
+        # blobs = blobs - dones
+        else:
+            break
+    return series
+
 if __name__ == "__main__":
-    buckets = list_buckets('idc-dev-etl')
-    for bucket in buckets:
-        print(bucket)
-    client = storage.Client()
-    result = get_series(client, "idc-tcia-1-tcga-read")
+    blobs = list_blobs('idc-dev-etl')
     pass
 

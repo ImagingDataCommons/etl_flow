@@ -29,21 +29,6 @@ def gen_blob_table(args):
 
     query = f"""
         SELECT
-          DISTINCT CONCAT(a.i_uuid, '.dcm') AS blob_name
-        FROM
-          `{args.src_project}.{args.src_bqdataset_name}.all_joined` a
-        JOIN
-          `{args.src_project}.{args.src_bqdataset_name}.all_collections` i
-        ON
-          a.collection_id = i.tcia_api_collection_id
-        WHERE
-          ( (a.i_source='tcia'
-              AND i.pub_gcs_tcia_url='public-datasets-idc')
-            OR (a.i_source='idc'
-              AND i.pub_gcs_idc_url='public-datasets-idc') )
-          AND a.i_excluded=FALSE
-        UNION ALL
-            SELECT
           DISTINCT CONCAT(a.se_uuid, '/', a.i_uuid, '.dcm') AS blob_name
         FROM
           `{args.src_project}.{args.src_bqdataset_name}.all_joined` a

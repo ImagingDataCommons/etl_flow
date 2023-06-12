@@ -20,7 +20,7 @@
 import argparse
 import sys
 from python_settings import settings
-from bq.idc_current.gen_idc_current_dataset import gen_idc_current_dataset
+from bq.generate_tables_and_views.idc_current.gen_idc_current_dataset import gen_idc_current_dataset
 
 
 if __name__ == '__main__':

@@ -14,23 +14,17 @@
 # limitations under the License.
 #
 import json
-import os
 import argparse
-import logging
-from logging import INFO
+import settings
 from google.cloud import bigquery, storage
 import time
 from multiprocessing import Process, Queue
 from utilities.logging_config import successlogger, progresslogger, errlogger
 
 # Copy the blobs that are new to a version from dev pre-staging buckets
-# to dev staging buckets.
-import settings
+# to idc-pdp-staging staging buckets .
 
-
-# Get a the dev_url and pub_url of all new instances. The dev_url is the url of the
-# premerge bucket or staging bucket holding the new instance. The pub_url is the
-# url of the bucket to which to copy it
+# Get the source and target URLS
 def get_urls(args):
     client = bigquery.Client()
     query = f"""
@@ -58,19 +52,24 @@ def copy_some_blobs(args, client, urls, n, dones):
     done = 0
     copied = 0
     for blob in urls:
-        blob_name = blob['dev_url'].split('/')[3]
+        blob_name = '/'.join(blob['dev_url'].split('/')[3:])
         if not blob_name in dones:
             dev_bucket_name=blob['dev_url'].split('/')[2]
-            dev_bucket = client.bucket(blob['dev_url'].split('/')[2])
+            dev_bucket = client.bucket(dev_bucket_name)
             dev_blob = dev_bucket.blob(blob_name)
             pub_bucket_name = blob['pub_url'].split('/')[2]
 
             # We don't copy directly to the public-datasets-idc bucket.
             # We copy to a staging bucket and Google copies to the public bucket
             if 'public-datasets-idc' in pub_bucket_name:
-                pub_bucket_name = 'idc-open-pdp-staging'
+                pub_bucket_name = 'public-datasets-idc-staging'
+            elif 'idc-open-cr' in pub_bucket_name:
+                pub_bucket_name = 'idc-open-cr-staging'
+            elif 'idc-open-idc1' in pub_bucket_name:
+                pub_bucket_name = 'idc-open-idc1-staging'
             else:
-                pass
+                errlogger.error(f'Unrecognized destination bucket name: {pub_bucket_name}')
+                exit
             pub_bucket = client.bucket(pub_bucket_name)
             pub_blob = pub_bucket.blob(blob_name)
             for attempt in range(3):
@@ -87,6 +86,9 @@ def copy_some_blobs(args, client, urls, n, dones):
                     break
                 except Exception as exc:
                     errlogger.error('p%s: Blob: %s, attempt: %s;  %s', args.id, blob_name, attempt, exc)
+                    time.sleep(5)
+            if range == 0:
+                errlogger.error('p%s: Blob: %s, copy failed; {exc}', args.id, blob_name, exc)
 
         done += 1
     if copied == 0:
@@ -105,7 +107,10 @@ def worker(input, args, dones):
 
     client = storage.Client()
     for urls, n in iter(input.get, 'STOP'):
-        copy_some_blobs(args, client, urls, n, dones)
+        try:
+            copy_some_blobs(args, client, urls, n, dones)
+        except Exception as exc:
+            errlogger.error(f'p{args.id}: In worker: {exc}')
 
 
 def copy_all_blobs(args):
@@ -154,9 +159,8 @@ def copy_all_blobs(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
-    # parser.add_argument('--log_dir', default=f'{settings.LOGGING_BASE}/{settings.BASE_NAME}')
     parser.add_argument('--batch', default=1000)
-    parser.add_argument('--processes', default=16)
+    parser.add_argument('--processes', default=1)
     args = parser.parse_args()
     args.id = 0 # Default process ID
 

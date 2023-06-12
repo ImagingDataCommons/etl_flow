@@ -15,7 +15,7 @@
 #
 
 """
-Validate that th idc-open-pdp-staging bucket holds the correct set of instance blobs
+Validate that th idc-open-idc1-staging bucket holds the correct set of instance blobs
 """
 
 import argparse
@@ -28,9 +28,10 @@ from google.cloud import storage, bigquery
 def get_expected_blobs_in_bucket(args):
     client = bigquery.Client()
     query = f"""
-    SELECT distinct CONCAT(instance_uuid,'.dcm') as blob_name
+    SELECT distinct CONCAT(series_uuid, '/', instance_uuid,'.dcm') as blob_name
     FROM `{settings.PDP_PROJECT}.idc_v{settings.CURRENT_VERSION}.auxiliary_metadata` 
     WHERE instance_revised_idc_version = {settings.CURRENT_VERSION}
+    AND split(gcs_url,'/')[offset(2)] = 'idc-open-idc1'
     """
     query_job = client.query(query)  # Make an API request.
     query_job.result()  # Wait for the query to complete.
@@ -85,11 +86,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # parser.add_argument('--version', default=f'{settings.CURRENT_VERSION}')
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--bucket', default='idc-open-pdp-staging')
+    parser.add_argument('--bucket', default='idc-open-idc1-staging')
     parser.add_argument('--dev_or_pub', default = 'pub', help='Validating a dev or pub bucket')
     parser.add_argument('--expected_blobs', default=f'{settings.LOG_DIR}/expected_blobs.txt', help='List of blobs names expected to be in above collections')
     parser.add_argument('--found_blobs', default=f'{settings.LOG_DIR}/found_blobs.txt', help='List of blobs names found in bucket')
-    parser.add_argument('--batch', default=10000, help='Size of batch assigned to each process')
+    parser.add_argument('--batch', default=1000, help='Size of batch assigned to each process')
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/validate_open_buckets')
 
     args = parser.parse_args()

@@ -17,12 +17,13 @@
 # Update the all_collections table, with new collections added during ingestion
 # This presumes that all such collections have neither a CR license nor are
 # considered potential candidates for defacing. Therefore all collections will
-# will have 'Public' access and will be in the GCS public-datasets-idc and AWS idc-open-data buckets.
+# have 'Public' access and will be in the GCS public-datasets-idc and AWS idc-open-data buckets.
 
 from idc.models import Base, Collection, All_Collections, Collection_id_map
 import settings
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import Session
+from utilities.logging_config import progresslogger
 
 
 def prebuild():
@@ -51,6 +52,7 @@ def prebuild():
                    tcia_metadata_sunset=0,
                    idc_metadata_sunset=0)
             sess.add(collection)
+            progresslogger.info(f'Added collection {collection}')
         sess.commit()
 
     return
