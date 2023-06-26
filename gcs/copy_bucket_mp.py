@@ -90,8 +90,6 @@ def worker(input, args, dones):
 def copy_all_instances(args, dones):
     client = storage.Client()
     src_bucket = storage.Bucket(client, args.src_bucket)
-
-
     n=len(dones)
 
     progresslogger.info(f"{len(dones)} blobs previously copied")

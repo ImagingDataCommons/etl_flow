@@ -363,7 +363,7 @@ if __name__ == '__main__':
     parser.add_argument('--ignore_differing_patient_counts', default=True)
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
                         help='Levels at which to log')
-    parser.add_argument('--collections', default=['RIDER Lung CT'], \
+    parser.add_argument('--collections', default=['RIDER Pilot'], \
         help='List of collections to compare. If empty, compare all collections')
     parser.add_argument('--skips', default=[])
 
