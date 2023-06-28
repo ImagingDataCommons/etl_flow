@@ -24,7 +24,7 @@ from python_settings import settings
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
-    parser.add_argument('--access', default='Public', help="Generate excluded_original_collections_metadata if True")
+    parser.add_argument('--access', default='Public', help="Generate original_collections_metadata if True; (deprecated)generate a table of excluded collections if false (deprecated)")
     parser.add_argument('--use_cached_metadata', default=False)
     parser.add_argument('--cached_metadata_file', default='cached_included_metadata.json', help='Where to cache metadata')
 
