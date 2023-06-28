@@ -81,7 +81,7 @@ if __name__ == '__main__':
     errors = [row.split(':')[-1] for row in open(f'{errlogger.handlers[0].baseFilename}').read().splitlines()]
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
-    for dataset_version in [i for i in range(11,14)]:
+    for dataset_version in [i for i in range(1,14)]:
         if str(dataset_version) in dones:
             continue
 

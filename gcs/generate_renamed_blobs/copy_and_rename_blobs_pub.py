@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+# Copy blobs, in some bucket, having flat names to blobs having hierarchical names
+
 import settings
 import json
 import argparse
@@ -27,7 +29,7 @@ def build_dones_table(args):
     client = bigquery.Client()
 
     schema = [
-            bigquery.SchemaField("trg_url", "STRING"),
+            bigquery.SchemaField("trg_name", "STRING"),
     ]
 
     job_config = bigquery.LoadJobConfig(
@@ -36,14 +38,14 @@ def build_dones_table(args):
     )
 
     with open(successlogger.handlers[0].baseFilename, "rb") as source_file:
-        job = client.load_table_from_file(source_file, args.table_id, job_config=job_config)
+        job = client.load_table_from_file(source_file, args.dones_table_id, job_config=job_config)
 
     job.result()  # Waits for the job to complete.
 
-    table = client.get_table(args.table_id)  # Make an API request.
+    table = client.get_table(args.dones_table_id)  # Make an API request.
     print(
         "Loaded {} rows and {} columns to {}".format(
-            table.num_rows, len(table.schema), args.table_id
+            table.num_rows, len(table.schema), args.dones_table_id
         )
     )
     return table.num_rows
@@ -51,41 +53,39 @@ def build_dones_table(args):
 
 def build_src_and_trg_table(args):
     client = bigquery.Client()
-    done = build_dones_table(args)
+    dones = build_dones_table(args)
     query = f"""
-    with uuids AS (SELECT 
-        se_uuid,
-        uuid,
-        REGEXP_REPLACE(dev_gcs_url, r'^gs://([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-]+)/(.*)$', '\\\\1') src_bucket,
-        REGEXP_REPLACE(dev_gcs_url, r'^gs://([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-]+)/(.*)$', '\\\\3') src_url,
-        IF(REGEXP_REPLACE({args.dev_or_pub}_gcs_url, r'^gs://([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-]+)/(.*)$', '\\\\1')='public-datasets-idc', 
-            'idc-open-pdp-staging', REGEXP_REPLACE({args.dev_or_pub}_gcs_url,r'^gs://([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-]+)/(.*)$', '\\\\1')) trg_bucket,    
-        REGEXP_REPLACE(dev_gcs_url, r'^gs://([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-]+)/(.*)$', '\\\\2/\\\\3') trg_url,
-    FROM `{args.dev_project}.{args.dev_dataset}.uuid_url_map_view`
-    WHERE access = 'Public')
-    SELECT uuids.* except(se_uuid, uuid)
-    FROM uuids
-    LEFT JOIN {args.table_id} dones
-    ON uuids.trg_url = dones.trg_url
-    WHERE dones.trg_url IS NULL 
-    ORDER BY se_uuid, uuid
+    with alls as (
+        SELECT 
+        DISTINCT
+        CONCAT(i_uuid,'.dcm') src_name,
+        CONCAT(se_uuid,'/',i_uuid,'.dcm') trg_name
+        FROM `{args.project}.{args.dataset}.all_joined` aj
+        JOIN `{args.project}.{args.dataset}.all_collections` ac
+        ON aj.idc_collection_id = ac.idc_collection_id
+        WHERE ((i_source='tcia' AND dev_tcia_url='{args.bucket}') OR (i_source='idc' AND dev_idc_url='{args.bucket}'))
+        AND aj.i_rev_idc_version < {int(settings.CURRENT_VERSION)}
+        )
+    SELECT alls.src_name, alls.trg_name
+    FROM alls
+    LEFT JOIN {args.dones_table_id} dones
+    ON alls.trg_name = dones.trg_name
+    WHERE dones.trg_name IS Null
+    ORDER BY alls.trg_name
     """
 
     query_job = client.query(query)
     query_job.result()  # Wait for the query to complete.
     destination = query_job.destination
     destination = client.get_table(destination)
-    return destination, done
+    return destination, dones
 
 def copy_some_blobs(args, client, uuids, n):
     done = 0
-    copied = 0
     for uuid in uuids:
-        # if not uuid['trg_url'] in dones:
-        src_bucket = client.bucket(uuid['src_bucket'])
-        src_blob = src_bucket.blob(uuid['src_url'])
-        trg_bucket = client.bucket(uuid['trg_bucket'])
-        trg_blob = trg_bucket.blob(uuid['trg_url'])
+        bucket = client.bucket(args.bucket)
+        src_blob = bucket.blob(uuid['src_name'])
+        trg_blob = bucket.blob(uuid['trg_name'])
         for attempt in range(3):
             try:
                 rewrite_token = False
@@ -95,40 +95,33 @@ def copy_some_blobs(args, client, uuids, n):
                     )
                     if not rewrite_token:
                         break
-                successlogger.info('%s', uuid['trg_url'])
-                progresslogger.info(f"p{args.id}: {done+n}of{len(uuids) + n}: {uuid['src_bucket']}/{uuid['src_url']} --> {uuid['trg_bucket']}/{uuid['trg_url']}")
-                copied += 1
+                successlogger.info('%s', uuid['trg_name'])
+                progresslogger.info(f"p{args.id}: {done+n}of{len(uuids) + n}")
                 break
             except Exception as exc:
-                errlogger.error(f"p{args.id}: Blob: {uuid['src_bucket']}/{uuid['src_bucket']}, attempt: {attempt};  {exc}")
-        # else:
-        #     # Skipping previously copied blob
-        #     progresslogger.info(f'p{args.id}: Skipped {n+done-1}')
-
+                errlogger.error(f"p{args.id}: Blob: {uuid[args.bucket]}/{uuid['src_name']}, attempt: {attempt};  {exc}")
         done += 1
-    if copied == 0:
-        progresslogger.info(f'p{args.id}: Skipped {n}:{n+done-1}')
 
 
 def worker(input, args):
     client = storage.Client()
     for uuids, n in iter(input.get, 'STOP'):
-        copy_some_blobs(args, client, uuids, n)
+        try:
+            copy_some_blobs(args, client, uuids, n)
+        except Exception as exc:
+            errlogger.error(f'p{args.id}: {exc}')
 
 
 def copy_all_blobs(args):
     bq_client = bigquery.Client()
-    destination, done = build_src_and_trg_table(args)
+    destination, dones = build_src_and_trg_table(args)
+    progresslogger.info(f'Copying {destination.num_rows-dones} of {destination.num_rows}')
+    # dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
 
     num_processes = args.processes
     processes = []
     # Create a pair of queue for each process
-
     task_queue = Queue()
-
-    strt = time.time()
-    # dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
-
     # Start worker processes
     for process in range(num_processes):
         args.id = process + 1
@@ -137,10 +130,10 @@ def copy_all_blobs(args):
         processes[-1].start()
 
     # Distribute the work across the task_queues
-    n = done
+    n = dones
     for page in bq_client.list_rows(destination, page_size=args.batch).pages:
         uuids = [
-            {"src_bucket": row.src_bucket, "src_url": row.src_url, "trg_bucket": row.trg_bucket, "trg_url": row.trg_url}
+            {"src_name": row.src_name, "trg_name": row.trg_name}
             for row in page]
         task_queue.put((uuids, n))
         # print(f'Queued {n}:{n+args.batch-1}')
@@ -151,28 +144,24 @@ def copy_all_blobs(args):
     for i in range(num_processes):
         task_queue.put('STOP')
 
-
     # Wait for process to terminate
     for process in processes:
-        print(f'Joining process: {process.name}, {process.is_alive()}')
+        progresslogger.info(f'Joining process: {process.name}, {process.is_alive()}')
         process.join()
 
-    delta = time.time() - strt
-    rate = (n)/delta
 
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
-    parser.add_argument('--table_id', default='idc-dev-etl.whc_dev.dones', help='BQ table into which to import dones')
-    parser.add_argument('--dev_project', default=settings.DEV_PROJECT)
-    parser.add_argument('--dev_dataset', default=settings.BQ_DEV_INT_DATASET)
-    parser.add_argument('--dev_or_pub', default='pub', help='Dev or pub to control which blobs to copy and rename')
-    parser.add_argument('--batch', default=1000)
-    parser.add_argument('--processes', default=1)
-    args = parser.parse_args()
-    args.id = 0 # Default process ID
-
-    progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
-
-    copy_all_blobs(args)
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
+#     parser.add_argument('--dones_table_id', default='idc-dev-etl.whc_dev.dones', help='BQ table into which to import dones')
+#     parser.add_argument('--project', default=settings.DEV_PROJECT)
+#     parser.add_argument('--dataset', default=f'idc_v{settings.CURRENT_VERSION}_dev')
+#     parser.add_argument('--bucket', default='idc-dev-defaced', help='Bucket whose blobs are to be copied')
+#     parser.add_argument('--batch', default=1000)
+#     parser.add_argument('--processes', default=1)
+#     args = parser.parse_args()
+#     args.id = 0 # Default process ID
+#
+#     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
+#
+#     copy_all_blobs(args)

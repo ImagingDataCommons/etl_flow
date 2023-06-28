@@ -26,42 +26,6 @@ from google.cloud.exceptions import NotFound
 from google.api_core.exceptions import NotFound, BadRequest
 from utilities.logging_config import successlogger, progresslogger, errlogger
 
-'''
-----------------------------------------------------------------------------------------------
-Create the target dataset:
-'''
-
-def create_dataset(target_client, target_project_id, dataset_id, dataset_dict):
-
-    full_dataset_id = "{}.{}".format(target_project_id, dataset_id)
-    install_dataset = bigquery.Dataset(full_dataset_id)
-    a=bigquery.CopyJobConfig
-
-    install_dataset.location = "US"
-    install_dataset.description = dataset_dict["description"]
-    install_dataset.labels = dataset_dict["labels"]
-
-    target_client.create_dataset(install_dataset)
-
-    return True
-
-'''
-----------------------------------------------------------------------------------------------
-Check if dataset exists:
-'''
-
-def bq_dataset_exists(client, project , target_dataset):
-
-    dataset_ref = bigquery.DatasetReference(project, target_dataset)
-    # dataset_ref = target_client.dataset(target_dataset)
-    try:
-        src_dataset = client.get_dataset(dataset_ref)
-        # target_client.get_dataset(dataset_ref)
-        return True
-    except NotFound:
-        return False
-
-
 def copy_table(client, args,  table_id, version):
 
     src_table_id = f'{args.src_project}.idc_v{version}.{table_id}'
@@ -89,35 +53,6 @@ def copy_table(client, args,  table_id, version):
     progresslogger.info("Copied table {} to {}".format(src_table_id, trg_table_id)
     )
 
-
-def copy_view(client, args, view_id):
-
-    try:
-        view = client.get_table(f'{args.trg_project}.{args.trg_dataset}.{view_id}')
-        progresslogger.info(f'View {view} already exists.')
-    except:
-        view = client.get_table(f'{args.src_project}.{args.src_dataset}.{view_id}')
-
-        new_view = bigquery.Table(f'{args.trg_project}.{args.trg_dataset}.{view_id}')
-        new_view.view_query = view.view_query.replace(args.src_project,args.pdp_project). \
-            replace(args.src_dataset,args.trg_dataset)
-
-        new_view.friendly_name = view.friendly_name
-        new_view.description = view.description
-        new_view.labels = view.labels
-        installed_view = client.create_table(new_view)
-
-        installed_view.schema = view.schema
-
-        try:
-            # # Update the schema after creating the view
-            # installed_view.schema = view.schema
-            client.update_table(installed_view, ['schema'])
-            progresslogger.info(f'Copy of view {view_id}: DONE')
-        except BadRequest as exc:
-            errlogger.error(f'{exc}')
-
-    return
 
 def publish_tables(args, table_name, min_version, max_version, dones):
     client = bigquery.Client()

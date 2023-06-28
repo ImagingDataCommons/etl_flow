@@ -18,7 +18,7 @@ import os
 from pathlib import Path
 import time
 from datetime import datetime, timezone
-import logging
+from utilities.logging_config import successlogger, progresslogger, errlogger
 import pydicom
 import shutil
 from pydicom.errors import InvalidDicomError
@@ -28,11 +28,9 @@ from google.cloud import storage
 from utilities.tcia_helpers import  get_TCIA_instances_per_series_with_hashes
 from ingestion.utilities.utils import validate_hashes, md5_hasher, copy_disk_to_gcs, copy_gcs_to_gcs
 
-
-
-successlogger = logging.getLogger('root.success')
-progresslogger = logging.getLogger('root.progress')
-errlogger = logging.getLogger('root.err')
+# successlogger = logging.getLogger('root.success')
+# progresslogger = logging.getLogger('root.progress')
+# errlogger = logging.getLogger('root.err')
 
 def clone_instance(instance, uuid):
     new_instance = Instance(uuid=uuid)
@@ -52,24 +50,26 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
 
         # Delete the series from disk in case it is there from a previous run
         try:
-            shutil.rmtree("{}/{}".format(args.dicom_dir, series.series_instance_uid), ignore_errors=True)
+            # shutil.rmtree("{}/{}".format(args.dicom_dir, series.series_instance_uid), ignore_errors=True)
+            shutil.rmtree("{}/{}".format(args.dicom_dir, series.uuid), ignore_errors=True)
         except:
             # It wasn't there
             pass
 
         download_start = time.time_ns()
-        hashes = get_TCIA_instances_per_series_with_hashes(args.dicom_dir, series.series_instance_uid)
+        # hashes = get_TCIA_instances_per_series_with_hashes(args.dicom_dir, series.series_instance_uid)
+        hashes = get_TCIA_instances_per_series_with_hashes(args.dicom_dir, series)
         download_time = (time.time_ns() - download_start)/10**9
         if not validate_hashes(args, collection, patient, study, series, hashes):
             return
 
         # Get a list of the files from the download
-        dcms = [dcm for dcm in os.listdir("{}/{}".format(args.dicom_dir, series.series_instance_uid))]
+        dcms = [dcm for dcm in os.listdir("{}/{}".format(args.dicom_dir, series.uuid))]
 
         # Ensure that the zip has the expected number of instances
         if not len(dcms) == len(series.instances):
             errlogger.error("      p%s: Invalid zip file for %s/%s/%s/%s", args.pid,
-                collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
+                collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.uuid)
             # Return without marking all instances done. This will prevent the series from being done.
             return
 
@@ -90,17 +90,16 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         for dcm in dcms:
             try:
                 pydicom_times.append(time.time_ns())
-                breakpoint() # Validate new DICOM ID validation code
-                reader = pydicom.dcmread("{}/{}/{}".format(args.dicom_dir, series.series_instance_uid, dcm), stop_before_pixels=True)
+                reader = pydicom.dcmread("{}/{}/{}".format(args.dicom_dir, series.uuid, dcm), stop_before_pixels=True)
                 SOPInstanceUID = reader.SOPInstanceUID
                 pydicom_times.append(time.time_ns())
             except InvalidDicomError:
                 errlogger.error("       p%s: Invalid DICOM file for %s/%s/%s/%s", args.pid,
-                    collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
+                    collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.uuid)
                 if collection.collection_id == 'NLST':
                     breakpoint()
                     # For NLST only, just delete the invalid file
-                    os.remove("{}/{}/{}".format(args.dicom_dir, series.series_instance_uid, dcm))
+                    os.remove("{}/{}/{}".format(args.dicom_dir, series.uuid, dcm))
                     continue
                 else:
                     # Return without marking all instances done. This will be prevent the series from being done.
@@ -111,8 +110,8 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
             # If an instance is already done, don't need to do anything more
             if instance.done:
                 # Delete file. We already have it.
-                os.remove("{}/{}/{}".format(args.dicom_dir, series.series_instance_uid, dcm))
-                progresslogger.debug("      p%s: Instance %s previously done, ", args.pid, series.series_instance_uid)
+                os.remove("{}/{}/{}".format(args.dicom_dir, series.uuid, dcm))
+                progresslogger.debug("      p%s: Instance %s previously done, ", args.pid, series.uuid)
 
                 continue
             psql_times.append(time.time_ns())
@@ -135,15 +134,15 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
 
             rename_times.append(time.time_ns())
             uuid = instance.uuid
-            file_name = "{}/{}/{}".format(args.dicom_dir, series.series_instance_uid, dcm)
-            blob_name = "{}/{}/{}.dcm".format(args.dicom_dir, series.series_instance_uid, uuid)
+            file_name = "{}/{}/{}".format(args.dicom_dir, series.uuid, dcm)
+            blob_name = "{}/{}/{}.dcm".format(args.dicom_dir, series.uuid, uuid)
             if os.path.exists(blob_name):
                 errlogger.error("       p%s: Duplicate DICOM files for %s/%s/%s/%s/%s", args.pid,
                     collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid, SOPInstanceUID)
                 if collection.collection_id == 'NLST':
                     breakpoint()
                     # For NLST only, just delete the duplicate
-                    os.remove("{}/{}/{}".format(args.dicom_dir, series.series_instance_uid, dcm))
+                    os.remove("{}/{}/{}".format(args.dicom_dir, series.uuid, dcm))
                     continue
                 else:
                     # Return without marking all instances done. This will be prevent the series from being done.
@@ -162,7 +161,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
             breakpoint()
             # For NLST only, delete any instances for which there is not a corresponding file
             for instance in series.instances:
-                if not os.path.exists("{}/{}/{}.dcm".format(args.dicom_dir, series.series_instance_uid, instance.uuid)):
+                if not os.path.exists("{}/{}/{}.dcm".format(args.dicom_dir, series.uuid, instance.uuid)):
                     sess.execute(delete(Instance).where(Instance.uuid==instance.uuid))
                     series.instances.remove(instance)
 
@@ -184,7 +183,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         mark_done_time = time.time() - mark_done_start
         # rootlogger.debug("      p%s: Series %s, completed build_instances; %s", args.pid, series.series_instance_uid, time.asctime())
         progresslogger.debug("        p%s: Series %s: download: %s, instances: %s, pydicom: %s, psql: %s, rename: %s, metadata: %s, copy: %s, mark_done: %s",
-                         args.pid, series.series_instance_uid,
+                         args.pid, series.uuid,
                          download_time,
                          instances_time/10**9,
                          (sum(pydicom_times[1::2]) - sum(pydicom_times[0::2]))/10**9,
@@ -217,7 +216,7 @@ def build_instances_idc(sess, args, collection, patient, study, series):
     for instance in series.instances:
         if not instance.done:
             instance.hash = src_instance_metadata[instance.sop_instance_uid]['hash']
-            instance.size, hash = copy_gcs_to_gcs(args, client, args.prestaging_idc_bucket, instance, src_instance_metadata[instance.sop_instance_uid]['gcs_url'])
+            instance.size, hash = copy_gcs_to_gcs(args, client, args.prestaging_idc_bucket, series, instance, src_instance_metadata[instance.sop_instance_uid]['gcs_url'])
             if hash != instance.hash:
                 errlogger.error("       p%s: Copy files to GCS failed for %s/%s/%s/%s/%s", args.pid,
                                 collection.collection_id, patient.submitter_case_id, study.study_instance_uid,

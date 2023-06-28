@@ -23,9 +23,9 @@ from sqlalchemy import select
 from ingestion.utilities.get_collection_dois_urls_licenses import get_patient_dois_idc, \
     get_patient_urls_idc, get_patient_dois_tcia, get_patient_urls_tcia, get_patient_licenses_tcia, \
     get_patient_licenses_idc
-import logging
-rootlogger = logging.getLogger('root')
-errlogger = logging.getLogger('root.err')
+from utilities.logging_config import successlogger, progresslogger, errlogger, rootlogger
+# rootlogger = logging.getLogger('root')
+# errlogger = logging.getLogger('root.err')
 
 
 class Source:
@@ -46,14 +46,6 @@ class TCIA(Source):
         self.lock = lock
 
     def get_hash(self, request_data, access_token=None, refresh_token=None):
-        # if not access_token:
-        #     access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
-        # headers = dict(
-        #     Authorization=f'Bearer {access_token}'
-        # )
-        # # url = "https://public-dev.cancerimagingarchive.net/nbia-api/services/getMD5Hierarchy"
-        # url = f"{NBIA_V2_URL}/getM5HashForImage?SOPInstanceUid={sop_instance_uid}"
-        # result = requests.get(url, headers=headers)
         self.lock.acquire()
         try:
             # result = get_hash(request_data, self.access_token)
@@ -73,15 +65,6 @@ class TCIA(Source):
             return result
 
     ###-------------------Versions-----------------###
-
-
-    # def src_version_hash(self):
-    #     collections = self.sess.execute(select(IDC_Collection.collection_id).distinct())
-    #     hashes = []
-    #     for collection in collections:
-    #         hashes.append(self.src_collection_hash(collection['collection_id']))
-    #     hash = get_merkle_hash(hashes)
-    #     return hash
 
 
     ###-------------------Collections-----------------###
@@ -114,10 +97,6 @@ class TCIA(Source):
             rootlogger.info('get_hash failed for collection %s', collection_id)
             raise Exception('get_hash failed for collection %s', collection_id)
 
-    # # # Deprecated
-    # # Get all the DOIs of analysis results series in a collection fromm TCIA
-    # def get_analysis_collection_dois(self, sess, collection, patient="", server=""):
-    #     return get_analysis_collection_dois_tcia(collection)
 
     ###-------------------Patients-----------------###
 
@@ -220,15 +199,6 @@ class TCIA(Source):
             raise Exception('get_hash failed for instance %s', sop_instance_uid)
 
     def get_instance_hash(self, sop_instance_uid, access_token=None, refresh_token=None):
-        # if not access_token:
-        #     access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
-        # headers = dict(
-        #     Authorization=f'Bearer {access_token}'
-        # )
-        # # url = "https://public-dev.cancerimagingarchive.net/nbia-api/services/getMD5Hierarchy"
-        # url = f"{NBIA_V2_URL}/getM5HashForImage?SOPInstanceUid={sop_instance_uid}"
-        # result = requests.get(url, headers=headers)
-        self.lock.acquire()
         try:
             # result = get_instance_hash(sop_instance_uid, self.access_token)
             result = get_instance_hash(sop_instance_uid, self.access[0])
@@ -271,10 +241,6 @@ class IDC(Source):
         hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
         return hash
 
-    # ## Deprecated
-    # # Get all the DOIs of analysis results series in a collection from IDC
-    # def get_analysis_collection_dois(self, sess, collection, server):
-    #     return get_analysis_collection_dois_idc(sess, collection)
 
     ###-------------------Patients-----------------###
 

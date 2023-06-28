@@ -20,35 +20,25 @@
 # are ignored
 # If there is no output, then no name changes were detected.
 
-from idc.models import Base, Version, Patient, Study, Series, Collection, All_Included_Collections
+from idc.models import Base, Version, Patient, Study, Series, Instance, Collection, All_Collections, All_Joined
 from utilities.tcia_scrapers import scrape_tcia_data_collections_page, scrape_tcia_analysis_collections_page
 from python_settings import settings
 import google
 from google.auth.transport import requests
 
-# from sqlalchemy import create_engine, distinct
-# from sqlalchemy_utils import register_composites
-# from sqlalchemy.orm import Session
-
+from sqlalchemy import and_, or_
 from utilities.sqlalchemy_helpers import sa_session
 
 def compare_dois():
-    # sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
-    # # sql_engine = create_engine(sql_uri, echo=True) # Use this to see the SQL being sent to PSQL
-    # sql_engine = create_engine(sql_uri)
-    #
-    # # Enable the underlying psycopg2 to deal with composites
-    # conn = sql_engine.connect()
-    # register_composites(conn)
-    #
-
     with sa_session(echo=False) as sess:
         # Get the source_dois across all series in each 'included' collection... collections
-        # that are not reacted or excluded. This can
+        # that are not redacted or excluded. This can
         # include both original collection dois and analysis results dois
-        rows = sess.query(Collection.collection_id,Series.source_doi).distinct(). \
-            join(Version.collections).join(Collection.patients).join(Patient.studies).join(Study.seriess).\
-            join(All_Included_Collections, All_Included_Collections.tcia_api_collection_id==Collection.collection_id).filter(Version.version == settings.PREVIOUS_VERSION).all()
+
+        rows = sess.query(All_Joined.collection_id,All_Joined.source_doi).distinct(). \
+            join(All_Collections, All_Joined.collection_id==All_Collections.tcia_api_collection_id). \
+            filter(All_Joined.idc_version == settings.PREVIOUS_VERSION). \
+            filter(or_(and_(All_Joined.i_source=='tcia',All_Collections.tcia_access=="Public"), and_(All_Joined.i_source=='idc', All_Collections.idc_access=="Public"))).all()
         idc_dois = {row.source_doi.lower(): row.collection_id for row in rows if row.source_doi }
 
         # Scrape TCIA pages to get a list of dois mapped to IDs

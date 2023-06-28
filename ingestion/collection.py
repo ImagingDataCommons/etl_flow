@@ -16,7 +16,7 @@
 
 import time
 from datetime import datetime, timedelta
-import logging
+from utilities.logging_config import successlogger, progresslogger, errlogger
 from uuid import uuid4
 from idc.models import instance_source, Version, Collection, Patient
 from ingestion.utilities.utils import accum_sources, empty_bucket, create_prestaging_bucket, is_skipped
@@ -29,9 +29,9 @@ from multiprocessing import Process, Queue, Lock, shared_memory
 from queue import Empty
 
 
-successlogger = logging.getLogger('root.success')
-progresslogger = logging.getLogger('root.progress')
-errlogger = logging.getLogger('root.err')
+# successlogger = logging.getLogger('root.success')
+# progresslogger = logging.getLogger('root.progress')
+# errlogger = logging.getLogger('root.err')
 
 
 def clone_collection(collection,uuid):
@@ -72,7 +72,7 @@ def worker(input, output, args, access, lock):
                     errlogger.error("p%s, exception %s; reattempt %s on patient %s/%s, %s; %s", args.pid, exc, attempt, collection.collection_id, patient.submitter_case_id, index, time.asctime())
                     sess.rollback()
 
-            if attempt == PATIENT_TRIES:
+            if attempt == PATIENT_TRIES - 1:
                 errlogger.error("p%s, Failed to process patient: %s", args.pid, patient.submitter_case_id)
                 sess.rollback()
             output.put(patient.submitter_case_id)
@@ -87,6 +87,10 @@ def expand_collection(sess, args, all_sources, collection):
     # A boolean is True if the hash of the corresponding source differs
     # from the hash of the current version of the patient
     # If the source is skipped, then the corresponding boolean will be False.
+
+    # If the source hash is "", and the corresponding source hash in idc_objects
+    # is not "", the collection has no longer in the source. Probably should
+    # retire it from the source.
     patients = all_sources.patients(collection, skipped)
 
     # Since we are starting, delete everything from the prestaging bucket.
@@ -207,7 +211,7 @@ def expand_collection(sess, args, all_sources, collection):
 
 def build_collection(sess, args, all_sources, collection_index, version, collection):
     begin = time.time()
-    successlogger.debug("p%s: Expand Collection %s, %s", args.pid, collection.collection_id, collection_index)
+    successlogger.info("p%s: Expand Collection %s, %s", args.pid, collection.collection_id, collection_index)
     args.prestaging_tcia_bucket = f"{args.prestaging_tcia_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
     args.prestaging_idc_bucket = f"{args.prestaging_idc_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
     if not collection.expanded:
@@ -342,7 +346,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
                 collection.done = True
                 # sess.commit()
                 duration = str(timedelta(seconds=(time.time() - begin)))
-                successlogger.info("Completed Collection %s, %s, in %s", collection.collection_id, collection_index,
+                successlogger.info("Built Collection %s, %s, in %s", collection.collection_id, collection_index,
                                 duration)
             sess.commit()
 

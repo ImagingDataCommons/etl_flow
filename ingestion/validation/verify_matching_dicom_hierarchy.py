@@ -15,8 +15,9 @@
 #
 
 # Verify that the DB and the DICOM metadata have the same DICOM UIDs.
-# Note that this script will currently report (correctly) that the
-# DICOM PatientIDs (also called submitter_case_id in the DB) of some
+#
+# Note that this script will currently report correctly that the
+# DICOM PatientIDs (also called submitter_case_id in the DB) of 300
 # NLST instances do not match.
 
 import argparse
@@ -31,13 +32,14 @@ def validate_UIDs_match(args):
     SELECT distinct aji.collection_id collection_id, aji.submitter_case_id bq_patientID, dm.patientid dm_patientID, 
         aji.Study_Instance_UID bq_study, dm.StudyInstanceUID dm_study, aji.Series_Instance_UID bq_series, 
         dm.SeriesInstanceUID dm_series, aji.SOP_Instance_UID instance 
-    FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_included` aji
-    JOIN `idc-dev-etl.{settings.BQ_DEV_EXT_DATASET}.dicom_metadata` dm
+    FROM `idc-dev-etl.{args.dev_dataset}.all_joined` aji
+    JOIN `idc-dev-etl.{args.pub_dataset}.dicom_metadata` dm
     ON aji.SOP_Instance_UID=dm.SOPInstanceUID
     WHERE 
-    aji.submitter_case_id!=dm.patientid
+    idc_version = {args.version}
+    AND (aji.submitter_case_id!=dm.patientid
     OR aji.Study_Instance_UID!=dm.StudyInstanceUID
-    OR aji.Series_Instance_UID!=dm.SeriesInstanceUID
+    OR aji.Series_Instance_UID!=dm.SeriesInstanceUID)
     """
     dups = [row for row in client.query(query)]
     if not dups:
@@ -55,6 +57,12 @@ def validate_UIDs_match(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--db', default=f'idc_v{settings.CURRENT_VERSION}', help='Database on which to operate')
+    parser.add_argument('--version', default=settings.CURRENT_VERSION)
+    # parser.add_argument('--version', default=14)
+    parser.add_argument('--dev_dataset', default=settings.BQ_DEV_INT_DATASET)
+    # parser.add_argument('--dev_dataset', default='idc_v14_dev')
+    parser.add_argument('--pub_dataset', default=settings.BQ_DEV_EXT_DATASET)
+    # parser.add_argument('--pub_dataset', default='idc_v14_pub')
     args = parser.parse_args()
 
     validate_UIDs_match(args)

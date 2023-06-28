@@ -21,74 +21,60 @@
 
 import argparse
 import settings
-from bq.bq_IO.upload_psql_to_bq import upload_to_bq, upload_version, upload_collection, upload_patient, upload_study, \
-    upload_series, upload_instance, upload_table
+from upload_psql_to_bq import upload_to_bq, upload_version, upload_collection, upload_patient, upload_study, \
+    upload_series, upload_instance, upload_table, create_all_joined, create_idc_all_joined
 from google.cloud import bigquery
 from utilities.bq_helpers import create_BQ_dataset
 
 tables = {
         'all_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
+        'all_joined': {"func": create_all_joined, "order_by": ""},
         'analysis_id_map': {"func": upload_table, "order_by": "collection_id"},
-        'analysis_results_descriptions': {"func": upload_table, "order_by": "id"},
-        'analysis_results_metadata_idc_source': {"func": upload_table, "order_by": "ID"},
         'collection': {"func":upload_collection, "order_by":"collection_id"},
         'collection_id_map': {"func": upload_table, "order_by": "idc_webapp_collection_id"},
         'collection_patient': {"func": upload_table, "order_by": "collection_uuid"},
-        'cr_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
-        'defaced_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
-        'excluded_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
+        'idc_all_joined': {"func": create_idc_all_joined, "order_by": ""},
         'idc_collection': {"func": upload_table, "order_by": "collection_id"},
         'idc_instance': {"func": upload_table, "order_by": "sop_instance_uid"},
         'idc_patient': {"func": upload_table, "order_by": "submitter_case_id"},
         'idc_series': {"func": upload_table, "order_by": "series_instance_uid"},
         'idc_study': {"func": upload_table, "order_by": "study_instance_uid"},
         'instance': {"func":upload_instance, "order_by":"sop_instance_uid"},
-        'open_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
-        'original_collections_metadata_idc_source':{"func": upload_table, "order_by": "idc_webapp_collection_id"},
         'patient': {"func":upload_patient, "order_by":"submitter_case_id"},
         'patient_study': {"func": upload_table, "order_by": "patient_uuid"},
-        'program': {"func": upload_table, "order_by": "tcia_wiki_collection_id"},
-        'redacted_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
         'series': {"func":upload_series, "order_by":"series_instance_uid"},
         'series_instance': {"func": upload_table, "order_by": "series_uuid"},
         'study': {"func":upload_study, "order_by":"study_instance_uid"},
         'study_series': {"func": upload_table, "order_by": "study_uuid"},
         'version': {"func":upload_version, "order_by":"version"},
-        'version_collection': {"func": upload_table, "order_by": "version"},
-    }
+        'version_collection': {"func": upload_table, "order_by": "version"}
+}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--federated_query', default=f'idc-dev-etl.us.etl_federated_query_idc_v{settings.CURRENT_VERSION}')
     parser.add_argument('--upload', nargs='*', default= [
         'all_collections',
+        'all_joined',
         'analysis_id_map',
-        'analysis_results_descriptions',
-        'analysis_results_metadata_idc_source',
         'collection',
         'collection_id_map',
         'collection_patient',
-        'cr_collections',
-        'defaced_collections',
-        'excluded_collections',
+        'idc_all_joined',
         'idc_collection',
         'idc_instance',
         'idc_patient',
         'idc_series',
         'idc_study',
         'instance',
-        'open_collections',
-        'original_collections_metadata_idc_source',
         'patient',
         'patient_study',
-        'program',
-        'redacted_collections',
         'series',
         'series_instance',
         'study',
         'study_series',
         'version',
-        'version_collection',
+        'version_collection'
     ], help="Tables to upload")
     args = parser.parse_args()
     print('args: {}'.format(args))
@@ -101,11 +87,11 @@ if __name__ == '__main__':
         # Presume the dataset already exists
         pass
 
-    try:
-        dataset = create_BQ_dataset(BQ_client, settings.BQ_DEV_EXT_DATASET)
-    except:
-        # Presume the dataset already exists
-        pass
+    # try:
+    #     dataset = create_BQ_dataset(BQ_client, settings.BQ_DEV_EXT_DATASET)
+    # except:
+    #     # Presume the dataset already exists
+    #     pass
 
     upload_to_bq(args, tables)
 

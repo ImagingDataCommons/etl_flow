@@ -42,10 +42,10 @@ def validate_dicom_metadata_counts():
     results = client.query(query)
     if list(results)[0].siu_cnt == 0 and list(results)[0].dcm_cnt == 0:
         successlogger.info("dicom_metadata has the correct SOPInstanceUIDs")
+        return 0
     else:
         errlogger.error("Error; SOPInstanceUIDs do not match expected set")
-
-    return
+        return -1
 
 
 if __name__ == '__main__':

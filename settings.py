@@ -19,8 +19,8 @@ import sys
 from os.path import join, dirname, exists
 from dotenv import load_dotenv
 
-CURRENT_VERSION=14
-PREVIOUS_VERSION=13
+CURRENT_VERSION=15
+PREVIOUS_VERSION=14
 
 SECURE_LOCAL_PATH = os.environ.get('SECURE_LOCAL_PATH', '')
 
@@ -78,7 +78,8 @@ GCS_PUB_MASKABLE='idc-open-idc1'
 
 # IDs of the dev and public BQ datasets
 BQ_REGION='us'
-BQ_DEV_INT_DATASET=f'idc_v{CURRENT_VERSION}_dev' if CURRENT_VERSION>=8 else f'idc_v{CURRENT_VERSION}'
+# BQ_DEV_INT_DATASET=f'idc_v{CURRENT_VERSION}_dev' if CURRENT_VERSION>=8 else f'idc_v{CURRENT_VERSION}'
+BQ_DEV_INT_DATASET='idc_v15_dev'
 BQ_DEV_EXT_DATASET=f'idc_v{CURRENT_VERSION}_pub' if CURRENT_VERSION>=8 else f'idc_v{CURRENT_VERSION}'
 BQ_PUB_DATASET=f'idc_v{CURRENT_VERSION}'
 BQ_PDP_DATASET=f'idc_v{CURRENT_VERSION}'

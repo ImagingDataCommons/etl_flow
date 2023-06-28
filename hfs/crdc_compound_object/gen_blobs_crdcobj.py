@@ -19,7 +19,7 @@ import json
 import argparse
 from collection_list_crdcobj import collection_list
 from utilities.logging_config import successlogger, progresslogger, errlogger
-from idc.models import Base, Version, Collection, Patient, Study, Series, Instance, All_Included_Collections
+from idc.models import Base, Version, Collection, Patient, Study, Series, Instance, All_Collections
 from google.cloud import storage
 from sqlalchemy.orm import Session
 import settings

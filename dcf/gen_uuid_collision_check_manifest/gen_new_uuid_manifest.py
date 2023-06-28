@@ -50,7 +50,7 @@ if __name__ == '__main__':
     parser.add_argument('--project', default=settings.DEV_PROJECT)
     parser.add_argument('--dst_bqdataset', default=settings.BQ_DEV_INT_DATASET)
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help= 'The version of the new uuids')
-    parser.add_argument('--manifest_uri', default=f'gs://indexd_manifests/dcf_input/pdp_hosting/idc_v{settings.CURRENT_VERSION}_new_uuids_*.tsv',
+    parser.add_argument('--manifest_uri', default=f'gs://indexd_manifests/dcf_input/pdp_hosting/idc_v{settings.CURRENT_VERSION}/idc_v{settings.CURRENT_VERSION}_new_uuids_*.tsv',
                         help="GCS file in which to save results")
     parser.add_argument('--temp_table', default=f'idc_v{settings.CURRENT_VERSION}_new_uuids_manifest', \
                         help='Temporary table in which to write query results')

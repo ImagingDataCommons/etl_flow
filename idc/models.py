@@ -185,6 +185,7 @@ class All_Joined(Base):
     sop_instance_uid = Column(String, nullable=False, unique=False, comment='DICOM SOPInstanceUID')
     i_uuid = Column(String, primary_key=True, comment="IDC assigned UUID of a version of this object")
     i_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of TCIA data at this level")
+    i_source = Column(String, nullable=True, comment="'tcia' or 'idc'")
     i_size = Column(BigInteger, nullable=True, comment='Instance blob size (bytes)')
     i_excluded = Column(Boolean, default=False, comment="True if instance should be excluded from auxiliary_metacata, etc.")
     i_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
@@ -506,6 +507,7 @@ class Series(Base):
     license_long_name = Column(String, comment="Long name of license.")
     license_url = Column(String, comment="License URL of this series.")
     license_short_name = Column(String, comment='Short name of license')
+    third_party = Column(Boolean, comment='True if this series is from a third party, else False')
 
     studies = relationship('Study',
                            secondary=study_series,
@@ -536,20 +538,6 @@ class Instance(Base):
     seriess = relationship('Series',
                           secondary=series_instance,
                           back_populates='instances')
-
-# collection_id_map maps an idc_collection_id to one or more tcia_api_collection_ids.
-# This mapping is meant to deal with the possibility that TCIA might rename a collection.
-# In that case, the IDC generated idc_collection_id binds those tcia_api_collection_ids.
-class Collection_id_map(Base):
-    __tablename__ = 'collection_id_map'
-    tcia_api_collection_id = Column(String, primary_key=True, \
-                    comment="Collection ID used by TCIA")
-    idc_collection_id = Column(String, primary_key=True,
-                   comment="IDC assigned collection ID (UUID4)")
-    idc_webapp_collection_id = Column(String, primary_key=True, \
-                  comment="Collection ID used by IDC webapp")
-    collection_id = Column(String, primary_key=True, \
-                   comment="Collection ID used for ETL")
 
 # Table that includes all IDC sourced collections.
 # This is a snapshot of what should be the current/next IDC version
@@ -614,9 +602,11 @@ class IDC_Instance(Base):
     hash = Column(String, comment='Instance hash')
     gcs_url = Column(String, comment='GCS URL of instance')
     size = Column(BigInteger, comment='Instance size in bytes')
+    excluded = Column(Boolean, comment='True of this series should be excluded from ingestion')
     idc_version = Column(Integer, comment='IDC version when this instance was added/revised')
 
     seriess = relationship("IDC_Series", back_populates="instances")
+
 
 # The table that is the union of the previous five tables
 class All_Collections(Base):
@@ -625,22 +615,36 @@ class All_Collections(Base):
     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
     dev_idc_url = Column(String, comment="Dev idc bucket name")
-    gcs_pub_tcia_url = Column(String, comment="Public gcs tcia bucket name")
-    gcs_pub_idc_url = Column(String, comment="Public gcs idc bucket name")
-    aws_pub_tcia_url = Column(String, comment="Public aws tcia bucket name")
-    aws_pub_idc_url = Column(String, comment="Public aws idc bucket name")
+    pub_gcs_tcia_url = Column(String, comment="Public gcs tcia bucket name")
+    pub_gcs_idc_url = Column(String, comment="Public gcs idc bucket name")
+    pub_aws_tcia_url = Column(String, comment="Public aws tcia bucket name")
+    pub_aws_idc_url = Column(String, comment="Public aws idc bucket name")
     tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
     idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
     tcia_metadata_sunset = Column(String, comment="Last version that metadata is published. 0==still visible'")
     idc_metadata_sunset = Column(String, comment="Last version that metadata is published. 0==still visible'")
 
 
+# collection_id_map maps an idc_collection_id to one or more tcia_api_collection_ids.
+# This mapping is meant to deal with the possibility that TCIA might rename a collection.
+# In that case, the IDC generated idc_collection_id binds those tcia_api_collection_ids.
+class Collection_id_map(Base):
+    __tablename__ = 'collection_id_map'
+    tcia_api_collection_id = Column(String, primary_key=True, \
+                    comment="Collection ID used by TCIA")
+    idc_collection_id = Column(String, primary_key=True,
+                   comment="IDC assigned collection ID (UUID4)")
+    idc_webapp_collection_id = Column(String, primary_key=True, \
+                  comment="Collection ID used by IDC webapp")
+    collection_id = Column(String, primary_key=True, \
+                   comment="Collection ID used for ETL")
+
 # This table is populated with metadata for collections that are not sourced from TCIA.
 class Original_Collections_Metadata_IDC_Source(Base):
     __tablename__ = 'original_collections_metadata_idc_source'
-    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID used by TCIA APIs')
-    tcia_wiki_collection_id = Column(String, nullable=False, comment='TCIA Wiki page collection ID')
-    idc_webapp_collection_id = Column(String, nullable=False, comment='Collection ID used by IDC webapp')
+    tcia_api_collection_id = Column(String, comment='Collection ID used by TCIA APIs')
+    tcia_wiki_collection_id = Column(String, nullable=True, comment='TCIA Wiki page collection ID')
+    idc_webapp_collection_id = Column(String,primary_key=True, nullable=False, comment='Collection ID used by IDC webapp')
     Status = Column(String, nullable=False, comment='Public or Limited')
     Updated = Column(String, comment='Date of last update')
     ImageTypes = Column(String, comment='List of image types')
@@ -671,11 +675,26 @@ class Analysis_Results_Metadata_IDC_Source(Base):
     license_url = Column(String, comment='URL of license description')
     license_long_name = Column(String, comment='Long name of license')
     license_short_name = Column(String, comment='Short name of license')
-    Description = Column(String, comment='Description of analysis result')
+    URL = Column(String,comment='URL of collection description page')
 
+# This table is populated with a description of each analysis result.
+class Analysis_Results_Descriptions(Base):
+    __tablename__ = 'analysis_results_descriptions'
+    id = Column(String, primary_key=True, comment='Analysis result id')
+    description = Column(String, comment='Analysis result description')
 
+# This table is populated with IDC assigned UUID of each analysis result.
+class Analysis_Id_Map(Base):
+    __tablename__ = 'analysis_id_map'
+    collection_id = Column(String, primary_key=True, comment='Analysis result ID')
+    idc_id = Column(String, comment='IDC assigned UUID')
 
-
+# This table gives the program to which collection, as identified by its
+# tcia_wiki_collection_id, belongs.
+class Program(Base):
+    __tablename__ = 'program'
+    tcia_wiki_collection_id = Column(String, primary_key=True, comment='Results ID')
+    program = Column(String, comment='Descriptive title')
 
 
 

@@ -20,9 +20,9 @@ from idc.models  import Collection_id_map, instance_source
 from ingestion.utilities.utils import to_webapp, get_merkle_hash
 from google.cloud import bigquery
 from ingestion.sources import TCIA, IDC
-import logging
-rootlogger = logging.getLogger('root')
-errlogger = logging.getLogger('root.err')
+from utilities.logging_config import successlogger, progresslogger, errlogger, rootlogger
+# rootlogger = logging.getLogger('root')
+# errlogger = logging.getLogger('root.err')
 
 
 class All:
@@ -41,33 +41,11 @@ class All:
     ###-------------------Versions-----------------###
 
     def idc_version_hashes(self, version):
-        breakpoint() # Verify
         childrens_hashes = [object.hashes for object in version.collections]
-        parent_hashes = [get_merkle_hash([childrens_hashes[source.value] for source in instance_source])]
+        # parent_hashes = [get_merkle_hash([childrens_hashes[source.value] for source in instance_source])]
+        parent_hashes = [get_merkle_hash([row[source.value] for row in childrens_hashes]) if set(
+            [row[source.value] for row in childrens_hashes]) != set(['']) else '' for source in instance_source]
         return parent_hashes
-
-        # objects = version.collections
-        # hashes = {'tcia': [], 'idc': [], 'all_sources': []}
-        # for object in objects:
-        #     for source in instance_source:
-        #         if object.hashes[source.value]:
-        #             hashes[source.name].append(object.hashes[source.value])
-        # version_hashes = ['','','']
-        # version_hashes[0] = get_merkle_hash(hashes['tcia']) if len(hashes['tcia']) else ''
-        # version_hashes[1] = get_merkle_hash(hashes['idc']) if len(hashes['idc']) else ''
-        # version_hashes[-1] = get_merkle_hash(hashes['all_sources']) if len(hashes['all_sources']) else ''
-        #
-        # # Now compute the hash of all sources
-        # version_hashes[-1] = get_merkle_hash([hash for hash in version_hashes[:-1]if hash])
-        #
-        # return version_hashes
-
-    # # Compute object's hashes according to sources
-    # def src_version_hashes(self, version):
-    #     version_hashes = ['','']
-    #     for source in self.sources:
-    #         version_hashes[source.value] = self.sources[source].src_version_hash(version)
-    #     return version_hashes
 
     ###-------------------Collections-----------------###
 
@@ -84,9 +62,6 @@ class All:
                     if not object in collections:
                         collections[object] = [False, False]
                     collections[object][source.value] = True
-
-        # # We explicitly add NLST, because it is not returned the above
-        # collections['NLST'] = [True, False]
 
         # Get a map from collection IDs to idc_collection_ids
         map = {row.collection_id: row.idc_collection_id for row in self.sess.query(Collection_id_map).all()}
@@ -127,26 +102,11 @@ class All:
 
     # Get objects per-source hashes from DB
     def idc_collection_hashes(self, collection):
-        breakpoint() # Verify
         childrens_hashes = [object.hashes for object in collection.patients]
-        parent_hashes = [get_merkle_hash([childrens_hashes[source.value] for source in instance_source])]
+        # parent_hashes = [get_merkle_hash([childrens_hashes[source.value] for source in instance_source])]
+        parent_hashes = [get_merkle_hash([row[source.value] for row in childrens_hashes]) if set(
+            [row[source.value] for row in childrens_hashes]) != set(['']) else '' for source in instance_source]
         return parent_hashes
-
-        # objects = collection.patients
-        # hashes = {'tcia': [], 'idc': [], 'all_sources': []}
-        # for object in objects:
-        #     for source in instance_source:
-        #         if object.hashes[source.value]:
-        #             hashes[source.name].append(object.hashes[source.value])
-        # collection_hashes = ['','','']
-        # collection_hashes[0] = get_merkle_hash(hashes['tcia']) if len(hashes['tcia']) else ''
-        # collection_hashes[1] = get_merkle_hash(hashes['idc']) if len(hashes['idc']) else ''
-        # collection_hashes[-1] = get_merkle_hash(hashes['all_sources']) if len(hashes['all_sources']) else ''
-        #
-        # breakpoint() # Why are we doing this?
-        # # # Now compute the hash of all sources
-        # # collection_hashes[-1] = get_merkle_hash([hash for hash in collection_hashes[:-1]if hash])
-        # return collection_hashes
 
 
     # Compute object's hashes according to sources
@@ -158,6 +118,7 @@ class All:
             else:
                 collection_hashes[source.value] = self.sources[source].src_collection_hash(collection_id)
         return collection_hashes
+
 
     # Compute collection hashes from its child hashes according to sources
     def src_collection_hashes_from_patient_hashes(self, collection_id, submitter_case_ids, skipped_sources, sources):
@@ -171,16 +132,6 @@ class All:
                     hashes.append(self.sources[source].src_patient_hash(collection_id, submitter_case_id))
                 collection_hashes[source.value] = get_merkle_hash(hashes)
         return collection_hashes
-
-    # # # Deprecated
-    # # Get all the DOIs of analysis results series in a collection
-    # def get_analysis_collection_dois(self, sess, collection, server):
-    #     collection_dois = ['','']
-    #     for source in self.sources:
-    #          collection_dois[source.value] = self.sources[source].get_analysis_collection_dois(sess, collection, server)
-    #     return collection_dois
-
-
 
     ###-------------------Patients-----------------###
 
@@ -206,25 +157,11 @@ class All:
 
     # Get objects per-source hashes from DB
     def idc_patient_hashes(self, patient):
-        breakpoint() # Verify
         childrens_hashes = [object.hashes for object in patient.studies]
-        parent_hashes = [get_merkle_hash([childrens_hashes[source.value] for source in instance_source])]
+        parent_hashes = [get_merkle_hash([row[source.value] for row in childrens_hashes]) if set(
+            [row[source.value] for row in childrens_hashes]) != set(['']) else '' for source in instance_source]
         return parent_hashes
 
-        # objects = patient.studies
-        # hashes = {'tcia': [], 'idc': [], 'all_sources': []}
-        # for object in objects:
-        #     for source in instance_source:
-        #         if object.hashes[source.value]:
-        #             hashes[source.name].append(object.hashes[source.value])
-        # patient_hashes = ['','','']
-        # patient_hashes[0] = get_merkle_hash(hashes['tcia']) if len(hashes['tcia']) else ''
-        # patient_hashes[1] = get_merkle_hash(hashes['idc']) if len(hashes['idc']) else ''
-        # patient_hashes[-1] = get_merkle_hash(hashes['all_sources']) if len(hashes['all_sources']) else ''
-        #
-        # # # Now compute the hash of all sources
-        # # patient_hashes[-1] = get_merkle_hash([hash for hash in patient_hashes[:-1]if hash])
-        # return patient_hashes
 
     # Compute object's hashes according to sources
     def src_patient_hashes(self, collection_id, submitter_case_id, skipped_sources):
@@ -246,6 +183,7 @@ class All:
                 patient_dois =  patient_dois | self.sources[source].get_patient_dois(collection, patient)
         return patient_dois
 
+
     # Get the (wiki) URLs of all series in a patient
     def get_patient_urls(self, collection, patient, skipped_sources):
         patient_urls = {}
@@ -253,6 +191,7 @@ class All:
             if not skipped_sources[source.value]:
                 patient_urls = patient_urls | self.sources[source].get_patient_urls(collection, patient)
         return patient_urls
+
 
     # Get the licenses data of all series in a patient
     def get_patient_licenses(self, collection, patient, skipped_sources):
@@ -285,27 +224,14 @@ class All:
         self.study_metadata = studies
         return studies
 
+
     # Get objects per-source hashes from DB
     def idc_study_hashes(self, study):
-        breakpoint() # Verify
         childrens_hashes = [object.hashes for object in study.seriess]
-        parent_hashes = [get_merkle_hash([childrens_hashes[source.value] for source in instance_source])]
+        parent_hashes = [get_merkle_hash([row[source.value] for row in childrens_hashes]) if set(
+            [row[source.value] for row in childrens_hashes]) != set(['']) else '' for source in instance_source]
         return parent_hashes
 
-        # objects = study.seriess
-        # hashes = {'tcia': [], 'idc': [], 'all_sources': []}
-        # for object in objects:
-        #     for source in instance_source:
-        #         if object.hashes[source.value]:
-        #             hashes[source.name].append(object.hashes[source.value])
-        # study_hashes = ['','','']
-        # study_hashes[0] = get_merkle_hash(hashes['tcia']) if len(hashes['tcia']) else ''
-        # study_hashes[1] = get_merkle_hash(hashes['idc']) if len(hashes['idc']) else ''
-        # study_hashes[-1] = get_merkle_hash(hashes['all_sources']) if len(hashes['all_sources']) else ''
-        #
-        # # # Now compute the hash of all sources
-        # # study_hashes[-1] = get_merkle_hash([hash for hash in study_hashes[:-1]if hash])
-        # return study_hashes
 
     # Compute object's hashes according to sources
     def src_study_hashes(self, collection_id, study_instance_uid, skipped_sources):
@@ -341,24 +267,24 @@ class All:
         return seriess
 
 
-    # Get objects per-source hashes from DB
+    # Get object's per-source hashes from DB
     def idc_series_hashes(self, series):
-        breakpoint() #Test
         objects = series.instances
 
         # Get the source of one instance
         source = objects[0].source
         # All instances must have the same source
         try:
-            assert set(source)== set(object.source for object in objects)
+            assert set([source])== set(object.source for object in objects)
         except:
             errlogger.error(
                 f'Instance in series {series.series_instance_uid} have invalid or inconsistent source')
+            breakpoint()
             exit(-1)
         series_hashes = ['', '', '']
         # By definition, the all_sources hash equals the hash of the source
         series_hashes[instance_source.all_sources.value] = \
-            series_hashes[instance_source.all_sources[source].value] = \
+            series_hashes[source.value] = \
             get_merkle_hash([object.hash for object in objects])
         return series_hashes
 
@@ -395,6 +321,7 @@ class All:
         # Make a copy for subsequent access by other sources functions
         self.instance_metadata = instances
         return instances
+
 
     # Compute object's hashes according to sources
     def src_instance_hashes(self, sop_instance_uid, source):

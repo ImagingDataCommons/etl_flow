@@ -16,18 +16,18 @@
 
 import time
 from datetime import datetime, timedelta
-import logging
+from utilities.logging_config import successlogger, progresslogger, errlogger
 from uuid import uuid4
-from idc.models import Version, Collection
+from idc.models import instance_source, Version, Collection
 from ingestion.utilities.utils import accum_sources, is_skipped
 from ingestion.collection import clone_collection, build_collection, retire_collection
 from egestion.egest import egest_version
 
 from python_settings import settings
 
-successlogger = logging.getLogger('root.success')
-progresslogger = logging.getLogger('root.progress')
-errlogger = logging.getLogger('root.err')
+# successlogger = logging.getLogger('root.success')
+# progresslogger = logging.getLogger('root.progress')
+# errlogger = logging.getLogger('root.err')
 
 
 def clone_version(previous_version, new_version):
@@ -39,27 +39,46 @@ def clone_version(previous_version, new_version):
         new_version.collections.append(collection)
     return new_version
 
-
 def expand_version(sess, args, all_sources, version):
-    # Get the collections that the sources know about
+    # Get a dictionary of collections that at least one of the sources know about,
+    # indexed by the idc assigned idc_collection_id of the source. Note that in the case
+    # of a collection not previously in the IDC DB, an idc_collection_id is assigned to
+    # the new collection
     # For each collection, returns a vector of booleans, one for each source.
-    # A boolean is True if the hash of the corresponding source differs
-    # from the hash of the current version of the collection
-    # If the source is skipped, them the corresponding boolean will be False.
+    # A boolean is True if the corresponding source 'has' the collection.
     collections = all_sources.collections()
 
-    # Because collection IDs can change, collections is indexed by the idc_collection_id
-    # of each collections. This mapping is maintained in the collection_id_map table.
-    ### It must be manually updated with a new (collection_id, idc_collection_id) when the ingestion
-    ### process will see a change in the collection_id for some collection.
-
-    # Get the most recent set of IDC collections.
+    # Get the set of IDC collections that IDC has in the DB
     idc_objects_results = version.collections
+    # Index by idc_collection_id
     idc_objects = {c.idc_collection_id: c for c in idc_objects_results}
-    # We exclude collections that are excluded from all sources
+
+    # We now extend the lists of skipped collections to include collections for which neither the DB nor the
+    # source have the collection. Note this is per source.
+    for idc_collection_id, collection in idc_objects.items():
+        if idc_collection_id in collections:
+            for source in instance_source:
+                if source.name != 'all_sources':
+                    if not collection.sources[source.value] and \
+                            not collections[idc_collection_id]['sources'][source.value]:
+                        if not collection.collection_id in args.skipped_collections:
+                            args.skipped_collections[collection.collection_id] = [False,False]
+                        args.skipped_collections[collection.collection_id][source.value] = True
+        else:
+            for source in instance_source:
+                if source.name != 'all_sources':
+                    if not collection.sources[source.value]:
+                        if not collection.collection_id in args.skipped_collections:
+                            args.skipped_collections[collection.collection_id] = [False,False]
+                        args.skipped_collections[collection.collection_id][source.value] = True
+
+
+
+    # We exclude collections that are skipped from all sources
     for idc_object in list(idc_objects):
         if idc_objects[idc_object].collection_id in args.skipped_collections \
-            and all(args.skipped_collections[idc_objects[idc_object].collection_id]):
+                and all(args.skipped_collections[idc_objects[idc_object].collection_id]):
+            progresslogger.info(f'p%s: Excluding collection {idc_objects[idc_object].collection_id}. Skipped in all sources.')
             idc_objects.pop(idc_object)
 
     # Collections that are not previously known about by any source.
@@ -116,15 +135,6 @@ def expand_version(sess, args, all_sources, version):
         # have been reliable.
         # if src_hashes[all_sources.]
         if any(revised):
-            # skipped = is_skipped(args.skipped_collections, collection.collection_id)
-            # src_hashes = all_sources.src_collection_hashes_from_patient_hashes(collection.collection_id,
-            #                                                                    [patient.submitter_case_id for patient in
-            #                                                                     collection.patients], skipped,
-            #                                                                    collection.sources)
-            # revised = [(x != y) and not z for x, y, z in \
-            #            zip(idc_hashes[:-1], src_hashes, skipped)]
-            # if any(revised):
-            # If any sources has an updated version of this object, create a new version.
             rev_collection = clone_collection(collection, uuid=str(uuid4()))
 
             # Here is where we update the collecton ID in case it has changed
@@ -184,6 +194,7 @@ def expand_version(sess, args, all_sources, version):
         # Mark the now previous version of this object as having been retired
         retire_collection(args, collection)
         version.collections.remove(collection)
+        progresslogger.info(f'p{args.pid}: Collection {collection.collection_id} is retired')
 
     progresslogger.info(f'\n\nVersion expansion summary')
     new_collections = []
@@ -239,9 +250,9 @@ def build_version(sess, args, all_sources, version):
             version.done = True
             version.revised = [True, True]
             duration = str(timedelta(seconds=(time.time() - begin)))
-            progresslogger.info("Completed Version %s, in %s", version.version, duration)
+            progresslogger.info("Built Version %s, in %s", version.version, duration)
         else:
-            # Revert the version
+            # There was nothing new, so remove the new version from the DB
             breakpoint()
             egest_version(sess, args, version)
             sess.delete(version)
