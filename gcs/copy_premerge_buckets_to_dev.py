@@ -14,8 +14,8 @@
 # limitations under the License.
 #
 
-# Copy pre-staging buckets populated by ingestion to staging buckets.
-# Ingestion copies data into prestaging buckets named by version and
+# Copy premerge buckets populated by ingestion to staging buckets.
+# Ingestion copies data into premerge buckets named by version and
 # collection, e.g. idc_v9_idc_tcga_brca. The data in these buckets must be
 # copied to one of the idc-dev-etl staging buckets:
 # idc-dev-open, idc-dev-cr, idc-dev-defaced, idc-dev-redacted, idc-dev-excluded.
@@ -26,7 +26,7 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 
 import settings
 from google.cloud import storage, bigquery
-from gcs.copy_bucket_mp.copy_bucket_mp import copy_all_instances
+from copy_bucket_mp import copy_all_instances
 
 def get_collection_groups():
     client = bigquery.Client()
@@ -59,7 +59,7 @@ def preview_copies(args, client, bucket_data):
     return
 
 
-def copy_dev_buckets(args):
+def copy_premerge_buckets(args):
     client = storage.Client()
     bucket_data= get_collection_groups()
     preview_copies(args, client, bucket_data)
@@ -87,9 +87,9 @@ def copy_dev_buckets(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
-    parser.add_argument('--processes', default=1, help="Number of concurrent processes")
+    parser.add_argument('--processes', default=32, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
     args = parser.parse_args()
     args.id = 0 # Default process ID
 
-    copy_dev_buckets(args)
+    copy_premerge_buckets(args)

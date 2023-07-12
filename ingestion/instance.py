@@ -41,12 +41,7 @@ def clone_instance(instance, uuid):
 
 
 def build_instances_tcia(sess, args, collection, patient, study, series):
-    # Download a zip of the instances in a series
-    # It will be write the zip to a file dicom/<series_instance_uid>.zip in the
-    # working directory, and expand the zip to directory dicom/<series_instance_uid>
-    try:
-        # When TCIA provided series timestamps, we'll us that for timestamp.
-        now = datetime.now(timezone.utc)
+     try:
 
         # Delete the series from disk in case it is there from a previous run
         try:
@@ -56,11 +51,13 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
             # It wasn't there
             pass
 
-        download_start = time.time_ns()
-        # hashes = get_TCIA_instances_per_series_with_hashes(args.dicom_dir, series.series_instance_uid)
+        # Download a zip of the instances in a series
+        # It will write the zip to a file dicom/<series_instance_uid>.zip in the
+        # working directory, and expand the zip to directory dicom/<series_instance_uid>
         hashes = get_TCIA_instances_per_series_with_hashes(args.dicom_dir, series)
-        download_time = (time.time_ns() - download_start)/10**9
+        # Validate that the files on disk have the expected hashes.
         if not validate_hashes(args, collection, patient, study, series, hashes):
+            # If validation fails, return. None of the instances will have the done bit set to True
             return
 
         # Get a list of the files from the download
@@ -80,19 +77,12 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
 
         # Replace the TCIA assigned file name
         # Also compute the md5 hash and length in bytes of each
-        pydicom_times=[]
-        psql_times=[]
-        rename_times=[]
-        metadata_times=[]
-        begin = time.time_ns()
         instances = {instance.sop_instance_uid:instance for instance in series.instances}
 
         for dcm in dcms:
             try:
-                pydicom_times.append(time.time_ns())
                 reader = pydicom.dcmread("{}/{}/{}".format(args.dicom_dir, series.uuid, dcm), stop_before_pixels=True)
                 SOPInstanceUID = reader.SOPInstanceUID
-                pydicom_times.append(time.time_ns())
             except InvalidDicomError:
                 errlogger.error("       p%s: Invalid DICOM file for %s/%s/%s/%s", args.pid,
                     collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.uuid)
@@ -105,16 +95,14 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
                     # Return without marking all instances done. This will be prevent the series from being done.
                     return
 
-            psql_times.append(time.time_ns())
             instance = instances[SOPInstanceUID]
-            # If an instance is already done, don't need to do anything more
-            if instance.done:
-                # Delete file. We already have it.
-                os.remove("{}/{}/{}".format(args.dicom_dir, series.uuid, dcm))
-                progresslogger.debug("      p%s: Instance %s previously done, ", args.pid, series.uuid)
-
-                continue
-            psql_times.append(time.time_ns())
+            # # If an instance is already done, don't need to do anything more
+            # if instance.done:
+            #     # Delete file. We already have it.
+            #     os.remove("{}/{}/{}".format(args.dicom_dir, series.uuid, dcm))
+            #     progresslogger.debug("      p%s: Instance %s previously done, ", args.pid, series.uuid)
+            #
+            #     continue
 
             # Validate that DICOM IDs match what we are expecting
             try:
@@ -132,7 +120,6 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
                 # Return without marking all instances done. This will be prevent the series from being done.
                 return
 
-            rename_times.append(time.time_ns())
             uuid = instance.uuid
             file_name = "{}/{}/{}".format(args.dicom_dir, series.uuid, dcm)
             blob_name = "{}/{}/{}.dcm".format(args.dicom_dir, series.uuid, uuid)
@@ -145,17 +132,14 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
                     os.remove("{}/{}/{}".format(args.dicom_dir, series.uuid, dcm))
                     continue
                 else:
-                    # Return without marking all instances done. This will be prevent the series from being done.
+                    # Return without marking all instances done. This will prevent the series from being done.
                     return
 
             os.rename(file_name, blob_name)
-            rename_times.append(time.time_ns())
 
-            metadata_times.append(time.time_ns())
             instance.hash = md5_hasher(blob_name)
             instance.size = Path(blob_name).stat().st_size
             instance.timestamp = datetime.utcnow()
-            metadata_times.append(time.time_ns())
 
         if collection.collection_id == 'NLST':
             breakpoint()
@@ -165,9 +149,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
                     sess.execute(delete(Instance).where(Instance.uuid==instance.uuid))
                     series.instances.remove(instance)
 
-        instances_time = time.time_ns() - begin
-
-        copy_start = time.time_ns()
+        # Copy the instance data to a staging bucket
         try:
             copy_disk_to_gcs(args, collection, patient, study, series)
         except:
@@ -175,46 +157,32 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
             errlogger.error("       p%s: Copy files to GCS failed for %s/%s/%s/%s", args.pid,
                     collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
             return
-        copy_time = (time.time_ns() - copy_start)/10**9
 
-        mark_done_start = time.time ()
         for instance in series.instances:
             instance.done = True
-        mark_done_time = time.time() - mark_done_start
-        # rootlogger.debug("      p%s: Series %s, completed build_instances; %s", args.pid, series.series_instance_uid, time.asctime())
-        progresslogger.debug("        p%s: Series %s: download: %s, instances: %s, pydicom: %s, psql: %s, rename: %s, metadata: %s, copy: %s, mark_done: %s",
-                         args.pid, series.uuid,
-                         download_time,
-                         instances_time/10**9,
-                         (sum(pydicom_times[1::2]) - sum(pydicom_times[0::2]))/10**9,
-                         (sum(psql_times[1::2]) - sum(psql_times[0::2]))/10**9,
-                         (sum(rename_times[1::2]) - sum(rename_times[0::2]))/10 **9,
-                         (sum(metadata_times[1::2]) - sum(metadata_times[0::2])) / 10 ** 9,
-                         copy_time,
-                         mark_done_time)
-    except Exception as exc:
+     except Exception as exc:
         errlogger.info('  p%s build_instances failed: %s', args.pid, exc)
         raise exc
 
 
 def build_instances_idc(sess, args, collection, patient, study, series):
-    # Download a zip of the instances in a series
-    # It will be write the zip to a file dicom/<series_instance_uid>.zip in the
-    # working directory, and expand the zip to directory dicom/<series_instance_uid>
 
-    # When TCIA provided series timestamps, we'll us that for timestamp.
-    now = datetime.now(timezone.utc)
     client=storage.Client()
 
+    # When idc is the source of instance data, the instances are already in a bucket.
+    # From idc_xxx DB hierarchy, we get a table of the SOPInstanceUID, hash and GCS URL of
+    # all the instances in the series
     stmt = select(IDC_Instance.sop_instance_uid, IDC_Instance.gcs_url, IDC_Instance.hash ). \
         where(IDC_Instance.series_instance_uid == series.series_instance_uid)
     result = sess.execute(stmt)
     src_instance_metadata = {i.sop_instance_uid:{'gcs_url':i.gcs_url, 'hash':i.hash} \
                              for i in result.fetchall()}
+    # Now we copy each instance to the staging bucket
     start = time.time()
     total_size = 0
     for instance in series.instances:
         if not instance.done:
+            # Copy the instance and validate the hash
             instance.hash = src_instance_metadata[instance.sop_instance_uid]['hash']
             instance.size, hash = copy_gcs_to_gcs(args, client, args.prestaging_idc_bucket, series, instance, src_instance_metadata[instance.sop_instance_uid]['gcs_url'])
             if hash != instance.hash:

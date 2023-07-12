@@ -58,8 +58,8 @@ def gen_instance_manifest(args):
       ON
         1=1
       WHERE
-        # idc_version IN {args.versions}
-        # AND 
+        i_rev_idc_version IN {args.versions}
+        AND 
             ((i_source='tcia'
             AND tcia_access='Public')
           OR (i_source='idc'

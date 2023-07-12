@@ -34,7 +34,7 @@ if __name__ == '__main__':
     parser.add_argument('--manifest_uri', default=f'gs://indexd_manifests/dcf_input/pdp_hosting/idc_v{settings.CURRENT_VERSION}_instance_manifest_*.tsv',
             help="GCS blob in which to save results")
     parser.add_argument('--temp_table_bqdataset', default='whc_dev', \
-            help='Manifest of temporary table')
+            help='BQ dataset of temporary table')
     parser.add_argument('--temp_table', default=f'idc_v{settings.CURRENT_VERSION}_instance_manifest', \
             help='Temporary table in which to write query results')
     args = parser.parse_args()

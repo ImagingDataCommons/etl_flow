@@ -32,8 +32,12 @@ if __name__ == '__main__':
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
-    for src_dataset in (
-            f'idc_v{settings.CURRENT_VERSION}',
-            f'idc_v1{settings.CURRENT_VERSION}_clinical',
-            ):
+    for src_dataset in [
+            # f'idc_v{settings.CURRENT_VERSION}',
+            # f'idc_current',
+            f'idc_v{settings.CURRENT_VERSION}_clinical',
+            # 'idc_current_clinical'
+            ]:
+        args.src_dataset = src_dataset
+        args.trg_dataset = src_dataset
         publish_dataset(args)
