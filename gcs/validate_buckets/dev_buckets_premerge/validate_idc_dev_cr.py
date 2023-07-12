@@ -15,7 +15,7 @@
 #
 
 """
-Multiprocess script to validate that the idc-dev-redacted bucket
+Multiprocess script to validate that the idc-dev-cr bucket
 contains the expected set of blobs.
 """
 
@@ -23,16 +23,18 @@ import argparse
 import json
 import settings
 
-from gcs.validate_bucket.validate_bucket_mp import check_all_instances
-
+import builtins
+builtins.APPEND_PROGRESSLOGGER = True
+from gcs.validate_buckets.validate_bucket_mp import check_all_instances_mp
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # parser.add_argument('--version', default=f'{settings.CURRENT_VERSION}')
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--bucket', default='idc-dev-redacted')
+    parser.add_argument('--processes', default=32)
+    parser.add_argument('--bucket', default='idc-dev-cr')
     parser.add_argument('--dev_or_pub', default = 'dev', help='Validating a dev or pub bucket')
-    parser.add_argument('--premerge', default=False, help='True when performing prior to merging premerge  buckets')
+    parser.add_argument('--premerge', default=True, help='True when performing prior to merging premerge  buckets')
     parser.add_argument('--expected_blobs', default=f'{settings.LOG_DIR}/expected_blobs.txt', help='List of blobs names expected to be in above collections')
     parser.add_argument('--found_blobs', default=f'{settings.LOG_DIR}/found_blobs.txt', help='List of blobs names found in bucket')
     parser.add_argument('--batch', default=10000, help='Size of batch assigned to each process')
@@ -40,5 +42,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print(f'args: {json.dumps(args.__dict__, indent=2)}')
-
-    check_all_instances(args)
+    check_all_instances_mp(args)

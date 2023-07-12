@@ -24,7 +24,7 @@ import argparse
 import json
 import settings
 
-from gcs.validate_bucket.validate_bucket_mp import check_all_instances
+from gcs.validate_buckets.validate_bucket import check_all_instances
 
 
 if __name__ == '__main__':

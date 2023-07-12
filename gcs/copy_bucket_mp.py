@@ -80,11 +80,15 @@ def worker(input, args, dones):
     src_bucket = storage.Bucket(client, args.src_bucket)
     dst_bucket = storage.Bucket(client, args.dst_bucket)
     for blob_names, n in iter(input.get, 'STOP'):
-        blob_names_todo = blob_names - dones
-        if blob_names_todo:
-            copy_instances(args, client, src_bucket, dst_bucket, blob_names_todo, n)
-        else:
-            progresslogger.info(f'p{args.id}: Blobs {n}:{n+len(blob_names)-1} previously copied')
+        try:
+            blob_names_todo = blob_names - dones
+            if blob_names_todo:
+                copy_instances(args, client, src_bucket, dst_bucket, blob_names_todo, n)
+            else:
+                progresslogger.info(f'p{args.id}: Blobs {n}:{n+len(blob_names)-1} previously copied')
+        except Exception as exc:
+            errlogger.error(f'p{args.id}: Error {exc}')
+
 
 
 def copy_all_instances(args, dones):
