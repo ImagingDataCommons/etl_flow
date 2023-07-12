@@ -18,6 +18,7 @@ import os
 import logging
 from logging import INFO, ERROR
 import settings
+import builtins
 
 # Suppress logging from request module
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -49,8 +50,12 @@ progresslogger = logging.getLogger('root.progress')
 progresslogger.setLevel(INFO)
 for hdlr in progresslogger.handlers[:]:
     progresslogger.removeHandler(hdlr)
-#The progress log file is always truncated (the mode='w' does that.)
-success_fh = logging.FileHandler('{}/progress.log'.format(settings.LOG_DIR), mode='w')
+#The progress log file is usually truncated (the mode='w' does that.)
+if not hasattr(builtins, "APPEND_PROGRESSLOGGER") or builtins.APPEND_PROGRESSLOGGER==False:
+    success_fh = logging.FileHandler('{}/progress.log'.format(settings.LOG_DIR), mode='w')
+else:
+    success_fh = logging.FileHandler('{}/progress.log'.format(settings.LOG_DIR))
+
 progresslogger.addHandler(success_fh)
 successformatter = logging.Formatter('%(message)s')
 success_fh.setFormatter(successformatter)

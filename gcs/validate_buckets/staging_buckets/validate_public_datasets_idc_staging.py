@@ -48,16 +48,33 @@ def get_expected_blobs_in_bucket(args):
             f.write(''.join(rows))
 
 
+# def get_found_blobs_in_bucket(args):
+#     client = storage.Client()
+#     bucket = client.bucket(args.bucket)
+#     page_token = ""
+#     # iterator = client.list_blobs(bucket, page_token=page_token, max_results=args.batch)
+#     iterator = client.list_blobs(bucket, versions=False, page_token=page_token, page_size=args.batch)
+#     with open(args.found_blobs, 'w') as f:
+#         for page in iterator.pages:
+#             blobs = [f'{blob.name}\n' for blob in page]
+#             f.write(''.join(blobs))
+
+
 def get_found_blobs_in_bucket(args):
     client = storage.Client()
     bucket = client.bucket(args.bucket)
     page_token = ""
     # iterator = client.list_blobs(bucket, page_token=page_token, max_results=args.batch)
-    iterator = client.list_blobs(bucket, versions=False, page_token=page_token, page_size=args.batch)
     with open(args.found_blobs, 'w') as f:
-        for page in iterator.pages:
-            blobs = [f'{blob.name}\n' for blob in page]
-            f.write(''.join(blobs))
+        series_iterator = client.list_blobs(bucket, versions=False, page_token=page_token, page_size=args.batch, \
+                                            prefix='', delimiter='/')
+        for page in series_iterator.pages:
+            for prefix in page.prefixes:
+                instance_iterator = client.list_blobs(bucket, versions=False, page_token=page_token, page_size=args.batch, \
+                                         prefix=prefix)
+                for page in instance_iterator.pages:
+                    blobs = [f'{blob.name}\n' for blob in page]
+                    f.write(''.join(blobs))
 
 
 def check_all_instances(args):
@@ -74,6 +91,7 @@ def check_all_instances(args):
         get_found_blobs_in_bucket(args)
         found_blobs = set(open(args.found_blobs).read().splitlines())
         # json.dump(psql_blobs, open(args.blob_names), 'w')
+
     if found_blobs == expected_blobs:
         successlogger.info(f"Bucket {args.bucket} has the correct set of blobs")
     else:

@@ -64,10 +64,11 @@ def bq_dataset_exists(client, project , target_dataset):
 
 def copy_table(client, args,  table_id):
 
-    try:
-        table = client.get_table(f'{args.trg_project}.{args.trg_dataset}.{table_id}')
-        progresslogger.info(f'Table {table} already exists.')
-    except:
+    # try:
+    #     table = client.get_table(f'{args.trg_project}.{args.trg_dataset}.{table_id}')
+    #     progresslogger.info(f'Table {table} already exists.')
+    # except:
+    if True:
         src_table_id = f'{args.src_project}.{args.src_dataset}.{table_id}'
         trg_table_id = f'{args.trg_project}.{args.trg_dataset}.{table_id}'
 
@@ -75,7 +76,7 @@ def copy_table(client, args,  table_id):
         client = bigquery.Client()
         job_config = bigquery.CopyJobConfig()
         job_config.operation_type = 'COPY'
-        job_config.write_disposition = 'WRITE_EMPTY'
+        job_config.write_disposition = 'WRITE_TRUNCATE'
 
         # Construct and run a copy job.
         job = client.copy_table(
@@ -93,32 +94,39 @@ def copy_table(client, args,  table_id):
 
 
 def copy_view(client, args, view_id):
-
     try:
-        view = client.get_table(f'{args.trg_project}.{args.trg_dataset}.{view_id}')
-        progresslogger.info(f'View {view} already exists.')
-    except:
-        view = client.get_table(f'{args.src_project}.{args.src_dataset}.{view_id}')
-
-        new_view = bigquery.Table(f'{args.trg_project}.{args.trg_dataset}.{view_id}')
-        new_view.view_query = view.view_query.replace(args.src_project,args.pdp_project). \
-            replace(args.src_dataset,args.trg_dataset)
-
-        new_view.friendly_name = view.friendly_name
-        new_view.description = view.description
-        new_view.labels = view.labels
-        installed_view = client.create_table(new_view)
-
-        installed_view.schema = view.schema
-
         try:
-            # # Update the schema after creating the view
-            # installed_view.schema = view.schema
-            client.update_table(installed_view, ['schema'])
-            progresslogger.info(f'Copy of view {view_id}: DONE')
-        except BadRequest as exc:
-            errlogger.error(f'{exc}')
+            view = client.get_table(f'{args.trg_project}.{args.trg_dataset}.{view_id}')
+            progresslogger.info(f'View {view} already exists.')
+            client.delete_table(f'{args.trg_project}.{args.trg_dataset}.{view_id}', not_found_ok=True)
+            progresslogger.info(f'Deleted {view}.')
+        except:
+            progresslogger.info(f'View {view_id} does not exist.')
 
+        finally:
+            view = client.get_table(f'{args.src_project}.{args.src_dataset}.{view_id}')
+
+            new_view = bigquery.Table(f'{args.trg_project}.{args.trg_dataset}.{view_id}')
+            new_view.view_query = view.view_query.replace(args.src_project,args.trg_project). \
+                replace(args.src_dataset,args.trg_dataset)
+
+            new_view.friendly_name = view.friendly_name
+            new_view.description = view.description
+            new_view.labels = view.labels
+            installed_view = client.create_table(new_view)
+
+            installed_view.schema = view.schema
+
+            try:
+                # # Update the schema after creating the view
+                # installed_view.schema = view.schema
+                client.update_table(installed_view, ['schema'])
+                progresslogger.info(f'Copy of view {view_id}: DONE')
+            except BadRequest as exc:
+                errlogger.error(f'{exc}')
+    except Exception as exc:
+        errlogger.error((f'{exc}'))
+        progresslogger.info((f'Really done'))
     return
 
 def publish_dataset(args):

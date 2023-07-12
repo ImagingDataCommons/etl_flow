@@ -37,19 +37,19 @@ from google.cloud import storage
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--src_bucket', default='dac-vhm-dst', help='Bucket containing WSI instances')
+    parser.add_argument('--src_bucket', default='dac-vhm-dst', help='Source bucket containing instances')
     parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/visible_human_project', help='Directory on which to mount the bucket.\
                 The script will create this directory if necessary.')
     parser.add_argument('--subdir', default='', help="Subdirectory of mount_point at which to start walking directory")
     parser.add_argument('--collection_id', default='NLM-Visible-Human-Project', help='idc_webapp_collection id of the collection or ID of analysis result to which instances belong.')
-    parser.add_argument('--wiki_doi', default='', help='Collection DOI')
+    parser.add_argument('--wiki_doi', default='', help='Collection DOI. Might be empty string.')
     parser.add_argument('--wiki_url', default='https://www.nlm.nih.gov/research/visible/visible_human.html',\
                         help='Info page URL')
     parser.add_argument('--license', default = {"license_url": 'https://www.nlm.nih.gov/databases/download/terms_and_conditions.html',\
             "license_long_name": "National Library of Medicine Terms and Conditions; May 21, 2019", \
-            "license_short_name": "National Library of Medicine Terms and Conditions; May 21, 2019"})
+            "license_short_name": "National Library of Medicine Terms and Conditions; May 21, 2019"}, help="(Sub-)Collection license")
     parser.add_argument('--third_party', type=bool, default=False, help='True if from a third party analysis result')
-    parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True')
+    parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

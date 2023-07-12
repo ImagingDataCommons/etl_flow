@@ -43,20 +43,21 @@ assert settings.configured
 
 
 def delete_instances(args, client, bucket, blobs, n):
-    try:
-        with client.batch():
-            for blob in blobs:
-                bucket.blob(blob[0], generation=blob[1]).delete()
-                # bucket.blob(blob[0], generation=blob[1]).delete()
-
-        successlogger.info('p%s Delete %s blobs %s:%s ', args.id, args.bucket, n, n+len(blobs)-1)
-    except ServiceUnavailable:
-        errlogger.error('p%s Delete %s blobs %s:%s failed', args.id, args.bucket, n, n+len(blobs)-1)
-    except NotFound:
-        errlogger.error('p%s Delete %s blobs %s:%s failed, not found', args.id, args.bucket, n, n+len(blobs)-1)
-    except Exception as exc:
-        errlogger.error('p%s Exception %s %s:%s', args.id, exc, n, n+len(blobs)-1)
-
+    TRIES = 3
+    for i in range(TRIES):
+        try:
+            with client.batch():
+                for blob in blobs:
+                    bucket.blob(blob[0], generation=blob[1]).delete()
+            successlogger.info('p%s Delete %s blobs %s:%s ', args.id, args.bucket, n, n+len(blobs)-1)
+            break
+        except ServiceUnavailable:
+            errlogger.error('p%s Delete %s blobs %s:%s failed', args.id, args.bucket, n, n+len(blobs)-1)
+        except Exception as exc:
+            errlogger.error('p%s Exception %s %s:%s', args.id, exc, n, n+len(blobs)-1)
+        except NotFound:
+            errlogger.error('p%s Delete %s blobs %s:%s failed, not found', args.id, args.bucket, n, n+len(blobs)-1)
+            break
 
 
 def worker(input, args):
