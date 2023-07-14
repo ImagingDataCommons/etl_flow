@@ -133,12 +133,26 @@ def get_instance_hash(sop_instance_uid, access_token=None):
 
 def get_hash_nlst(request_data, access_token=''):
     access_token, refresh_token = get_access_token(NLST_AUTH_URL)
-    headers = dict(
-        Authorization=f'Bearer {access_token}'
-    )
-    url = f"{NLST_URL}/getMD5Hierarchy"
-    result = requests.post(url, headers=headers, data=request_data)
+    retries = 4
+    while retries:
+        headers = dict(
+            Authorization=f'Bearer {access_token}'
+        )
+        url = f"{NLST_URL}/getMD5Hierarchy"
+        result = requests.post(url, headers=headers, data=request_data)
+        if result.status_code == 200:
+            break
+        else:
+            sleep( 2**(5-retries))
+            retries -= 1
     return result
+
+    # headers = dict(
+    #     Authorization=f'Bearer {access_token}'
+    # )
+    # url = f"{NLST_URL}/getMD5Hierarchy"
+    # result = requests.post(url, headers=headers, data=request_data)
+    # return result
 
 def get_hash(request_data, access_token=None):
     if not access_token:
