@@ -45,19 +45,11 @@ def build_instance(client, args, sess, series, instance_id, hash, size, blob_nam
         instance.sop_instance_uid = instance_id
         series.instances.append(instance)
         progresslogger.info(f'\t\t\t\tInstance {blob_name} added')
-
-    # Always set/update these values
-    if instance.hash != hash:
-        # Revise this instance's version
-        instance.idc_version = args.version
-        instance.gcs_url = f'gs://{args.src_bucket}/{blob_name}'
-        instance.hash = hash
-        instance.size = size
-        instance.idc_version = args.version
-        instance.excluded = False
-        progresslogger.info(f'\t\t\t\tInstance {blob_name} new or revised')
-    else:
-        progresslogger.info(f'\t\t\t\tInstance {blob_name} unchanged')
+    instance.idc_version = args.version
+    instance.gcs_url = f'gs://{args.src_bucket}/{blob_name}'
+    instance.hash = hash
+    instance.idc_version = args.version
+    instance.excluded = False
     successlogger.info(blob_name)
 
 
@@ -75,9 +67,9 @@ def build_series(client, args, sess, study, series_id, instance_id, hash, size, 
         series.third_party = args.third_party
         study.seriess.append(series)
         progresslogger.info(f'\t\t\tSeries {series_id} added')
-    # Always set/update the wiki_doi in case it has changed
-    series.wiki_doi = args.wiki_doi
-    series.wiki_url = args.wiki_url
+    # Always set/update the source_doi in case it has changed
+    series.source_doi = args.source_doi
+    series.source_url = args.source_url
     series.excluded = False
     build_instance(client, args, sess, series, instance_id, hash, size, blob_name)
     return
@@ -172,8 +164,8 @@ def prebuild(args):
 #                 The script will create this directory if necessary.')
 #     parser.add_argument('--subdir', default='', help="Subdirectory of mount_point at which to start walking directory")
 #     parser.add_argument('--collection_id', default='NLM_visible_human_project', help='idc_webapp_collection id of the collection or ID of analysis result to which instances belong.')
-#     parser.add_argument('--wiki_doi', default='', help='Collection DOI')
-#     parser.add_argument('--wiki_url', default='https://www.nlm.nih.gov/research/visible/visible_human.html',\
+#     parser.add_argument('--source_doi', default='', help='Collection DOI')
+#     parser.add_argument('--source_url', default='https://www.nlm.nih.gov/research/visible/visible_human.html',\
 #                         help='Info page URL')
 #     parser.add_argument('--license', default = {"license_url": 'https://www.nlm.nih.gov/databases/download/terms_and_conditions.html',\
 #             "license_long_name": "National Library of Medicine Terms and Conditions; May 21, 2019", \

@@ -152,7 +152,7 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
             failed = expand_series(sess, args, all_sources, version, collection, patient, study, series)
             if failed:
                 return
-        successlogger.info("      p%s: Expanded Series %s; %s; %s instances, expand: %s", args.pid, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
+        successlogger.info("      p%s: Expanded Series %s; %s; %s instances, expand time: %s", args.pid, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
         try:
             # Verify that series has a single source
             assert sum(1 for source in series.sources if source) == 1

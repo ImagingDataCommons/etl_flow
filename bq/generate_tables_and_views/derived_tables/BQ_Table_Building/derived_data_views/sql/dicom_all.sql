@@ -21,6 +21,8 @@ WITH
     aux.study_revised_idc_version AS study_revised_idc_version,
     dcm.SeriesInstanceUID AS SeriesInstanceUID,
     aux.series_uuid as crdc_series_uuid,
+    aux.series_gcs_url as series_gcs_url,
+    aux.series_aws_url as series_aws_url,
     aux.series_hash as series_hash,
     aux.series_init_idc_version AS series_init_idc_version,
     aux.series_revised_idc_version AS series_revised_idc_version,

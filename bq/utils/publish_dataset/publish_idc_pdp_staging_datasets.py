@@ -35,8 +35,8 @@ if __name__ == '__main__':
     for src_dataset in [
             # f'idc_v{settings.CURRENT_VERSION}',
             # f'idc_current',
-            f'idc_v{settings.CURRENT_VERSION}_clinical',
-            # 'idc_current_clinical'
+            # f'idc_v{settings.CURRENT_VERSION}_clinical',
+            'idc_current_clinical'
             ]:
         args.src_dataset = src_dataset
         args.trg_dataset = src_dataset

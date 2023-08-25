@@ -356,7 +356,7 @@ if __name__ == '__main__':
     # err_fh.setFormatter(errformatter)
     #
     # version = settings.CURRENT_VERSION
-    version = 15
+    version = 16
     parser = argparse.ArgumentParser()
     # parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
     parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
@@ -368,7 +368,7 @@ if __name__ == '__main__':
     parser.add_argument('--only_mismatches', default=False, help='Only log mismatching hashes')
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
                         help='Levels at which to log')
-    parser.add_argument('--collections', default=[], \
+    parser.add_argument('--collections', default=['CPTAC-HNSCC'], \
                         help='List of collections to compare. If empty, compare all collections')
     parser.add_argument('--patients', default = [],
                         help='List of patients to compare. If empty, compare all patients')

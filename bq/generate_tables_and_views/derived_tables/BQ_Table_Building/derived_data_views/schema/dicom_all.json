@@ -146,6 +146,18 @@
         "type": "STRING"
       },
       {
+        "description": "URL of the Google Cloud Storage (GCS) folder of the series containing the current version of this instance",
+        "mode": "NULLABLE",
+        "name": "series_gcs_url",
+        "type": "STRING"
+      },
+      {
+        "description": "URL of the Amazon Web Services (AWS) folder of the series containing the current version of this instance",
+        "mode": "NULLABLE",
+        "name": "series_aws_url",
+        "type": "STRING"
+      },
+      {
         "description": "md5 hash of the data in the this version of the series containing this instance",
         "mode": "NULLABLE",
         "name": "series_hash",
@@ -194,13 +206,13 @@
         "type": "STRING"
       },
       {
-        "description": "URL to this object containing the current version of this instance in Google Cloud Storage (GCS)",
+        "description": "URL of the Google Cloud Storage (GCS) object containing the current version of this instance",
         "mode": "NULLABLE",
         "name": "gcs_url",
         "type": "STRING"
       },
       {
-        "description": "URL to this object containing the current version of this instance in Amazon Web Services (AWS)",
+        "description": "URL of the Amazon Web Services (AWS) object containing the current version of this instance",
         "mode": "NULLABLE",
         "name": "aws_url",
         "type": "STRING"

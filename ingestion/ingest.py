@@ -48,10 +48,10 @@ def ingest(args):
         access = shared_memory.ShareableList(get_access_token())
         args.access = access
 
-        args.skipped_tcia_collections = list_skips(sess, 'tcia', args.skipped_tcia_collections, args.included_tcia_collections)
-        args.skipped_idc_collections = list_skips(sess, 'idc', args.skipped_idc_collections, args.included_idc_collections)
+        args.skipped_tcia_collections = list_skips(sess, 'tcia', args.skipped_tcia_collections)
+        args.skipped_idc_collections = list_skips(sess, 'idc', args.skipped_idc_collections)
 
-        # Now create a table of collections for which tcia or idc ingestion or both, are to be skipped.
+        # Ccreate a table of collections for which tcia or idc ingestion or both, are to be skipped.
         # Populate with tcia skips
         skipped_collections = \
             {collection_id:[True, False] for collection_id in args.skipped_tcia_collections}
@@ -110,7 +110,7 @@ def ingest(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--num_processes', type=int, default=12, help="Number of concurrent processes")
+    parser.add_argument('--num_processes', type=int, default=8, help="Number of concurrent processes")
 
     # parser.add_argument('--skipped_tcia_groups', nargs='*', default=['redacted_collections', 'excluded_collections'],\
     #                     help="List of tables containing tcia_api_collection_ids of tcia collections to be skipped")

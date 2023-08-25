@@ -184,7 +184,7 @@ class All:
         return patient_dois
 
 
-    # Get the (wiki) URLs of all series in a patient
+    # Get the (source) URLs of all series in a patient
     def get_patient_urls(self, collection, patient, skipped_sources):
         patient_urls = {}
         for source in self.sources:

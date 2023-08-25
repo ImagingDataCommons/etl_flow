@@ -44,8 +44,8 @@ def prebuild(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--wiki_url', default='https://doi.org/10.5281/zenodo.7539035', \
-                        help='Only delete instances having this wiki_url')
+    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.7539035', \
+                        help='Only delete instances having this source_url')
     parser.add_argument('--collection_ids', type=str, default=['NLST', 'NSCLC-Radiomics'], nargs='*', \
       help='A list of collections to remove.')
     # parser.add_argument('--log_dir', default=f'{settings.LOGGING_BASE}/{settings.BASE_NAME}')

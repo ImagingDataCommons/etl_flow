@@ -48,8 +48,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--collection_id', type=str, default='CPTAC-GBM', nargs='*', \
       help='A list of collections to remove.')
-    parser.add_argument('--wiki_url', default='https://doi.org/10.7937/K9/TCIA.2018.3RJE41Q1', \
-                        help='Only delete instances having this wiki_url')
+    parser.add_argument('--source_url', default='https://doi.org/10.7937/K9/TCIA.2018.3RJE41Q1', \
+                        help='Only delete instances having this source_url')
     parser.add_argument('--submitter_case_ids', type=str, default=['C3L-03547',
 'C3L-03549',
 'C3L-03554',

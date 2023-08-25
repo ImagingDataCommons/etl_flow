@@ -34,7 +34,7 @@
 from google.cloud import bigquery
 
 auxiliary_metadata_schema = [
-    bigquery.SchemaField('tcia_api_collection_id', 'STRING', mode='NULLABLE', description='Collection ID as accepted by TCIA APIs. Or in the style of TCIA APIs'),
+    bigquery.SchemaField('tcia_api_collection_id', 'STRING', mode='NULLABLE', description='DEPRECATED: Collection ID as accepted by TCIA APIs. Or in the style of TCIA APIs'),
     bigquery.SchemaField('idc_webapp_collection_id', 'STRING', mode='NULLABLE', description='Collection ID as accepted by the IDC webapp'),
     bigquery.SchemaField('collection_id', 'STRING', mode='NULLABLE', description='Collection ID as accepted by the IDC webapp. Duplicate of idc_webapp_collection_id'),
     bigquery.SchemaField('collection_timestamp', 'DATETIME', mode='NULLABLE', description='Revision timestamp'),
@@ -55,6 +55,8 @@ auxiliary_metadata_schema = [
     bigquery.SchemaField('study_final_idc_version', 'INTEGER', mode='NULLABLE', description='The IDC version in which this version of the study containing this instance last appeared. If 0, thise is the current version.'),
     bigquery.SchemaField('SeriesInstanceUID', 'STRING', mode='NULLABLE', description='DICOM series containing this instance'),
     bigquery.SchemaField('series_uuid', 'STRING', mode='NULLABLE', description='UUID of this version of the series containing this instance'),
+    bigquery.SchemaField('series_gcs_url', 'STRING', mode='NULLABLE', description='URL of the Google Cloud Storage (GCS) folder of the series containing this instance'),
+    bigquery.SchemaField('series_aws_url', 'STRING', mode='NULLABLE', description='URL of the Amazon Web Services (AWS) folder of the series containing this instance'),
     bigquery.SchemaField('source_doi', 'STRING', mode='NULLABLE', description='The DOI of a wiki page that describes the original collection or analysis result that includes this instance'),
     bigquery.SchemaField('source_url', 'STRING', mode='NULLABLE', description='The URL of a wiki page that describes the original collection or analysis result that includes this instance'),
     bigquery.SchemaField('series_instances', 'INTEGER', mode='NULLABLE', description='Number of instances in the version of the study containing this instance'),
@@ -64,8 +66,8 @@ auxiliary_metadata_schema = [
     bigquery.SchemaField('series_final_idc_version', 'INTEGER', mode='NULLABLE', description='The IDC version in which this version of the series containing this instance last appeared. If 0, thise is the current version.'),
     bigquery.SchemaField('SOPInstanceUID', 'STRING', mode='NULLABLE', description='DICOM instance containing this instance version'),
     bigquery.SchemaField('instance_uuid', 'STRING', mode='NULLABLE', description='UUID of this version of this instance'),
-    bigquery.SchemaField('gcs_url', 'STRING', mode='NULLABLE', description='URL to this object containing the current version of this instance in Google Cloud Storage (GCS)'),
-    bigquery.SchemaField('aws_url', 'STRING', mode='NULLABLE', description='URL to this object containing the current version of this instance in Amazon Web Services (AWS)'),
+    bigquery.SchemaField('gcs_url', 'STRING', mode='NULLABLE', description='URL of the Google Cloud Storage (GCS) object containing the current version of this instance' ),
+    bigquery.SchemaField('aws_url', 'STRING', mode='NULLABLE', description='URL to the Amazon Web Services (AWS) object containing the current version of this instance'),
     bigquery.SchemaField('instance_size', 'INTEGER', mode='NULLABLE', description='Size in bytes of this version of this instance'),
     bigquery.SchemaField('instance_hash', 'STRING', mode='NULLABLE', description='md5 hash of the data in the this version of this instance'),
     # bigquery.SchemaField('instance_source', 'STRING', mode='NULLABLE', description='Source of the instance, either tcia or idc'),

@@ -37,8 +37,8 @@ def create_idc_all_joined(client, args, table, order_by):
      se.series_instance_uid, 
      se.hash se_hash, 
      se.excluded se_excluded, 
-     wiki_doi, 
-     wiki_url, 
+     source_doi, 
+     source_url, 
      third_party, 
      license_long_name,
      license_short_name, 
@@ -49,14 +49,14 @@ def create_idc_all_joined(client, args, table, order_by):
      size,
      i.excluded i_excluded, 
      idc_version
-    FROM idc_collection c
-     JOIN idc_patient p
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_collection` c
+     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_patient` p
      ON c.collection_id = p.collection_id
-     JOIN idc_study st
+     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_study` st
      ON p.submitter_case_id = st.submitter_case_id
-     JOIN idc_series se
+     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_series` se
      ON st.study_instance_uid = se.study_instance_uid
-     JOIN idc_instance i
+     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_instance` i
      ON se.series_instance_uid = i.series_instance_uid
    """
     # Make an API request to create the view.

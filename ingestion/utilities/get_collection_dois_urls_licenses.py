@@ -73,11 +73,11 @@ def get_patient_dois_tcia(collection, patient):
 def get_patient_dois_idc(sess, collection, patient):
     try:
         query = sess.query(IDC_Series.series_instance_uid.label('SeriesInstanceUID'), \
-            IDC_Series.wiki_doi.label('SourceDOI')). \
+            IDC_Series.source_doi.label('SourceDOI')). \
             join(IDC_Collection.patients).join(IDC_Patient.studies).join(IDC_Study.seriess). \
             filter(IDC_Collection.collection_id == collection). \
             filter(IDC_Patient.submitter_case_id == patient). \
-            filter(IDC_Series.wiki_doi != None)
+            filter(IDC_Series.source_doi != None)
         series_dois = {row['SeriesInstanceUID']: row['SourceDOI'] for row in [row._asdict() for row in query.all()]}
         return series_dois
     except:
@@ -98,11 +98,11 @@ def get_patient_urls_tcia(collection, patient):
 def get_patient_urls_idc(sess, collection, patient):
     try:
         query = sess.query(IDC_Series.series_instance_uid.label('SeriesInstanceUID'), \
-            IDC_Series.wiki_url.label('SourceURL')). \
+            IDC_Series.source_url.label('SourceURL')). \
             join(IDC_Collection.patients).join(IDC_Patient.studies).join(IDC_Study.seriess). \
             filter(IDC_Collection.collection_id == collection). \
             filter(IDC_Patient.submitter_case_id == patient). \
-            filter(IDC_Series.wiki_url != None)
+            filter(IDC_Series.source_url != None)
         series_urls = {row['SeriesInstanceUID']: row['SourceURL'] for row in [row._asdict() \
                      for row in query.all()]}
         return series_urls
@@ -140,7 +140,7 @@ def get_licenses_tcia(collection, patient, third_party="no", server=""):
                         "license_long_name": series_metadata["License Name"],
                         "license_short_name": license_types[series_metadata["License Name"]]['shortName']
                     }
-                elif collection == 'CPTAC-PDA':
+                elif collection in ['CPTAC-PDA', 'Breast-MRI-NACT-Pilot']:
                     series_licenses[seriesUID] = {
                         "license_url": license_types['Creative Commons Attribution 3.0 Unported License']["licenseURL"],
                         "license_long_name": license_types['Creative Commons Attribution 3.0 Unported License']["longName"],
