@@ -31,7 +31,8 @@ from utilities.bq_helpers import query_BQ, export_BQ_to_GCS, delete_BQ_Table
 def s5cmd_manifest(args, collection_id, manifest_version, source_doi, service, url):
     bq_client = bigquery.Client(project='idc-dev-etl')
     gcs_client = storage.Client(project='idc-dev-etl')
-    file_name = f"{collection_id.lower().replace('-','_').replace(' ','-')}_v{manifest_version}_{service}.s5cmd"
+    # file_name = f"{collection_id.lower().replace('-','_').replace(' ','-')}_v{manifest_version}_{service}.s5cmd"
+    file_name = f"{collection_id.lower().replace('-','_').replace(' ','-')}_{service}.s5cmd"
     query = f"""
     SELECT distinct concat('cp s3://', pub_{service}_idc_url, '/', se_uuid, '/*  .') URL
     FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
@@ -62,7 +63,8 @@ f'''# To download the files in this manifest, first install s5cmd (https://githu
 def dcf_manifest(args, collection_id, manifest_version, source_doi, service, url):
     bq_client = bigquery.Client(project='idc-dev-etl')
     gcs_client = storage.Client(project='idc-dev-etl')
-    file_name = f"{collection_id.lower().replace('-','_').replace(' ','-')}_v{manifest_version}_{service}.csv"
+    # file_name = f"{collection_id.lower().replace('-','_').replace(' ','-')}_v{manifest_version}_{service}.csv"
+    file_name = f"{collection_id.lower().replace('-','_').replace(' ','-')}_{service}.csv"
     query = f"""
     SELECT distinct concat('dg.4DFC/',i_uuid) drs_uri
     FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
