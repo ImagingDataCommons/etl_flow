@@ -644,7 +644,8 @@ class Original_Collections_Metadata_IDC_Source(Base):
     __tablename__ = 'original_collections_metadata_idc_source'
     # tcia_api_collection_id = Column(String, comment='Collection ID used by TCIA APIs')
     # tcia_wiki_collection_id = Column(String, nullable=True, comment='TCIA Wiki page collection ID')
-    idc_webapp_collection_id = Column(String,primary_key=True, nullable=False, comment='Collection ID used by IDC webapp')
+    collection_name = Column(String, comment='Public collection name')
+    collection_id = Column(String,primary_key=True, nullable=False, comment='Collection ID used by IDC webapp')
     Status = Column(String, nullable=False, comment='Public or Limited')
     Updated = Column(String, comment='Date of last update')
     ImageTypes = Column(String, comment='List of image types')
@@ -658,7 +659,7 @@ class Original_Collections_Metadata_IDC_Source(Base):
     license_long_name = Column(String, comment='Long name of license')
     license_short_name = Column(String, comment='Short name of license')
     Description = Column(String, comment='Description of collection')
-    version = Column(String, comment='Version of IDC-sourced subcollection as <original_idc_version>.<revised_idc_version>')
+    # version = Column(String, comment='Version of IDC-sourced subcollection as <original_idc_version>.<revised_idc_version>')
 
 # This table is populated with metadata for collections that are not sourced from TCIA.
 class Analysis_Results_Metadata_IDC_Source(Base):
