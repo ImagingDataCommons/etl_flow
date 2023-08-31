@@ -34,8 +34,8 @@ from bq.generate_tables_and_views.auxiliary_metadata_table.schema import auxilia
 def build_table(args):
     query = f"""
     SELECT
-      collection_id AS tcia_api_collection_id,
-      REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_') AS idc_webapp_collection_id,
+      
+      collection_id as collection_name,
       REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_') AS collection_id,
       c_min_timestamp as collection_timestamp,
       c_hashes.all_hash AS collection_hash,
@@ -141,7 +141,9 @@ def build_table(args):
       i_final_idc_version AS instance_final_idc_version,
       license_url,
       license_long_name,
-      license_short_name
+      license_short_name,
+      collection_id AS tcia_api_collection_id,
+      REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_') AS idc_webapp_collection_id
       FROM
         `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
       JOIN

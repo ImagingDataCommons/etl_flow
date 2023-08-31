@@ -18,7 +18,8 @@
 from google.cloud import bigquery
 
 data_collections_metadata_schema = [
-    bigquery.SchemaField('idc_webapp_collection_id', 'STRING', mode='NULLABLE', description='Collection ID as used internally by IDC webapp'),
+    bigquery.SchemaField('collection_name', 'STRING', mode='NULLABLE', description='Collection name as used externally by IDC webapp'),
+    bigquery.SchemaField('collection_id', 'STRING', mode='NULLABLE', description='Collection ID as used internally by IDC webapp'),
     bigquery.SchemaField('Program', 'STRING', mode='NULLABLE', description='Program to which this collection belongs'),
     bigquery.SchemaField('Status', 'STRING', mode='NULLABLE', description='Collection status: Ongoing or Complete'),
     bigquery.SchemaField('Updated', 'DATE', mode='NULLABLE', description='Date of ost recent update'),
@@ -45,6 +46,8 @@ data_collections_metadata_schema = [
         ],
     ),
     bigquery.SchemaField('Description', 'STRING', mode='NULLABLE', description='Description of collection (HTML format)'),
+    bigquery.SchemaField('idc_webapp_collection_id', 'STRING', mode='NULLABLE',
+                         description='DEPRECATED:Collection ID as used internally by IDC webapp'),
     bigquery.SchemaField('tcia_api_collection_id', 'STRING', mode='NULLABLE',
                          description='DEPRECATED: Collection ID as accepted by TCIA APIs'),
     bigquery.SchemaField('tcia_wiki_collection_id', 'STRING', mode='NULLABLE',

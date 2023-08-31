@@ -34,9 +34,8 @@
 from google.cloud import bigquery
 
 auxiliary_metadata_schema = [
-    bigquery.SchemaField('tcia_api_collection_id', 'STRING', mode='NULLABLE', description='DEPRECATED: Collection ID as accepted by TCIA APIs. Or in the style of TCIA APIs'),
-    bigquery.SchemaField('idc_webapp_collection_id', 'STRING', mode='NULLABLE', description='Collection ID as accepted by the IDC webapp'),
-    bigquery.SchemaField('collection_id', 'STRING', mode='NULLABLE', description='Collection ID as accepted by the IDC webapp. Duplicate of idc_webapp_collection_id'),
+    bigquery.SchemaField('collection_name', 'STRING', mode='NULLABLE', description='DEPRECATED: Collection name as used externally by IDC webapp'),
+    bigquery.SchemaField('collection_id', 'STRING', mode='NULLABLE', description='Collection ID as used internally by IDC webapp and accepted by the IDC API'),
     bigquery.SchemaField('collection_timestamp', 'DATETIME', mode='NULLABLE', description='Revision timestamp'),
     bigquery.SchemaField('collection_hash', 'STRING', mode='NULLABLE', description='md5 hash of the of this version of the collection containing this instance'),
     bigquery.SchemaField('collection_init_idc_version', 'INTEGER', mode='NULLABLE', description='The IDC version in which the collection containing this instance first appeared'),
@@ -78,4 +77,7 @@ auxiliary_metadata_schema = [
     bigquery.SchemaField('license_url', 'STRING', mode='NULLABLE', description='URL of license of this analysis result'),
     bigquery.SchemaField('license_long_name', 'STRING', mode='NULLABLE', description='Long name of license of this analysis result'),
     bigquery.SchemaField('license_short_name', 'STRING', mode='NULLABLE', description='Short name of license of this analysis result'),
+    bigquery.SchemaField('tcia_api_collection_id', 'STRING', mode='NULLABLE', description='DEPRECATED: Collection name as used externally by IDC webapp'),
+    bigquery.SchemaField('idc_webapp_collection_id', 'STRING', mode='NULLABLE', description='DEPRECATED: Collection ID as used internally by IDC webapp and accepted by the IDC API'),
+
 ]

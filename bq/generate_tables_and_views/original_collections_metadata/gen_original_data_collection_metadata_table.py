@@ -178,13 +178,13 @@ def get_original_collections_metadata_idc_source(client, args):
     query = f"""
     SELECT * 
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_metadata_idc_source`
-    ORDER BY idc_webapp_collection_id
+    ORDER BY collection_id
     """
 
     metadata = {}
     for row in client.query(query).result():
-        metadata[row['idc_webapp_collection_id']] = dict(
-            tcia_wiki_collection_id = "",
+        metadata[row['collection_id']] = dict(
+            collection_name = row['collection_name'],
             DOI = row['DOI'],
             URL = row['URL'],
             CancerType = row['CancerType'],
@@ -195,7 +195,9 @@ def get_original_collections_metadata_idc_source(client, args):
             SupportingData = row['SupportingData'],
             Access = "",
             Status = row['Status'],
-            Updated = row['Updated'] if row['Updated'] != 'NA' else None
+            Updated = row['Updated'] if row['Updated'] != 'NA' else None,
+            tcia_api_collection_id = row['collection_name'],
+            tcia_wiki_collection_id = ''
         )
     return metadata
 
@@ -230,28 +232,32 @@ def get_collection_metadata(client, args):
     return collection_metadata
 
 
-# def get_non_tcia_descriptions(client, args):
-#     query = f"""
-#     SELECT *
-#     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_metadata_idc_source`
-#     ORDER BY idc_webapp_collection_id
-#     """
-#
-#     descriptions = {}
-#     for row in client.query(query).result():
-#         # row['idc_webapp_collection_id'] = dict(
-#         #     description = row['Description']
-#         # )
-#         descriptions[row['idc_webapp_collection_id']] = dict(
-#             description = row['Description']
-#         )
-#     return descriptions
-#
-#
-# def get_all_descriptions(client, args):
-#     collection_descriptions = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_collection_descriptions_and_licenses().items()}
-#     collection_descriptions |=get_non_tcia_descriptions(client, args)
-#     return collection_descriptions
+def get_non_tcia_descriptions(client, args):
+    query = f"""
+    SELECT *
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_metadata_idc_source`
+--     ORDER BY idc_webapp_collection_id
+    ORDER BY collection_id
+    """
+
+    descriptions = {}
+    for row in client.query(query).result():
+        # row['idc_webapp_collection_id'] = dict(
+        #     description = row['Description']
+        # )
+        # descriptions[row['idc_webapp_collection_id']] = dict(
+        #     description = row['Description']
+        # )
+        descriptions[row['collection_id']] = dict(
+            description=row['Description']
+        )
+    return descriptions
+
+
+def get_all_descriptions_legacy(client, args):
+    collection_descriptions = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_collection_descriptions_and_licenses().items()}
+    collection_descriptions |=get_non_tcia_descriptions(client, args)
+    return collection_descriptions
 
 
 def get_all_descriptions(client, args):
@@ -329,12 +335,15 @@ def build_metadata(client, args):
                     if not 'URL' in collection_data:
                         # TCIA collections have an empty URL
                         collection_data['URL'] = f"https://doi.org/{collection_data['DOI']}"
-                    if collection_data['tcia_wiki_collection_id']:
-                        # Only tcia collections have a tcia_api_collection_id
-                        collection_data['tcia_api_collection_id'] = tcia_api_collection_id
-                    else:
-                        collection_data['tcia_api_collection_id'] = ""
+                    # if collection_data['tcia_wiki_collection_id']:
+                    #     # Only tcia collections have a tcia_api_collection_id
+                    #     collection_data['tcia_api_collection_id'] = tcia_api_collection_id
+                    # else:
+                    #     collection_data['tcia_api_collection_id'] = ""
+                    collection_data['tcia_api_collection_id'] = tcia_api_collection_id
+                    collection_data['collection_name'] = tcia_api_collection_id
                     collection_data['idc_webapp_collection_id'] = idc_collection_id
+                    collection_data['collection_id'] = idc_collection_id
                     if collection_data['tcia_wiki_collection_id']:
                         collection_data['Program'] = programs[collection_data['tcia_wiki_collection_id'].lower().replace(' ','_').replace('-','_')]
                     else:

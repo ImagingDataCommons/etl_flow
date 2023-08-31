@@ -8,51 +8,9 @@
   "schema": {
     "fields": [
       {
-        "description": "TCIA assigned tumor location of the collection containing this instance",
-        "mode": "NULLABLE",
-        "name": "tcia_tumorLocation",
-        "type": "STRING"
-      },
-      {
-        "description": "Source assigned tumor location of the collection containing this instance. Duplicate of tcia_tumorLocation",
-        "mode": "NULLABLE",
-        "name": "collection_tumorLocation",
-        "type": "STRING"
-      },
-      {
-        "description": "TCIA assigned species of the collection containing this instance",
-        "mode": "NULLABLE",
-        "name": "tcia_species",
-        "type": "STRING"
-      },
-      {
-        "description": "Source assigned species of the collection containing this instance. Duplicate of tcia_species.",
-        "mode": "NULLABLE",
-        "name": "collection_species",
-        "type": "STRING"
-      },
-      {
-        "description": "TCIA assigned cancer type of the collection containing this instance",
-        "mode": "NULLABLE",
-        "name": "tcia_cancerType",
-        "type": "STRING"
-      },
-      {
-        "description": "Source assigned cancer type of the collection containing this instance. Duplicate of tcia_cancerType.",
-        "mode": "NULLABLE",
-        "name": "collection_cancerType",
-        "type": "STRING"
-      },
-      {
         "description": "The ID of the collection containing this instance as expected by the TCIA API",
         "mode": "NULLABLE",
-        "name": "tcia_api_collection_id",
-        "type": "STRING"
-      },
-      {
-        "description": "The ID of the collection containing this instance as expected by the IDC web app and API.",
-        "mode": "NULLABLE",
-        "name": "idc_webapp_collection_id",
+        "name": "collection_name",
         "type": "STRING"
       },
       {
@@ -83,6 +41,24 @@
         "description": "The IDC version in which this version of the collection containing this instance first appeared",
         "mode": "NULLABLE",
         "name": "collection_revised_idc_version",
+        "type": "STRING"
+      },
+      {
+        "description": "Source assigned tumor location of the collection containing this instance. Duplicate of tcia_tumorLocation",
+        "mode": "NULLABLE",
+        "name": "collection_tumorLocation",
+        "type": "STRING"
+      },
+      {
+        "description": "Source assigned species of the collection containing this instance. Duplicate of tcia_species.",
+        "mode": "NULLABLE",
+        "name": "collection_species",
+        "type": "STRING"
+      },
+      {
+        "description": "Source assigned cancer type of the collection containing this instance. Duplicate of tcia_cancerType.",
+        "mode": "NULLABLE",
+        "name": "collection_cancerType",
         "type": "STRING"
       },
       {
@@ -247,6 +223,37 @@
         "name": "license_short_name",
         "type": "STRING"
       },
+      {
+        "description": "The ID of the collection containing this instance as expected by the TCIA API",
+        "mode": "NULLABLE",
+        "name": "tcia_api_collection_id",
+        "type": "STRING"
+      },
+      {
+        "description": "The ID of the collection containing this instance as expected by the IDC web app and API.",
+        "mode": "NULLABLE",
+        "name": "idc_webapp_collection_id",
+        "type": "STRING"
+      },
+      {
+        "description": "TCIA assigned tumor location of the collection containing this instance",
+        "mode": "NULLABLE",
+        "name": "tcia_tumorLocation",
+        "type": "STRING"
+      },
+      {
+        "description": "TCIA assigned species of the collection containing this instance",
+        "mode": "NULLABLE",
+        "name": "tcia_species",
+        "type": "STRING"
+      },
+      {
+        "description": "TCIA assigned cancer type of the collection containing this instance",
+        "mode": "NULLABLE",
+        "name": "tcia_cancerType",
+        "type": "STRING"
+      },
+
       {
         "description": "TBD",
         "mode": "NULLABLE",
