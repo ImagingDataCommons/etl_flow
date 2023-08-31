@@ -55,7 +55,7 @@ if __name__ == '__main__':
     parser.add_argument('--federated_query', default=f'idc-dev-etl.us.etl_federated_query_idc_v{settings.CURRENT_VERSION}')
     parser.add_argument('--upload', nargs='*', default= [
         'all_collections',
-        # 'analysis_id_map',
+        'analysis_id_map',
         'collection',
         'collection_id_map',
         'collection_patient',
