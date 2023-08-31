@@ -28,12 +28,6 @@ from python_settings import settings
 from multiprocessing import Process, Queue, Lock, shared_memory
 from queue import Empty
 
-
-# successlogger = logging.getLogger('root.success')
-# progresslogger = logging.getLogger('root.progress')
-# errlogger = logging.getLogger('root.err')
-
-
 def clone_collection(collection,uuid):
     new_collection = Collection(uuid=uuid)
     for key, value in collection.__dict__.items():
@@ -218,25 +212,6 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         expand_collection(sess, args, all_sources, collection)
     successlogger.info("p%s: Expanded Collection %s, %s, %s patients", args.pid, collection.collection_id, collection_index, len(collection.patients))
 
-    ### DOIs and URLs are now collected at the patient level
-    # # Get the lists of data and analyis series for this collection
-    # data_collection_doi = get_data_collection_doi(collection.collection_id, server=args.server)
-    # data_collection_url = get_data_collection_url(collection.collection_id, sess)
-    # if data_collection_doi=="" and (data_collection_url=="" or data_collection_url is None):
-    #     errlogger.error('No DOI for collection %s', collection.collection_id)
-    #     breakpoint()
-    #     return
-    # # If there is no URL, construct one from the DOI
-    # if data_collection_url == None and data_collection_doi.split('/')[0]=='10.7937':
-    #     data_collection_url = f'https://doi.org/{data_collection_doi}'
-    # data_collection_doi_url = {'doi': data_collection_doi, 'url': data_collection_url}
-    #
-    # # Get all the analysis results DOIs.
-    # breakpoint()
-    # # pre_analysis_collection_dois = []
-    # dois = all_sources.get_analysis_collection_dois(sess, collection.collection_id, server=args.server)
-    # analysis_collection_dois = {item['SeriesInstanceUID']: item['SourceDOI'] for sublist in dois for item in sublist}
-
     if args.num_processes==0:
         patients = sorted(collection.patients, key=lambda patient: patient.done, reverse=True)
         for patient in patients:
@@ -311,44 +286,26 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
     if all([patient.done for patient in collection.patients]):
         collection.max_timestamp = max([patient.max_timestamp for patient in collection.patients if patient.max_timestamp != None])
         try:
-            # Get a list of what DB thinks are the collection's hashes
+            # Get IDCs vector of collection hashes from the DB
             idc_hashes = all_sources.idc_collection_hashes(collection)
             skipped = is_skipped(args.skipped_collections, collection.collection_id)
 
-            # Record the hashes even if they don't match the source hashes
-            collection.hashes = idc_hashes
-            collection.sources = accum_sources(collection, collection.patients)
-
+            # Get the sources' vector of collection hashes
             src_hashes = all_sources.src_collection_hashes(collection.collection_id, skipped)
-            rehash_deltas = [(x != y) and not z for x, y, z in \
+            # Compare hashes of unskipped sources
+            revised = [(x != y) and not z for x, y, z in \
                        zip(idc_hashes[:-1], src_hashes, skipped)]
-            if any(rehash_deltas):
-                errlogger.error('Collection hash match failed for collection %s', collection.collection_id)
-
-                # NBIA collection hash is sometimes incorrect. Compute the NBIA hash from patient hashes
-                src_hashes = all_sources.src_collection_hashes_from_patient_hashes(collection.collection_id, [patient.submitter_case_id for patient in collection.patients], skipped, collection.sources)
-                rehash_deltas = [(x != y) and not z for x, y, z in \
-                                 zip(idc_hashes[:-1], src_hashes, skipped)]
-                if any(rehash_deltas):
-                    errlogger.error('Per patient hash match failed for collection %s', collection.collection_id)
-                    duration = str(timedelta(seconds=(time.time() - begin)))
-                    successlogger.info("Uncompleted Collection %s, %s, with per-patient hashes failure in %s", collection.collection_id, collection_index,
-                                    duration)
-                else:
-                    collection.done = True
-                    duration = str(timedelta(seconds=(time.time() - begin)))
-                    successlogger.info("Completed Collection %s, %s, with per-patient hashes in %s", collection.collection_id, collection_index,
-                                       duration)
-
+            if any(revised):
+                raise Exception('Hash match failed for collection %s', collection.collection_id)
             else:
-                # collection.hashes = idc_hashes
-                # collection.sources = accum_sources(collection, collection.patients)
+                # Record the collection hashes
+                collection.hashes = idc_hashes
+                # The collection's sources vector is the OR of the sources vector of all its patients
+                collection.sources = accum_sources(collection, collection.patients)
                 collection.done = True
-                # sess.commit()
                 duration = str(timedelta(seconds=(time.time() - begin)))
-                successlogger.info("Built Collection %s, %s, in %s", collection.collection_id, collection_index,
-                                duration)
-            sess.commit()
+                successlogger.info("Built Collection %s, %s, in %s", collection.collection_id, collection_index, duration)
+                sess.commit()
 
         except Exception as exc:
             errlogger.error('Could not validate collection hash for %s: %s', collection.collection_id, exc)

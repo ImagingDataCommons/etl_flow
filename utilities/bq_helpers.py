@@ -211,12 +211,14 @@ def copy_BQ_table(client, src_table, dst_table, create_disposition='CREATE_IF_NE
 
 
 # Export table contents to GCS
-def export_BQ_to_GCS(client, src_dataset, src_table, dst_uri, field_delimiter="\t", destination_format="CSV"):
+def export_BQ_to_GCS(client, src_dataset, src_table, dst_uri, field_delimiter="\t", destination_format="CSV", \
+                     print_header=True):
     dataset_ref = client.dataset(src_dataset, project=client.project)
     table_ref = dataset_ref.table(src_table)
     job_config = bigquery.job.ExtractJobConfig()
     job_config.field_delimiter = field_delimiter
     job_config.destination_format = destination_format
+    job_config.print_header = print_header
 
     extract_job = client.extract_table(
         table_ref,

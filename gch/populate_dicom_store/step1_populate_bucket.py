@@ -25,12 +25,13 @@
 import sys
 import argparse
 from googleapiclient import discovery
-from google.api_core.exceptions import Conflict
+from google.api_core.exceptions import Conflict, TooManyRequests, ServiceUnavailable
 from step2_import_bucket import import_buckets
 from utilities.logging_config import successlogger, progresslogger, errlogger
 import settings
 from google.cloud import storage, bigquery
 from multiprocessing import Process, Queue
+from time import  sleep
 
 
 def get_gch_client():
@@ -102,38 +103,78 @@ def build_dones_table(args):
 
 # Populate a bucket with instances to be inserted in the DICOM store
 def copy_some_instances(args, client, uids, n):
-    done = 0
-    dst_bucket = client.bucket(args.staging_bucket)
-    for row in uids:
-        blob_id = row['blob_id']
-        src_bucket = client.bucket(row['bucket'])
-        src_blob = src_bucket.blob(blob_id)
-        dst_blob = dst_bucket.blob(blob_id)
-        TRIES = 3
-        for attempt in range(TRIES):
-            try:
-                rewrite_token = False
-                while True:
-                    rewrite_token, bytes_rewritten, total_bytes = dst_blob.rewrite(
-                        src_blob, token=rewrite_token
-                    )
-                    if not rewrite_token:
-                        break
-                successlogger.info(f'{blob_id}')
-                progresslogger.info(f"p{args.id}: {done+n}of{len(uids) + n}")
-                break
-            except Exception as exc:
+    try:
+        done = 0
+        dst_bucket = client.bucket(args.staging_bucket)
+        for row in uids:
+            blob_id = row['blob_id']
+            BUCKET_TRIES = 10
+            for i in range(BUCKET_TRIES):
+                try:
+                    src_bucket = client.bucket(row['bucket'])
+                    src_blob = src_bucket.blob(blob_id)
+                except AttributeError as exc:
+                    errlogger.warning(
+                        f"p{args.id}: Trying to create bucket: {exc}; attempt {i}\n")
+                    sleep(1)
+                except TooManyRequests as exc:
+                    errlogger.warning(
+                        f"p{args.id}: Blob: Too many requests: {repr(exc)};  {exc}\n")
+                    sleep(1)
+                except ServiceUnavailable as exc:
+                    errlogger.warning(
+                        f"p{args.id}: Blob: Service unavailable: {repr(exc)};  {exc}\n")
+                    sleep(1)
+            if i == BUCKET_TRIES:
                 errlogger.error(
-                    f"p{args.id}: Blob: {uids[args.src_bucket]}/{uids['src_name']}, attempt: {attempt};  {exc}")
-        done += 1
+                    f"p{args.id}: Failed to create bucket)")
+                break
+
+            dst_blob = dst_bucket.blob(blob_id)
+            TRIES = 10
+            for attempt in range(TRIES):
+                try:
+                    rewrite_token = False
+                    while True:
+                        try:
+                            rewrite_token, bytes_rewritten, total_bytes = dst_blob.rewrite(
+                                src_blob, token=rewrite_token
+                            )
+                            if not rewrite_token:
+                                break
+                        except AttributeError as exc:
+                            errlogger.warning(
+                                f"p{args.id}: Trying to create bucket: {exc}; attempt {i}\n")
+                            sleep(1)
+                        except TooManyRequests as exc0:
+                            errlogger.warning(
+                                f"p{args.id}: Blob: Too many requests: {repr(exc0)};  {exc0}")
+                            sleep(1)
+                        except ServiceUnavailable as exc0:
+                            errlogger.warning(
+                                f"p{args.id}: Blob: Service unavailable: {repr(exc0)};  {exc0}")
+                            sleep(1)
+                    successlogger.info(f'{blob_id}')
+                    break
+                except Exception as exc1:
+                    errlogger.warning(
+                        f"p{args.id}: Blob: {uids[args.src_bucket]}/{uids['src_name']}, attempt: {attempt};  {exc1}")
+            done += 1
+        progresslogger.info(f"p{args.id}: {done + n}of{len(uids) + n}")
+    except Exception as exc2:
+        # breakpoint()
+        errlogger.exception(f'p{args.id}: copy: exception type: {repr(exc2)}; {exc2}; row = {row}')
+    return
 
 def worker(input, args):
     client = storage.Client()
     for uids, n in iter(input.get, 'STOP'):
         try:
             copy_some_instances(args, client, uids, n)
-        except Exception as exc:
-            errlogger.error(f'p{args.id}: {exc}')
+        except Exception as exc3:
+            # breakpoint()
+            errlogger.error(f'p{args.id}: worker, exception type: {repr(exc3)} exception {exc3}')
+    return
 
 
 def populate_staging_bucket(args):
@@ -218,15 +259,9 @@ def populate_staging_bucket(args):
 
     # Wait for process to terminate
     for process in processes:
-        print(f'Joining process: {process.name}, {process.is_alive()}')
+        progresslogger.info(f'Joining process: {process.name}, {process.is_alive()}')
         process.join()
 
-    breakpoint()    # Add code to check for completion by reading success.log
-
-def import_staging_bucket(args):
-    args.src_buckets = [args.staging_bucket]
-    args.period = 60
-    import_buckets(args)
 
 def populate_bucket(args):
     create_staging_bucket(args)
@@ -235,17 +270,15 @@ def populate_bucket(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--client', default=storage.Client())
-    parser.add_argument('--processes', default=16)
+    parser.add_argument('--processes', default=96)
     parser.add_argument('--batch', default=1000)
     parser.add_argument('--dones_table_id', default='idc-dev-etl.whc_dev.step3a_dones', help='BQ table from which to import dones')
     parser.add_argument('--log_dir', default=settings.LOG_DIR)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--merged', default=False, help='True if premerge buckets have been merged')
-    parser.add_argument('--period',default=60)
     args = parser.parse_args()
     args.id = 0 # Default process ID
-    args.staging_bucket = f'dicom_store_population_staging_v{settings.CURRENT_VERSION}'
-    print("{}".format(args), file=sys.stdout)
+    args.staging_bucket = f'dicom_store_import_staging_v{settings.CURRENT_VERSION}'
+    progresslogger.info(f"{args}")
 
-    breakpoint() # This script has been revised and not yet tested.
     populate_bucket(args)

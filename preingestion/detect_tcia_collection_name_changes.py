@@ -34,18 +34,17 @@ def compare_dois():
         # Get the source_dois across all series in each 'included' collection... collections
         # that are not redacted or excluded. This can
         # include both original collection dois and analysis results dois
-
-        rows = sess.query(All_Joined.collection_id,All_Joined.source_doi).distinct(). \
-            join(All_Collections, All_Joined.collection_id==All_Collections.tcia_api_collection_id). \
-            filter(All_Joined.idc_version == settings.PREVIOUS_VERSION). \
-            filter(or_(and_(All_Joined.i_source=='tcia',All_Collections.tcia_access=="Public"), and_(All_Joined.i_source=='idc', All_Collections.idc_access=="Public"))).all()
+        rows = sess.query(Collection.collection_id,Series.source_doi).distinct().join(Collection.patients). \
+            join(Patient.studies).join(Study.seriess). \
+            join(All_Collections, Collection.collection_id==All_Collections.tcia_api_collection_id). \
+            filter(and_(or_(Series.sources == [True, False], Series.sources == [True, True]), All_Collections.tcia_access=="Public")).all()
         idc_dois = {row.source_doi.lower(): row.collection_id for row in rows if row.source_doi }
 
         # Scrape TCIA pages to get a list of dois mapped to IDs
         tcia_original_dois = {item['DOI']: collection_id for collection_id, item in scrape_tcia_data_collections_page().items()}
         tcia_analysis_dois = {item['DOI']: collection_id for collection_id, item in scrape_tcia_analysis_collections_page().items()}
 
-        # Look for each doi that we have in the latter two lists, if found compare IDs.
+        # Look for each doi that we have in the latter two lists; if found compare IDs.
         for doi in idc_dois:
             if doi in tcia_original_dois:
                 if idc_dois[doi].lower() != tcia_original_dois[doi].lower():

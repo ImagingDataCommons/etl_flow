@@ -55,12 +55,10 @@ if __name__ == '__main__':
     parser.add_argument('--federated_query', default=f'idc-dev-etl.us.etl_federated_query_idc_v{settings.CURRENT_VERSION}')
     parser.add_argument('--upload', nargs='*', default= [
         'all_collections',
-        'all_joined',
-        'analysis_id_map',
+        # 'analysis_id_map',
         'collection',
         'collection_id_map',
         'collection_patient',
-        'idc_all_joined',
         'idc_collection',
         'idc_instance',
         'idc_patient',
@@ -74,7 +72,9 @@ if __name__ == '__main__':
         'study',
         'study_series',
         'version',
-        'version_collection'
+        'version_collection',
+        'all_joined',
+        'idc_all_joined',
     ], help="Tables to upload")
     args = parser.parse_args()
     print('args: {}'.format(args))

@@ -582,8 +582,8 @@ class IDC_Series(Base):
     study_instance_uid = Column(ForeignKey('idc_study.study_instance_uid'), comment="Containing object")
     hash = Column(String, comment='Series hash')
     excluded = Column(Boolean, comment='True of this series should be excluded from ingestion')
-    wiki_doi = Column(String, comment='Source DOI of this series\' wiki')
-    wiki_url = Column(String, comment='Source URL of this series\' wiki')
+    source_doi = Column(String, comment='Source DOI of this series\' wiki')
+    source_url = Column(String, comment='Source URL of this series\' wiki')
     third_party = Column(Boolean, default=False, comment='True if from a third party analysis result')
     license_url = Column(String, comment='URL of license description')
     license_long_name = Column(String, comment='Long name of license')
@@ -642,9 +642,10 @@ class Collection_id_map(Base):
 # This table is populated with metadata for collections that are not sourced from TCIA.
 class Original_Collections_Metadata_IDC_Source(Base):
     __tablename__ = 'original_collections_metadata_idc_source'
-    tcia_api_collection_id = Column(String, comment='Collection ID used by TCIA APIs')
-    tcia_wiki_collection_id = Column(String, nullable=True, comment='TCIA Wiki page collection ID')
-    idc_webapp_collection_id = Column(String,primary_key=True, nullable=False, comment='Collection ID used by IDC webapp')
+    # tcia_api_collection_id = Column(String, comment='Collection ID used by TCIA APIs')
+    # tcia_wiki_collection_id = Column(String, nullable=True, comment='TCIA Wiki page collection ID')
+    collection_name = Column(String, comment='Public collection name')
+    collection_id = Column(String,primary_key=True, nullable=False, comment='Collection ID used by IDC webapp')
     Status = Column(String, nullable=False, comment='Public or Limited')
     Updated = Column(String, comment='Date of last update')
     ImageTypes = Column(String, comment='List of image types')
@@ -658,6 +659,7 @@ class Original_Collections_Metadata_IDC_Source(Base):
     license_long_name = Column(String, comment='Long name of license')
     license_short_name = Column(String, comment='Short name of license')
     Description = Column(String, comment='Description of collection')
+    # version = Column(String, comment='Version of IDC-sourced subcollection as <original_idc_version>.<revised_idc_version>')
 
 # This table is populated with metadata for collections that are not sourced from TCIA.
 class Analysis_Results_Metadata_IDC_Source(Base):
@@ -676,6 +678,7 @@ class Analysis_Results_Metadata_IDC_Source(Base):
     license_long_name = Column(String, comment='Long name of license')
     license_short_name = Column(String, comment='Short name of license')
     URL = Column(String,comment='URL of collection description page')
+    version = Column(String, comment='Version of analysis result as <original_idc_version>.<revised_idc_version>')
 
 # This table is populated with a description of each analysis result.
 class Analysis_Results_Descriptions(Base):
@@ -686,8 +689,8 @@ class Analysis_Results_Descriptions(Base):
 # This table is populated with IDC assigned UUID of each analysis result.
 class Analysis_Id_Map(Base):
     __tablename__ = 'analysis_id_map'
-    collection_id = Column(String, primary_key=True, comment='Analysis result ID')
-    idc_id = Column(String, comment='IDC assigned UUID')
+    collection_id = Column(String, comment='Analysis result ID')
+    idc_id = Column(String, primary_key=True, comment='IDC assigned UUID')
 
 # This table gives the program to which collection, as identified by its
 # tcia_wiki_collection_id, belongs.

@@ -61,18 +61,18 @@ def load_spreadsheet(args):
     print('Data imported successfully!')
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--spreadsheet_id', default = '1-sk8CMTDDj-deKv7sXglLvHUhDSNS1cRqUg5Oy5UpRY',
-                        help='id portion of spreadsheet URL')
-    parser.add_argument('--sheet_name', default = 'Sheet1', help='Sheet within spreadsheet to load')
-    parser.add_argument('--bq_dataset_id', default='whc_dev', help='BQ datasey')
-    parser.add_argument('--table_id', default='programs', help='Table name to which to copy data')
-    parser.add_argument('--columns', default=['tcia_wiki_collection_id', 'program'], help='Columns in df to keep. Keep all if list is empty')
-    args = parser.parse_args()
-    print('args: {}'.format(args))
-
-    load_spreadsheet(args)
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--spreadsheet_id', default = '1-sk8CMTDDj-deKv7sXglLvHUhDSNS1cRqUg5Oy5UpRY',
+#                         help='id portion of spreadsheet URL')
+#     parser.add_argument('--sheet_name', default = 'Sheet1', help='Sheet within spreadsheet to load')
+#     parser.add_argument('--bq_dataset_id', default='whc_dev', help='BQ datasey')
+#     parser.add_argument('--table_id', default='programs', help='Table name to which to copy data')
+#     parser.add_argument('--columns', default=['tcia_wiki_collection_id', 'program'], help='Columns in df to keep. Keep all if list is empty')
+#     args = parser.parse_args()
+#     print('args: {}'.format(args))
+#
+#     load_spreadsheet(args)
 
 
 

@@ -74,8 +74,8 @@ def build_series(client, args, sess, study, row):
         series.series_instance_uid = series_id
         study.seriess.append(series)
         successlogger.info('\t\t\tSeries %s', series_id)
-    # Always set/update the wiki_doi in case it has changed
-    series.wiki_doi = doi
+    # Always set/update the source_doi in case it has changed
+    series.source_doi = doi
     series.third_party = args.third_party
     build_instance(client, args, sess, series, row)
     return

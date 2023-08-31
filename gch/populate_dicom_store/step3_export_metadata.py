@@ -14,8 +14,6 @@
 # limitations under the License.
 #
 
-
-
 # Export metadata from a DICOM store to BQ. If the table currently exists, it is truncated.
 
 import argparse

@@ -23,10 +23,6 @@ from ingestion.utilities.utils import accum_sources, get_merkle_hash, is_skipped
 from ingestion.study import clone_study, build_study, retire_study
 from python_settings import settings
 
-# successlogger = logging.getLogger('root.success')
-# progresslogger = logging.getLogger('root.progress')
-# errlogger = logging.getLogger('root.err')
-
 # Return a dictionary of the dois and urls of all series in the patient
 def get_dois_urls_licenses(args, all_sources, collection_id, patient_id):
     skipped_sources = is_skipped(args.skipped_collections, collection_id)
@@ -178,7 +174,6 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
     sess.commit()
     return
 
-# def build_patient(sess, args, all_sources, patient_index, data_collection_doi_url, analysis_collection_dois, version, collection, patient):
 def build_patient(sess, args, all_sources, patient_index, version, collection, patient):
 
     try:

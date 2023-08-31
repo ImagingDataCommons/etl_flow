@@ -96,15 +96,6 @@ def copy_some_blobs(args, client, urls, n, dones):
 
 
 def worker(input, args, dones):
-    # proglogger.info('p%s: Worker starting: args: %s', args.id, args )
-    # print(f'p{args.id}: Worker starting: args: {args}')
-
-    # RETRIES = 3
-    # try:
-    #     dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
-    # except:
-    #     dones = []
-
     client = storage.Client()
     for urls, n in iter(input.get, 'STOP'):
         try:
@@ -160,7 +151,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
     parser.add_argument('--batch', default=1000)
-    parser.add_argument('--processes', default=1)
+    parser.add_argument('--processes', default=16)
     args = parser.parse_args()
     args.id = 0 # Default process ID
 

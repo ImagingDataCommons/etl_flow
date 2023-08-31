@@ -14,9 +14,10 @@
 # limitations under the License.
 #
 
-# This script generates the BQ auxiliary_metadata table. It basically joins the BQ version, collection,
-# patient, study, series, and instance tables. Typically these are uploaded from PostgreSQL to BQ using
-# the upload_psql_to_bq.py script
+# This script generates the BQ auxiliary_metadata table. It is parameterizable
+# to build either with 'pre-merge or 'post-merge' GCS URLS of new instances.
+# It is also paramaterizable to build in the idc-dev-etl or idc-pdp-staging
+# projects
 import argparse
 import json
 import sys
@@ -33,8 +34,8 @@ from bq.generate_tables_and_views.auxiliary_metadata_table.schema import auxilia
 def build_table(args):
     query = f"""
     SELECT
-      collection_id AS tcia_api_collection_id,
-      REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_') AS idc_webapp_collection_id,
+      
+      collection_id as collection_name,
       REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_') AS collection_id,
       c_min_timestamp as collection_timestamp,
       c_hashes.all_hash AS collection_hash,
@@ -57,6 +58,38 @@ def build_table(args):
     --
       series_instance_uid AS SeriesInstanceUID,
       se_uuid AS series_uuid,
+      CONCAT('gs://',
+        # If we are generating series_gcs_url for the public auxiliary_metadata table 
+        if('{args.target}' = 'pub', 
+            if( i_source='tcia', ac.pub_gcs_tcia_url, ac.pub_gcs_idc_url), 
+        #else 
+            # We are generating the dev auxiliary_metadata
+            # If this instance is new in this version and we 
+            # have not merged new instances into dev buckets
+            if(i_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+                # We use the premerge url prefix
+                CONCAT('idc_v', {settings.CURRENT_VERSION}, 
+                    '_',
+                    i_source,
+                    '_',
+                    REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_')
+                    ),
+    
+            #else
+                 ## This instance is not new so use the staging bucket prefix
+                  #if( i_source='tcia', ac.dev_tcia_url, ac.dev_idc_url)
+                 #)
+                # This instance is not new so use the public bucket prefix
+                 if( i_source='tcia', ac.pub_gcs_tcia_url, ac.pub_gcs_idc_url)
+                )
+            ), 
+        '/', se_uuid, '/') as series_gcs_url,
+      
+      # There are no dev S3 buckets, so populate the aws_series_url 
+      # the same for both dev and pub versions of auxiliary_metadata
+      CONCAT('s3://',
+        if( i_source='tcia', ac.pub_aws_tcia_url, ac.pub_aws_idc_url),
+            '/', se_uuid, '/') as series_aws_url,           
       IF(collection_id='APOLLO', '', source_doi) AS source_doi,
       IF(source_url is Null OR source_url='', CONCAT('https://doi.org/', source_doi), source_url) AS source_url,
       series_instances,
@@ -86,8 +119,11 @@ def build_table(args):
                     ),
     
             #else
-                # This instance is not new so use the staging bucket prefix
-                 if( i_source='tcia', ac.dev_tcia_url, ac.dev_idc_url)
+                 ## This instance is not new so use the staging bucket prefix
+                  #if( i_source='tcia', ac.dev_tcia_url, ac.dev_idc_url)
+                 #)
+                # This instance is not new so use the public bucket prefix
+                 if( i_source='tcia', ac.pub_gcs_tcia_url, ac.pub_gcs_idc_url)
                 )
             ), 
         '/', se_uuid, '/', i_uuid, '.dcm') as gcs_url,
@@ -105,7 +141,9 @@ def build_table(args):
       i_final_idc_version AS instance_final_idc_version,
       license_url,
       license_long_name,
-      license_short_name
+      license_short_name,
+      collection_id AS tcia_api_collection_id,
+      REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_') AS idc_webapp_collection_id
       FROM
         `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
       JOIN

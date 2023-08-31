@@ -30,7 +30,9 @@ def validate_dicom_metadata_counts():
     ON aj.collection_id = ac.tcia_api_collection_id
     WHERE aj.idc_version = {settings.CURRENT_VERSION}
     AND aj.i_excluded is False
-    AND ((i_source='tcia' AND ac.tcia_access='Public') OR (i_source='idc' AND ac.idc_access='Public'))
+    AND
+        ((i_source='tcia' AND ac.tcia_access='Public' AND (ac.tcia_metadata_sunset=0 OR ({settings.CURRENT_VERSION} <= ac.tcia_metadata_sunset))) 
+        OR (i_source='idc' AND ac.idc_access='Public' AND (ac.idc_metadata_sunset=0 OR ({settings.CURRENT_VERSION} <= ac.idc_metadata_sunset))))
     )
     select count(siu.sopinstanceuid) as siu_cnt, count(dm.sopinstanceuid) as dcm_cnt
     FROM sopinstanceuids as siu

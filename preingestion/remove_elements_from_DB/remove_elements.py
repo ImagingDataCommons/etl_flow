@@ -16,7 +16,7 @@
 
 # Conditionally and hierarchically removes an instance, series, study, patient or collection from
 # the idc_xxx hierarchy.
-# A series is only removed if its wiki_url matches a specified URL. This enables removing data
+# A series is only removed if its source_url matches a specified URL. This enables removing data
 # that, for example is from a particular analysis result.
 # An element at a level is only removed if all its children have been removed.
 
@@ -47,7 +47,7 @@ def remove_instance(client, args, sess, series, instance):
 
 def remove_series(client, args, sess, study, series):
     try:
-        if series.wiki_url == args.wiki_url:
+        if series.source_url == args.source_url:
             index = 0
             for instance in series.instances:
                 instance = series.instances[index]

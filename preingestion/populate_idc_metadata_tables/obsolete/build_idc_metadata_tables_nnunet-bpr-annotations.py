@@ -76,9 +76,9 @@ def build_series(client, args, sess, study, series_id, doi, instance_id, hash, b
         series.license_long_name =args.license['license_long_name']
         series.license_short_name =args.license['license_short_name']
         study.seriess.append(series)
-    # Always set/update the wiki_doi in case it has changed
-    series.wiki_doi = doi
-    series.wiki_url = f'https://doi.org/{doi}'
+    # Always set/update the source_doi in case it has changed
+    series.source_doi = doi
+    series.source_url = f'https://doi.org/{doi}'
     series.third_party = args.third_party
     build_instance(client, args, sess, series, instance_id, hash, blob_name)
     return

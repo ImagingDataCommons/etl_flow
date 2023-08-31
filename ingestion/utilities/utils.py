@@ -215,19 +215,14 @@ def accum_sources(parent, children):
 
 
 # Generate a list of skipped collections. We always skip collections that don't have 'Public' access.
-def list_skips(sess, source, skipped_groups, skipped_collections, included_collections=[]):
-    # tables_dict = {table.__tablename__: table for table in Base.__subclasses__()}
+# The list is specific to a source.
+def list_skips(sess, source, skipped_collections):
     skips = [collection for collection in skipped_collections]
-    # for group in skipped_groups:
-    #     collections = sess.query(tables_dict[group].tcia_api_collection_id).all()
-    #     for collection in collections:
-    #         skips.append(collection.tcia_api_collection_id)
     if source == 'tcia':
         collections = sess.query(All_Collections.tcia_api_collection_id).filter(and_(All_Collections.tcia_access != 'Public', All_Collections.tcia_access != None)).all()
     else:
         collections = sess.query(All_Collections.tcia_api_collection_id).filter(and_(All_Collections.idc_access != 'Public', All_Collections.idc_access != None)).all()
     for collection in collections:
         skips.append(collection.tcia_api_collection_id)
-    skips = list(set(skips) - set(included_collections))
     skips.sort()
     return skips

@@ -16,6 +16,8 @@
 
 import difflib
 from utilities.tcia_helpers import get_license_info
+import tcia_utils
+
 
 import requests
 from bs4 import BeautifulSoup
@@ -187,6 +189,7 @@ def scrape_tcia_data_collections_page():
 
 
 if __name__ == "__main__":
+    a=tcia_utils.datacite.getDoi('json')
     # m =scrape_tcia_data_collections_page()
     # s = get_collection_id('https://wiki.cancerimagingarchive.net/x/N4NyAQ')
     # url, longName, shortName = get_license_from_wiki('10.7937/tcia.2019.of2w8lxr')

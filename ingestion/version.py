@@ -250,7 +250,7 @@ def build_version(sess, args, all_sources, version):
             version.done = True
             version.revised = [True, True]
             duration = str(timedelta(seconds=(time.time() - begin)))
-            progresslogger.info("Built Version %s, in %s", version.version, duration)
+            successlogger.info("Built Version %s, in %s", version.version, duration)
         else:
             # There was nothing new, so remove the new version from the DB
             breakpoint()
@@ -258,7 +258,7 @@ def build_version(sess, args, all_sources, version):
             sess.delete(version)
             progresslogger.info('Deleted version %s', version.version)
 
-            progresslogger.info("Version unchanged, remains at %s", settings.PREVIOUS_VERSION)
+            successlogger.info("Version unchanged, remains at %s", settings.PREVIOUS_VERSION)
         sess.commit()
 
     else:

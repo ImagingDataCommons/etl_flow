@@ -14,9 +14,9 @@
 # limitations under the License.
 #
 
-# This script generates the BQ auxiliary_metadata table. It basically joins the BQ version, collection,
-# patient, study, series, and instance tables. Typically these are uploaded from PostgreSQL to BQ using
-# the upload_psql_to_bq.py script
+# This script generates the BQ auxiliary_metadata table. It is parameterized
+# to build with 'post-merge' GCS URLS of new instances.
+# It is also paramaterized to build in the idc-pdp-staging project.
 import argparse
 import sys
 import settings

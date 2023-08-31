@@ -14,9 +14,8 @@
 # limitations under the License.
 #
 
-# This script generates the idc_current dataset, which is comprised of a view of every table and view in
-# the idc_vX dataset corresponding to the current IDC data version.
-
+# This script generates the idc_current_clinical dataset, which is comprised of a view of every table and view in
+# the idc_clinical dataset corresponding to the current IDC data version.
 import argparse
 import sys
 import settings
@@ -30,8 +29,8 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=version, help='Current IDC version')
     parser.add_argument('--src_project', default=settings.PDP_PROJECT)
     parser.add_argument('--trg_project', default=settings.PDP_PROJECT)
-    parser.add_argument('--src_bqdataset', default=f'idc_v{version}', help='BQ dataset name')
-    parser.add_argument('--current_bqdataset', default=f'idc_current', help='current dataset name')
+    parser.add_argument('--src_bqdataset', default=f'idc_v{version}_clinical', help='BQ dataset name')
+    parser.add_argument('--current_bqdataset', default=f'idc_current_clinical', help='current dataset name')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

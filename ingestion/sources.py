@@ -127,7 +127,7 @@ class TCIA(Source):
         patient_dois = get_patient_dois_tcia(collection, patient)
         return patient_dois
 
-    # Get the (wiki) URLs of all series in a patient
+    # Get the (source) URLs of all series in a patient
     def get_patient_urls(self, collection, patient):
         patient_urls = get_patient_urls_tcia(collection, patient)
         return patient_urls
@@ -199,6 +199,7 @@ class TCIA(Source):
             raise Exception('get_hash failed for instance %s', sop_instance_uid)
 
     def get_instance_hash(self, sop_instance_uid, access_token=None, refresh_token=None):
+        self.lock.acquire()
         try:
             # result = get_instance_hash(sop_instance_uid, self.access_token)
             result = get_instance_hash(sop_instance_uid, self.access[0])
@@ -266,7 +267,7 @@ class IDC(Source):
         return patient_dois
 
 
-    # Get the (wiki) URLs of all series in a patient
+    # Get the (source) URLs of all series in a patient
     def get_patient_urls(self, collection, patient):
         patient_urls = get_patient_urls_idc(self.sess, collection, patient)
         return patient_urls
