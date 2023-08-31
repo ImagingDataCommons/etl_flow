@@ -493,6 +493,45 @@ def get_collection_descriptions_and_licenses(collection=None):
         nlst_description = get_collection_descriptions_and_licenses('NLST')
         collection_descriptions['NLST'] = nlst_description['NLST']
 
+        if not 'CPTAC-GBM' in collection_descriptions:
+            collection_descriptions['CPTAC-GBM'] = {
+                'licenseId': 1,
+                'description': """
+<p>
+	<span class="conf-macro output-inline" data-hasbody="true" data-macro-name="excerpt">This collection contains subjects from the National Cancer Institute&rsquo;s <u><a class="external-link" href="https://proteomics.cancer.gov/programs/cptac" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> Glioblastoma Multiforme (CPTAC-GBM) cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics. Radiology and pathology images from CPTAC Phase 3 patients are being collected and made publicly available by The Cancer Imaging Archive to enable researchers to investigate cancer phenotypes which may correlate to corresponding proteomic, genomic and clinical data.</span></p>
+<p>
+	&nbsp;</p>
+<p>
+	<span class="iceOutTxt" id="MAINbody:collectionDescriptionPopupForm:j_id716">Please see the <a href="https://doi.org/10.7937/K9/TCIA.2018.3RJE41Q1">CPTAC-GBM</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</span></p>"""
+            }
+
+        if not 'TCGA-GBM' in collection_descriptions:
+            collection_descriptions['TCGA-GBM'] = {
+                'licenseId': 1,
+                'description': """
+<p>The <a href="http://imaging.cancer.gov/" target="_blank"><u>Cancer Imaging Program (CIP)</u></a> is working directly with primary investigators from institutes participating in TCGA to obtain and load images relating to the genomic, clinical, and pathological data being stored within the <a href="http://tcga-data.nci.nih.gov/" target="_blank">TCGA Data Portal</a> Currently this large MR multi-sequence image collection of glioblastoma patients can be matched by each unique case identifier with the extensive gene and expression data of the same case from The Cancer Genome Atlas Data Portal to research the link between clinical phenome and tissue genome. </p><br />
+<a href="https://doi.org/10.7937/K9/TCIA.2016.RNYFUYE9" target="_blank">TCGA-GBM</a></span> page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
+            }
+
+        if not 'TCGA-HNSC' in collection_descriptions:
+            collection_descriptions['TCGA-HNSC'] = {
+                'licenseId': 1,
+                'description': """
+<p>The <a href="http://imaging.cancer.gov/" target="_blank"><u>Cancer Imaging Program (CIP)</u></a> is working directly with primary investigators from institutes participating in TCGA to obtain and load images relating to the genomic, clinical, and pathological data being stored within the <a href="http://tcga-data.nci.nih.gov/" target="_blank">TCGA Data Portal</a>. Currently this large PET/CT multi-sequence image collection of  head and neck squamous cell carcinoma (HNSC) patients can be matched by each unique case identifier with the extensive gene and expression data of the same case from The Cancer Genome Atlas Data Portal to research the link between clinical phenome and tissue genome.</p>
+</br>
+<p>Please see the <a href="https://doi.org/10.7937/K9/TCIA.2016.LXKQ47MS" target="_blank">TCGA-HNSC</a> page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
+            }
+
+        if not 'TCGA-LGG' in collection_descriptions:
+                collection_descriptions['TCGA-LGG'] = {
+                    'licenseId': 1,
+                    'description': """
+<div>
+	<strong>Note:&nbsp;This collection has special restrictions on its usage. See <a href="https://wiki.cancerimagingarchive.net/x/c4hF" target="_blank">Data Usage Policies and Restrictions</a>.</strong></div>
+</br><p>The <a href="http://imaging.cancer.gov/" target="_blank"><u>Cancer Imaging Program (CIP)</u></a> is working directly with primary investigators from institutes participating in TCGA to obtain and load images relating to the genomic, clinical, and pathological data being stored within the <a href="http://tcga-data.nci.nih.gov/" target="_blank">TCGA Data Portal</a>. Currently this large MR multi-sequence image collection of low grade glioma patients can be matched by each unique case identifier with the extensive gene and expression data of the same case from The Cancer Genome Atlas Data Portal to research the link between clinical phenome and tissue genome.</p><br />
+<p>Please see the <a href="https://doi.org/10.7937/K9/TCIA.2016.L4LTD3TK" target="_blank">TCGA-LGG</a> page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
+                }
+
         if not 'CPTAC-AML' in collection_descriptions:
             # Also descriptions for TCIA collections that don't have descriptions.
             collection_descriptions['CPTAC-AML'] = {
