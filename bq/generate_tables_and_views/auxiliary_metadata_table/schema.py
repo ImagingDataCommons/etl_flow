@@ -34,7 +34,7 @@
 from google.cloud import bigquery
 
 auxiliary_metadata_schema = [
-    bigquery.SchemaField('collection_name', 'STRING', mode='NULLABLE', description='DEPRECATED: Collection name as used externally by IDC webapp'),
+    bigquery.SchemaField('collection_name', 'STRING', mode='NULLABLE', description='Collection name as used externally by IDC webapp'),
     bigquery.SchemaField('collection_id', 'STRING', mode='NULLABLE', description='Collection ID as used internally by IDC webapp and accepted by the IDC API'),
     bigquery.SchemaField('collection_timestamp', 'DATETIME', mode='NULLABLE', description='Revision timestamp'),
     bigquery.SchemaField('collection_hash', 'STRING', mode='NULLABLE', description='md5 hash of the of this version of the collection containing this instance'),
