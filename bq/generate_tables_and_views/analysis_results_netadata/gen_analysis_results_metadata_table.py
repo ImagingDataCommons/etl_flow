@@ -110,7 +110,8 @@ def build_metadata(args, BQ_client):
             'Location':data['Location'], 'Subjects':data['Subjects'], 'Collections':data['Collections'], \
             'AnalysisArtifactsonTCIA':data['AnalysisArtifacts'], 'Updated':data['Updated']} \
             for title, data in all_idc_analysis_metadata.items()}
-    analysis_metadata = idc_analysis_metadata | scrape_tcia_analysis_collections_page()
+    tcia_analysis_metadata = scrape_tcia_analysis_collections_page()
+    analysis_metadata = idc_analysis_metadata | tcia_analysis_metadata
 
     # Get analysis results descriptions
     descriptions = get_descriptions(BQ_client, args)
@@ -144,6 +145,7 @@ def build_metadata(args, BQ_client):
             #     if collection in redacted_collection_access:
             #         analysis_data['Access'] = redacted_collection_access[collection]
             analysis_data['Description'] = descriptions[analysis_data['ID']]
+            analysis_data['AnalysisArtifacts'] = analysis_data['AnalysisArtifactsonTCIA']
             rows.append(json.dumps(analysis_data))
     metadata = '\n'.join(rows)
     return metadata

@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Upload DB tables used in to generated subsequent BQ tables.
+# Upload DB tables used to generate subsequent BQ tables.
 # Beginning with idc v8, the per version BQ datasets are split
 # into idc_v<version>_dev and idc_v<version>_pub. These tables
 # go into the former, generated tables into the latter.
@@ -28,7 +28,6 @@ from utilities.bq_helpers import create_BQ_dataset
 
 tables = {
         'all_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
-        'all_joined': {"func": create_all_joined, "order_by": ""},
         'analysis_id_map': {"func": upload_table, "order_by": "collection_id"},
         'collection': {"func":upload_collection, "order_by":"collection_id"},
         'collection_id_map': {"func": upload_table, "order_by": "idc_webapp_collection_id"},
@@ -55,7 +54,7 @@ if __name__ == '__main__':
     parser.add_argument('--federated_query', default=f'idc-dev-etl.us.etl_federated_query_idc_v{settings.CURRENT_VERSION}')
     parser.add_argument('--upload', nargs='*', default= [
         'all_collections',
-        # 'analysis_id_map',
+        'analysis_id_map',
         'collection',
         'collection_id_map',
         'collection_patient',
@@ -73,7 +72,6 @@ if __name__ == '__main__':
         'study_series',
         'version',
         'version_collection',
-        'all_joined',
         'idc_all_joined',
     ], help="Tables to upload")
     args = parser.parse_args()
@@ -86,12 +84,6 @@ if __name__ == '__main__':
     except:
         # Presume the dataset already exists
         pass
-
-    # try:
-    #     dataset = create_BQ_dataset(BQ_client, settings.BQ_DEV_EXT_DATASET)
-    # except:
-    #     # Presume the dataset already exists
-    #     pass
 
     upload_to_bq(args, tables)
 
