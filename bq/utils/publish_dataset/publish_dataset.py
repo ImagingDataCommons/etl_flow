@@ -89,8 +89,17 @@ def copy_table(client, args,  table_id):
 
         job.result()  # Wait for the job to complete.
 
-        progresslogger.info("Backed up deleted table {} to {}".format(src_table_id, trg_table_id)
-        )
+        progresslogger.info("Copied table {} to {}".format(src_table_id, trg_table_id))
+
+        if table_id == 'dicom_derived_all':
+            dataset_ref = bigquery.DatasetReference(args.trg_project, args.trg_dataset)
+            table_ref = dataset_ref.table(table_id)
+            table = client.get_table(table_ref)  # API request
+            table.description = "DEPRECATED: This table will likely be removed in a future IDC version"
+            table = client.update_table(table, ["description"])  # API request
+
+        return
+
 
 
 def copy_view(client, args, view_id):
@@ -111,7 +120,10 @@ def copy_view(client, args, view_id):
                 replace(args.src_dataset,args.trg_dataset)
 
             new_view.friendly_name = view.friendly_name
-            new_view.description = view.description
+            if view_id == 'dicom_derived_all':
+                new_view.description = "DEPRECATED: This table will likely be removed in a future IDC version"
+            else:
+                new_view.description = view.description
             new_view.labels = view.labels
             installed_view = client.create_table(new_view)
 
@@ -143,12 +155,13 @@ def publish_dataset(args):
         )
         create_dataset(client, args.trg_project, args.trg_dataset, dataset_dict)
 
-    progresslogger.info(f'Backing up {args.src_dataset} to {args.trg_dataset}')
+    progresslogger.info(f'Copying {args.src_dataset} to {args.trg_dataset}')
     table_ids = {table.table_id: table.table_type for table in client.list_tables(f'{args.src_project}.{args.src_dataset}')}
     # Create tables first
     for table_id in table_ids:
         if table_ids[table_id] == 'TABLE':
             copy_table(client, args, table_id)
+
     for table_id in table_ids:
         if table_ids[table_id] == 'VIEW':
             copy_view(client, args, table_id)
