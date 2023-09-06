@@ -145,6 +145,7 @@ def build_metadata(args, BQ_client):
             #     if collection in redacted_collection_access:
             #         analysis_data['Access'] = redacted_collection_access[collection]
             analysis_data['Description'] = descriptions[analysis_data['ID']]
+            analysis_data['AnalysisArtifacts'] = analysis_data['AnalysisArtifactsonTCIA']
             rows.append(json.dumps(analysis_data))
     metadata = '\n'.join(rows)
     return metadata
