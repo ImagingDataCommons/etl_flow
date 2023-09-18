@@ -22,7 +22,7 @@
 import argparse
 import settings
 from upload_psql_to_bq import upload_to_bq, upload_version, upload_collection, upload_patient, upload_study, \
-    upload_series, upload_instance, upload_table, create_all_joined, create_idc_all_joined
+    upload_series, upload_instance, upload_table
 from google.cloud import bigquery
 from utilities.bq_helpers import create_BQ_dataset
 
@@ -32,7 +32,6 @@ tables = {
         'collection': {"func":upload_collection, "order_by":"collection_id"},
         'collection_id_map': {"func": upload_table, "order_by": "idc_webapp_collection_id"},
         'collection_patient': {"func": upload_table, "order_by": "collection_uuid"},
-        'idc_all_joined': {"func": create_idc_all_joined, "order_by": ""},
         'idc_collection': {"func": upload_table, "order_by": "collection_id"},
         'idc_instance': {"func": upload_table, "order_by": "sop_instance_uid"},
         'idc_patient': {"func": upload_table, "order_by": "submitter_case_id"},
