@@ -29,13 +29,9 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version for which to build the table')
     parser.add_argument('--target', default='dev', help="dev or prod")
     parser.add_argument('--merged', default=True, help='True if premerge buckets have been merged in dev buckets')
-    # parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default=f'{settings.DEV_PROJECT}')
-    # parser.add_argument('--dev_bqdataset_name', default=f'idc_v{args.version}_dev', help='BQ dataset containing development tables')
-    # parser.add_argument('--pub_bqdataset_name', default=f'idc_v{args.version}_pub', help='BQ dataset containing public tables')
     parser.add_argument('--trg_bqdataset_name', default=f'idc_v{settings.CURRENT_VERSION}_pub', help='BQ dataset of resulting table')
     parser.add_argument('--bqtable_name', default='auxiliary_metadata', help='BQ table name')
-    parser.add_argument('--temp_license_table_name', default='temp_licenses', help='BQ table name')
     args = parser.parse_args()
 
     args.access ='Public' # Fixed value
