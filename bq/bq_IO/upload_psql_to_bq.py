@@ -308,8 +308,3 @@ def upload_to_bq(args, tables):
                 successlogger.info(f'{table} upload completed in {time()-b:.2f}s')
         else:
             successlogger.info(f'{table} upload completed in {time() - b:.2f}s')
-
-
-
-
-
