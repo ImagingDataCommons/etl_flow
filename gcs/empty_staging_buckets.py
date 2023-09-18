@@ -25,12 +25,12 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--processes', default=1, help="Number of concurrent processes")
+    parser.add_argument('--processes', default=16, help="Number of concurrent processes")
     parser.add_argument('--batch', default=1000, help='Size of batch assigned to each process')
     parser.add_argument('--project', default='idc-pdp-staging')
 
     args = parser.parse_args()
 
-    for bucket in ['public_datasets_idc_staging', 'idc-open-cr-staging', 'idc-open-idc1-staging']:
+    for bucket in ['public-datasets-idc-staging', 'idc-open-cr-staging', 'idc-open-idc1-staging']:
         args.bucket = bucket
-    del_all_instances  (args)
+        del_all_instances  (args)
