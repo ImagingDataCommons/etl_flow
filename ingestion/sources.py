@@ -17,7 +17,7 @@ import time
 
 from utilities.tcia_helpers import  get_hash, get_TCIA_studies_per_patient, get_TCIA_patients_per_collection,\
     get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_collection_values_and_counts,\
-    get_instance_hash, refresh_access_token
+    get_instance_hash, get_access_token
 from idc.models  import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, instance_source
 from sqlalchemy import select
 from ingestion.utilities.get_collection_dois_urls_licenses import get_patient_dois_idc, \
@@ -53,7 +53,8 @@ class TCIA(Source):
             if result.status_code == 401:
                 # Refresh the token and try once more to get the hash
                 # errlogger.error('p%s Refreshing access token %s, refresh token %s at %s', self.pid, self.access[0], self.access[1], time.asctime(time.localtime()))
-                self.access[0], self.access[1] = refresh_access_token(self.access[1])
+                # self.access[0], self.access[1] = refresh_access_token(self.access[1])
+                self.access[0], self.access[1] = get_access_token()
                 # errlogger.error('p%s After refresh, token %s, refresh token %s', self.pid, self.access[0], self.access[1])
                 result = get_hash(request_data, self.access[0])
                 if result.status_code != 200:
@@ -176,7 +177,7 @@ class TCIA(Source):
         if result:
             return result.content.decode()
         else:
-            rootlogger.info('get_hash failed for series %s', series_instance_uid)
+            rootlogger.error('get_hash failed for series %s', series_instance_uid)
             raise Exception('get_hash failed for series %s', series_instance_uid)
 
     ###-------------------Instance-----------------###
@@ -204,8 +205,10 @@ class TCIA(Source):
             # result = get_instance_hash(sop_instance_uid, self.access_token)
             result = get_instance_hash(sop_instance_uid, self.access[0])
             if result.status_code == 401:
-                # Refresh the token and try once more to get the hash
-                self.access_token, self.refresh_token = refresh_access_token(self.refresh_token)
+                # # Refresh the token and try once more to get the hash
+                # self.access_token, self.refresh_token = refresh_access_token(self.refresh_token)
+                # Get a new access token
+                self.access_token, self.refresh_token = get_access_token()
                 result = get_instance_hash(sop_instance_uid, self.access_token)
                 if result.status_code != 200:
                     result = None

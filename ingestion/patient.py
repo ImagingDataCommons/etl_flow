@@ -196,16 +196,17 @@ def build_patient(sess, args, all_sources, patient_index, version, collection, p
 
              # Get a list of what DB thinks are the patient's hashes
             idc_hashes = all_sources.idc_patient_hashes(patient)
+            patient.hashes = idc_hashes
+            patient.sources = accum_sources(patient, patient.studies)
+
             skipped = is_skipped(args.skipped_collections, collection.collection_id)
             src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id, skipped)
             revised = [(x != y) and  not z for x, y, z in \
                     zip(idc_hashes[:-1], src_hashes, skipped)]
             if any(revised):
-                raise Exception('Hash match failed for patient %s', patient.submitter_case_id)
+                # raise Exception('Hash match failed for patient %s', patient.submitter_case_id)
+                errlogger.error(Exception('Hash match failed for patient %s', patient.submitter_case_id))
             else:
-                patient.hashes = idc_hashes
-                patient.sources = accum_sources(patient, patient.studies)
-
                 patient.done = True
                 sess.commit()
                 duration = str(timedelta(seconds=(time.time() - begin)))

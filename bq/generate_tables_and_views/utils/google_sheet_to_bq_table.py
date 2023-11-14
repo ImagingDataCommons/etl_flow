@@ -20,7 +20,7 @@ import argparse
 import pandas as pd
 from google.cloud import bigquery
 
-def load_spreadsheet(args):
+def load_spreadsheet(args, schema=None):
     # Load the Google Sheets data into a Pandas DataFrame
 
     url = f'https://docs.google.com/spreadsheets/d/{args.spreadsheet_id}/gviz/tq?tqx=out:csv&sheet={args.sheet_name}'
@@ -37,11 +37,12 @@ def load_spreadsheet(args):
             if not columnName in args.columns:
                 df = df.drop(columnName, axis=1)
 
-    # Create the BigQuery table schema based on the DataFrame columns
-    # We assume all columns are STRINGs
-    schema = []
-    for column in df.columns:
-        schema.append(bigquery.SchemaField(column, 'STRING'))
+    if not schema:
+        # Create the BigQuery table schema based on the DataFrame columns
+        # We assume all columns are STRINGs
+        schema = []
+        for column in df.columns:
+            schema.append(bigquery.SchemaField(column, 'STRING'))
 
     # Define the BigQuery table reference
     table_ref = client.dataset(args.bq_dataset_id, project=args.project).table(args.table_id)

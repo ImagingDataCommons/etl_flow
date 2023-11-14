@@ -21,7 +21,7 @@ import json
 import time
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json
-from bq.generate_tables_and_views.analysis_results_netadata.schema import analysis_results_metadata_schema
+from bq.generate_tables_and_views.analysis_results_metadata.schema import analysis_results_metadata_schema
 from utilities.tcia_scrapers import scrape_tcia_analysis_collections_page
 from utilities.logging_config import successlogger, progresslogger
 from python_settings import settings
@@ -103,6 +103,19 @@ def get_all_analysis_metadata(client):
     analysis_metadata = get_idc_sourced_analysis_metadata(client)
     analysis_metadata = analysis_metadata | scrape_tcia_analysis_collections_page()
 
+# Get a list of subjects per source DOI
+def count_subjects(client):
+    query = f"""
+    SELECT source_doi, COUNT (DISTINCT submitter_case_id) cnt
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public`
+    GROUP BY source_doi, idc_version
+    HAVING idc_version = {settings.CURRENT_VERSION}     """
+
+    results = [dict(row) for row in client.query(query).result()]
+    counts = {row['source_doi'].lower(): row['cnt'] for row in results}
+    return counts
+
+
 def build_metadata(args, BQ_client):
 
     all_idc_analysis_metadata = get_idc_sourced_analysis_metadata(BQ_client)
@@ -122,6 +135,7 @@ def build_metadata(args, BQ_client):
     # For each source DOI, which collections contain it
     source_dois_collections = get_collections_containing_a_doi(BQ_client, args)
 
+    counts_per_doi = count_subjects(BQ_client)
     rows = []
     for analysis_id, analysis_data in analysis_metadata.items():
         # If the DOI of this analysis result is in source_dois_license, then it is in the series table
@@ -135,7 +149,11 @@ def build_metadata(args, BQ_client):
                 title = title[:-1]
             analysis_data['Title'] = title
             analysis_data['ID'] = title_id[1].split(')')[0]
-            analysis_data['Collections'] = source_dois_collections[analysis_data['DOI']]
+            try:
+                analysis_data['Collections'] = source_dois_collections[analysis_data['DOI']]
+            except Exception as exc:
+                print(f"Didn't counts for DOI  {analysis_data['DOI'].lower()}" )
+            analysis_data['Subjects'] = counts_per_doi[analysis_data['DOI']]
             analysis_data['Access'] = 'Public'
             license = get_license(BQ_client, analysis_data["DOI"])
             for key, value in license.items():
@@ -153,9 +171,13 @@ def build_metadata(args, BQ_client):
 def gen_collections_table(args):
     BQ_client = bigquery.Client(project=settings.DEV_PROJECT)
     metadata = build_metadata(args, BQ_client)
-    job = load_BQ_from_json(BQ_client, settings.DEV_PROJECT, settings.BQ_DEV_EXT_DATASET, args.bqtable_name, metadata, analysis_results_metadata_schema,
-        write_disposition='WRITE_TRUNCATE',
-        table_description='Metadata of Analysis Results. These are the results of analysis performed against Original Collections hosted by IDC.')
+    try:
+        job = load_BQ_from_json(BQ_client, settings.DEV_PROJECT, settings.BQ_DEV_EXT_DATASET, args.bqtable_name, metadata, analysis_results_metadata_schema,
+            write_disposition='WRITE_TRUNCATE',
+            table_description='Metadata of Analysis Results. These are the results of analysis performed against Original Collections hosted by IDC.')
+    except Exception as exc:
+        print(f'Error {exc}')
+        exit
     while not job.state == 'DONE':
         progresslogger.info('Status: {}'.format(job.state))
         time.sleep(args.period * 60)

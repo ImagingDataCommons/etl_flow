@@ -636,6 +636,12 @@ if __name__ == "__main__":
 
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
     # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
+    h = get_hash({'Collection': 'ReMIND'})
+    h = get_hash({'Collection': 'ReMIND', 'Patient':'ReMIND-001'})
+    h = get_hash({'Collection': '4D-Lung','Patient':'100_HM10395'})
+    h = get_hash({'Collection': '4D-Lung'})
+    h = get_hash({'Collection': '4D-Lung','Patient':'101_HM10395'})
+
     d = get_collection_descriptions_and_licenses()
     i = get_collection_id_from_doi('10.7937/k9/tcia.2016.eln8ygle')
     c=get_collection_values_and_counts()

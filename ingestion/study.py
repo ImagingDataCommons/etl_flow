@@ -177,6 +177,8 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
             series_index = f'{study.seriess.index(series) + 1} of {len(study.seriess)}'
             if not series.done:
                 build_series(sess, args, all_sources, series_index, version, collection, patient, study, series)
+                if (series.hashes.tcia == "" and series.sources.tcia==True) or (series.hashes.idc == "" and series.sources.idc==True) :
+                    breakpoint()
             else:
                 successlogger.info("      p%s: Series %s, %s, previously built", args.pid, series.series_instance_uid, series_index)
 
@@ -184,22 +186,24 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
             study.max_timestamp = max([series.max_timestamp for series in study.seriess if series.max_timestamp != None])
             # Get a list of what DB thinks are the study's hashes
             idc_hashes = all_sources.idc_study_hashes(study)
+            study.hashes = idc_hashes
+            study.sources = accum_sources(study, study.seriess)
+            study.study_instances = sum([series.series_instances for series in study.seriess])
+
             skipped = is_skipped(args.skipped_collections, collection.collection_id)
             src_hashes = all_sources.src_study_hashes(collection.collection_id, study.study_instance_uid, skipped)
             revised = [(x != y) and not z for x, y, z in \
                        zip(idc_hashes[:-1], src_hashes, skipped)]
             if any(revised):
-                raise Exception('Hash match failed for study %s', study.study_instance_uid)
+                # raise Exception('Hash match failed for study %s', study.study_instance_uid)
+                errlogger.error('Hash match failed for study %s', study.study_instance_uid)
             else:
-                study.hashes = idc_hashes
-                study.sources = accum_sources(study, study.seriess)
-                study.study_instances = sum([series.series_instances for series in study.seriess])
                 study.done = True
                 sess.commit()
                 duration = str(timedelta(seconds=(time.time() - begin)))
                 successlogger.info("    p%s: Built Study %s, %s,  in %s", args.pid, study.study_instance_uid, study_index, duration)
     except Exception as exc:
-        errlogger.info('  p%s build_study failed: %s', args.pid, exc)
+        errlogger.error('  p%s build_study failed: %s', args.pid, exc)
         raise exc
 
 

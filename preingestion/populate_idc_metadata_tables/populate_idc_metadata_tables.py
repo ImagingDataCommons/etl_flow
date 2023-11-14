@@ -23,7 +23,7 @@
 # The script walks the directory hierarchy from a specified subdirectory of the
 # gcsfuse mount point
 
-from idc.models import Base, IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance
+from idc.models import Base, IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, Collection, Patient
 from gen_hashes import gen_hashes
 from utilities.logging_config import successlogger, errlogger, progresslogger
 from base64 import b64decode
@@ -101,16 +101,16 @@ def build_patient(client, args, sess, collection, patient_id, study_id, series_i
     return
 
 
-def build_collection(client, args, sess, patient_id, study_id, series_id, instance_id, hash, size, blob_name):
-    collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == args.collection_id).first()
+def build_collection(client, args, sess, collection_id, patient_id, study_id, series_id, instance_id, hash, size, blob_name):
+    collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
     if not collection:
         # The collection is not currently in the DB, so add it
         collection = IDC_Collection()
-        collection.collection_id = args.collection_id
+        collection.collection_id = collection_id
         sess.add(collection)
-        progresslogger.info(f'Collection {args.collection_id} added')
+        progresslogger.info(f'Collection {collection_id} added')
     else:
-        progresslogger.info(f'Collection {args.collection_id} exists')
+        progresslogger.info(f'Collection {collection_id} exists')
     build_patient(client, args, sess, collection, patient_id, study_id, series_id, instance_id, hash, size, blob_name)
     return
 
@@ -132,22 +132,25 @@ def prebuild(args):
             if page.num_items:
                 for blob in page:
                     if not blob.name.endswith('DICOMDIR'):
-                        if not blob.name in dones:
-                            with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
-                                try:
-                                    r = dcmread(f, stop_before_pixels=True)
-                                    patient_id = r.PatientID
-                                    study_id = r.StudyInstanceUID
-                                    series_id = r.SeriesInstanceUID
-                                    instance_id = r.SOPInstanceUID
-                                except Exception as exc:
-                                    errlogger.error(f'pydicom failed for {blob.name}: {exc}')
-                                    return
-                            hash = b64decode(blob.md5_hash).hex()
-                            size = blob.size
-                            build_collection(client, args, sess, patient_id, study_id, series_id, instance_id, hash, size, blob.name)
-                    else:
-                        progresslogger.info(f'Skipped {blob.name}')
+                        with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
+                            try:
+                                r = dcmread(f, stop_before_pixels=True)
+                                patient_id = r.PatientID
+                                study_id = r.StudyInstanceUID
+                                series_id = r.SeriesInstanceUID
+                                instance_id = r.SOPInstanceUID
+                                if not args.collection_id:
+                                    collection_id = sess.query(Collection.collection_id).distinct().join(
+                                        Collection.patients). \
+                                        filter(Patient.submitter_case_id == patient_id).one()[0]
+                                else:
+                                    collection_id = args.collection_id
+                            except Exception as exc:
+                                errlogger.error(f'pydicom failed for {blob.name}: {exc}')
+                                continue
+                        hash = b64decode(blob.md5_hash).hex()
+                        size = blob.size
+                        build_collection(client, args, sess, collection_id, patient_id, study_id, series_id, instance_id, hash, size, blob.name)
 
         sess.commit()
         if args.gen_hashes:

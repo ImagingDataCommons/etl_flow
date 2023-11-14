@@ -30,5 +30,5 @@ psycopg2
 pydicom
 python-dotenv
 python_settings
-sqlalchemy
+sqlalchemy==1.4.50
 sqlalchemy_utils

@@ -24,7 +24,7 @@ import hashlib
 from logging import INFO
 from utilities.tcia_helpers import get_hash, get_access_token, get_images_with_md5_hash, get_images_with_md5_hash_nlst,\
     get_TCIA_patients_per_collection, get_TCIA_studies_per_patient, get_TCIA_series_per_study, NBIA_AUTH_URL, \
-    get_hash_nlst, NLST_AUTH_URL, refresh_access_token
+    get_hash_nlst, NLST_AUTH_URL
 from ingestion.utilities.utils import get_merkle_hash
 from utilities.logging_config import successlogger, progresslogger, errlogger
 import settings
@@ -151,7 +151,7 @@ def compare_series_hashes(access_token, refresh_token, cur, args, collection, pa
 
 def compare_study_hashes(access_token, refresh_token, sess, args, collection, patient):
     tcia_studies = get_TCIA_studies_per_patient(collection.collection_id, patient.submitter_case_id)
-    idc_studies = patient.studies
+    idc_studies = [study for study in patient.studies if study.sources.tcia==True]
     only_idc = []
     if args.studies:
         idc_studies = [study for study in idc_studies if study.study_instance_uid in args.studies]
@@ -207,7 +207,7 @@ def validate_idc_collection_hash(collection):
 def compare_patient_hashes(access_token, refresh_token, sess, args, collection):
     tcia_patients = get_TCIA_patients_per_collection(collection.collection_id)
 
-    idc_patients = [patient  for patient in collection.patients if patient.sources.tcia==True]
+    idc_patients = [patient for patient in collection.patients if patient.sources.tcia==True]
     only_idc = []
     if args.patients:
         idc_patients = [patient for patient in idc_patients if patient.submitter_case_id in args.patients]
@@ -224,7 +224,9 @@ def compare_patient_hashes(access_token, refresh_token, sess, args, collection):
                 for patient in only_tcia:
                     progresslogger.info(f"c>>         {patient}")
 
-    for patient in [patient for patient in idc_patients if patient.submitter_case_id not in only_idc]:
+    sorted_patient_ids = sorted([patient.submitter_case_id for patient in idc_patients if patient.submitter_case_id not in only_idc])
+    for patient_id in sorted_patient_ids:
+        patient = next(patient for patient in idc_patients if patient.submitter_case_id == patient_id)
         access_token, refresh_token = get_access_token(auth_server=NBIA_AUTH_URL)
         try:
             # progresslogger.info('{}    {:32}'.format(n, patient.submitter_case_id))
@@ -356,7 +358,7 @@ if __name__ == '__main__':
     # err_fh.setFormatter(errformatter)
     #
     # version = settings.CURRENT_VERSION
-    version = 16
+    version = 17
     parser = argparse.ArgumentParser()
     # parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
     parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
@@ -368,7 +370,7 @@ if __name__ == '__main__':
     parser.add_argument('--only_mismatches', default=False, help='Only log mismatching hashes')
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
                         help='Levels at which to log')
-    parser.add_argument('--collections', default=['CPTAC-HNSCC'], \
+    parser.add_argument('--collections', default=['CPTAC-UCEC'], \
                         help='List of collections to compare. If empty, compare all collections')
     parser.add_argument('--patients', default = [],
                         help='List of patients to compare. If empty, compare all patients')

@@ -21,7 +21,7 @@
 
 from idc.models import Base, Collection, All_Collections, Collection_id_map
 import settings
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine, func, or_
 from sqlalchemy.orm import Session
 from utilities.logging_config import progresslogger
 
@@ -53,13 +53,26 @@ def prebuild():
                    idc_metadata_sunset=0)
             sess.add(collection)
             progresslogger.info(f'Added collection {collection}')
+        # sess.commit()
+    with Session(sql_engine) as sess:
+        collections = sess.query(All_Collections).outerjoin(Collection, Collection.idc_collection_id== \
+                All_Collections.idc_collection_id).\
+                filter(Collection.rev_idc_version==settings.CURRENT_VERSION).filter( or_(Collection.sources==(True,True), Collection.sources==(False,True))).all() #.filter(Collection.sources.==True).all()
+        for collection in collections:
+            if collection.dev_idc_url== None:
+                collection.dev_idc_url='idc-dev-open'
+                collection.pub_gcs_idc_url='public-datasets-idc'
+                collection.pub_aws_idc_url='idc-open-data'
+                collection.idc_access='Public'
+                collection.idc_metadata_sunset=0
+
+                progresslogger.info(f'Updated collection {collection.tcia_api_collection_id}')
         sess.commit()
 
     return
 
 
 if __name__ == '__main__':
-    breakpoint() # Make a copy of all_collections before executing this script. It might truncate that table.
     prebuild()
 
 

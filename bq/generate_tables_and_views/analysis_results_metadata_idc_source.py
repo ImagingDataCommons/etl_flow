@@ -25,7 +25,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--spreadsheet_id', default = '1Nu9uQNDOXBLUA9w8hp32b41cjPls6NOkjlgDwxAFgWw',
                         help='"id" portion of spreadsheet URL')
-    parser.add_argument('--sheet_name', default = 'Sheet1', help='Sheet within spreadsheet to load')
+    parser.add_argument('--sheet_name', default = f'idc_v{settings.CURRENT_VERSION}', help='Sheet within spreadsheet to load')
     parser.add_argument('--project', default='idc-dev-etl', help='BQ project')
     parser.add_argument('--bq_dataset_id', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ datasey')
     parser.add_argument('--table_id', default='analysis_results_metadata_idc_source', help='Table name to which to copy data')
