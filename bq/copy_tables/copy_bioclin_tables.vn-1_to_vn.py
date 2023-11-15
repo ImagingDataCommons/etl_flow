@@ -34,8 +34,7 @@ if __name__ == '__main__':
     parser.add_argument('--dst_bqdataset', default=f'idc_v{settings.CURRENT_VERSION}_pub', help='Destination BQ dataset')
     parser.add_argument('--dataset_description', default = f'IDC V{settings.CURRENT_VERSION} BQ tables and views')
     parser.add_argument('--bqtables', \
-        default=['nlst_canc', 'nlst_ctab', 'nlst_ctabc', 'nlst_prsn', 'nlst_screen', \
-                'tcga_biospecimen_rel9', 'tcga_clinical_rel9'], help='BQ tables to be copied')
+        default=['tcga_biospecimen_rel9', 'tcga_clinical_rel9'], help='BQ tables to be copied')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

@@ -61,7 +61,7 @@ def build_table(args):
       CONCAT('gs://',
         # If we are generating series_gcs_url for the public auxiliary_metadata table 
         if('{args.target}' = 'pub', 
-            if( i_source='tcia', ac.pub_gcs_tcia_url, ac.pub_gcs_idc_url), 
+            if( i_source='tcia', aj.pub_gcs_tcia_url, aj.pub_gcs_idc_url), 
         #else 
             # We are generating the dev auxiliary_metadata
             # If this instance is new in this version and we 
@@ -76,11 +76,8 @@ def build_table(args):
                     ),
     
             #else
-                 ## This instance is not new so use the staging bucket prefix
-                  #if( i_source='tcia', ac.dev_tcia_url, ac.dev_idc_url)
-                 #)
-                # This instance is not new so use the public bucket prefix
-                 if( i_source='tcia', ac.pub_gcs_tcia_url, ac.pub_gcs_idc_url)
+                 # This instance is not new so use the public bucket prefix
+                 if( i_source='tcia', aj.dev_tcia_url, aj.dev_idc_url)
                 )
             ), 
         '/', se_uuid, '/') as series_gcs_url,
@@ -88,7 +85,7 @@ def build_table(args):
       # There are no dev S3 buckets, so populate the aws_series_url 
       # the same for both dev and pub versions of auxiliary_metadata
       CONCAT('s3://',
-        if( i_source='tcia', ac.pub_aws_tcia_url, ac.pub_aws_idc_url),
+        if( i_source='tcia', aj.pub_aws_tcia_url, aj.pub_aws_idc_url),
             '/', se_uuid, '/') as series_aws_url,           
       IF(collection_id='APOLLO', '', source_doi) AS source_doi,
       IF(source_url is Null OR source_url='', CONCAT('https://doi.org/', source_doi), source_url) AS source_url,
@@ -104,7 +101,7 @@ def build_table(args):
       CONCAT('gs://',
         # If we are generating gcs_url for the public auxiliary_metadata table 
         if('{args.target}' = 'pub', 
-            if( i_source='tcia', ac.pub_gcs_tcia_url, ac.pub_gcs_idc_url), 
+            if( i_source='tcia', aj.pub_gcs_tcia_url, aj.pub_gcs_idc_url), 
         #else 
             # We are generating the dev auxiliary_metadata
             # If this instance is new in this version and we 
@@ -119,20 +116,43 @@ def build_table(args):
                     ),
     
             #else
-                 ## This instance is not new so use the staging bucket prefix
-                  #if( i_source='tcia', ac.dev_tcia_url, ac.dev_idc_url)
-                 #)
-                # This instance is not new so use the public bucket prefix
-                 if( i_source='tcia', ac.pub_gcs_tcia_url, ac.pub_gcs_idc_url)
+                 # This instance is not new so use the public bucket prefix
+                 if( i_source='tcia', aj.dev_tcia_url, aj.dev_idc_url)
                 )
             ), 
         '/', se_uuid, '/', i_uuid, '.dcm') as gcs_url,
       
+    # If we are generating gcs_bucket for the public auxiliary_metadata table 
+    if('{args.target}' = 'pub', 
+        if( i_source='tcia', aj.pub_gcs_tcia_url, aj.pub_gcs_idc_url), 
+    #else 
+        # We are generating the dev auxiliary_metadata
+        # If this instance is new in this version and we 
+        # have not merged new instances into dev buckets
+        if(i_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+            # We use the premerge url prefix
+            CONCAT('idc_v', {settings.CURRENT_VERSION}, 
+                '_',
+                i_source,
+                '_',
+                REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_')
+                ),
+
+        #else
+             # This instance is not new so use the public bucket prefix
+             if( i_source='tcia', aj.dev_tcia_url, aj.dev_idc_url)
+            )
+        ) as gcs_bucket,
+      
       # There are no dev S3 buckets, so populate the aws_url 
       # the same for both dev and pub versions of auxiliary_metadata
       CONCAT('s3://',
-        if( i_source='tcia', ac.pub_aws_tcia_url, ac.pub_aws_idc_url),
+        if( i_source='tcia', aj.pub_aws_tcia_url, aj.pub_aws_idc_url),
             '/', se_uuid, '/', i_uuid, '.dcm') as aws_url,
+      # There are no dev S3 buckets, so populate the aws_bucket 
+      # the same for both dev and pub versions of auxiliary_metadata
+      if( i_source='tcia', aj.pub_aws_tcia_url, aj.pub_aws_idc_url) as aws_bucket,
+
       i_size AS instance_size,
       i_hash AS instance_hash,
 --       i_source AS instance_source,
@@ -144,19 +164,7 @@ def build_table(args):
       license_short_name,
       collection_id AS tcia_api_collection_id,
       REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_') AS idc_webapp_collection_id
-      FROM
-        `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
-      JOIN
-        `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac
-      ON
-        collection_id = ac.tcia_api_collection_id
-      WHERE
-        i_excluded is False
-      AND
-        ((i_source='tcia' AND ac.tcia_access='Public' AND (ac.tcia_metadata_sunset=0 OR ({args.version} <= ac.tcia_metadata_sunset))) 
-        OR (i_source='idc' AND ac.idc_access='Public' AND (ac.idc_metadata_sunset=0 OR ({args.version} <= ac.idc_metadata_sunset))))
-      AND
-        idc_version = {args.version}
+      FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_current` aj
       ORDER BY
         tcia_api_collection_id, submitter_case_id
 """

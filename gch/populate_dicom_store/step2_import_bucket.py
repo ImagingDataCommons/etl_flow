@@ -150,5 +150,4 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
     args.staging_bucket = f'dicom_store_import_staging_v{settings.CURRENT_VERSION}'
 
-    breakpoint() # Not yet tested
     import_buckets(args)

@@ -36,7 +36,7 @@ if __name__ == '__main__':
             'analysis_results_metadata', \
             'dicom_metadata', \
             'mutable_metadata', \
-            'nlst_canc', 'nlst_ctab', 'nlst_ctabc', 'nlst_prsn', 'nlst_screen', \
+            # 'nlst_canc', 'nlst_ctab', 'nlst_ctabc', 'nlst_prsn', 'nlst_screen', \
             'original_collections_metadata', \
             'tcga_biospecimen_rel9', 'tcga_clinical_rel9', \
             'version_metadata'

@@ -188,9 +188,21 @@
         "type": "STRING"
       },
       {
+        "description": "Name of the Google Cloud Storage (GCS) bucket containing the current version of this instance",
+        "mode": "NULLABLE",
+        "name": "gcs_bucket",
+        "type": "STRING"
+      },
+      {
         "description": "URL of the Amazon Web Services (AWS) object containing the current version of this instance",
         "mode": "NULLABLE",
         "name": "aws_url",
+        "type": "STRING"
+      },
+      {
+        "description": "Name of the Amazon Web Services (AWS) bucket containing the current version of this instance",
+        "mode": "NULLABLE",
+        "name": "aws_bucket",
         "type": "STRING"
       },
       {
