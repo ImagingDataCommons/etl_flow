@@ -119,6 +119,7 @@ def expand_version(sess, args, all_sources, version):
         progresslogger.info('p%s: Collection %s is new', args.pid, new_collection.collection_id)
 
     for collection in existing_objects:
+        print(f"Check {collection.collection_id} for revisions")
         # if not collection.collection_id in skipped:
         idc_hashes = collection.hashes
         if collection.collection_id in args.skipped_collections:
@@ -232,6 +233,7 @@ def build_version(sess, args, all_sources, version):
         collection_index = f'{idc_collections.index(collection) + 1} of {len(idc_collections)}'
         if not collection.done:
             build_collection(sess, args, all_sources, collection_index, version, collection)
+            pass
         else:
             progresslogger.info("p%s: Collection %s, %s, previously built", args.pid, collection.collection_id, collection_index)
 

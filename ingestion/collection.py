@@ -252,9 +252,8 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
                 task_queue.put((patient_index, collection.collection_id, patient.submitter_case_id))
                 enqueued_patients.append(patient.submitter_case_id)
             else:
-                if (collection.patients.index(patient) % 100 ) == 0:
-                    successlogger.info("  p%s: Patient %s, %s, previously built", args.pid, patient.submitter_case_id,
-                                patient_index)
+                successlogger.info("  p%s: Patient %s, %s, previously built", args.pid, patient.submitter_case_id,
+                            patient_index)
 
         # Collect the results for each patient
         try:
@@ -288,15 +287,20 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         try:
             # Get IDCs vector of collection hashes from the DB
             idc_hashes = all_sources.idc_collection_hashes(collection)
-            skipped = is_skipped(args.skipped_collections, collection.collection_id)
+            # Record the collection hashes
+            collection.hashes = idc_hashes
+            # The collection's sources vector is the OR of the sources vector of all its patients
+            collection.sources = accum_sources(collection, collection.patients)
 
+            skipped = is_skipped(args.skipped_collections, collection.collection_id)
             # Get the sources' vector of collection hashes
             src_hashes = all_sources.src_collection_hashes(collection.collection_id, skipped)
             # Compare hashes of unskipped sources
             revised = [(x != y) and not z for x, y, z in \
                        zip(idc_hashes[:-1], src_hashes, skipped)]
             if any(revised):
-                raise Exception('Hash match failed for collection %s', collection.collection_id)
+                # raise Exception('Hash match failed for collection %s', collection.collection_id)
+                errlogger.error('Hash match failed for collection %s', collection.collection_id)
             else:
                 # Record the collection hashes
                 collection.hashes = idc_hashes
@@ -308,7 +312,12 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
                 sess.commit()
 
         except Exception as exc:
-            errlogger.error('Could not validate collection hash for %s: %s', collection.collection_id, exc)
+            errlogger.error(f'Could not validate collection hash for { collection.collection_id}: {exc}')
+            # Record our hashes but don't mark as done
+            # Record the collection hashes
+            collection.hashes = idc_hashes
+            # The collection's sources vector is the OR of the sources vector of all its patients
+            collection.sources = accum_sources(collection, collection.patients)
 
     else:
         duration = str(timedelta(seconds=(time.time() - begin)))

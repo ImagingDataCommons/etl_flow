@@ -24,7 +24,7 @@ import hashlib
 import logging
 from time import sleep
 from logging import INFO
-from utilities.tcia_helpers import get_hash, get_access_token, refresh_access_token, get_images_with_md5_hash, \
+from utilities.tcia_helpers import get_hash, get_access_token, get_images_with_md5_hash, \
     get_TCIA_patients_per_collection, get_TCIA_studies_per_patient, get_TCIA_series_per_study, NBIA_AUTH_URL
 
 from python_settings import settings

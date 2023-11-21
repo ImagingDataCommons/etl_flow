@@ -23,26 +23,15 @@ from utilities.logging_config import successlogger,errlogger
 def validate_dicom_metadata_counts():
     client = bigquery.Client()
     query = f"""
-    WITH sopinstanceuids AS (
-    SELECT aj.sop_instance_uid as SOPInstanceUID
-    FROM `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined` as aj
-    JOIN `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_collections` ac
-    ON aj.collection_id = ac.tcia_api_collection_id
-    WHERE aj.idc_version = {settings.CURRENT_VERSION}
-    AND aj.i_excluded is False
-    AND
-        ((i_source='tcia' AND ac.tcia_access='Public' AND (ac.tcia_metadata_sunset=0 OR ({settings.CURRENT_VERSION} <= ac.tcia_metadata_sunset))) 
-        OR (i_source='idc' AND ac.idc_access='Public' AND (ac.idc_metadata_sunset=0 OR ({settings.CURRENT_VERSION} <= ac.idc_metadata_sunset))))
-    )
-    select count(siu.sopinstanceuid) as siu_cnt, count(dm.sopinstanceuid) as dcm_cnt
-    FROM sopinstanceuids as siu
-    FULL OUTER JOIN `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_pub.dicom_metadata` as dm
-    ON siu.SOPInstanceUID = dm.SOPInstanceUID
-    WHERE siu.SOPInstanceUID is NULL or dm.SOPInstanceUID is null
+    SELECT count(*) cnt
+    FROM `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined_current` ajc
+    FULL OUTER JOIN `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_pub.dicom_metadata` dm
+    ON ajc.sop_instance_uid = dm.sopinstanceuid
+    WHERE ajc.sop_instance_uid IS NULL OR dm.sopinstanceuid IS NULL
     """
 
     results = client.query(query)
-    if list(results)[0].siu_cnt == 0 and list(results)[0].dcm_cnt == 0:
+    if list(results)[0].cnt == 0:
         successlogger.info("dicom_metadata has the correct SOPInstanceUIDs")
         return 0
     else:

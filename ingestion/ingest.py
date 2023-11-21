@@ -115,7 +115,10 @@ if __name__ == '__main__':
     # parser.add_argument('--skipped_tcia_groups', nargs='*', default=['redacted_collections', 'excluded_collections'],\
     #                     help="List of tables containing tcia_api_collection_ids of tcia collections to be skipped")
     parser.add_argument('--skipped_tcia_collections', nargs='*', \
-            default=['NLST', 'APOLLO-5-ESCA', 'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-PAAD', 'APOLLO-5-THYM'], \
+            default=['NLST', 'APOLLO-5-ESCA', 'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-PAAD', 'APOLLO-5-THYM', \
+                    'ACNS0332', 'AHOD0831', 'AREN0532', 'AREN0533', 'AREN0534', 'CALGB50303', 'A091105'
+                     'CPTAC-UCEC'
+                     ],
                         help='List of additional tcia collections to be skipped')
     # parser.add_argument('--included_tcia_collections', nargs='*', default=[], help='List of tcia collections to exclude from skipped groups')
     parser.add_argument('--prestaging_tcia_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_tcia_', help='Copy tcia instances here before forwarding to --staging_bucket')
@@ -123,7 +126,7 @@ if __name__ == '__main__':
     # parser.add_argument('--skipped_idc_groups', nargs='*', default=['redacted_collections', 'excluded_collections'],\
     #                     help="List of tables containing tcia_api_collection_ids of idc collections to be skipped")
     parser.add_argument('--skipped_idc_collections', nargs='*',\
-            default=[], \
+            default=['CPTAC-UCEC'], \
                         help='List of additional idc collections to be skipped')
     # # parser.add_argument('--included_idc_collections', nargs='*', \
     # #         default=[], help='List of idc collections to include (exclude from skipped groups)')

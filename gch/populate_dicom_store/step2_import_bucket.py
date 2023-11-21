@@ -148,7 +148,6 @@ if __name__ == '__main__':
     parser.add_argument('--period', default=60, help="seconds to sleep between checking operation status")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-    args.staging_bucket = f'dicom_store_population_staging_v{settings.CURRENT_VERSION}'
+    args.staging_bucket = f'dicom_store_import_staging_v{settings.CURRENT_VERSION}'
 
-    breakpoint() # Not yet tested
     import_buckets(args)

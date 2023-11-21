@@ -172,16 +172,17 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
             # Get a list of what DB thinks are the series's hashes
             idc_hashes = all_sources.idc_series_hashes(series)
             # # Get a list of what the sources think are the series's hashes
+            series.hashes = idc_hashes
+            series.series_instances = len(series.instances)
 
             skipped = is_skipped(args.skipped_collections, collection.collection_id)
             src_hashes = all_sources.src_series_hashes(collection.collection_id, series.series_instance_uid, skipped)
             revised = [(x != y) and not z for x, y, z in \
                        zip(idc_hashes[:-1], src_hashes, skipped)]
             if any(revised):
-                raise Exception('Hash match failed for series %s', series.series_instance_uid)
+                # raise Exception('Hash match failed for series %s', series.series_instance_uid)
+                errlogger.error('Hash match failed for series %s', series.series_instance_uid)
             else:
-                series.hashes = idc_hashes
-                series.series_instances = len(series.instances)
                 series.done = True
                 sess.commit()
                 duration = str(timedelta(seconds=(time.time() - begin)))

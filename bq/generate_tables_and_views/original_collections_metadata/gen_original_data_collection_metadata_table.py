@@ -299,6 +299,8 @@ def get_licenses(client, doi):
 def build_metadata(client, args):
     BQ_client = bigquery.Client(project=settings.DEV_PROJECT)
 
+    programs = get_collections_programs(BQ_client, args)
+
     # Now get most of the medadata for all collections
     collection_metadata = get_collection_metadata(client, args)
 
@@ -308,8 +310,6 @@ def build_metadata(client, args):
     # Get a list of the licenses associated with each collection
     licenses = get_licenses(BQ_client, args)
     # licenses = get_original_collection_licenses(args)
-
-    programs = get_collections_programs(BQ_client, args)
 
     # Get a dict indexed by idc_webapp_collection_ids and mapping
     # to "tcia_api_collection_id having access==args.access

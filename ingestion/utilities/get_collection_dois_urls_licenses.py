@@ -53,6 +53,9 @@ def get_dois_tcia(collection, patient="", third_party="no", server=""):
                         uri = uri.split('doi.org/')[1]
                     seriesUID = series["seriesUID"]
                     series_dois[seriesUID] = uri
+                elif collection == 'NSCLC Radiogenomics':
+                    seriesUID = series["seriesUID"]
+                    series_dois[seriesUID] = "10.7937/K9/TCIA.2017.7hs46erv"
                 else:
                     breakpoint()
                     errlogger.error(
@@ -133,7 +136,8 @@ def get_licenses_tcia(collection, patient, third_party="no", server=""):
                 if 'doi.org' in uri:
                     uri = uri.split('doi.org/')[1]
                 seriesUID = series["seriesUID"]
-                series_metadata = get_TCIA_series_metadata(seriesUID)
+                series_metadata = \
+                    get_TCIA_series_metadata(seriesUID)
                 if "License URL" in series_metadata:
                     series_licenses[seriesUID] = {
                         "license_url": series_metadata["License URL"],
@@ -151,6 +155,15 @@ def get_licenses_tcia(collection, patient, third_party="no", server=""):
                         "license_url": license_types['Creative Commons Attribution 4.0 International License']['licenseURL'],
                         "license_long_name": license_types['Creative Commons Attribution 4.0 International License']['longName'],
                         "license_short_name": license_types['Creative Commons Attribution 4.0 International License']['shortName']
+                    }
+                elif collection == 'CT-Phantom4Radiomics':
+                    series_licenses[seriesUID] = {
+                        "license_url": license_types['Creative Commons Attribution 4.0 International License'][
+                            'licenseURL'],
+                        "license_long_name": license_types['Creative Commons Attribution 4.0 International License'][
+                            'longName'],
+                        "license_short_name": license_types['Creative Commons Attribution 4.0 International License'][
+                            'shortName']
                     }
                 else:
                     breakpoint()

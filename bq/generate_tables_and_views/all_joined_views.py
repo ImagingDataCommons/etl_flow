@@ -90,7 +90,18 @@ def create_all_joined(client):
     i.excluded AS i_excluded,
     i.init_idc_version AS i_init_idc_version,
     i.rev_idc_version AS i_rev_idc_version,
-    i.final_idc_version AS i_final_idc_version
+    i.final_idc_version AS i_final_idc_version,
+    ac.dev_tcia_url,
+    ac.dev_idc_url,
+    ac.pub_gcs_tcia_url,
+    ac.pub_gcs_idc_url,
+    ac.pub_aws_tcia_url,
+    ac.pub_aws_idc_url,
+    ac.tcia_access,
+    ac.idc_access,
+    ac.tcia_metadata_sunset,
+    ac.idc_metadata_sunset
+
    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version` v
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version_collection` vc ON v.version = vc.version
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection` c ON vc.collection_uuid = c.uuid
@@ -102,6 +113,8 @@ def create_all_joined(client):
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.series` se ON ss.series_uuid = se.uuid
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.series_instance` si ON se.uuid = si.series_uuid
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.instance` i ON si.instance_uuid = i.uuid
+     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac ON collection_id = ac.tcia_api_collection_id
+
   """
     # Make an API request to create the view.
     client.delete_table(view_id, not_found_ok=True)
@@ -109,15 +122,37 @@ def create_all_joined(client):
     print(f"Created {view.table_type}: {str(view.reference)}")
     return view
 
+# All instances that are public and in the current version
+def create_all_joined_current(client):
+    view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_current"
+    view = bigquery.Table(view_id)
+    # view.view_query = f"""
+    # SELECT aj.* from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
+    # JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac
+    # ON aj.collection_id = ac.tcia_api_collection_id
+    # WHERE ((aj.i_source='tcia' AND ac.tcia_access='Public') OR (aj.i_source='idc' AND ac.idc_access='Public'))
+    # AND ((aj.i_source='tcia' and ac.tcia_metadata_sunset=0) OR (aj.i_source='idc' and ac.idc_metadata_sunset=0))
+    # AND idc_version={settings.CURRENT_VERSION} and aj.i_excluded=False
+    # """
+    view.view_query = f"""
+    SELECT * from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined`
+    WHERE ((i_source='tcia' AND tcia_access='Public') OR (i_source='idc' AND idc_access='Public'))
+    AND ((i_source='tcia' and tcia_metadata_sunset=0) OR (i_source='idc' and idc_metadata_sunset=0))
+    AND idc_version={settings.CURRENT_VERSION} and i_excluded=False
+    """
+    # Make an API request to create the view.
+    client.delete_table(view_id, not_found_ok=True)
+    view = client.create_table(view, exists_ok=True)
+    print(f"Created {view.table_type}: {str(view.reference)}")
+    return view
 
+# All instances that are public across all IDC versions
 def create_all_joined_public(client):
     view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public"
     view = bigquery.Table(view_id)
     view.view_query = f"""
-    SELECT aj.* from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
-    JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac
-    ON aj.collection_id = ac.tcia_api_collection_id
-    WHERE (aj.i_source='tcia' AND ac.tcia_access='Public') OR (aj.i_source='idc' AND ac.idc_access='Public')
+    SELECT * from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
+    WHERE (i_source='tcia' AND tcia_access='Public') OR (i_source='idc' AND idc_access='Public')
     """
     # Make an API request to create the view.
     client.delete_table(view_id, not_found_ok=True)
@@ -126,14 +161,13 @@ def create_all_joined_public(client):
     return view
 
 
+# All instances having limited access (redacted), across all IDC versions
 def create_all_joined_limited(client):
     view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_limited"
     view = bigquery.Table(view_id)
     view.view_query = f"""
-    SELECT aj.* from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
-    JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac
-    ON aj.collection_id = ac.tcia_api_collection_id
-    WHERE (aj.i_source='tcia' AND ac.tcia_access='Limited') OR (aj.i_source='idc' AND ac.idc_access='Limited')
+    SELECT * from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
+    WHERE (i_source='tcia' AND tcia_access='Limited') OR (i_source='idc' AND idc_access='Limited')
     """
     # Make an API request to create the view.
     client.delete_table(view_id, not_found_ok=True)
@@ -142,14 +176,13 @@ def create_all_joined_limited(client):
     return view
 
 
+# All instances that are in excluded collections, across all IDC versions
 def create_all_joined_excluded(client):
     view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_excluded"
     view = bigquery.Table(view_id)
     view.view_query = f"""
-    SELECT aj.* from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
-    JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac
-    ON aj.collection_id = ac.tcia_api_collection_id
-    WHERE (aj.i_source='tcia' AND ac.tcia_access='Excluded') OR (aj.i_source='idc' AND ac.idc_access='Excluded')
+    SELECT * from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
+    WHERE (i_source='tcia' AND tcia_access='Excluded') OR (i_source='idc' AND idc_access='Excluded')
     """
     # Make an API request to create the view.
     client.delete_table(view_id, not_found_ok=True)
@@ -214,7 +247,8 @@ if __name__ == '__main__':
     create_all_joined_public(BQ_client)
     create_all_joined_limited(BQ_client)
     create_all_joined_excluded(BQ_client)
-    create_idc_all_joined(BQ_client)
+    create_all_joined_current(BQ_client)
+    # create_idc_all_joined(BQ_client)
 
 
 

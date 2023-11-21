@@ -141,7 +141,7 @@ def copy_view(client, args, view_id):
         progresslogger.info((f'Really done'))
     return
 
-def publish_dataset(args):
+def publish_dataset(args, table_ids={}):
     client = bigquery.Client()
     # client = bigquery.Client(project=args.trg_project)
     src_dataset_ref = bigquery.DatasetReference(args.src_project, args.src_dataset)
@@ -156,7 +156,9 @@ def publish_dataset(args):
         create_dataset(client, args.trg_project, args.trg_dataset, dataset_dict)
 
     progresslogger.info(f'Copying {args.src_dataset} to {args.trg_dataset}')
-    table_ids = {table.table_id: table.table_type for table in client.list_tables(f'{args.src_project}.{args.src_dataset}')}
+    table_ids = table_ids
+    if not table_ids:
+        table_ids = {table.table_id: table.table_type for table in client.list_tables(f'{args.src_project}.{args.src_dataset}')}
     # Create tables first
     for table_id in table_ids:
         if table_ids[table_id] == 'TABLE':
@@ -166,4 +168,4 @@ def publish_dataset(args):
         if table_ids[table_id] == 'VIEW':
             copy_view(client, args, table_id)
 
-
+    return
