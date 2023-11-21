@@ -14,13 +14,12 @@
 # limitations under the License.
 #
 
-# Copy most public tables/views from dev to prod.
-# Note tha auxiliary_metadata must be generated for prod since urls are different
-# Note also that views such as segmentations must also be separately generated.
+# Copy tables from dev to prod.
 import argparse
 import sys
 import settings
 from bq.copy_tables.copy_tables import copy_tables
+from google.cloud import bigquery
 
 
 if __name__ == '__main__':
@@ -28,19 +27,24 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version of dataset to which to copy tables')
     parser.add_argument('--src_project', default=settings.DEV_PROJECT)
     parser.add_argument('--dst_project', default=settings.PDP_PROJECT)
-    parser.add_argument('--src_bqdataset', default=settings.BQ_DEV_EXT_DATASET, help='Source BQ dataset')
-    parser.add_argument('--dst_bqdataset', default=settings.BQ_PUB_DATASET, help='Destination BQ dataset')
-    parser.add_argument('--dataset_description', default = f'IDC V{settings.CURRENT_VERSION} BQ tables and views')
-    parser.add_argument('--bqtables', nargs='+', \
-        default=[
-            'analysis_results_metadata', \
-            'dicom_metadata', \
-            'mutable_metadata', \
-            'original_collections_metadata', \
-            'tcga_biospecimen_rel9', 'tcga_clinical_rel9', \
-            'version_metadata'
-        ], help='BQ tables to be copied')
-
+    parser.add_argument('--src_bqdataset', default=f'idc_v{settings.CURRENT_VERSION}_clinical', help='Source BQ dataset')
+    parser.add_argument('--dst_bqdataset', default=f'idc_v{settings.CURRENT_VERSION}_clinical', help='Destination BQ dataset')
+    parser.add_argument('--dataset_description', default = f'IDC V{settings.CURRENT_VERSION} clinical BQ tables')
+    # parser.add_argument('--bqtables', nargs='+', \
+    #     default=[
+    #         'analysis_results_metadata', \
+    #         'dicom_metadata', \
+    #         'mutable_metadata', \
+    #         'original_collections_metadata', \
+    #         'tcga_biospecimen_rel9', 'tcga_clinical_rel9', \
+    #         'version_metadata'
+    #     ], help='BQ tables to be copied')
     args = parser.parse_args()
+
+    client = bigquery.Client(project=args.src_project)
+
+    # Get a list of the tables in the source dataset
+    args.bqtables = [table.table_id for table in client.list_tables (f'{args.src_project}.{args.src_bqdataset}')]
+
     print("{}".format(args), file=sys.stdout)
     copy_tables(args)

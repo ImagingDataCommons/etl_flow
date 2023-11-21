@@ -35,7 +35,7 @@ def copy_tables(args):
     for table in args.bqtables:
         src_table = src_dataset.table(table)
         dst_table = dst_dataset.table(table)
-        delete_BQ_Table(client, args.dst_project, args.dst_bqdataset, table)
+        # delete_BQ_Table(client, args.dst_project, args.dst_bqdataset, table)
         copy_BQ_table(client, src_table, dst_table)
         successlogger.info(f"Copied table {table}")
 
