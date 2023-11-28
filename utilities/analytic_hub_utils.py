@@ -1,5 +1,5 @@
 #
-# Copyright 2020, Institute for Systems Biology
+# Copyright 2023, Institute for Systems Biology
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,6 +17,12 @@ import json
 
 import requests
 import logging
+import subprocess
+
+import google.oauth2.id_token
+import google.auth.transport.requests as google_requests
+
+
 
 
 # from http.client import HTTPConnection
@@ -32,12 +38,10 @@ import settings
 import logging
 logging.getLogger("requests").setLevel(logging.WARNING)
 
-def post(url, data):
-    result =  requests.post(url, data=data)
-    response = result.json()
-    if result.status_code != 200:
-        raise RuntimeError('In get_url(): status_code=%s; url: %s', result.status_code, url)
-    return result
+def get_token():
+    gcloud_itoken = subprocess.check_output(["gcloud", "auth" ,"application-default", "print-access-token"])
+    gcloud_itoken_str = gcloud_itoken.decode().strip()
+    return gcloud_itoken_str
 
 def create_exchange():
     url = 'https://analyticshub.googleapis.com/v1/projects/nci-idc-bigquery-data/locations/US/dataExchanges?dataExchangeId=nci_idc_bigquery_data_exchange'
@@ -46,9 +50,40 @@ def create_exchange():
         "description": "Exchange for publication of NCI IDC BQ datasets",
         "primaryContact": "bcliffor@systemsbiology.org"
     }
-    token = ??
+
+    headers = {
+        "Authorization": f"Bearer {get_token()}" }
+    result =  requests.post(url, data=json.dumps(data), headers=headers)
+    response = result.json()
+    if result.status_code != 200:
+        raise RuntimeError('In get_url(): status_code=%s; url: %s', result.status_code, url)
+    return (response)
+
+def get_exchange_policy():
+    url = 'https://analyticshub.googleapis.com/v1/projects/nci-idc-bigquery-data/locations/US/dataExchanges/nci_idc_bigquery_data_exchange:getIamPolicy'
+    data = {}
+
+    token = get_token()
     headers = {
         "Authorization": f"Bearer {token}" }
+
+    result =  requests.post(url, headers=headers, data=json.dumps(data))
+    response = result.json()
+    if result.status_code != 200:
+        raise RuntimeError('In get_url(): status_code=%s; url: %s', result.status_code, url)
+    return (response)
+
+
+def list_exchanges():
+    url = 'https://analyticshub.googleapis.com/v1/projects/nci-idc-bigquery-data/locations/US/dataExchanges?dataExchangeId=nci_idc_bigquery_data_exchange'
+    data = {
+        "displayName": "nci-idc-bigquery-data-exchange",
+        "description": "Exchange for publication of NCI IDC BQ datasets",
+        "primaryContact": "bcliffor@systemsbiology.org"
+    }
+
+    headers = {
+        "Authorization": f"Bearer {get_token()}" }
     result =  requests.post(url, data=json.dumps(data), headers=headers)
     response = result.json()
     if result.status_code != 200:
@@ -56,6 +91,7 @@ def create_exchange():
     return (response)
 
 if __name__ == "__main__":
-    r = create_exchange()
-
+    p = get_exchange_policy()
+    # t = get_token()
+    # r = create_exchange()
 
