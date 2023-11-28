@@ -48,8 +48,7 @@ def create_exchange():
     }
 
     headers = {
-        "Authorization": "Bearer ya29.c.c0AY_VpZisbyPKWvyeQ_QNZzxGFgDacflLr-EbnrTsKpBSi_zu7gf48tpXFKEAxTkKWTQLimYEBvjNtgXVr6yfN89neU3K4OCMYKPyUkv5jceS8_LCbRewn3QSEEld8eTXp9HbnWySdeBrHDgO34bMRh5CcTfIK7CYFW-Ugj4sRLGcGZdvtd6mpeNkqwvIRXCbudZcjTglKSFx__M6f62bdbl58O0t7OTQ5emrX6Bsr_oWcyopgLhX9HkyR4wC7FsNo2lBS_DnGy9omDy7Et0ClCTWwnp6h81TkJnwxw6toUGJqOvHhU1tU6M8FifjTvsdAVNoAh7APT6C5sSYDxRUWoGMFfWHWKgLeByZkdXSxy2vSxv7OB2K4S10xCj8RcrtWp5MAQE399CBgkW00nJOs_j-qwW8mV99oeBZltzinXcWnpOhYQn97tVsufUJft8Z7wpZprrUo0aSu00ygIf8FoQ9BS--X8h1meaxwsVXtfydQOhccrfz-r2dnkxu_pryfngvX8l8ca4Qhvtg-8vVZ6fV4gOiBOi4wIt8dS8bb2sWnvQq4nZ3d_rnhiOo6JzjFSYaXW4Xxx_moV4555Shpd9nF6_4MaIhbpSeJUqa3MYhYm_ZknSQ2SfBd2cp1dhvgr-fBM1rZ1ZdSvco70Qj6kw3boeh2k_UrViml8mMQ1ikuWg0S5e3z1OFcm7ZnIqv5sjiI64FuOoJMeo56loqW74IQ4an-nywjnpF898iJ12gylV3Z0ynQb6wWicIkWUp2est529ptv3yb5ewF23B90B1JXt4Zn3xfh9pFrIa4Vu-qhyyR_Rk1VqehpnYzQ5Qhsd1u6q9eRl5-iwQj9BokSb5-4pQvx9vwzWmfr96wMS8_4B_niOXJ5mYe7y0I6Wq-V15UI5kxVqhX29aukI2RtV0JothZIyXY5t_QOcaYIQjMjp4cVk3_t9bhd3RVhWmveZUt8xBSMWrIdoB0ngijMZdsbBgfRVQunMWtn7kR9myrQu7wu19p08"
-    }
+        "Authorization": "Bearer  }
     result =  requests.post(url, data=json.dumps(data), headers=headers)
     response = result.json()
     if result.status_code != 200:
