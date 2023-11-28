@@ -22,7 +22,7 @@ from subprocess import run, PIPE
 from time import sleep
 import requests
 import logging
-
+import pandas as pd
 import zipfile
 
 # from http.client import HTTPConnection
@@ -624,10 +624,49 @@ def get_collection_license_info():
 
     return licenses
 
-def get_all_collection_data():
-    url = "https://stage.cancerimagingarchive.net/api/v1/collections/"
+def get_tcia_collection_metadata(fields):
+    url = f"https://stage.cancerimagingarchive.net/api/v1/collections/?search={fields}"
     result = get_url(url)
-    return
+    data = result.json()
+    return data
+
+def get_tcia_collection_titles():
+    url = f"https://stage.cancerimagingarchive.net/api/v1/collections/?&_fields=id,collection_short_title"
+    # url = f"https://stage.cancerimagingarchive.net/api/v1/collections/?include=45479"
+    result = get_url(url)
+    data = result.json()
+    return data
+
+def get_all_tcia_metadata(type, query_param=''):
+    url = f"https://stage.cancerimagingarchive.net/api/v1/{type}/{query_param}"
+    # url = f"https://stage.cancerimagingarchive.net/api/v1/collections/?include=45479"
+    response = requests.get(url)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse the JSON response into a dataframe
+        data = response.json()
+        # df = pd.DataFrame(data)
+
+        # Check if there are more pages to fetch
+        while 'next' in response.links.keys():
+            next_url = response.links['next']['url']
+            response = requests.get(next_url)
+            if response.status_code == 200:
+                next_data = response.json()
+                data.extend(next_data)
+                 # data = response.json()
+                # df = pd.concat([df, pd.DataFrame(data)], ignore_index=True)
+            else:
+                print('Error accessing the API:', response.status_code)
+                break
+
+        # Output the dataframe
+        # display(df)
+        return data
+    else:
+        print('Error accessing the API:', response.status_code)
+
 
 if __name__ == "__main__":
     # if not settings.configured:
@@ -640,7 +679,8 @@ if __name__ == "__main__":
 
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
     # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
-    d = get_all_collection_data()
+    d = get_all_tcia_metadata(type="analysis-results")
+    # d = get_collection_metadata("ACRIN-Contralateral-Breast-MR")
     d = get_collection_descriptions_and_licenses()
     i = get_collection_id_from_doi('10.7937/k9/tcia.2016.eln8ygle')
     c=get_collection_values_and_counts()

@@ -17,7 +17,7 @@
 
 import argparse
 import sys
-from bq.generate_tables_and_views.original_collections_metadata.gen_original_data_collection_metadata_table import gen_collections_table
+from bq.generate_tables_and_views.original_collections_metadata.gen_original_collection_metadata import gen_collections_table
 from python_settings import settings
 
 

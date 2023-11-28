@@ -62,5 +62,5 @@ def gen_table():
                       aschema=schema, \
                       write_disposition='WRITE_TRUNCATE', table_description='')
 
-if __name__ == '__main__':
-    gen_table()
+# if __name__ == '__main__':
+#     gen_table()

@@ -71,7 +71,6 @@ if __name__ == '__main__':
         'study_series',
         'version',
         'version_collection',
-        'idc_all_joined',
     ], help="Tables to upload")
     args = parser.parse_args()
     print('args: {}'.format(args))

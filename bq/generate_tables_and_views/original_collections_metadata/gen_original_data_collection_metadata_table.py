@@ -283,7 +283,7 @@ def get_licenses(client, doi):
     query = f"""
     WITH unstruct as(
     SELECT DISTINCT REPLACE(REPLACE(LOWER(collection_id),'-','_'),' ','_') collection_id, license_url, license_long_name, license_short_name
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined`
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public`
     WHERE license_url is not null
     )
     SELECT collection_id, ARRAY_AGG(STRUCT(license_url, license_long_name, license_short_name)) as licenses

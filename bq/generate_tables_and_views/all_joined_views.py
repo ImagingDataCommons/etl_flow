@@ -248,7 +248,7 @@ if __name__ == '__main__':
     create_all_joined_limited(BQ_client)
     create_all_joined_excluded(BQ_client)
     create_all_joined_current(BQ_client)
-    # create_idc_all_joined(BQ_client)
+    create_idc_all_joined(BQ_client)
 
 
 
