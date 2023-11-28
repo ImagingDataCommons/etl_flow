@@ -27,7 +27,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--src_project', default="idc-pdp-staging", help='Project from which tables are copied')
-    parser.add_argument('--trg_project', default="bigquery-public-data", help='Project to which tables are copied')
+    parser.add_argument('--trg_project', default="nci-idc-bigquery-data", help='Project to which tables are copied')
     parser.add_argument('--table_ids', default={}, help="Copy all tables/views unless the is non-empty")
     parser.add_argument('--clinical_table_ids', default={}, help="Copy all tables/views unless the is non-empty")
     args = parser.parse_args()
