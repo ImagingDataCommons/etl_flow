@@ -624,21 +624,11 @@ def get_collection_license_info():
 
     return licenses
 
-def get_tcia_collection_metadata(fields):
-    url = f"https://stage.cancerimagingarchive.net/api/v1/collections/?search={fields}"
-    result = get_url(url)
-    data = result.json()
-    return data
-
-def get_tcia_collection_titles():
-    url = f"https://stage.cancerimagingarchive.net/api/v1/collections/?&_fields=id,collection_short_title"
-    # url = f"https://stage.cancerimagingarchive.net/api/v1/collections/?include=45479"
-    result = get_url(url)
-    data = result.json()
-    return data
-
 def get_all_tcia_metadata(type, query_param=''):
-    url = f"https://stage.cancerimagingarchive.net/api/v1/{type}/{query_param}"
+    if query_param:
+        url = f"https://stage.cancerimagingarchive.net/api/v1/{type}/?per_page=100&{query_param}"
+    else:
+        url = f"https://stage.cancerimagingarchive.net/api/v1/{type}/?per_page=100"
     # url = f"https://stage.cancerimagingarchive.net/api/v1/collections/?include=45479"
     response = requests.get(url)
 
@@ -679,7 +669,7 @@ if __name__ == "__main__":
 
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
     # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
-    d = get_all_tcia_metadata(type="analysis-results")
+    d = get_all_tcia_metadata(type="analysis-results", query_param='slug=arar0331-tumor-annotations')
     # d = get_collection_metadata("ACRIN-Contralateral-Breast-MR")
     d = get_collection_descriptions_and_licenses()
     i = get_collection_id_from_doi('10.7937/k9/tcia.2016.eln8ygle')

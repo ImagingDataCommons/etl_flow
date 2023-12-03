@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+# Build the analysis_results_metadata BQ table
+
 import argparse
 import sys
 import os
@@ -22,43 +24,26 @@ import time
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json
 from bq.generate_tables_and_views.analysis_results_metadata.schema import analysis_results_metadata_schema
-from utilities.tcia_scrapers import scrape_tcia_analysis_collections_page
+from utilities.tcia_helpers import get_all_tcia_metadata
 from utilities.logging_config import successlogger, progresslogger
 from python_settings import settings
 
-# Build the analysis_results_metadata BQ table
 
-# # Get the access status of redactable collections
-# # Note this assumes that analysis is only against tcia supplied data (radiology) data.
-# def get_redacted_collections(client,args):
-#     query = f"""
-#     SELECT tcia_api_collection_id, tcia_access as access
-#     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.redacted_collections`
-#     """
-#     redacted_collection_access = {c.tcia_api_collection_id.lower().replace(' ','_').replace('-','_'): c.access for c in client.query(query).result()}
-#     return redacted_collection_access
-#
-# Get the license associated with a particular source DOI
-def get_license(client, doi):
+# Get the licenses associated with each source_doi
+def get_licenses(client):
     query = f"""
-    SELECT distinct license_url, license_long_name, license_short_name
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined`
-    WHERE lower(source_doi) = lower('{doi}')
-    """
-    licenses = [dict(row) for row in client.query(query)]
-    try:
-        assert len(licenses) == 1
-    except Exception as exc:
-        exit
-    return licenses[0]
+SELECT *
+FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.licenses`
+"""
+    licenses = {row['source_doi']: dict(row) for row in client.query(query)}
+    return licenses
 
-# Get all source DOIs, licenses and the collections which they are in
+
+# Get all source_dois and the collections which they are in
 def get_collections_containing_a_doi(client, args):
     query = f"""
         SELECT DISTINCT collection_id AS collection_id, source_doi
-        FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined`
-        WHERE idc_version = {settings.CURRENT_VERSION} 
-        AND license_short_name in ('CC BY 3.0', 'CC BY 4.0', 'CC BY-NC 3.0', 'CC BY-NC 4.0')
+        FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_current`
         ORDER BY collection_id
         """
     result = client.query(query).result()
@@ -89,81 +74,73 @@ def get_descriptions(client,args):
 
 def get_idc_sourced_analysis_metadata(client):
     query = f"""
-    SELECT DISTINCT *
+    SELECT DISTINCT ID, Title, Access, DOI as source_doi, CancerType as CancerTypes, Location as CancerLocations, AnalysisArtifacts, Updated 
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_metadata_idc_source`
     """
-
     results = [dict(row) for row in client.query(query).result()]
-    metadata = {f'{row["Title"]} ({row["ID"]})':row for row in results}
+    metadata = {row["source_doi"]:row for row in results}
     return metadata
 
-
-def get_all_analysis_metadata(client):
-    # Scrape the TCIA analysis results page for metadata
-    analysis_metadata = get_idc_sourced_analysis_metadata(client)
-    analysis_metadata = analysis_metadata | scrape_tcia_analysis_collections_page()
 
 # Get a list of subjects per source DOI
 def count_subjects(client):
     query = f"""
-    SELECT source_doi, COUNT (DISTINCT submitter_case_id) cnt
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public`
-    GROUP BY source_doi, idc_version
-    HAVING idc_version = {settings.CURRENT_VERSION}     """
+SELECT source_doi, COUNT (DISTINCT submitter_case_id) cnt
+FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_current`
+GROUP BY source_doi
+"""
 
     results = [dict(row) for row in client.query(query).result()]
     counts = {row['source_doi'].lower(): row['cnt'] for row in results}
     return counts
 
+def get_tcia_sourced_analysis_metadata(BQ_client):
+    tcia_ars = get_all_tcia_metadata('analysis-results')
+    ar_metadata = {}
+    for ar in tcia_ars:
+        ar_metadata[ar['result_doi'].lower()] = dict(
+            ID = ar['result_short_title'],
+            Title = ar['result_title'],
+            Access = ar['result_page_accessibility'],
+            source_doi = ar['result_doi'],
+            CancerTypes = ', '.join(ar['cancer_types']) if ar['cancer_types'] else "" ,
+            CancerLocations = ', '.join(ar['cancer_locations']) if ar['cancer_locations'] else "",
+            AnalysisArtifacts = ', '.join(ar['supporting_data']) if ar['supporting_data'] else "",
+            Updated = ar['date_updated']
+        )
+    return ar_metadata
 
 def build_metadata(args, BQ_client):
-
-    all_idc_analysis_metadata = get_idc_sourced_analysis_metadata(BQ_client)
-    idc_analysis_metadata = {title: {'DOI':data['DOI'], 'CancerType':data['CancerType'], \
-            'Location':data['Location'], 'Subjects':data['Subjects'], 'Collections':data['Collections'], \
-            'AnalysisArtifactsonTCIA':data['AnalysisArtifacts'], 'Updated':data['Updated']} \
-            for title, data in all_idc_analysis_metadata.items()}
-    tcia_analysis_metadata = scrape_tcia_analysis_collections_page()
+    tcia_analysis_metadata = get_tcia_sourced_analysis_metadata(BQ_client)
+    idc_analysis_metadata = get_idc_sourced_analysis_metadata(BQ_client)
     analysis_metadata = idc_analysis_metadata | tcia_analysis_metadata
 
-    # Get analysis results descriptions
+    # Get licenses and analysis results descriptions
+    licenses = get_licenses(BQ_client)
     descriptions = get_descriptions(BQ_client, args)
 
-    # # Get access status of potentially redacted collections
-    # redacted_collection_access = get_redacted_collections(BQ_client,args)
-
-    # For each source DOI, which collections contain it
+     # For each source DOI, which collections contain it
     source_dois_collections = get_collections_containing_a_doi(BQ_client, args)
 
     counts_per_doi = count_subjects(BQ_client)
+
     rows = []
-    for analysis_id, analysis_data in analysis_metadata.items():
-        # If the DOI of this analysis result is in source_dois_license, then it is in the series table
+    for source_doi, analysis_data in analysis_metadata.items():
+        # If the DOI of this analysis result is in source_dois_collections, then it is in the series table
         # and therefore we have a series from this analysis result, and therefore we should include
         # this analysis result in the analysis_results metadata table
-        if analysis_data["DOI"].lower() in source_dois_collections:
-            # analysis_data["Collection"] = analysis_id
-            title_id = analysis_id.rsplit('(',1)
-            title = title_id[0]
-            if title.endswith(' '):
-                title = title[:-1]
-            analysis_data['Title'] = title
-            analysis_data['ID'] = title_id[1].split(')')[0]
+        if source_doi.lower() in source_dois_collections:
+            analysis_data['source_url'] =f'https://doi.org/{source_doi}'
             try:
-                analysis_data['Collections'] = source_dois_collections[analysis_data['DOI']]
+                analysis_data['Collections'] = source_dois_collections[source_doi]
             except Exception as exc:
-                print(f"Didn't counts for DOI  {analysis_data['DOI'].lower()}" )
-            analysis_data['Subjects'] = counts_per_doi[analysis_data['DOI']]
-            analysis_data['Access'] = 'Public'
-            license = get_license(BQ_client, analysis_data["DOI"])
-            for key, value in license.items():
+                print(f"Didn't have counts for source_doi {source_doi}" )
+            analysis_data['Subjects'] = counts_per_doi[source_doi]
+            license = licenses[source_doi]
+            for key, value in license['license'].items():
                 analysis_data[key] = value
-
-            # for collection in analysis_data["Collections"].split(','):
-            #     if collection in redacted_collection_access:
-            #         analysis_data['Access'] = redacted_collection_access[collection]
             analysis_data['Description'] = descriptions[analysis_data['ID']]
-            analysis_data['AnalysisArtifacts'] = analysis_data['AnalysisArtifactsonTCIA']
+            analysis_data['AnalysisArtifactsonTCIA'] = analysis_data['AnalysisArtifacts']
             rows.append(json.dumps(analysis_data))
     metadata = '\n'.join(rows)
     return metadata

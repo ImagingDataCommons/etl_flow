@@ -206,30 +206,45 @@ def add_descriptions(client, args, collection_metadata):
 
 # Get a list of the licenses associated with each collection
 def add_licenses(client, doi, collection_metadata):
+    # query = f"""
+    # WITH unstruct as(
+    # SELECT DISTINCT REPLACE(REPLACE(LOWER(collection_id),'-','_'),' ','_') collection_id, license_url, license_long_name, license_short_name
+    # FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public`
+    # WHERE license_url is not null
+    # )
+    # SELECT collection_id, ARRAY_AGG(STRUCT(license_url, license_long_name, license_short_name)) as licenses
+    # FROM unstruct
+    # GROUP BY collection_id
+    # ORDER BY collection_id
+    #  """
     query = f"""
     WITH unstruct as(
-    SELECT DISTINCT REPLACE(REPLACE(LOWER(collection_id),'-','_'),' ','_') collection_id, license_url, license_long_name, license_short_name
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public`
-    WHERE license_url is not null
+    SELECT DISTINCT source_url, license.license_url, license.license_long_name, license.license_short_name
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.licenses`
+    WHERE license.license_url is not null
     )
-    SELECT collection_id, ARRAY_AGG(STRUCT(license_url, license_long_name, license_short_name)) as licenses
+    SELECT source_url, ARRAY_AGG(STRUCT(license_url, license_long_name, license_short_name)) as licenses
     FROM unstruct
-    GROUP BY collection_id
-    ORDER BY collection_id
+    GROUP BY source_url
+    ORDER BY source_url
      """
+
     license_dicts = [dict(row) for row in client.query(query)]
 
-    licenses = {row['collection_id']: row['licenses'] for row in license_dicts}
-    for collection_id, license_list in licenses.items():
-        licenses[collection_id] = \
+    licenses = {dict(row)['source_url']: dict(row)['licenses'] for row in client.query(query)}
+
+    # Keep only distinct licenses
+    for source_url, license_list in licenses.items():
+        licenses[source_url] = \
             list({v['license_short_name']: v for v in license_list}.values())
-    for collection in collection_metadata:
-        collection_metadata[collection]["licenses"] = licenses[collection]
+
+    for collection, metadata in collection_metadata.items():
+        collection_metadata[collection]["licenses"] = next(license for  source_url, license in licenses.items() if source_url.lower() == metadata['URL'].lower())
     return collection_metadata
 
 
 def build_metadata(client, args):
-    # Now get most of the medadata for all collections
+    # Now get most of the metadata for all collections
     collection_metadata = get_collection_metadata(client, args)
 
     # Add additional metadata that we get separately
