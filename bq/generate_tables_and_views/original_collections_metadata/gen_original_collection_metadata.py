@@ -148,7 +148,7 @@ def get_original_collections_metadata_tcia_source(client, args, idc_collections)
                 collection_name=collection_name,
                 collection_id=collection_id,
                 Status=collection_metadata['collection_status'],
-                Updated=collection_metadata['modified_gmt'].split('T')[0],
+                Updated=collection_metadata['date_updated'].split('T')[0],
                 Access=["Public"],
                 ImageTypes="",
                 Subjects=0,
