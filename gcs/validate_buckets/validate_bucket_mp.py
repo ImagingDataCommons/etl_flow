@@ -136,22 +136,14 @@ def check_all_instances_mp(args, premerge=False):
         progresslogger.info(f'Getting expected blobs')
         get_expected_blobs_in_bucket(args, premerge)
         expected_blobs = set(open(args.expected_blobs).read().splitlines())
-        # json.dump(psql_blobs, open(args.blob_names), 'w')
 
     try:
         found_blobs = set(open(args.found_blobs).read().splitlines())
-        # found_blobs = open(f'{successlogger.handlers[0].baseFilename}').read().splitlines()
         progresslogger.info(f'Already have found blobs')
     except:
         progresslogger.info(f'Getting found blobs')
         get_found_blobs_in_bucket(args)
         found_blobs = open(f'{successlogger.handlers[0].baseFilename}').read().splitlines()
-        # json.dump(psql_blobs, open(args.blob_names), 'w')
-
-
-    progresslogger.info(f'Getting found blobs')
-    get_found_blobs_in_bucket(args)
-    found_blobs = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
 
     if found_blobs == expected_blobs:
         successlogger.info(f"Bucket {args.bucket} has the correct set of blobs")

@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Duplicate idc_current datasets in idc_pdp_staging to public-datasets-idc
+# Duplicate idc_vxx datasets in idc_pdp_staging.
 import settings
 import argparse
 import json
@@ -27,15 +27,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--src_project', default="idc-pdp-staging", help='Project from which tables are copied')
-    parser.add_argument('--trg_project', default="bigquery-public-data", help='Project to which tables are copied')
+    parser.add_argument('--trg_project', default="nci-idc-bigquery-data", help='Project to which tables are copied')
+    parser.add_argument('--pub_project', default="bigquery-public-data", help='Project where public datasets live')
+    parser.add_argument('--table_ids', default={}, help="Copy all tables/views unless this is non-empty.")
+    parser.add_argument('--clinical_table_ids', default={}, help="Copy all tables/views unless this is non-empty")
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
-    for src_dataset in [
-            'idc_current',
-            'idc_current_clinical'
+    for src_dataset, table_ids in [
+                (f'idc_v{settings.CURRENT_VERSION}', args.table_ids),
+                (f'idc_v{settings.CURRENT_VERSION}_clinical', args.clinical_table_ids)
             ]:
         args.src_dataset = src_dataset
         args.trg_dataset = src_dataset
-        publish_dataset(args)
+        publish_dataset(args, table_ids)

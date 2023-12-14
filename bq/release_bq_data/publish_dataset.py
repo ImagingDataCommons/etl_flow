@@ -116,7 +116,7 @@ def copy_view(client, args, view_id):
             view = client.get_table(f'{args.src_project}.{args.src_dataset}.{view_id}')
 
             new_view = bigquery.Table(f'{args.trg_project}.{args.trg_dataset}.{view_id}')
-            new_view.view_query = view.view_query.replace(args.src_project,args.trg_project). \
+            new_view.view_query = view.view_query.replace(args.src_project,args.pub_project). \
                 replace(args.src_dataset,args.trg_dataset)
 
             new_view.friendly_name = view.friendly_name
