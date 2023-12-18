@@ -28,6 +28,8 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Current IDC version')
     parser.add_argument('--src_project', default=settings.DEV_PROJECT)
     parser.add_argument('--trg_project', default=settings.DEV_PROJECT)
+    breakpoint() # Is this the correct pub_project?
+    parser.add_argument('--pub_project', default=settings.DEV_PROJECT)
     parser.add_argument('--src_bqdataset', default=settings.BQ_DEV_EXT_DATASET, help='BQ dataset name')
     parser.add_argument('--current_bqdataset', default=f'idc_current', help='current dataset name')
 

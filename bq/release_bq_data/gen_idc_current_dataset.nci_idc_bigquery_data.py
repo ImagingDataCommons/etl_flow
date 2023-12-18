@@ -24,12 +24,12 @@ from bq.generate_tables_and_views.idc_current.gen_idc_current_dataset import gen
 
 
 if __name__ == '__main__':
-    # version = settings.CURRENT_VERSION
-    version = 16
+    version = settings.CURRENT_VERSION
+    # version = 16
     parser = argparse.ArgumentParser()
     breakpoint()
-    # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Current IDC version')
-    parser.add_argument('--version', default=version, help='Current IDC version')
+    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Current IDC version')
+    # parser.add_argument('--version', default=version, help='Current IDC version')
     breakpoint()
     # parser.add_argument('--src_project', default=settings.AH_PROJECT, help='The project where the tables to be viewed reside')
     parser.add_argument('--src_project', default=settings.PDP_PROJECT, help='The project where the tables to be viewed reside')
