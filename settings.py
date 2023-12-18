@@ -94,6 +94,10 @@ LOGGING_BASE = f'/mnt/disks/idc-etl/logs/v{CURRENT_VERSION}'
 BASE_NAME = sys.argv[0].rsplit('/',1)[-1].rsplit('.',1)[0]
 LOG_DIR = f'{LOGGING_BASE}/{BASE_NAME}'
 
+AH_PROJECT = "nci-idc-bigquery-data" # Analytics Hub project
+AH_EXCHANGE_ID = "nci_idc_bigquery_data_exchange"    # ID of the Analytics Hub exchange
+AH_EXCHANGE_LOCATION = "US"
+
 
 
 

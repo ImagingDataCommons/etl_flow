@@ -64,6 +64,7 @@ def delete_all_views_in_target_dataset(target_client, args,):
 
 
 def gen_idc_current_dataset(args):
+    # Client for the project where views are to be created
     trg_client = bigquery.Client(project=args.trg_project)
 
     try:
@@ -86,15 +87,15 @@ def gen_idc_current_dataset(args):
         # Create the view object
         trg_view = bigquery.Table(f'{args.trg_project}.{args.current_bqdataset}.{table_id}')
         # Form the view SQL
-        view_sql = f"""
-            select * from `{args.src_project}.{args.src_bqdataset}.{table_id}`"""
+        view_sql = f"""select * from `{args.pub_project}.{args.src_bqdataset}.{table_id}`"""
         # Add the SQL to the view object
         trg_view.view_query = view_sql
         # Create the view in the target dataset
         installed_targ_view = trg_client.create_table(trg_view)
 
-        # Now add descriptions to the view
-        src_schema = trg_client.get_table(trg_client.dataset(args.src_bqdataset).table(table_id)).schema
+        # Now add get the schema from the referenced table
+        src_client = bigquery.Client(project=args.src_project)
+        src_schema = trg_client.get_table(src_client.dataset(args.src_bqdataset).table(table_id)).schema
         generated_schema = installed_targ_view.schema
         annotated_schema = annotate_schema(generated_schema, src_schema)
 

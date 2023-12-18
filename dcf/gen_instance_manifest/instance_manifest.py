@@ -44,26 +44,17 @@ def gen_instance_manifest(args):
         ts.timestamps[ORDINAL(i_init_idc_version)] AS created,
         ts.timestamps[ORDINAL(i_rev_idc_version)] AS updated,
         IF(i_source='tcia', 
-          CONCAT('gs://', ac.pub_gcs_tcia_url,'/', se_uuid, '/', i_uuid, '.dcm', ', s3://', ac.pub_aws_tcia_url,'/', se_uuid, '/', i_uuid, '.dcm'),
-          CONCAT('gs://', ac.pub_gcs_idc_url,'/', se_uuid, '/', i_uuid, '.dcm', ', s3://', ac.pub_aws_idc_url,'/', se_uuid, '/', i_uuid, '.dcm')
+          CONCAT('gs://', pub_gcs_tcia_url,'/', se_uuid, '/', i_uuid, '.dcm', ', s3://', pub_aws_tcia_url,'/', se_uuid, '/', i_uuid, '.dcm'),
+          CONCAT('gs://', pub_gcs_idc_url,'/', se_uuid, '/', i_uuid, '.dcm', ', s3://', pub_aws_idc_url,'/', se_uuid, '/', i_uuid, '.dcm')
         ) urls
       FROM
-        `{args.project}.{args.dev_bqdataset}.all_joined` aj
-      JOIN
-        `{args.project}.{args.dev_bqdataset}.all_collections` ac
-      ON
-        aj.collection_id = ac.tcia_api_collection_id
+        `{args.project}.{args.dev_bqdataset}.all_joined_current` aj
       JOIN
         ts
       ON
         1=1
-      WHERE
-        i_rev_idc_version IN {args.versions}
-        AND 
-            ((i_source='tcia'
-            AND tcia_access='Public')
-          OR (i_source='idc'
-            AND idc_access='Public')) )
+      WHERE i_rev_idc_version=17
+    )
     SELECT
       CONCAT('dg.4DFC/',i_uuid) GUID,
       i_hash md5,
@@ -77,10 +68,6 @@ def gen_instance_manifest(args):
       sop_instance_uid name
     FROM
       mult
-    JOIN
-      ts
-    ON
-      1=1
     GROUP BY
       sop_instance_uid,
       i_uuid,
@@ -89,7 +76,7 @@ def gen_instance_manifest(args):
       created,
       updated,
       i_rev_idc_version
-    ORDER BY LENGTH(url) DESC
+    ORDER BY GUID
       """
 
     results = query_BQ(BQ_client, args.temp_table_bqdataset, args.temp_table, query, write_disposition='WRITE_TRUNCATE')
