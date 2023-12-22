@@ -131,6 +131,7 @@ def get_found_blobs_in_bucket(args):
 def check_all_instances_mp(args, premerge=False):
     try:
         expected_blobs = set(open(args.expected_blobs).read().splitlines())
+        assert len(expected_blobs) > 0
         progresslogger.info(f'Already have expected blobs')
     except:
         progresslogger.info(f'Getting expected blobs')
@@ -139,11 +140,12 @@ def check_all_instances_mp(args, premerge=False):
 
     try:
         found_blobs = set(open(args.found_blobs).read().splitlines())
+        assert len(found_blobs) > 0
         progresslogger.info(f'Already have found blobs')
     except:
         progresslogger.info(f'Getting found blobs')
         get_found_blobs_in_bucket(args)
-        found_blobs = open(f'{successlogger.handlers[0].baseFilename}').read().splitlines()
+        found_blobs = set(open(args.found_blobs).read().splitlines())
 
     if found_blobs == expected_blobs:
         successlogger.info(f"Bucket {args.bucket} has the correct set of blobs")

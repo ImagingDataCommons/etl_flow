@@ -92,10 +92,12 @@ def expand_collection(sess, args, all_sources, collection):
         progresslogger.info("Emptying tcia prestaging buckets")
         create_prestaging_bucket(args, args.prestaging_tcia_bucket)
         empty_bucket(args.prestaging_tcia_bucket)
+        breakpoint() # Verify that the bucket is empty
     if collection.revised.idc:
         progresslogger.info("Emptying idc prestaging buckets")
         create_prestaging_bucket(args, args.prestaging_idc_bucket)
         empty_bucket(args.prestaging_idc_bucket)
+        breakpoint() # Verify that the bucket is empty
 
     # Check for duplicates
     if len(patients) != len(set(patients)):
