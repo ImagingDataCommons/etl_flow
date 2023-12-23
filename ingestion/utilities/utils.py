@@ -144,7 +144,7 @@ def copy_disk_to_prestaging_bucket(args, series):
 
 def empty_bucket(bucket):
     try:
-        src = "gs://{}/*".format(bucket)
+        src = "gs://{}/**".format(bucket)
         run(["gsutil", "-m", "-q", "rm", src])
         progresslogger.debug("Emptied bucket %s", bucket)
     except Exception as exc:
