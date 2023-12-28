@@ -19,17 +19,19 @@
 
 import argparse
 import sys
-from bq.idc_current.gen_idc_current_dataset import gen_idc_current_dataset
+from python_settings import settings
+from bq.generate_tables_and_views.idc_current.gen_idc_current_dataset import gen_idc_current_dataset
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=5, help='Current IDC version')
-    args = parser.parse_args()
-    parser.add_argument('--src_project', default='bigquery-public-data')
-    parser.add_argument('--src_bqdataset', default=f'idc_current', help='BQ dataset name')
-    parser.add_argument('--trg_project', default='canceridc-data')
-    parser.add_argument('--trg_bqdataset', default=f'idc_current', help='BQ dataset name')
+    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Current IDC version')
+    parser.add_argument('--src_project', default=settings.DEV_PROJECT)
+    parser.add_argument('--trg_project', default=settings.DEV_PROJECT)
+    breakpoint() # Is this the correct pub_project?
+    parser.add_argument('--pub_project', default=settings.DEV_PROJECT)
+    parser.add_argument('--src_bqdataset', default=settings.BQ_DEV_EXT_DATASET, help='BQ dataset name')
+    parser.add_argument('--current_bqdataset', default=f'idc_current', help='current dataset name')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

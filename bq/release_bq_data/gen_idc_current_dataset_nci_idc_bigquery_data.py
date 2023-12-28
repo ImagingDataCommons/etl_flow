@@ -26,13 +26,18 @@ from bq.generate_tables_and_views.idc_current.gen_idc_current_dataset import gen
 if __name__ == '__main__':
     version = settings.CURRENT_VERSION
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Current IDC version')
-    parser.add_argument('--version', default=version, help='Current IDC version')
-    parser.add_argument('--src_project', default=settings.PDP_PROJECT)
-    parser.add_argument('--trg_project', default=settings.PDP_PROJECT)
-    parser.add_argument('--src_bqdataset', default=f'idc_v{version}', help='BQ dataset name')
-    parser.add_argument('--current_bqdataset', default=f'idc_current', help='current dataset name')
+    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Current IDC version')
+    parser.add_argument('--src_project', default=settings.PDP_PROJECT, help='The project where the tables to be viewed reside')
+    parser.add_argument('--trg_project', default=settings.AH_PROJECT, help='The project where the view will be created')
+    parser.add_argument('--pub_project', default='bigquery-public-data', help='The project which will be referenced by the view')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
+
+    args.src_bqdataset = f'idc_v{version}'
+    args.current_bqdataset = f'idc_current'
+    gen_idc_current_dataset(args)
+
+    args.src_bqdataset = f'idc_v{version}_clinical'
+    args.current_bqdataset = f'idc_current_clinical'
     gen_idc_current_dataset(args)

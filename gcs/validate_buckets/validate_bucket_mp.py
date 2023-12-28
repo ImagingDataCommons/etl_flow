@@ -54,7 +54,7 @@ def worker(input, args, dones):
 
 def get_expected_blobs_in_bucket(args, premerge=False):
     client = bigquery.Client()
-    query = f"""
+    query = f"""from  
       SELECT distinct concat(se_uuid,'/', i_uuid, '.dcm') as blob_name
       FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
       JOIN `idc-dev-etl.idc_v{args.version}_dev.all_collections` aic
@@ -131,27 +131,21 @@ def get_found_blobs_in_bucket(args):
 def check_all_instances_mp(args, premerge=False):
     try:
         expected_blobs = set(open(args.expected_blobs).read().splitlines())
+        assert len(expected_blobs) > 0
         progresslogger.info(f'Already have expected blobs')
     except:
         progresslogger.info(f'Getting expected blobs')
         get_expected_blobs_in_bucket(args, premerge)
         expected_blobs = set(open(args.expected_blobs).read().splitlines())
-        # json.dump(psql_blobs, open(args.blob_names), 'w')
 
     try:
         found_blobs = set(open(args.found_blobs).read().splitlines())
-        # found_blobs = open(f'{successlogger.handlers[0].baseFilename}').read().splitlines()
+        assert len(found_blobs) > 0
         progresslogger.info(f'Already have found blobs')
     except:
         progresslogger.info(f'Getting found blobs')
         get_found_blobs_in_bucket(args)
-        found_blobs = open(f'{successlogger.handlers[0].baseFilename}').read().splitlines()
-        # json.dump(psql_blobs, open(args.blob_names), 'w')
-
-
-    progresslogger.info(f'Getting found blobs')
-    get_found_blobs_in_bucket(args)
-    found_blobs = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
+        found_blobs = set(open(args.found_blobs).read().splitlines())
 
     if found_blobs == expected_blobs:
         successlogger.info(f"Bucket {args.bucket} has the correct set of blobs")

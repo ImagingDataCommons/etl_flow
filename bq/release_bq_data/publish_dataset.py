@@ -14,9 +14,8 @@
 # limitations under the License.
 #
 
-# Backup a dataset
-# Tables in the dataset are snapshotted.
-# Views in the dataset are copied.
+# Copy a dataset to a public project
+
 import settings
 import argparse
 import json
@@ -54,26 +53,30 @@ Check if dataset exists:
 def bq_dataset_exists(client, project , target_dataset):
 
     dataset_ref = bigquery.DatasetReference(project, target_dataset)
+    # dataset_ref = target_client.dataset(target_dataset)
     try:
         src_dataset = client.get_dataset(dataset_ref)
+        # target_client.get_dataset(dataset_ref)
         return True
     except NotFound:
         return False
 
 
-def snapshot_table(client, args,  table_id):
-    try:
-        table = client.get_table(f'{args.trg_project}.{args.trg_dataset}.{table_id}')
-        progresslogger.info(f'Table {table} already exists.')
-    except:
+def copy_table(client, args,  table_id):
+
+    # try:
+    #     table = client.get_table(f'{args.trg_project}.{args.trg_dataset}.{table_id}')
+    #     progresslogger.info(f'Table {table} already exists.')
+    # except:
+    if True:
         src_table_id = f'{args.src_project}.{args.src_dataset}.{table_id}'
         trg_table_id = f'{args.trg_project}.{args.trg_dataset}.{table_id}'
 
         # Construct a BigQuery client object.
         client = bigquery.Client()
         job_config = bigquery.CopyJobConfig()
-        job_config.operation_type = 'SNAPSHOT'
-        job_config.write_disposition = 'WRITE_EMPTY'
+        job_config.operation_type = 'COPY'
+        job_config.write_disposition = 'WRITE_TRUNCATE'
 
         # Construct and run a copy job.
         job = client.copy_table(
@@ -83,45 +86,64 @@ def snapshot_table(client, args,  table_id):
             location="US",
             job_config=job_config,
         )  # Make an API request.
-        job.result()  # Wait for the job to complete.
-        progresslogger.info("Backed up table {} to {}".format(src_table_id, trg_table_id)
-        )
 
-def add_descriptions_to_schema(src_schema, trg_schema):
-    for i, src_field in enumerate(src_schema):
-        if src_field.description and  ((j:=(next((j for j, trg_field in enumerate(trg_schema) if src_field.name == trg_field.name), -1))) != -1):
-            new_schemaField_dict = trg_schema[j].to_api_repr()
-            new_schemaField_dict['description'] = src_schema[i].description
-            new_schemaField = bigquery.SchemaField.from_api_repr(new_schemaField_dict)
-            trg_schema[j] = new_schemaField
-    return trg_schema
+        job.result()  # Wait for the job to complete.
+
+        progresslogger.info("Copied table {} to {}".format(src_table_id, trg_table_id))
+
+        if table_id == 'dicom_derived_all':
+            dataset_ref = bigquery.DatasetReference(args.trg_project, args.trg_dataset)
+            table_ref = dataset_ref.table(table_id)
+            table = client.get_table(table_ref)  # API request
+            table.description = "DEPRECATED: This table will likely be removed in a future IDC version"
+            table = client.update_table(table, ["description"])  # API request
+
+        return
+
 
 
 def copy_view(client, args, view_id):
-
     try:
-        view = client.get_table(f'{args.trg_project}.{args.trg_dataset}.{view_id}')
-        progresslogger.info(f'View {view} already exists.')
-    except:
-        view = client.get_table(f'{args.src_project}.{args.src_dataset}.{view_id}')
-
-        new_view = bigquery.Table(f'{args.trg_project}.{args.trg_dataset}.{view_id}')
-        new_view.view_query = view.view_query
-        new_view.friendly_name = view.friendly_name
-        new_view.description = view.description
-        new_view.labels = view.labels
-        installed_view = client.create_table(new_view)
         try:
-            # # Update the schema after creating the view
+            view = client.get_table(f'{args.trg_project}.{args.trg_dataset}.{view_id}')
+            progresslogger.info(f'View {view} already exists.')
+            client.delete_table(f'{args.trg_project}.{args.trg_dataset}.{view_id}', not_found_ok=True)
+            progresslogger.info(f'Deleted {view}.')
+        except:
+            progresslogger.info(f'View {view_id} does not exist.')
+
+        finally:
+            view = client.get_table(f'{args.src_project}.{args.src_dataset}.{view_id}')
+
+            new_view = bigquery.Table(f'{args.trg_project}.{args.trg_dataset}.{view_id}')
+            new_view.view_query = view.view_query.replace(args.src_project,args.pub_project). \
+                replace(args.src_dataset,args.trg_dataset)
+
+            new_view.friendly_name = view.friendly_name
+            if view_id == 'dicom_derived_all':
+                new_view.description = "DEPRECATED: This table will likely be removed in a future IDC version"
+            else:
+                new_view.description = view.description
+            new_view.labels = view.labels
+            installed_view = client.create_table(new_view)
+
             installed_view.schema = view.schema
-            client.update_table(installed_view, ['schema'])
-            progresslogger.info(f'Copied view {view_id}: DONE')
-        except BadRequest as exc:
-            errlogger.error(f'{exc}')
+
+            try:
+                # # Update the schema after creating the view
+                # installed_view.schema = view.schema
+                client.update_table(installed_view, ['schema'])
+                progresslogger.info(f'Copy of view {view_id}: DONE')
+            except BadRequest as exc:
+                errlogger.error(f'{exc}')
+    except Exception as exc:
+        errlogger.error((f'{exc}'))
+        progresslogger.info((f'Really done'))
     return
 
-def backup_dataset(args):
+def publish_dataset(args, table_ids={}):
     client = bigquery.Client()
+    # client = bigquery.Client(project=args.trg_project)
     src_dataset_ref = bigquery.DatasetReference(args.src_project, args.src_dataset)
     src_dataset = client.get_dataset(src_dataset_ref)
 
@@ -133,12 +155,17 @@ def backup_dataset(args):
         )
         create_dataset(client, args.trg_project, args.trg_dataset, dataset_dict)
 
-    progresslogger.info(f'Backing up {args.src_dataset} to {args.trg_dataset}')
-    table_ids = {table.table_id: table.table_type for table in client.list_tables(f'{args.src_project}.{args.src_dataset}')}
+    progresslogger.info(f'Copying {args.src_dataset} to {args.trg_dataset}')
+    table_ids = table_ids
+    if not table_ids:
+        table_ids = {table.table_id: table.table_type for table in client.list_tables(f'{args.src_project}.{args.src_dataset}')}
     # Create tables first
     for table_id in table_ids:
         if table_ids[table_id] == 'TABLE':
-            snapshot_table(client, args, table_id)
+            copy_table(client, args, table_id)
+
     for table_id in table_ids:
         if table_ids[table_id] == 'VIEW':
             copy_view(client, args, table_id)
+
+    return

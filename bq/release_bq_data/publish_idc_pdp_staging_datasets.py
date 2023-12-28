@@ -14,33 +14,31 @@
 # limitations under the License.
 #
 
-# Copy some tables to another project
+# Duplicate idc_vxx datasets in idc_pdp_staging.
 import settings
 import argparse
 import json
 from utilities.logging_config import successlogger, progresslogger, errlogger
-from publish_some_tables import publish_tables
+from publish_dataset import publish_dataset
 
 
 if __name__ == '__main__':
     # (sys.argv)
     parser = argparse.ArgumentParser()
+    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--src_project', default="idc-pdp-staging", help='Project from which tables are copied')
-    parser.add_argument('--trg_project', default="bigquery-public-data", help='Project to which tables are copied')
+    parser.add_argument('--trg_project', default="nci-idc-bigquery-data", help='Project to which tables are copied')
+    parser.add_argument('--pub_project', default="bigquery-public-data", help='Project where public datasets live')
+    parser.add_argument('--table_ids', default={}, help="Copy all tables/views unless this is non-empty.")
+    parser.add_argument('--clinical_table_ids', default={}, help="Copy all tables/views unless this is non-empty")
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
-    dones = open(f'{successlogger.handlers[0].baseFilename}').read().splitlines()
-    errors = [row.split(':')[-1] for row in open(f'{errlogger.handlers[0].baseFilename}').read().splitlines()]
 
-    tables = [
-        ('dicom_metadata', 1, 1),
-        ('dicom_derived_all', 2, 7),
-        ('dicom_derived_all', 13, 13),
-        ('measurement_groups', 13, 13),
-        ('qualitative_measurements', 13, 13),
-        ('quantitative_measurements', 13, 13)
-    ]
-
-    for table_name, min_version, max_version in tables:
-        publish_tables(args, table_name, min_version, max_version, dones)
+    for src_dataset, table_ids in [
+                (f'idc_v{settings.CURRENT_VERSION}', args.table_ids),
+                (f'idc_v{settings.CURRENT_VERSION}_clinical', args.clinical_table_ids)
+            ]:
+        args.src_dataset = src_dataset
+        args.trg_dataset = src_dataset
+        publish_dataset(args, table_ids)

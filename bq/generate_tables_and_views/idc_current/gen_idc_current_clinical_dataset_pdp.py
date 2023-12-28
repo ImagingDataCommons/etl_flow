@@ -29,6 +29,8 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=version, help='Current IDC version')
     parser.add_argument('--src_project', default=settings.PDP_PROJECT)
     parser.add_argument('--trg_project', default=settings.PDP_PROJECT)
+    breakpoint() # Is this the correct pub_project?
+    parser.add_argument('--pub_project', default=settings.PDP_PROJECT)
     parser.add_argument('--src_bqdataset', default=f'idc_v{version}_clinical', help='BQ dataset name')
     parser.add_argument('--current_bqdataset', default=f'idc_current_clinical', help='current dataset name')
 

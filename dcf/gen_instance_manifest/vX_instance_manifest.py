@@ -29,8 +29,8 @@ if __name__ == '__main__':
     parser.add_argument('--project', default=settings.DEV_PROJECT)
     parser.add_argument('--pub_bqdataset', default=settings.BQ_DEV_EXT_DATASET)
     parser.add_argument('--dev_bqdataset', default=settings.BQ_DEV_INT_DATASET)
-    parser.add_argument('--versions', default=f'({settings.CURRENT_VERSION})', \
-            help= 'A quoted tuple of version numbers, e.g. "(1,2)"')
+    parser.add_argument('--version', default={settings.CURRENT_VERSION}, \
+            help= 'Version for which to generate manifest.')
     parser.add_argument('--manifest_uri', default=f'gs://indexd_manifests/dcf_input/pdp_hosting/idc_v{settings.CURRENT_VERSION}/idc_v{settings.CURRENT_VERSION}_instance_manifest_*.tsv',
             help="GCS blob in which to save results")
     parser.add_argument('--temp_table_bqdataset', default='whc_dev', \

@@ -99,7 +99,7 @@ def load_BQ_from_json(client, project, dataset, table, json_rows, aschema=None, 
     job_config = bigquery.LoadJobConfig()
     job_config.source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
     job_config.write_disposition = write_disposition
-    # job_config.destination_table_description = table_description
+    job_config.destination_table_description = table_description
     if aschema:
         job_config.schema = aschema
     else:
@@ -113,7 +113,7 @@ def load_BQ_from_json(client, project, dataset, table, json_rows, aschema=None, 
             print('Waiting for job done. Status: {}'.format(job.state))
             time.sleep(15)
         result = job.result()
-    except:
+    except Exception as exc:
         print("Error loading table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
               file=sys.stdout, flush=True)
         raise
@@ -122,13 +122,15 @@ def load_BQ_from_json(client, project, dataset, table, json_rows, aschema=None, 
 
 
 # csv_rows is newline delimited csv data
-def load_BQ_from_CSV(client, dataset, table, csv_rows, aschema, write_disposition='WRITE_APPEND'):
-    table_id = "{}.{}.{}".format(client.project, dataset, table)
+def load_BQ_from_CSV(client, project, dataset, table, csv_rows, aschema=None, write_disposition='WRITE_APPEND', skip=0):
+    table_id = "{}.{}.{}".format(project, dataset, table)
 
     job_config = bigquery.LoadJobConfig()
     job_config.source_format = bigquery.SourceFormat.CSV
     job_config.write_disposition = write_disposition
+    job_config.skip_leading_rows = skip
     job_config.schema = aschema
+    job_config.autodetect = True if not aschema else False
 
     # Convert to
     data = io.StringIO(csv_rows)
@@ -147,8 +149,8 @@ def load_BQ_from_CSV(client, dataset, table, csv_rows, aschema, write_dispositio
 
 
 # load a file at some uri. Assumes a csv or tsv (default).
-def load_BQ_from_uri(client, dataset, table, uri, schema, delimiter='\t', skip=1, write_disposition='WRITE_APPEND'):
-    table_id = "{}.{}.{}".format(client.project, dataset, table)
+def load_BQ_from_uri(client, project, dataset, table, uri, schema=None, delimiter='\t', skip=1, write_disposition='WRITE_APPEND'):
+    table_id = "{}.{}.{}".format(project, dataset, table)
 
     job_config = bigquery.LoadJobConfig()
     job_config.source_format = bigquery.SourceFormat.CSV
