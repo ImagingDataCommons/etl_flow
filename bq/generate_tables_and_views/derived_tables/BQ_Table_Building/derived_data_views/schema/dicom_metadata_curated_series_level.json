@@ -1,5 +1,5 @@
 {
-  "description": "dicom_metadata_curated_series_level contains metadata that has been aggregated/cleaned up to describe content at series level; see source code for the underlying query at https://github.com/ImagingDataCommons/etl_flow/blob/master/bq/derived_table_creation/BQ_Table_Building/derived_data_views/sql/dicom_metadata_curated_series_level.sql",
+  "description": "dicom_metadata_curated_series_level contains metadata that has been aggregated/cleaned up to describe content at series level; see source code for the underlying query at https://github.com/ImagingDataCommons/etl_flow/blob/master/bq/generate_tables_and_views/derived_tables/BQ_Table_Building/derived_data_views/sql/dicom_metadata_curated_series_level.sql",
   "friendlyName": "dicom_metadata_curated_series_level",
   "labels": {
     "tbd_key_1": "value_1",

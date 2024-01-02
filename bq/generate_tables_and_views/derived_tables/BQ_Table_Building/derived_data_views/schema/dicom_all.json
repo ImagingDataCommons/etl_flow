@@ -1,5 +1,5 @@
 {
-  "description": "dicom_all is a join of dicom_metadata with selected columns from auxiliary_metadata and original_collections_metadata; see source code for the underlying query at https://github.com/ImagingDataCommons/etl_flow/blob/master/bq/derived_table_creation/BQ_Table_Building/derived_data_views/sql/dicom_all.sql",
+  "description": "dicom_all is a join of dicom_metadata with selected columns from auxiliary_metadata and original_collections_metadata; see source code for the underlying query at https://github.com/ImagingDataCommons/etl_flow/blob/master/bq/generate_tables_and_views/derived_tables/BQ_Table_Building/derived_data_views/sql/dicom_all.sql",
   "friendlyName": "dicom_all",
   "labels": {
     "tbd_key_1": "value_1",
