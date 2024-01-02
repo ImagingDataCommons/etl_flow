@@ -50,6 +50,7 @@ if __name__ == '__main__':
             "license_short_name": "CC BY 4.0"}, help="(Sub-)Collection license")
     parser.add_argument('--third_party', type=bool, default=True, help='True if from a third party analysis result')
     parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
+    parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

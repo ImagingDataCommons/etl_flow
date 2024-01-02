@@ -28,6 +28,8 @@ from gen_hashes import gen_hashes
 from utilities.logging_config import successlogger, errlogger, progresslogger
 from base64 import b64decode
 from python_settings import settings
+from validate_analysis_result import validate_analysis_result
+from validate_original_collection import validate_original_collection
 
 from pydicom import dcmread
 
@@ -119,8 +121,6 @@ def prebuild(args):
     client = storage.Client()
     src_bucket = storage.Bucket(client, args.src_bucket)
 
-    dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
-
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
     # sql_engine = create_engine(sql_uri, echo=True)
     sql_engine = create_engine(sql_uri)
@@ -153,8 +153,17 @@ def prebuild(args):
                         build_collection(client, args, sess, collection_id, patient_id, study_id, series_id, instance_id, hash, size, blob.name)
 
         sess.commit()
+        if args.validate:
+            if args.third_party:
+                if validate_analysis_result(args) == -1:
+                    exit -1
+            else:
+                if validate_original_collection(args) == -1:
+                    exit -1
+
         if args.gen_hashes:
             gen_hashes(args.collection_id)
+
 
         return
 
@@ -174,6 +183,8 @@ def prebuild(args):
 #             "license_long_name": "National Library of Medicine Terms and Conditions; May 21, 2019", \
 #             "license_short_name": "National Library of Medicine Terms and Conditions; May 21, 2019"})
 #     parser.add_argument('--third_party', type=bool, default=False, help='True if from a third party analysis result')
+#     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
+#     parser.add_argument('--gen_hashes', type=bool, default=True, help='True if hashes are to be generated')
 #
 #     args = parser.parse_args()
 #     print("{}".format(args), file=sys.stdout)
