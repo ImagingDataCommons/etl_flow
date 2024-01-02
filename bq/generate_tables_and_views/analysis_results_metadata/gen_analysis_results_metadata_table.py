@@ -42,7 +42,7 @@ FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.licenses`
 # Get all source_dois and the collections which they are in
 def get_collections_containing_a_doi(client, args):
     query = f"""
-        SELECT DISTINCT collection_id AS collection_id, source_doi
+        SELECT DISTINCT collection_id AS collection_id, source_doi, source_url
         FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_current`
         ORDER BY collection_id
         """
@@ -141,6 +141,7 @@ def build_metadata(args, BQ_client):
                 analysis_data[key] = value
             analysis_data['Description'] = descriptions[analysis_data['ID']]
             analysis_data['AnalysisArtifactsonTCIA'] = analysis_data['AnalysisArtifacts']
+            analysis_data['DOI'] = analysis_data['source_doi']
             rows.append(json.dumps(analysis_data))
     metadata = '\n'.join(rows)
     return metadata

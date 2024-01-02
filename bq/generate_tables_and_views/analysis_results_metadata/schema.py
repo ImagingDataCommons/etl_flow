@@ -52,4 +52,7 @@ analysis_results_metadata_schema = [
                          description='Analysis result description'),
     bigquery.SchemaField('AnalysisArtifactsonTCIA', 'STRING', mode='NULLABLE',
                          description='DEPRECATED: Types of analysis artifacts produced'),
+    bigquery.SchemaField('DOI', 'STRING', mode='NULLABLE',
+                         description='Deprecated: Duplicate of source_doi'),
+
 ]
