@@ -1,4 +1,10 @@
 WITH
+  aux AS (
+  SELECT am.*, arm.ID as analysis_result_id
+  FROM `{project}.{dataset}.auxiliary_metadata` am
+  LEFT JOIN `{project}.{dataset}.analysis_results_metadata` arm
+  ON (am.source_DOI = arm.source_doi)
+  ),
   pre_dicom_all AS (
   SELECT
     aux.collection_name AS collection_name,
@@ -40,6 +46,7 @@ WITH
     aux.instance_revised_idc_version AS instance_revised_idc_version,
     aux.source_doi as Source_DOI,
     aux.source_url as Source_URL,
+    aux.analysis_result_id as analysis_result_id,
     aux.license_url as license_url,
     aux.license_long_name as license_long_name,
     aux.license_short_name as license_short_name,
@@ -48,9 +55,8 @@ WITH
     data_collections.Location as tcia_tumorLocation,
     data_collections.Species as tcia_species,
     data_collections.CancerType as tcia_cancerType
-
    FROM
-    `{project}.{dataset}.auxiliary_metadata` AS aux
+    aux
   INNER JOIN
     `{project}.{dataset}.original_collections_metadata` AS data_collections
   ON
