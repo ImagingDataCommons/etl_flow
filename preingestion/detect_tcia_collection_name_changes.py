@@ -22,10 +22,7 @@
 
 from idc.models import Base, Version, Patient, Study, Series, Instance, Collection, All_Collections, All_Joined
 from utilities.tcia_scrapers import scrape_tcia_data_collections_page, scrape_tcia_analysis_collections_page
-from python_settings import settings
-import google
-from google.auth.transport import requests
-
+from utilities.tcia_helpers import get_all_tcia_metadata
 from sqlalchemy import and_, or_
 from utilities.sqlalchemy_helpers import sa_session
 
@@ -41,8 +38,10 @@ def compare_dois():
         idc_dois = {row.source_doi.lower(): row.collection_id for row in rows if row.source_doi }
 
         # Scrape TCIA pages to get a list of dois mapped to IDs
-        tcia_original_dois = {item['DOI']: collection_id for collection_id, item in scrape_tcia_data_collections_page().items()}
-        tcia_analysis_dois = {item['DOI']: collection_id for collection_id, item in scrape_tcia_analysis_collections_page().items()}
+        # tcia_analysis_dois = {item['DOI']: collection_id for collection_id, item in scrape_tcia_analysis_collections_page().items()}
+        # tcia_original_dois = {item['DOI']: collection_id for collection_id, item in scrape_tcia_data_collections_page().items()}
+        tcia_original_dois = {row['collection_doi'].lower(): row['collection_short_title'] for row in get_all_tcia_metadata(type="collections", query_param="&_fields=collection_short_title,collection_doi")}
+        tcia_analysis_dois = {row['result_doi'].lower(): row['result_short_title'] for row in get_all_tcia_metadata(type="analysis-results", query_param="&_fields=result_short_title,result_doi")}
 
         # Look for each doi that we have in the latter two lists; if found compare IDs.
         for doi in idc_dois:

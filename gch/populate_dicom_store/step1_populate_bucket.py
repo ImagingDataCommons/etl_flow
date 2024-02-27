@@ -15,7 +15,7 @@
 #
 
 #### This is the first step in populating a DICOM store ####
-# We populate a bucket with all the instance in a version.
+# We populate a bucket with all the instances in a version.
 # Note that, for yet unexplained reasons, the process can
 # fail to copy some instances to the target bucket. Therefore,
 # this process should be rerun until the bucket is fully populated.

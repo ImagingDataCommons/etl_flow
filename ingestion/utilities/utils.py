@@ -19,7 +19,7 @@ import os
 import hashlib
 from base64 import b64decode
 # import logging
-from subprocess import run
+from subprocess import run, STDOUT, DEVNULL
 from google.cloud import storage
 from google.api_core.exceptions import Conflict
 
@@ -113,18 +113,6 @@ def validate_series_in_gcs(args, collection, patient, study, series):
 
 # Copy the series instances downloaded from TCIA/NBIA from disk to the prestaging bucket
 def copy_disk_to_prestaging_bucket(args, series):
-    # client = storage.Client()
-    # src_dir = f"{args.dicom_dir}/{series.series_instance_uid}"
-    # dst_bucket = client.bucket(args.prestaging_tcia_bucket)
-    # for instance in os.listdir(src_dir):
-    #     src_file = f'{src_dir}/{instance}'
-    #     blob = dst_bucket.blob(f"{series.uuid}/{instance}")
-    #     try:
-    #         blob.upload_from_filename(src_file, checksum="md5")
-    #     except Exception as exc:
-    #         errlogger.error(f'p{args.pid}: copy_disk_to_prestaging_bucket failed for {series.uuid}/{instance}')
-    #         raise exc
-
     #Do the copy as a subprocess in order to use the gsutil -m option
     try:
         # Copy the series to GCS
@@ -132,7 +120,8 @@ def copy_disk_to_prestaging_bucket(args, series):
         dst = f'gs://{args.prestaging_tcia_bucket}'
         # breakpoint() # Check if -J parameter is still broken
         result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
-        # result = run(["gsutil", "-m", "-q", "cp", "-J", src, dst], check=True)
+        # result = run(["gcloud", "storage", "--quiet", "cp", "--recursive", src, dst], check=True,
+        #              stdout=DEVNULL, stderr=STDOUT)
         if result.returncode :
             errlogger.error('p%s: \tcopy_disk_to_prestaging_bucket failed for series %s', args.pid, series.series_instance_uid)
             raise RuntimeError('p%s: copy_disk_to_prestaging_bucket failed for series %s', args.pid, series.series_instance_uid)
@@ -188,6 +177,29 @@ def copy_disk_to_gcs(args, collection, patient, study, series):
     # Delete the series from disk
     shutil.rmtree("{}/{}".format(args.dicom_dir, series.uuid), ignore_errors=True)
 
+def copy_composite_blob_to_noncomposite_blob(args, src_blob, dst_blob):
+    # We need to copy a composite blob such that the resulting blob is a noncomposite blob
+    # For this purpose, we copy to a local file and then to the destination
+    #Do the copy as a subprocess in order to use the gsutil -m option
+    try:
+        # Copy the blob to disk
+        src = f'gs://{src_blob.bucket.name}/{src_blob.name}'
+        dst = f'/mnt/disks/idc-etl/tmp/{src_blob.name}'
+        result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
+        if result.returncode :
+            errlogger.error('p%s: \tcopy_disk_to_prestaging_bucket copy to file failed for %s', args.pid, src_blob.name)
+            raise RuntimeError('p%s: opy_disk_to_prestaging_bucket copy to file failed for %s', args.pid, src_blob.name)
+        src = dst
+        dst = f'gs://{dst_blob.bucket.name}/{dst_blob.name}'
+        result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
+        if result.returncode :
+            errlogger.error('p%s: \tcopy_disk_to_prestaging_bucket copy to gcs failed for %s', args.pid, dst_blob.name)
+            raise RuntimeError('p%s: opy_disk_to_prestaging_bucket copy to gcs failed for %s', args.pid, dst_blob.name)
+    except Exception as exc:
+        errlogger.error("\tp%s: Copy to prestage bucket failed for series %s", args.pid, series.series_instance_uid)
+        raise RuntimeError("p%s: Copy to prestage bucketfailed for series %s", args.pid, series.series_instance_uid) from exc
+
+
 
 # Copy an instance from a source bucket to a destination bucket. Currently used when ingesting IDC sourced data
 # which is placed in some bucket after preparation
@@ -203,6 +215,12 @@ def copy_gcs_to_gcs(args, client, dst_bucket_name, series, instance, gcs_url):
         progresslogger.debug('******p%s: Rewrite bytes_rewritten %s, total_bytes %s', args.pid, bytes_rewritten, total_bytes)
         token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob, token=token)
     dst_blob.reload()
+    if not dst_blob.md5_hash:
+        # This is like a composite object. Copy it so that the resulting object is noncomposite
+
+        copy_composite_blob_to_noncomposite_blob(args, src_blob, dst_blob)
+        dst_blob = dst_bucket.blob(f'{series.uuid}/{instance.uuid}.dcm')
+        dst_blob.reload()
     return dst_blob.size, b64decode(dst_blob.md5_hash).hex()
 
 

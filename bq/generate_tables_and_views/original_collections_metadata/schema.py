@@ -30,8 +30,8 @@ data_collections_metadata_schema = [
     bigquery.SchemaField('URL','STRING', mode='NULLABLE', description='URL of collection information page'),
     bigquery.SchemaField('CancerType','STRING', mode='NULLABLE', description='Cancer type of this collection '),
     bigquery.SchemaField('SupportingData', 'STRING', mode='NULLABLE', description='Type(s) of addional available data'),
-    bigquery.SchemaField('Species', 'STRING', mode='NULLABLE', description=" Species of collection subjects"),
-    bigquery.SchemaField('Location','STRING', mode='NULLABLE', description='Body location that was studies'),
+    bigquery.SchemaField('Species', 'STRING', mode='NULLABLE', description="Species of collection subjects"),
+    bigquery.SchemaField('Location','STRING', mode='NULLABLE', description='Body location that was studied'),
     bigquery.SchemaField(
         "licenses",
         "RECORD",

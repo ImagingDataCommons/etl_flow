@@ -30,12 +30,15 @@ from base64 import b64decode
 from python_settings import settings
 from validate_analysis_result import validate_analysis_result
 from validate_original_collection import validate_original_collection
+from ingestion.utilities.utils import md5_hasher
 
 from pydicom import dcmread
 
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, update
 from google.cloud import storage
+
+import csv
 
 def build_instance(client, args, sess, series, instance_id, hash, size, blob_name):
     try:
@@ -127,30 +130,75 @@ def prebuild(args):
 
     with Session(sql_engine) as sess:
         client = storage.Client()
-        iterator = client.list_blobs(src_bucket, prefix=args.subdir)
-        for page in iterator.pages:
-            if page.num_items:
-                for blob in page:
-                    if not blob.name.endswith('DICOMDIR'):
-                        with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
-                            try:
-                                r = dcmread(f, stop_before_pixels=True)
-                                patient_id = r.PatientID
-                                study_id = r.StudyInstanceUID
-                                series_id = r.SeriesInstanceUID
-                                instance_id = r.SOPInstanceUID
-                                if not args.collection_id:
-                                    collection_id = sess.query(Collection.collection_id).distinct().join(
-                                        Collection.patients). \
-                                        filter(Patient.submitter_case_id == patient_id).one()[0]
-                                else:
-                                    collection_id = args.collection_id
-                            except Exception as exc:
-                                errlogger.error(f'pydicom failed for {blob.name}: {exc}')
-                                continue
+        if args.metadata_table:
+            dones = sess.query(IDC_Series, IDC_Instance.gcs_url).join(IDC_Instance.seriess).filter(IDC_Series.source_doi == args.source_doi).all()
+            dones = set([row['gcs_url'].replace(f'gs://{args.src_bucket}/', '') for row in dones])
+            # dones = set(open(successlogger.handlers[0].baseFilename).read().splitlines())
+            # If we have a table of PatientID,StudyInstanceuid,seriesinstanceuid,sopInstanceuid,filepath metadata
+            bucket = client.bucket(args.src_bucket)
+            with open(args.metadata_table) as csvfile:
+                reader = csv.DictReader(csvfile, fieldnames=['PatientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID', 'filepath'])
+                skip=True
+                n=0
+                for r in reader:
+                    if skip:
+                        skip = False
+                        continue
+                    patient_id = r['PatientID']
+                    study_id = r['StudyInstanceUID']
+                    series_id = r['SeriesInstanceUID']
+                    instance_id = r['SOPInstanceUID']
+                    collection_id = args.collection_id
+
+                    blob_name = r['filepath'].replace(f'gs://{args.src_bucket}/', '')
+                    if blob_name in dones:
+                        progresslogger.info(f"Skipping {blob_name}")
+                        continue
+                    blob = bucket.blob(blob_name)
+                    blob.reload()
+                    try:
                         hash = b64decode(blob.md5_hash).hex()
-                        size = blob.size
-                        build_collection(client, args, sess, collection_id, patient_id, study_id, series_id, instance_id, hash, size, blob.name)
+                    except TypeError:
+                        # Can't get md5 hash for some blobs (maybe multipart copied/)
+                        # So try to compute it
+                        try:
+                            hash = md5_hasher(f"{args.mount_point}/{blob.name}")
+                            progresslogger.info(f'Computed md5 hash of {blob_name}')
+                        except Exception as exc:
+                            errlogger.error(f'Failed to get hash/sizeof {blob_name}')
+                            exit
+                    size = blob.size
+                    build_collection(client, args, sess, collection_id, patient_id, study_id, series_id, instance_id, hash,
+                                 size, blob.name)
+                    n += 1
+                    if not n%500:
+                        sess.commit()
+
+        else:
+            iterator = client.list_blobs(src_bucket, prefix=args.subdir)
+            for page in iterator.pages:
+                if page.num_items:
+                    for blob in page:
+                        if not blob.name.endswith('DICOMDIR'):
+                            with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
+                                try:
+                                    r = dcmread(f, specific_tags=['PatientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID'], stop_before_pixels=True)
+                                    patient_id = r.PatientID
+                                    study_id = r.StudyInstanceUID
+                                    series_id = r.SeriesInstanceUID
+                                    instance_id = r.SOPInstanceUID
+                                    if not args.collection_id:
+                                        collection_id = sess.query(Collection.collection_id).distinct().join(
+                                            Collection.patients). \
+                                            filter(Patient.submitter_case_id == patient_id).one()[0]
+                                    else:
+                                        collection_id = args.collection_id
+                                except Exception as exc:
+                                    errlogger.error(f'pydicom failed for {blob.name}: {exc}')
+                                    continue
+                            hash = b64decode(blob.md5_hash).hex()
+                            size = blob.size
+                            build_collection(client, args, sess, collection_id, patient_id, study_id, series_id, instance_id, hash, size, blob.name)
 
         sess.commit()
         if args.validate:
@@ -163,8 +211,6 @@ def prebuild(args):
 
         if args.gen_hashes:
             gen_hashes(args.collection_id)
-
-
         return
 
 
@@ -172,9 +218,12 @@ def prebuild(args):
 #     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 #     parser.add_argument('--version', default=settings.CURRENT_VERSION)
 #     parser.add_argument('--src_bucket', default='dac-vhm-dst', help='Bucket containing WSI instances')
+#     parser.add_argument('--metadata_table', default='', help='csv table of study, series, SOPInstanceUID, filepath')
+
 #     parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/visible_human_project', help='Directory on which to mount the bucket.\
 #                 The script will create this directory if necessary.')
 #     parser.add_argument('--subdir', default='', help="Subdirectory of mount_point at which to start walking directory")
+#     parser.add_argument('--startswith', default=[], help='Only include files whose name startswith a string in the list. If the list is empty, include all'
 #     parser.add_argument('--collection_id', default='NLM_visible_human_project', help='idc_webapp_collection id of the collection or ID of analysis result to which instances belong.')
 #     parser.add_argument('--source_doi', default='', help='Collection DOI')
 #     parser.add_argument('--source_url', default='https://www.nlm.nih.gov/research/visible/visible_human.html',\

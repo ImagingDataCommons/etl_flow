@@ -23,8 +23,6 @@
 # The script walks the directory hierarchy from a specified subdirectory of the
 # gcsfuse mount point
 
-import io
-import os
 import sys
 import argparse
 import pathlib
@@ -37,18 +35,27 @@ from google.cloud import storage
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--src_bucket', default='prostate_mri_us_biopsy_dicom_annotations', help='Source bucket containing instances')
-    parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/prostate_mri_us_biopsy_dicom_annotations', help='Directory on which to mount the bucket.\
+    parser.add_argument('--src_bucket', default='idc-conversion-outputs-cptac-agefixed', help='Source bucket containing instances')
+    parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/preeingestion_gcsfuse_mount_point', help='Directory on which to mount the bucket.\
                 The script will create this directory if necessary.')
-    parser.add_argument('--subdir', default='', help="Subdirectory of mount_point at which to start walking directory")
-    parser.add_argument('--collection_id', default='Prostate-MRI-US-Biopsy', help='idc_webapp_collection id of the collection. If empry string, it will look up collection_id from patient_id in blob')
-    parser.add_argument('--source_doi', default='10.5281/zenodo.10069911', help='Collection DOI. Might be empty string.')
-    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.10069911',\
+    parser.add_argument('--subdir', \
+            default='TiffAddedAgeFixed/20BR002 [20BR002]', \
+            help="Subdirectory of mount_point at which to start walking directory")
+    # parser.add_argument('--startswith', \
+    #         default=['1.3.6.1.4.1.5962.99.1.187348737.1792714343.1640864888577','1.3.6.1.4.1.5962.99.1.2144263414.1822412046.1655706705142.37.0'],\
+    #         help='Only include files whose name startswith a string in the list. If the list is empty, include all')
+    parser.add_argument('--startswith', \
+            default=[],\
+            help='Only include files whose name startswith a string in the list. If the list is empty, include all')
+    parser.add_argument('--subset_of_db_expected', default=True, help='If True, validation will not report an error if the instances in the bucket are a subset of the instance in the DB')
+    parser.add_argument('--collection_id', default='CPTAC-BRCA', help='idc_webapp_collection id of the collection or ID of analysis result to which instances belong.')
+    parser.add_argument('--source_doi', default='10.7937/tcia.caem-ys80', help='Collection DOI. Might be empty string.')
+    parser.add_argument('--source_url', default='https://doi.org/10.7937/tcia.caem-ys80',\
                         help='Info page URL')
-    parser.add_argument('--license', default = {"license_url": 'https://creativecommons.org/licenses/by/4.0/',\
-            "license_long_name": "Creative Commons Attribution 4.0 International License", \
-            "license_short_name": "CC BY 4.0"}, help="(Sub-)Collection license")
-    parser.add_argument('--third_party', type=bool, default=True, help='True if from a third party analysis result')
+    parser.add_argument('--license', default = {"license_url": 'https://creativecommons.org/licenses/by/3.0/',\
+            "license_long_name": "Creative Commons Attribution 3.0 Unported License", \
+            "license_short_name": "CC BY 3.0"}, help="(Sub-)Collection license")
+    parser.add_argument('--third_party', type=bool, default=False, help='True if from a third party analysis result')
     parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
 

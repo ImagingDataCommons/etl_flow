@@ -93,14 +93,14 @@ def scrape_tcia_analysis_collections_page():
 
     soup = BeautifulSoup(page.content, "html.parser")
 
-    table = soup.find(id="tablepress-10")
+    table = soup.find(id="tablepress-14")
 
     # print(table.prettify())
 
     rows = table.find_all("tr")
 
     table = {}
-    header = "Collection,DOI,CancerType,Location,Subjects,Collections,AnalysisArtifactsonTCIA,Updated,LicenseURL,LicenseName".split(",")
+    header = "Collection,CancerTypes,Locations,Subjects,Relasted Collections,Supporting Data, Updated".split(",")
 
     for row in rows:
         trow = {}

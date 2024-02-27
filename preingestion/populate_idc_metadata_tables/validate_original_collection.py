@@ -57,11 +57,12 @@ def validate_original_collection(args):
                 errlogger.error('The following blobs are in the bucket but not in the DB:')
                 for blob in expected_blobs - found_blobs:
                     errlogger.error(blob)
-            if found_blobs - expected_blobs:
+                return -1
+            if not args.subset_of_db_expected and found_blobs - expected_blobs:
                 errlogger.error('The following blobs are in the DB but not in the bucket:')
                 for blob in found_blobs - expected_blobs:
                     errlogger.error(blob)
-            return -1
+                return -1
         else:
             successlogger.info('All blobs in the bucket are in the DB')
 

@@ -41,6 +41,7 @@ def gen_hashes(collection_id=''):
              collections = sess.query(IDC_Collection).filter(IDC_Collection.collection_id==collection_id)
         else:
             collections = sess.query(IDC_Collection).all()
+        n = 0
         for collection in collections:
             for patient in collection.patients:
                 for study in patient.studies:
@@ -54,6 +55,10 @@ def gen_hashes(collection_id=''):
                 hashes = [study.hash for study in patient.studies]
                 patient.hash = get_merkle_hash(hashes)
                 progresslogger.info('\tpatient hash %s', patient.submitter_case_id)
+                n += 1
+                if not n%100:
+                    sess.commit()
+
             hashes = [patient.hash for patient in collection.patients]
             collection.hash = get_merkle_hash(hashes)
             progresslogger.info('Collection hash %s', collection.collection_id)\
@@ -63,11 +68,11 @@ def gen_hashes(collection_id=''):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--collection', default='', help='If not null, gen hash of this collection, else all collections')
+    parser.add_argument('--collection', default='NLST', help='If not null, gen hash of this collection, else all collections')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()
 
-    gen_hashes(args)
+    gen_hashes(args.collection)
 

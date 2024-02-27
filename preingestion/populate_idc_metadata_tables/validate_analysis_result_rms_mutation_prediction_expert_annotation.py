@@ -44,17 +44,13 @@ def validate_analysis_result(args):
                     if not blob.name.endswith(('DICOMDIR','.zip','.csv')):
                         expected_blobs |= {f'gs://{args.src_bucket}/{blob.name}'}
 
-        # # Generate a set of the URLs of blobs in the DB
-        # found_blobs = set()
-        # # collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == args.collection_id).first()
-        # seriess = sess.query(IDC_Series).filter(IDC_Series.source_url == args.source_url).all()
-        # for series in seriess:
-        #     for instance in series.instances:
-        #         found_blobs |= {instance.gcs_url}
-
-        found_blobs = sess.query(IDC_Series, IDC_Instance.gcs_url).join(IDC_Instance.seriess).filter(
-            IDC_Series.source_url == args.source_url).all()
-        found_blobs = set([row['gcs_url'] for row in found_blobs])
+        # Generate a set of the URLs of blobs in the DB
+        found_blobs = set()
+        # collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == args.collection_id).first()
+        seriess = sess.query(IDC_Series).filter(IDC_Series.source_url == args.source_url).all()
+        for series in seriess:
+            for instance in series.instances:
+                found_blobs |= {instance.gcs_url}
 
         if expected_blobs != found_blobs:
             if expected_blobs - found_blobs:
@@ -78,9 +74,9 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--src_bucket', default='aimi-annotations', help='Bucket containing WSI instances')
+    parser.add_argument('--src_bucket', default='rms_manual_annotation_sr_conversion_2024-01-18', help='Bucket containing WSI instances')
     parser.add_argument('--subdir', default='', help="Subdirectory of mount_point at which to start walking directory")
-    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.10081112',\
+    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.10462858',\
                         help='Info page URL')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

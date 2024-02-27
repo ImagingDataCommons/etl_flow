@@ -78,7 +78,7 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
         # skipped source. I.E. if an object has a skipped source then, we can't ask the source about it so assume
         # it exists.
         existing_objects = [obj for id, obj in idc_objects.items() \
-               if id in instances or (obj.source and skipped[instance_source[obj.source].value])]
+            if id in instances or (obj.source and skipped[obj.source.value])]
         # An object in IDC is retired if it no longer exists in IDC
         retired_objects = [obj for id, obj in idc_objects.items() \
                if not obj in existing_objects ]
