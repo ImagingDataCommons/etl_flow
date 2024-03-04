@@ -162,11 +162,11 @@ def build_table(args):
       license_url,
       license_long_name,
       license_short_name,
-      collection_id AS tcia_api_collection_id,
-      REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_') AS idc_webapp_collection_id
+--       collection_id AS tcia_api_collection_id,
+--       REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_') AS idc_webapp_collection_id
       FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_current` aj
       ORDER BY
-        tcia_api_collection_id, submitter_case_id
+        collection_name, submitter_case_id
 """
     client = bigquery.Client(project=args.dst_project)
     result = delete_BQ_Table(client, args.dst_project, args.trg_bqdataset_name, args.bqtable_name)

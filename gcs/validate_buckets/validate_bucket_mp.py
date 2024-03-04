@@ -54,7 +54,7 @@ def worker(input, args, dones):
 
 def get_expected_blobs_in_bucket(args, premerge=False):
     client = bigquery.Client()
-    query = f"""from  
+    query = f"""
       SELECT distinct concat(se_uuid,'/', i_uuid, '.dcm') as blob_name
       FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
       JOIN `idc-dev-etl.idc_v{args.version}_dev.all_collections` aic

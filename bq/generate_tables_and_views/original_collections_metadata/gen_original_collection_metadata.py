@@ -19,7 +19,7 @@ import argparse
 import sys
 import json
 from google.cloud import bigquery
-from utilities.bq_helpers import load_BQ_from_json
+from utilities.bq_helpers import load_BQ_from_json, delete_BQ_Table
 from bq.generate_tables_and_views.original_collections_metadata.schema import data_collections_metadata_schema
 from utilities.tcia_helpers import get_all_tcia_metadata
 from utilities.logging_config import errlogger
@@ -29,16 +29,11 @@ def add_programs(client, args, collection_metadata):
     query = f"""
         SELECT *
         FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.program`"""
-    programs = {row['tcia_wiki_collection_id'].lower().replace('_','-').replace(' ','-'): row['program'] for row in client.query(query).result()}
+    programs = {row['collection_id'].lower(): row['program'] for row in client.query(query).result()}
     for collection in collection_metadata:
-        try:
-            if collection_metadata[collection]['tcia_wiki_collection_id']:
+            if collection_metadata[collection]['collection_id']:
                 collection_metadata[collection]["Program"] = \
-                    programs[collection_metadata[collection]['tcia_wiki_collection_id'].lower().replace('_','-').replace(' ','-')]
-            else:
-                collection_metadata[collection]["Program"] = programs[collection_metadata[collection]['collection_name'].lower().replace('_','-').replace(' ','-')]
-        except Exception as exc:
-            print(f"No matching program for {collection}")
+                    programs[collection_metadata[collection]['collection_id']]
     return collection_metadata
     # programs = {collection: program for cur.fetchall()
 
@@ -107,10 +102,10 @@ def get_original_collections_metadata_idc_source(client, args):
         metadata[row['collection_id']] = dict(
             collection_name = row['collection_name'],
             collection_id = row['collection_name'].lower().replace('-','_').replace(' ','_'),
-            DOI = row['DOI'],
-            URL = row['URL'],
-            CancerType = row['CancerType'],
-            Location = row['Location'],
+            source_doi = row['DOI'],
+            source_url = row['URL'],
+            CancerTypes = row['CancerType'],
+            TumorLocations = row['Location'],
             Subjects = 0,
             Species = row['Species'],
             ImageTypes = row['ImageTypes'],
@@ -118,9 +113,13 @@ def get_original_collections_metadata_idc_source(client, args):
             Access = ["Public"],
             Status = row['Status'],
             Updated = row['Updated'] if row['Updated'] != 'NA' else None,
-            idc_webapp_collection_id = row['collection_name'].lower().replace('-','_').replace(' ','_'),
-            tcia_api_collection_id = row['collection_name'],
-            tcia_wiki_collection_id = ''
+            DOI = row['DOI'],
+            URL = row['URL'],
+            CancerType = row['CancerType'],
+            Location = row['Location'],
+            # idc_webapp_collection_id = row['collection_name'].lower().replace('-','_').replace(' ','_'),
+            # tcia_api_collection_id = row['collection_name'],
+            # tcia_wiki_collection_id = ''
         )
     return metadata
 
@@ -152,19 +151,25 @@ def get_original_collections_metadata_tcia_source(client, args, idc_collections)
                 Access=["Public"],
                 ImageTypes="",
                 Subjects=0,
-                DOI=collection_metadata['collection_doi'],
-                URL=f"https://doi.org/{collection_metadata['collection_doi']}",
-                CancerType=", ".join(collection_metadata['cancer_types']) \
+                source_doi=collection_metadata['collection_doi'],
+                source_url=f"https://doi.org/{collection_metadata['collection_doi']}",
+                CancerTypes=", ".join(collection_metadata['cancer_types']) \
                     if isinstance(collection_metadata['cancer_types'], list) else '',
                 SupportingData=", ".join(collection_metadata['supporting_data']) \
                     if isinstance(collection_metadata['supporting_data'], list) else '',
                 Species=", ".join(collection_metadata['species']) \
                     if isinstance(collection_metadata['species'], list) else '',
+                TumorLocations=", ".join(collection_metadata['cancer_locations']) \
+                    if isinstance(collection_metadata['cancer_locations'], list) else '',
+                DOI=collection_metadata['collection_doi'],
+                URL=f"https://doi.org/{collection_metadata['collection_doi']}",
+                CancerType=", ".join(collection_metadata['cancer_types']) \
+                    if isinstance(collection_metadata['cancer_types'], list) else '',
                 Location=", ".join(collection_metadata['cancer_locations']) \
                     if isinstance(collection_metadata['cancer_locations'], list) else '',
-                idc_webapp_collection_id=collection_id,
-                tcia_api_collection_id=collection_name,
-                tcia_wiki_collection_id=collection_metadata['collection_browse_title']
+                # idc_webapp_collection_id=collection_id,
+                # tcia_api_collection_id=collection_name,
+                # tcia_wiki_collection_id=collection_metadata['collection_browse_title']
             )
         except Exception as exc:
             print(exc)
@@ -239,7 +244,7 @@ def add_licenses(client, doi, collection_metadata):
             list({v['license_short_name']: v for v in license_list}.values())
 
     for collection, metadata in collection_metadata.items():
-        collection_metadata[collection]["licenses"] = next(license for  source_url, license in licenses.items() if source_url.lower() == metadata['URL'].lower())
+        collection_metadata[collection]["licenses"] = next(license for  source_url, license in licenses.items() if source_url.lower() == metadata['source_url'].lower())
     return collection_metadata
 
 
@@ -267,6 +272,7 @@ def gen_collections_table(args):
     metadata_json = '\n'.join([json.dumps(row) for row in
                         sorted(metadata, key=lambda d: d['collection_name'])])
     try:
+        delete_BQ_Table(BQ_client, settings.DEV_PROJECT, settings.BQ_DEV_EXT_DATASET, args.bqtable_name)
         load_BQ_from_json(BQ_client,
                     settings.DEV_PROJECT,
                     settings.BQ_DEV_EXT_DATASET if args.access=='Public' else settings.BQ_DEV_INT_DATASET , args.bqtable_name, metadata_json,

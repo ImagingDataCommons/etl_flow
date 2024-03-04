@@ -25,7 +25,7 @@
 import sys
 import argparse
 from googleapiclient import discovery
-from google.api_core.exceptions import Conflict, TooManyRequests, ServiceUnavailable
+from google.api_core.exceptions import Conflict, TooManyRequests, ServiceUnavailable, NotFound
 from step2_import_bucket import import_buckets
 from utilities.logging_config import successlogger, progresslogger, errlogger
 import settings
@@ -113,6 +113,7 @@ def copy_some_instances(args, client, uids, n):
                 try:
                     src_bucket = client.bucket(row['bucket'])
                     src_blob = src_bucket.blob(blob_id)
+                    break
                 except AttributeError as exc:
                     errlogger.warning(
                         f"p{args.id}: Trying to create bucket: {exc}; attempt {i}\n")
@@ -131,34 +132,33 @@ def copy_some_instances(args, client, uids, n):
                 break
 
             dst_blob = dst_bucket.blob(blob_id)
-            TRIES = 10
-            for attempt in range(TRIES):
+            rewrite_token = False
+            while True:
                 try:
-                    rewrite_token = False
-                    while True:
-                        try:
-                            rewrite_token, bytes_rewritten, total_bytes = dst_blob.rewrite(
-                                src_blob, token=rewrite_token
-                            )
-                            if not rewrite_token:
-                                break
-                        except AttributeError as exc:
-                            errlogger.warning(
-                                f"p{args.id}: Trying to create bucket: {exc}; attempt {i}\n")
-                            sleep(1)
-                        except TooManyRequests as exc0:
-                            errlogger.warning(
-                                f"p{args.id}: Blob: Too many requests: {repr(exc0)};  {exc0}")
-                            sleep(1)
-                        except ServiceUnavailable as exc0:
-                            errlogger.warning(
-                                f"p{args.id}: Blob: Service unavailable: {repr(exc0)};  {exc0}")
-                            sleep(1)
-                    successlogger.info(f'{blob_id}')
-                    break
-                except Exception as exc1:
+                    rewrite_token, bytes_rewritten, total_bytes = dst_blob.rewrite(
+                        src_blob, token=rewrite_token
+                    )
+                    if not rewrite_token:
+                        successlogger.info(f'{blob_id}')
+                        break
+                except AttributeError as exc:
                     errlogger.warning(
-                        f"p{args.id}: Blob: {uids[args.src_bucket]}/{uids['src_name']}, attempt: {attempt};  {exc1}")
+                        f"p{args.id}: Trying to create bucket: {exc}; attempt {i}\n")
+                    sleep(1)
+                except TooManyRequests as exc0:
+                    errlogger.warning(
+                        f"p{args.id}: Blob: Too many requests: {repr(exc0)};  {exc0}")
+                    sleep(1)
+                except ServiceUnavailable as exc0:
+                    errlogger.warning(
+                        f"p{args.id}: Blob: Service unavailable: {repr(exc0)};  {exc0}")
+                    sleep(1)
+                except NotFound as exc:
+                    errlogger.error(
+                        f"p{args.id}: Blob: Source blob {row['bucket']}/{blob_id} not found")
+                    break
+
+                    break
             done += 1
         progresslogger.info(f"p{args.id}: {done + n}of{len(uids) + n}")
     except Exception as exc2:
@@ -192,9 +192,9 @@ def populate_staging_bucket(args):
     WITH alls AS (
         SELECT
           CONCAT(aj.se_uuid, '/', aj.i_uuid, '.dcm') blob_id,
-        # If this instance is new in this version and we 
+        # If this series is new/revised in this version and we 
         # have not merged new instances into dev buckets
-        if(i_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+        if(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
             # We use the premerge url prefix
             CONCAT('idc_v', {settings.CURRENT_VERSION}, 
                 '_',
@@ -270,9 +270,9 @@ def populate_bucket(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--client', default=storage.Client())
-    parser.add_argument('--processes', default=96)
+    parser.add_argument('--processes', default=1)
     parser.add_argument('--batch', default=1000)
-    parser.add_argument('--dones_table_id', default='idc-dev-etl.whc_dev.step3a_dones', help='BQ table from which to import dones')
+    parser.add_argument('--dones_table_id', default='idc-dev-etl.whc_dev.step1_dones', help='BQ table from which to import dones')
     parser.add_argument('--log_dir', default=settings.LOG_DIR)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--merged', default=False, help='True if premerge buckets have been merged')

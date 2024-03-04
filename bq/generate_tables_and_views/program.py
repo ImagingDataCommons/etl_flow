@@ -21,7 +21,7 @@ from utilities.tcia_helpers import get_all_tcia_metadata
 from google.cloud import bigquery
 
 SCHEMA = [
-    bigquery.SchemaField('collection_name', 'STRING', mode='NULLABLE', description='Collection name'),
+    bigquery.SchemaField('collection_id', 'STRING', mode='NULLABLE', description='Collection id'),
     bigquery.SchemaField('program', 'STRING', mode='NULLABLE', description='Program name')]
 
 
@@ -29,7 +29,7 @@ def gen_table(args):
     # Get a list of the program of each IDC sourced collectiuon
     client = bigquery.Client()
     query = f'''
-    SELECT REPLACE(REPLACE(LOWER(collection_name), '-', '_'), ' ','_') AS collection_id, program
+    SELECT collection_id, program
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_metadata_idc_source`'''
     idc_programs = [row.values() for row in client.query(query)]
 
@@ -40,7 +40,7 @@ def gen_table(args):
 
     all_programs = idc_programs
     all_programs.extend(tcia_programs)
-    df = pd.DataFrame(all_programs, columns=['collection_name', 'program'])
+    df = pd.DataFrame(all_programs, columns=['collection_id', 'program'])
 
     # Define the BigQuery table reference
     table_ref = client.dataset(args.bq_dataset_id, project=args.project).table(args.table_id)

@@ -31,7 +31,7 @@ from gcs.validate_buckets.validate_bucket_mp import check_all_instances_mp
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=f'{settings.CURRENT_VERSION}')
-    parser.add_argument('--processes', default=1)
+    parser.add_argument('--processes', default=64)
     parser.add_argument('--bucket', default='public-datasets-idc', help='Bucket to be validated')
     parser.add_argument('--dev_or_pub', default = 'pub', help='Validating a dev or pub bucket')
     parser.add_argument('--premerge', default=False, help='True when performing prior to merging premerge  buckets')

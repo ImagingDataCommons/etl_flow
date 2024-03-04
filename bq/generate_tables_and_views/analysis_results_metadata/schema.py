@@ -40,9 +40,9 @@ analysis_results_metadata_schema = [
     bigquery.SchemaField('source_doi','STRING', mode='NULLABLE', description='DOI that can be resolved at doi.org to a wiki page'),
     bigquery.SchemaField('source_url','STRING', mode='NULLABLE', description='URL of a wiki page'),
     bigquery.SchemaField('CancerTypes','STRING', mode='NULLABLE', description='Type(s) of cancer analyzed'),
-    bigquery.SchemaField('CancerLocations', 'STRING', mode='NULLABLE', description='Body location that was analyzed'),
+    bigquery.SchemaField('TumorLocations', 'STRING', mode='NULLABLE', description='Body location that was analyzed'),
     bigquery.SchemaField('Subjects', 'INTEGER', mode='NULLABLE', description='Number of subjects whose data was analyzed'),
-    bigquery.SchemaField('Collections', 'STRING', mode='NULLABLE', description='idc_webapp_collection_ids of original data collections analyzed'),
+    bigquery.SchemaField('Collections', 'STRING', mode='NULLABLE', description='collection_names of original data collections analyzed'),
     bigquery.SchemaField('AnalysisArtifacts', 'STRING', mode='NULLABLE', description='Types of analysis artifacts produced'),
     bigquery.SchemaField('Updated', 'DATE', mode='NULLABLE', description='Most recent update reported by TCIA'),
     bigquery.SchemaField('license_url', 'STRING', mode='NULLABLE', description='URL of license of this analysis result'),
@@ -54,5 +54,7 @@ analysis_results_metadata_schema = [
                          description='DEPRECATED: Duplicate of AnalysisArtifacts'),
     bigquery.SchemaField('DOI', 'STRING', mode='NULLABLE',
                          description='DEPRECATED: Duplicate of source_doi'),
+    bigquery.SchemaField('CancerType', 'STRING', mode='NULLABLE', description='DEPRECATED: Duplicate of CancerTypes'),
+    bigquery.SchemaField('Location', 'STRING', mode='NULLABLE', description='DEPRECATED: Duplicate of PrimarySiteLocations'),
 
 ]

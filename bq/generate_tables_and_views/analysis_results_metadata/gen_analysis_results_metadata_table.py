@@ -74,7 +74,8 @@ def get_descriptions(client,args):
 
 def get_idc_sourced_analysis_metadata(client):
     query = f"""
-    SELECT DISTINCT ID, Title, Access, DOI as source_doi, CancerType as CancerTypes, Location as CancerLocations, AnalysisArtifacts, Updated 
+--     SELECT DISTINCT ID, Title, Access, DOI as source_doi, CancerType as CancerTypes, Location as CancerLocations, AnalysisArtifacts, Updated 
+    SELECT DISTINCT ID, Title, Access, source_doi, CancerType as CancerTypes, Location as TumorLocations, AnalysisArtifacts, Updated 
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_metadata_idc_source`
     """
     results = [dict(row) for row in client.query(query).result()]
@@ -82,7 +83,7 @@ def get_idc_sourced_analysis_metadata(client):
     return metadata
 
 
-# Get a list of subjects per source DOI
+# Get a list of subjects per source_doi
 def count_subjects(client):
     query = f"""
 SELECT source_doi, COUNT (DISTINCT submitter_case_id) cnt
@@ -104,7 +105,7 @@ def get_tcia_sourced_analysis_metadata(BQ_client):
             Access = ar['result_page_accessibility'],
             source_doi = ar['result_doi'],
             CancerTypes = ', '.join(ar['cancer_types']) if ar['cancer_types'] else "" ,
-            CancerLocations = ', '.join(ar['cancer_locations']) if ar['cancer_locations'] else "",
+            TumorLocations = ', '.join(ar['cancer_locations']) if ar['cancer_locations'] else "",
             AnalysisArtifacts = ', '.join(ar['supporting_data']) if ar['supporting_data'] else "",
             Updated = ar['date_updated']
         )
@@ -142,6 +143,8 @@ def build_metadata(args, BQ_client):
             analysis_data['Description'] = descriptions[analysis_data['ID']]
             analysis_data['AnalysisArtifactsonTCIA'] = analysis_data['AnalysisArtifacts']
             analysis_data['DOI'] = analysis_data['source_doi']
+            analysis_data['CancerType'] = analysis_data['CancerTypes']
+            analysis_data['Location'] = analysis_data['TumorLocations']
             rows.append(json.dumps(analysis_data))
     metadata = '\n'.join(rows)
     return metadata

@@ -128,7 +128,7 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
         idc_hashes = study.hashes
 
         # Get the hash from each source that is not skipped
-        # The hash of a source is "" if the source is skipped, or the source that does not have
+        # The hash of a source is "" if the source is skipped, or the source does not have
         # the object
         src_hashes = all_sources.src_study_hashes(collection.collection_id, study.study_instance_uid, skipped)
         # A source is revised the idc hashes[source] and the source hash differ and the source is not skipped
