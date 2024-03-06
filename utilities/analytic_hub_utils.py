@@ -101,9 +101,7 @@ def get_listing(listing):
         "Authorization": f"Bearer {token}" }
 
     result =  requests.get(url, headers=headers)
-    response = result.json()
-    if result.status_code != 200:
-        raise RuntimeError('In get_url(): status_code=%s; url: %s', result.status_code, url)
+    return(result.json())
     return (response)
 
 
@@ -152,16 +150,8 @@ def create_listing(args):
 
     headers = {
         "Authorization": f"Bearer {get_token()}" }
-    try:
-        result =  requests.post(url, data=json.dumps(data), headers=headers)
-        if result.status_code != 200:
-            raise RuntimeError('In get_url(): status_code=%s; url: %s', result.status_code, url)
-        response = result.json()
-        print(response)
-    except Exception as e:
-        print(f'Listing creation failed: {e}')
-        raise e
-    return (response)
+    result =  requests.post(url, data=json.dumps(data), headers=headers)
+    return result.json()
 
 def patch_listing(args):
     # url = 'https://analyticshub.googleapis.com/v1/projects/nci-idc-bigquery-data/locations/US/dataExchanges?dataExchangeId=nci_idc_bigquery_data_exchange'
@@ -229,7 +219,7 @@ if __name__ == "__main__":
     version = settings.CURRENT_VERSION
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--listing_id', default="idc_v17")
+    parser.add_argument('--listing_id', default="idc_v18_current")
     parser.add_argument('--display_name', default=f"NCI Imaging Data Commons BigQuery Metadata Catalog v{settings.CURRENT_VERSION}: Imaging Metadata")
     parser.add_argument('--description', default="IDC BQ metadata from the V17 IDC release")
     parser.add_argument('--dataset', default="idc_v17")
@@ -237,10 +227,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.description = '<p>NCI Imaging Data Commons (IDC) is a cloud-based environment containing publicly available cancer imaging data co-located with analysis and exploration tools and resources. IDC is a node within the broader NCI <a target="_blank" rel="noopener noreferrer" href="https://datacommons.cancer.gov/" sandboxuid="0" extsuid="0">Cancer Research Data Commons (CRDC) (https://datacommons.cancer.gov) infrastructure that provides secure access to a large, comprehensive, and expanding collection of cancer research data. IDC curates and shares imaging data in DICOM format, available for download from public Google Cloud Storage buckets. This dataset provides the searchable index of the metadata accompanying the shared DICOM files. You can read about IDC in this publication.</p>'
 
-    l = get_listing('idc_v17_clinical')
-    l = delete_listing('idc_v17_clinical')
+    l = get_listing('idc_v18_current')
+    # l = delete_listing('idc_v17_clinical')
     # p = get_exchange()
     l = list_exchanges()
     # t = get_token()
     # r = create_exchange()
+    pass
 

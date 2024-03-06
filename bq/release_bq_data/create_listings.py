@@ -18,10 +18,11 @@
 
 import settings
 import argparse
-from utilities.analytic_hub_utils import create_listing
+from utilities.analytic_hub_utils import create_listing, get_listing
 from utilities.bq_helpers import create_BQ_dataset
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
+from utilities.logging_config import successlogger, errlogger
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -47,21 +48,39 @@ Terms of Use: If you use this dataset, please acknowledge IDC as described in th
     args.display_name = f"NCI Imaging Data Commons Imaging Metadata Catalog v{settings.CURRENT_VERSION}"
     args.dataset = f"projects/{settings.AH_PROJECT}/datasets/idc_v{settings.CURRENT_VERSION}"
     try:
-        dst_dataset = client.get_dataset(args.dataset)
+        client.get_dataset(f"{settings.AH_PROJECT}.idc_v{settings.CURRENT_VERSION}")
     except NotFound:
-        breakpoint()
         description = f"Imaging Data Commons (IDC) - The Cancer Imaging Archive (TCIA) v{settings.CURRENT_VERSION} data"
-        dst_dataset = create_BQ_dataset(client, args.dataset, description)
-    listing = create_listing(args)
+        try:
+            create_BQ_dataset(client, f"idc_v{settings.CURRENT_VERSION}", description)
+        except Exception as exc:
+            print(f"Failed to create datset idc_v{settings.CURRENT_VERSION}: {exc}")
+            exit
+    try:
+        get_listing(args.listing_id)
+    except:
+        try:
+            response = create_listing(args)
+            successlogger.info(f'Created listing {response}')
+        except Exception as exc:
+            errlogger.error(f'Failed to create AH listing; {exc}')
 
     # Create idc_vX_clinical listing
     args.listing_id = f"idc_v{settings.CURRENT_VERSION}_clinical"
     args.display_name = f"NCI Imaging Data Commons Clinical Metadata Catalog v{settings.CURRENT_VERSION}"
     args.dataset = f"projects/{settings.AH_PROJECT}/datasets/idc_v{settings.CURRENT_VERSION}_clinical"
+
     try:
-        dst_dataset = client.get_dataset(args.dataset)
+        client.get_dataset(f"{settings.AH_PROJECT}.idc_v{settings.CURRENT_VERSION}_clinical")
     except NotFound:
-        breakpoint()
-        description = f"Imaging Data Commons (IDC) - The Cancer Imaging Archive (TCIA) v{settings.CURRENT_VERSION} clinical data"
-        dst_dataset = create_BQ_dataset(client, args.dataset, description)
-    listing = create_listing(args)
+        description = f"Imaging Data Commons (IDC) - The Cancer Imaging Archive (TCIA) v{settings.CURRENT_VERSION_}_clinical data"
+        try:
+            create_BQ_dataset(client, f"idc_v{settings.CURRENT_VERSION}_clinical", description)
+        except Exception as exc:
+            print(f"Failed to create datset idc_v{settings.CURRENT_VERSION_}_clinical: {exc}")
+            exit
+    try:
+        response = create_listing(args)
+        successlogger.info(f'Created listing {response}')
+    except Exception as exc:
+        errlogger.error(f'Failed to create AH listing; {exc}')
