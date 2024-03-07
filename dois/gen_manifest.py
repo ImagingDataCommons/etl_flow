@@ -14,8 +14,15 @@
 # limitations under the License.
 #
 
-# Generate the manifest for a single (sub)collection version
+# Generate various manifests for a specified IDC sourced collection
+# or analysis result. The instances or series included are identified
+# by their source_doi.
+## NOTE: Zenodo DOIs are versioned and we associated the version specific
+## DOI with data when it is added or revised. It seems possible that objects
+## in an IDC-version of a collection or result could have different DOI versions.
+## We need to be careful to deal with this.
 # The resulting manifest is copied to GCS
+
 
 import argparse
 import sys
@@ -28,20 +35,15 @@ from utilities.bq_helpers import query_BQ, export_BQ_to_GCS, delete_BQ_Table
 
 
 
-def s5cmd_manifest(args, collection_id, manifest_version, source_doi, service, url):
+def s5cmd_manifest(args, collection_id, manifest_version, source_dois, service, url):
     bq_client = bigquery.Client(project='idc-dev-etl')
     gcs_client = storage.Client(project='idc-dev-etl')
     # file_name = f"{collection_id.lower().replace('-','_').replace(' ','-')}_v{manifest_version}_{service}.s5cmd"
     file_name = f"{collection_id.lower().replace('-','_').replace(' ','-')}_{service}.s5cmd"
     query = f"""
     SELECT distinct concat('cp s3://', pub_{service}_idc_url, '/', se_uuid, '/*  .') URL
-    FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
-    JOIN `idc-dev-etl.idc_v{args.version}_dev.all_collections` ac
-    ON aj.idc_collection_id = ac.idc_collection_id
-    WHERE collection_id = '{collection_id}' 
-        AND idc_version = {manifest_version} 
-        AND source_doi = '{source_doi}'
-        AND se_sources.idc=True
+    FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_current` aj
+    WHERE source_doi IN {source_dois}
     ORDER by URL
     """
 
@@ -54,62 +56,59 @@ f'''# To download the files in this manifest, first install s5cmd (https://githu
     manifest = header + '\n' + '\n'.join(series)
 
     bucket = gcs_client.bucket(args.manifest_bucket)
-    blob = bucket.blob(file_name)
+    blob = bucket.blob(f"{collection_id.lower().replace('-','_').replace(' ','-')}/v{args.manifest_version}/{file_name}")
     blob.upload_from_string(manifest)
 
     return
 
 
-def dcf_manifest(args, collection_id, manifest_version, source_doi, service, url):
+def dcf_manifest(args, collection_id, manifest_version, source_dois, service, url):
     bq_client = bigquery.Client(project='idc-dev-etl')
     gcs_client = storage.Client(project='idc-dev-etl')
     # file_name = f"{collection_id.lower().replace('-','_').replace(' ','-')}_v{manifest_version}_{service}.csv"
     file_name = f"{collection_id.lower().replace('-','_').replace(' ','-')}_{service}.csv"
     query = f"""
     SELECT distinct concat('dg.4DFC/',i_uuid) drs_uri
-    FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
-    JOIN `idc-dev-etl.idc_v{args.version}_dev.all_collections` ac
-    ON aj.idc_collection_id = ac.idc_collection_id
-    WHERE collection_id = '{collection_id}' 
-        AND idc_version = {manifest_version} 
-        AND source_doi = '{source_doi}'
-        AND se_sources.idc=True
+    FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_current` aj
+    WHERE source_doi IN {source_dois}
     ORDER by drs_uri
     """
 
     header = \
-f'''# To obtain GCS and AWS URLs of the instances in this series, 
+f'''# To obtain GCS and AWS URLs of the instances in this manifest, 
 # resolve each drs_uri in this manifest, e.g.
 # $ curl {url}<drs_uri>. 
 # The GCS and AWS URL of the instance are found in the 
-# 'access_methods' array of the returned JSON DrsObject'''
+# 'access_methods' array of the returned JSON GA4GH DrsObject
+# See https://ga4gh.github.io/data-repository-service-schemas/
+# For more information on the GA4GH DRS'''
 
     drs_uris = [row.drs_uri for row in bq_client.query(query).result()]
     manifest = header + '\n' + '\n'.join(drs_uris)
 
     bucket = gcs_client.bucket(args.manifest_bucket)
-    blob = bucket.blob(file_name)
+    blob = bucket.blob(f"{collection_id.lower().replace('-','_').replace(' ','-')}/v{args.manifest_version}/{file_name}")
     blob.upload_from_string(manifest)
 
     return
 
 
 
-if __name__ == '__main__':
-    parser =argparse.ArgumentParser()
-    # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version for which to build the table')
-    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version for which to build the table')
-    parser.add_argument('--temp_table_bqdataset', default=f'whc_dev')
-    parser.add_argument('--temp_table', default=f'doi_subcollection')
-    parser.add_argument('--manifest_bucket', default='doi_manifests')
-    parser.add_argument('--collection_id', default='RMS-Mutation-Prediction')
-    parser.add_argument('--manifest_version', default=settings.CURRENT_VERSION, help='IDC revision of the collection whose manifest is to be generated')
-    parser.add_argument('--source_doi', default='10.5281/zenodo.8225131', help='DOI of series to be included in the manifest')
-
-    args = parser.parse_args()
-    print("{}".format(args), file=sys.stdout)
-
-    dcf_manifest(args, args.collection_id, args.manifest_version, args.source_doi, 'dcf', 'https://nci-crdc.datacommons.io/ga4gh/drs/v1/objects/')
-    s5cmd_manifest(args, args.collection_id, args.manifest_version, args.source_doi, 'gcs', 'https://storage.googleapis.com')
-    s5cmd_manifest(args, args.collection_id, args.manifest_version, args.source_doi, 'aws', 'https://s3.amazonaws.com')
-
+# if __name__ == '__main__':
+#     parser =argparse.ArgumentParser()
+#     # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version for which to build the table')
+#     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version for which to build the table')
+#     parser.add_argument('--temp_table_bqdataset', default=f'whc_dev')
+#     parser.add_argument('--temp_table', default=f'doi_subcollection')
+#     parser.add_argument('--manifest_bucket', default='doi_manifests')
+#     parser.add_argument('--collection_id', default='rms_mutation_prediction_expert_annotations')
+#     parser.add_argument('--manifest_version', default=settings.CURRENT_VERSION, help='IDC revision of the collection whose manifest is to be generated')
+#     parser.add_argument('--source_dois', default=('10.5281/zenodo.10462857', '10.5281/zenodo.10462858'), help="DOIs of series to be included in the manifest")
+#
+#     args = parser.parse_args()
+#     print("{}".format(args), file=sys.stdout)
+#
+#     dcf_manifest(args, args.collection_id, args.manifest_version, args.source_dois, 'dcf', 'https://nci-crdc.datacommons.io/ga4gh/drs/v1/objects/')
+#     s5cmd_manifest(args, args.collection_id, args.manifest_version, args.source_dois, 'gcs', 'https://storage.googleapis.com')
+#     s5cmd_manifest(args, args.collection_id, args.manifest_version, args.source_dois, 'aws', 'https://s3.amazonaws.com')
+#
