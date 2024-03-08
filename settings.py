@@ -23,6 +23,7 @@ CURRENT_VERSION=18
 PREVIOUS_VERSION=17
 
 SECURE_LOCAL_PATH = os.environ.get('SECURE_LOCAL_PATH', '')
+LOG_PATH = os.environ.get('LOG_PATH','/mnt/disks/idc-etl/logs')
 
 if not exists(join(dirname(__file__), SECURE_LOCAL_PATH, '.env.idc-dev-etl')):
     print("[ERROR] Couldn't open .env.idc-dev-etl file expected at {}!".format(
@@ -90,7 +91,7 @@ TCIA_PASSWORD = os.environ.get('TCIA_PASSWORD')
 TCIA_CLIENT_ID = os.environ.get('TCIA_CLIENT_ID')
 TCIA_CLIENT_SECRET= os.environ.get('TCIA_CLIENT_SECRET')
 
-LOGGING_BASE = f'/mnt/disks/idc-etl/logs/v{CURRENT_VERSION}'
+LOGGING_BASE = f'{LOG_PATH}/v{CURRENT_VERSION}'
 BASE_NAME = sys.argv[0].rsplit('/',1)[-1].rsplit('.',1)[0]
 LOG_DIR = f'{LOGGING_BASE}/{BASE_NAME}'
 

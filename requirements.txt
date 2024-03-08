@@ -26,9 +26,9 @@ google-cloud-storage
 google-crc32c
 google-resumable-media
 googleapis-common-protos
-psycopg2
+#psycopg2
 pydicom
 python-dotenv
 python_settings
-sqlalchemy==1.4.50
-sqlalchemy_utils
+#sqlalchemy==1.4.50
+#sqlalchemy_utils
