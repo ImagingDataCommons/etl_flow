@@ -169,7 +169,7 @@ def get_original_collections_metadata_tcia_source(client, args, idc_collections)
                     if isinstance(collection_metadata['cancer_locations'], list) else '',
                 # idc_webapp_collection_id=collection_id,
                 # tcia_api_collection_id=collection_name,
-                # tcia_wiki_collection_id=collection_metadata['collection_browse_title']
+                tcia_wiki_collection_id=collection_metadata['collection_short_title']
             )
         except Exception as exc:
             print(exc)

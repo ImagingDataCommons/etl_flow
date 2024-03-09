@@ -52,4 +52,6 @@ data_collections_metadata_schema = [
     bigquery.SchemaField('CancerType', 'STRING', mode='NULLABLE', description='DEPRECATED: Duplicate of CancerTypes '),
     bigquery.SchemaField('Location', 'STRING', mode='NULLABLE',
                          description='DEPRECATED: Duplicate of TumorLocations'),
+    bigquery.SchemaField('tcia_wiki_collection_id', 'STRING', mode='NULLABLE',
+                         description='Collection ID as on TCIA wiki page'),
 ]
