@@ -14,7 +14,7 @@ jobs:
           pkg-manager: pip
       - run:
           name: Run tests
-          command: python -m temp/helloworld.py
+          command: python -m temp.helloworld.py
 #      - import_db
 #      - create_bq_datasets
 #      - detect_tcia_collection_name_changes
