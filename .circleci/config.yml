@@ -7,6 +7,7 @@ jobs:
 #    docker:
 #      - image:
 #          - image: cimg/python:3.8.14
+    working_directory: ~/etl_flow
     executor: python/default
     steps:
       - checkout
@@ -14,7 +15,7 @@ jobs:
           pkg-manager: pip
       - run:
           name: Run tests
-          command: python -m temp.helloworld.py
+          command: python -m temp/helloworld.py
 #      - import_db
 #      - create_bq_datasets
 #      - detect_tcia_collection_name_changes
