@@ -1,5 +1,5 @@
 {
-  "description": "dicom_all is a join of dicom_metadata with selected columns from auxiliary_metadata and original_collections_metadata; see source code for the underlying query at https://github.com/ImagingDataCommons/etl_flow/blob/master/bq/derived_table_creation/BQ_Table_Building/derived_data_views/sql/dicom_all.sql",
+  "description": "dicom_all is a join of dicom_metadata with selected columns from auxiliary_metadata and original_collections_metadata; see source code for the underlying query at https://github.com/ImagingDataCommons/etl_flow/blob/master/bq/generate_tables_and_views/derived_tables/BQ_Table_Building/derived_data_views/sql/dicom_all.sql",
   "friendlyName": "dicom_all",
   "labels": {
     "tbd_key_1": "value_1",
@@ -218,6 +218,12 @@
         "type": "STRING"
       },
       {
+        "description": "If this instance is an analysis result, then the ID of the analysis result, else NULL",
+        "mode": "NULLABLE",
+        "name": "analysis_result_id",
+        "type": "STRING"
+      },
+      {
         "description": "The URL to the page describing the license of the collection that contains this instance",
         "mode": "NULLABLE",
         "name": "license_url",
@@ -236,31 +242,31 @@
         "type": "STRING"
       },
       {
-        "description": "The ID of the collection containing this instance as expected by the TCIA API",
+        "description": "DEPRECATED: Duplicate of collection_name",
         "mode": "NULLABLE",
         "name": "tcia_api_collection_id",
         "type": "STRING"
       },
       {
-        "description": "The ID of the collection containing this instance as expected by the IDC web app and API.",
+        "description": "DEPRECATED: Duplicate of collection_id",
         "mode": "NULLABLE",
         "name": "idc_webapp_collection_id",
         "type": "STRING"
       },
       {
-        "description": "TCIA assigned tumor location of the collection containing this instance",
+        "description": "DEPRECATED: Duplicate of collection_tumorLocation",
         "mode": "NULLABLE",
         "name": "tcia_tumorLocation",
         "type": "STRING"
       },
       {
-        "description": "TCIA assigned species of the collection containing this instance",
+        "description": "DEPRECATED: Duplicate of collection_species",
         "mode": "NULLABLE",
         "name": "tcia_species",
         "type": "STRING"
       },
       {
-        "description": "TCIA assigned cancer type of the collection containing this instance",
+        "description": "DEPRECATED: Duplicate of collection_cancerType",
         "mode": "NULLABLE",
         "name": "tcia_cancerType",
         "type": "STRING"

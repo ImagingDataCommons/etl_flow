@@ -19,8 +19,8 @@ import sys
 from os.path import join, dirname, exists
 from dotenv import load_dotenv
 
-CURRENT_VERSION=17
-PREVIOUS_VERSION=16
+CURRENT_VERSION=18
+PREVIOUS_VERSION=17
 
 SECURE_LOCAL_PATH = os.environ.get('SECURE_LOCAL_PATH', '')
 
@@ -97,7 +97,5 @@ LOG_DIR = f'{LOGGING_BASE}/{BASE_NAME}'
 AH_PROJECT = "nci-idc-bigquery-data" # Analytics Hub project
 AH_EXCHANGE_ID = "nci_idc_bigquery_data_exchange"    # ID of the Analytics Hub exchange
 AH_EXCHANGE_LOCATION = "US"
-
-
 
 

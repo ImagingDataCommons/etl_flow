@@ -113,9 +113,9 @@ class TCIA(Source):
         try:
             result = self.get_hash({'Collection':collection_id, 'PatientID': submitter_case_id})
         except Exception as exc:
-            errlogger.error('Exception %s in src_patient_hash', exc)
+            errlogger.exception('Exception %s in src_patient_hash', exc)
             # raise Exception('Exception %s in src_patient_hash', exc)
-            return -1
+            raise Exception('Exception %s in src_patient_hash', exc)
         if result:
             return result.content.decode()
         else:

@@ -128,7 +128,7 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
         idc_hashes = study.hashes
 
         # Get the hash from each source that is not skipped
-        # The hash of a source is "" if the source is skipped, or the source that does not have
+        # The hash of a source is "" if the source is skipped, or the source does not have
         # the object
         src_hashes = all_sources.src_study_hashes(collection.collection_id, study.study_instance_uid, skipped)
         # A source is revised the idc hashes[source] and the source hash differ and the source is not skipped
@@ -149,7 +149,7 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
             rev_study.sources = studies[study.study_instance_uid]
             rev_study.rev_idc_version = settings.CURRENT_VERSION
             patient.studies.append(rev_study)
-            progresslogger.debug  ('    p%s: Study %s is revised',  args.pid, rev_study.study_instance_uid)
+            progresslogger.info  ('    p%s: Study %s is revised',  args.pid, rev_study.study_instance_uid)
 
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised patient
@@ -164,7 +164,7 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
             # Shouldn't be needed if the previous version is done
             study.done = True
             study.expanded = True
-            progresslogger.debug  ('    p%s: Study %s unchanged',  args.pid, study.study_instance_uid)
+            progresslogger.info  ('    p%s: Study %s unchanged',  args.pid, study.study_instance_uid)
 
     for study in retired_objects:
         retire_study(args, study)

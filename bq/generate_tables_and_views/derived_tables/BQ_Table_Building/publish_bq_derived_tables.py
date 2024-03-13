@@ -352,6 +352,15 @@ def main(args):
     dataset_metadata_file = params['DATASET_METADATA_FILE']
     install_list = params['INSTALL_LIST']
 
+    if args.tables:
+        new_install_list = []
+        for row in install_list:
+            for table in row:
+                if table in args.tables:
+                    new_install_list.append(row)
+                break
+        install_list = new_install_list
+
     target_client = bigquery.Client(project=target_project)
 
     #

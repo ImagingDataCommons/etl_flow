@@ -26,8 +26,8 @@ from google.cloud import bigquery, storage
 
 import settings
 from utilities.bq_helpers import load_BQ_from_json
-from original_collections_metadata.gen_original_data_collection_metadata_table import get_collection_descriptions_and_licenses
-
+# from original_collections_metadata.gen_original_data_collection_metadata_table import get_collection_descriptions_and_licenses
+from utilities.tcia_helpers import get_collection_descriptions_and_licenses
 
 def gen_table():
     bq_client = bigquery.Client(project='idc-dev-etl')

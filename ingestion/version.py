@@ -107,7 +107,7 @@ def expand_version(sess, args, all_sources, version):
         # a object's sources are computed hierarchically after
         # building all the children.
         new_collection.sources = collections[idc_collection_id]['sources']
-        new_collection.hashes = None
+        new_collection.hashes = ("","","")
         new_collection.init_idc_version=settings.CURRENT_VERSION
         new_collection.rev_idc_version=settings.CURRENT_VERSION
         new_collection.final_idc_version=0
@@ -144,7 +144,7 @@ def expand_version(sess, args, all_sources, version):
             rev_collection.done = False
             rev_collection.is_new = False
             rev_collection.expanded = False
-            rev_collection.hashes = None
+            rev_collection.hashes = ("","","")
             # The following line can probably be deleted because
             # a object's sources are computed hierarchically after
             # building all the children.

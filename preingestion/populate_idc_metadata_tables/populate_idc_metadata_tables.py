@@ -28,12 +28,17 @@ from gen_hashes import gen_hashes
 from utilities.logging_config import successlogger, errlogger, progresslogger
 from base64 import b64decode
 from python_settings import settings
+from validate_analysis_result import validate_analysis_result
+from validate_original_collection import validate_original_collection
+from ingestion.utilities.utils import md5_hasher
 
 from pydicom import dcmread
 
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, update
 from google.cloud import storage
+
+import csv
 
 def build_instance(client, args, sess, series, instance_id, hash, size, blob_name):
     try:
@@ -48,7 +53,6 @@ def build_instance(client, args, sess, series, instance_id, hash, size, blob_nam
     instance.idc_version = args.version
     instance.gcs_url = f'gs://{args.src_bucket}/{blob_name}'
     instance.hash = hash
-    instance.idc_version = args.version
     instance.excluded = False
     successlogger.info(blob_name)
 
@@ -119,8 +123,6 @@ def prebuild(args):
     client = storage.Client()
     src_bucket = storage.Bucket(client, args.src_bucket)
 
-    dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
-
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
     # sql_engine = create_engine(sql_uri, echo=True)
     sql_engine = create_engine(sql_uri)
@@ -134,7 +136,7 @@ def prebuild(args):
                     if not blob.name.endswith('DICOMDIR'):
                         with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
                             try:
-                                r = dcmread(f, stop_before_pixels=True)
+                                r = dcmread(f, specific_tags=['PatientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID'], stop_before_pixels=True)
                                 patient_id = r.PatientID
                                 study_id = r.StudyInstanceUID
                                 series_id = r.SeriesInstanceUID
@@ -151,21 +153,31 @@ def prebuild(args):
                         hash = b64decode(blob.md5_hash).hex()
                         size = blob.size
                         build_collection(client, args, sess, collection_id, patient_id, study_id, series_id, instance_id, hash, size, blob.name)
-
         sess.commit()
-        if args.gen_hashes:
-            gen_hashes(args.collection_id)
 
-        return
+    if args.validate:
+        if args.third_party:
+            if validate_analysis_result(args) == -1:
+                exit -1
+        else:
+            if validate_original_collection(args) == -1:
+                exit -1
+
+    if args.gen_hashes:
+        gen_hashes(args.collection_id)
+    return
 
 
 # if __name__ == '__main__':
 #     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 #     parser.add_argument('--version', default=settings.CURRENT_VERSION)
 #     parser.add_argument('--src_bucket', default='dac-vhm-dst', help='Bucket containing WSI instances')
+#     parser.add_argument('--metadata_table', default='', help='csv table of study, series, SOPInstanceUID, filepath')
+
 #     parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/visible_human_project', help='Directory on which to mount the bucket.\
 #                 The script will create this directory if necessary.')
 #     parser.add_argument('--subdir', default='', help="Subdirectory of mount_point at which to start walking directory")
+#     parser.add_argument('--startswith', default=[], help='Only include files whose name startswith a string in the list. If the list is empty, include all'
 #     parser.add_argument('--collection_id', default='NLM_visible_human_project', help='idc_webapp_collection id of the collection or ID of analysis result to which instances belong.')
 #     parser.add_argument('--source_doi', default='', help='Collection DOI')
 #     parser.add_argument('--source_url', default='https://www.nlm.nih.gov/research/visible/visible_human.html',\
@@ -174,6 +186,8 @@ def prebuild(args):
 #             "license_long_name": "National Library of Medicine Terms and Conditions; May 21, 2019", \
 #             "license_short_name": "National Library of Medicine Terms and Conditions; May 21, 2019"})
 #     parser.add_argument('--third_party', type=bool, default=False, help='True if from a third party analysis result')
+#     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
+#     parser.add_argument('--gen_hashes', type=bool, default=True, help='True if hashes are to be generated')
 #
 #     args = parser.parse_args()
 #     print("{}".format(args), file=sys.stdout)

@@ -92,12 +92,12 @@ def expand_collection(sess, args, all_sources, collection):
         progresslogger.info("Emptying tcia prestaging buckets")
         create_prestaging_bucket(args, args.prestaging_tcia_bucket)
         empty_bucket(args.prestaging_tcia_bucket)
-        breakpoint() # Verify that the bucket is empty
+        # breakpoint() # Verify that the bucket is empty
     if collection.revised.idc:
         progresslogger.info("Emptying idc prestaging buckets")
         create_prestaging_bucket(args, args.prestaging_idc_bucket)
         empty_bucket(args.prestaging_idc_bucket)
-        breakpoint() # Verify that the bucket is empty
+        # breakpoint() # Verify that the bucket is empty
 
     # Check for duplicates
     if len(patients) != len(set(patients)):
@@ -137,7 +137,7 @@ def expand_collection(sess, args, all_sources, collection):
         # a object's sources are computed hierarchically after
         # building all the children.
         new_patient.sources = patients[patient]
-        new_patient.hashes = None
+        new_patient.hashes = ("","","")
         new_patient.uuid = str(uuid4())
         new_patient.max_timestamp = new_patient.min_timestamp
         new_patient.init_idc_version=settings.CURRENT_VERSION
@@ -169,7 +169,7 @@ def expand_collection(sess, args, all_sources, collection):
             rev_patient.is_new = False
             rev_patient.expanded = False
             rev_patient.revised = revised
-            rev_patient.hashes = None
+            rev_patient.hashes = ("","","")
             # The following line can probably be deleted because
             # a object's sources are computed hierarchically after
             # building all the children.
@@ -199,6 +199,24 @@ def expand_collection(sess, args, all_sources, collection):
         breakpoint()
         retire_patient(args, patient)
         collection.patients.remove(patient)
+
+    new_patients = []
+    revised_patients = []
+    for patient in collection.patients:
+        if not patient.done:
+            if patient.init_idc_version == patient.rev_idc_version:
+                new_patients.append(patient.submitter_case_id)
+            else:
+                revised_patients.append(patient.submitter_case_id)
+    progresslogger.info('New patients:')
+    for patient_id in sorted(new_patients):
+        progresslogger.info(patient_id)
+    progresslogger.info('\nRevised patients:')
+    for patient_id in sorted(revised_patients):
+        progresslogger.info(patient_id)
+    progresslogger.info('\nRetired patients:')
+    for patient in retired_objects:
+        progresslogger.info(patient.patient_id)
 
     collection.expanded = True
     sess.commit()
@@ -237,19 +255,23 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
 
         num_processes = min(args.num_processes, len(collection.patients))
 
+        # Enqueue each patient in the the task queue
+        # patients = sorted(collection.patients, key=lambda patient: patient.done, reverse=True)
+        all_patients = [patient for patient in collection.patients]
+        all_patients = sorted(all_patients, key=lambda patient: patient.submitter_case_id)
+        patients = [patient for patient in collection.patients if patient.done==False]
+        patients = sorted(patients, key=lambda patient: patient.submitter_case_id)
         # Start worker processes
         lock = Lock()
-        for process in range(num_processes):
+        for process in range(min(num_processes, len(patients))):
             args.pid = process+1
             processes.append(
                 Process(target=worker, args=(task_queue, done_queue, args, args.access, lock )))
             processes[-1].start()
 
-        # Enqueue each patient in the the task queue
         args.pid = 0
-        patients = sorted(collection.patients, key=lambda patient: patient.done, reverse=True)
         for patient in patients:
-            patient_index = f'{collection.patients.index(patient) + 1} of {len(collection.patients)}'
+            patient_index = f'{all_patients.index(patient) + 1} of {len(all_patients)}'
             if not patient.done:
                 task_queue.put((patient_index, collection.collection_id, patient.submitter_case_id))
                 enqueued_patients.append(patient.submitter_case_id)

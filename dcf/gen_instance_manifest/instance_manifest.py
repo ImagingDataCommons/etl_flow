@@ -53,7 +53,7 @@ def gen_instance_manifest(args):
         ts
       ON
         1=1
-      WHERE i_rev_idc_version=17
+      WHERE i_rev_idc_version = {args.version}
     )
     SELECT
       CONCAT('dg.4DFC/',i_uuid) GUID,

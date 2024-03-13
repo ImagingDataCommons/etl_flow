@@ -19,7 +19,7 @@ import time
 from datetime import datetime, timedelta
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from uuid import uuid4
-from idc.models import Study, Series
+from idc.models import Study, Series, instance_source
 from ingestion.utilities.utils import accum_sources, get_merkle_hash, is_skipped
 from ingestion.series import clone_series, build_series, retire_series
 
@@ -103,7 +103,7 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
         new_series.series_instances = 0
         new_series.revised = seriess[series]
         new_series.sources = seriess[series]
-        new_series.hashes = None
+        new_series.hashes = ("","","")
         new_series.max_timestamp = new_series.min_timestamp
         new_series.init_idc_version=settings.CURRENT_VERSION
         new_series.rev_idc_version=settings.CURRENT_VERSION
@@ -134,7 +134,7 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
             rev_series.is_new = False
             rev_series.expanded = False
             rev_series.revised = revised
-            rev_series.hashes = None
+            rev_series.hashes = ("","","")
             rev_series.sources = seriess[series.series_instance_uid]
             rev_series.rev_idc_version = settings.CURRENT_VERSION
             study.seriess.append(rev_series)
@@ -177,7 +177,9 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
             series_index = f'{study.seriess.index(series) + 1} of {len(study.seriess)}'
             if not series.done:
                 build_series(sess, args, all_sources, series_index, version, collection, patient, study, series)
-                if (series.hashes.tcia == "" and series.sources.tcia==True) or (series.hashes.idc == "" and series.sources.idc==True) :
+                # Verify that source is consistent
+                if (series.hashes[instance_source.tcia.value] == "" and series.sources.tcia == True) or \
+                        (series.hashes[instance_source.idc.value] == "" and series.sources.idc == True):
                     breakpoint()
             else:
                 successlogger.info("      p%s: Series %s, %s, previously built", args.pid, series.series_instance_uid, series_index)

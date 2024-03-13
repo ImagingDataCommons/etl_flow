@@ -79,7 +79,7 @@ auxiliary_metadata_schema = [
     bigquery.SchemaField('license_url', 'STRING', mode='NULLABLE', description='URL of license of this analysis result'),
     bigquery.SchemaField('license_long_name', 'STRING', mode='NULLABLE', description='Long name of license of this analysis result'),
     bigquery.SchemaField('license_short_name', 'STRING', mode='NULLABLE', description='Short name of license of this analysis result'),
-    bigquery.SchemaField('tcia_api_collection_id', 'STRING', mode='NULLABLE', description='DEPRECATED: Collection name as used externally by IDC webapp'),
-    bigquery.SchemaField('idc_webapp_collection_id', 'STRING', mode='NULLABLE', description='DEPRECATED: Collection ID as used internally by IDC webapp and accepted by the IDC API'),
+    # bigquery.SchemaField('tcia_api_collection_id', 'STRING', mode='NULLABLE', description='DEPRECATED: Collection name as used externally by IDC webapp'),
+    # bigquery.SchemaField('idc_webapp_collection_id', 'STRING', mode='NULLABLE', description='DEPRECATED: Collection ID as used internally by IDC webapp and accepted by the IDC API'),
 
 ]

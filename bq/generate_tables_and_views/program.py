@@ -13,10 +13,58 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import pandas as pd
+
 import settings
 import argparse
-from utils.google_sheet_to_bq_table import load_spreadsheet
-from utils.bq_table_to_cloudsql import export_table
+from utilities.tcia_helpers import get_all_tcia_metadata
+from google.cloud import bigquery
+
+SCHEMA = [
+    bigquery.SchemaField('collection_id', 'STRING', mode='NULLABLE', description='Collection id'),
+    bigquery.SchemaField('program', 'STRING', mode='NULLABLE', description='Program name')]
+
+
+def gen_table(args):
+    # Get a list of the program of each IDC sourced collectiuon
+    client = bigquery.Client()
+    query = f'''
+    SELECT collection_id, program
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_metadata_idc_source`'''
+    idc_programs = [row.values() for row in client.query(query)]
+
+    # Get a list of the program of each TCIA sourced collection
+    tcia_programs = [(row['collection_short_title'].lower().replace('-','_').replace(' ','_'), row['program'][0]) for row in \
+        get_all_tcia_metadata(type="collections", query_param="&_fields=collection_short_title,program")]
+
+
+    all_programs = idc_programs
+    all_programs.extend(tcia_programs)
+    df = pd.DataFrame(all_programs, columns=['collection_id', 'program'])
+
+    # Define the BigQuery table reference
+    table_ref = client.dataset(args.bq_dataset_id, project=args.project).table(args.table_id)
+
+    # Create the BigQuery table schema based on the DataFrame columns
+    # We assume all columns are STRINGs
+    schema = []
+    for column in df.columns:
+        schema.append(bigquery.SchemaField(column, 'STRING'))
+
+    # Create the BigQuery table if it doesn't exist
+    try:
+        client.get_table(table_ref)
+    except:
+        table = bigquery.Table(table_ref, schema=SCHEMA)
+        client.create_table(table)
+
+    # Write the DataFrame data to BigQuery
+    job_config = bigquery.LoadJobConfig(schema=schema, write_disposition='WRITE_TRUNCATE')
+    job = client.load_table_from_dataframe(df, table_ref, job_config=job_config)
+    job.result()
+
+    print('Data imported successfully!')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -31,5 +79,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print('args: {}'.format(args))
 
-    load_spreadsheet(args)
+    gen_table(args)
     # export_table(args)

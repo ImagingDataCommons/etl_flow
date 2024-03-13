@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Generate the original_collections_descriptions table in BQ and PSQL from a
+# Generate the original_collections_descriptions table in BQ, from a
 # spreadsheet in Google Drive
 import settings
 import argparse
