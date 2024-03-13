@@ -22,12 +22,12 @@ jobs:
 #      - revise_analysis_results_metadata_idc_source_table
 #      - update_analysis_results_descriptions_table
 
-  preingestion:
-    docker:
-      - image:
-          - image: cimg/python:3.8.14
-    steps:
-      -update_idc_xxx_table_hierarchy
+#  preingestion:
+#    docker:
+#      - image:
+#          - image: cimg/python:3.8.14
+#    steps:
+#      -update_idc_xxx_table_hierarchy
 workflows:
   flow:
     jobs:
