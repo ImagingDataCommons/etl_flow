@@ -16,7 +16,7 @@ jobs:
       - run:
           name: Run tests
           command: |
-            python -m temp.helloworld.py
+            python -m temp.helloworld
             ls -al
 #      - import_db
 #      - create_bq_datasets
