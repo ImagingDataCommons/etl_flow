@@ -1,12 +1,23 @@
 version: 2.1
 orbs:
   python: circleci/python@2.1.1
+commands:
+  install_cloud_sql:
+    steps:
+      - run: |
+          echo $GCLOUD_SERVICE_KEY | gcloud auth activate-service-account --key-file=-
+          gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+          gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
 
 jobs:
   prelims:
-#    docker:
-#      - image:
-#          - image: cimg/python:3.8.14
+    docker:
+      - image:
+          - image: google/cloud_sdk
+            auth:
+              username: $ETL_FLOW_CLOUD_SDK_USER
+              password: $ETL_FLOW_CLOUD_SDK_PASSWORD
+
     working_directory: ~/etl_flow
     executor: python/default
     steps:
