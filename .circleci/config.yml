@@ -18,6 +18,7 @@ jobs:
       steps:
         - gcp-cli/setup:
             service_account_email: IDC_ETL_PROCESSING_SA
+            service_account_key: IDC_ETL_PROCESSING_SERVICE_KEY
         - run:
             name: Install Cloud SQL Proxy
             command: |
