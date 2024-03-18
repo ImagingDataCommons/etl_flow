@@ -15,27 +15,27 @@ jobs:
 #          service-account-key: $GCP_SA_KEY
     use-gcp:
       executor: gcp-cli/default
-    steps:
-      - gcp-cli/setup:
-          version: 404.0.0
-      - run:
-          name: Install Cloud SQL Proxy
-          command: |
-            mkdir -p $HOME/google-cloud-sdk/
-            export CLOUD_SQL_PROXY_VERSION=v1.19.1
-            wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O cloud_sql_proxy
-            chmod +x cloud_sql_proxy
-            mv cloud_sql_proxy $HOME/google-cloud-sdk/
-      - run:
-          name: Run Cloud SQL Proxy
-          command: |
-            $HOME/google-cloud-sdk/cloud_sql_proxy -instances=$CLOUD_SQL_INSTANCE_NAME=tcp:5432
-          background: true
-      - run:
-          name: Run tests
-          command: |
-            # Run your tests that connect to the Cloud SQL instance
-            preingestion/detect_tcia_collection_name_changes.py
+      steps:
+        - gcp-cli/setup:
+            version: 404.0.0
+        - run:
+            name: Install Cloud SQL Proxy
+            command: |
+              mkdir -p $HOME/google-cloud-sdk/
+              export CLOUD_SQL_PROXY_VERSION=v1.19.1
+              wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O cloud_sql_proxy
+              chmod +x cloud_sql_proxy
+              mv cloud_sql_proxy $HOME/google-cloud-sdk/
+        - run:
+            name: Run Cloud SQL Proxy
+            command: |
+              $HOME/google-cloud-sdk/cloud_sql_proxy -instances=$CLOUD_SQL_INSTANCE_NAME=tcp:5432
+            background: true
+        - run:
+            name: Run tests
+            command: |
+              # Run your tests that connect to the Cloud SQL instance
+              preingestion/detect_tcia_collection_name_changes.py
 
 workflows:
   run-cloud-sql-proxy:
