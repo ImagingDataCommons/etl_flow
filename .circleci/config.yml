@@ -17,7 +17,6 @@ jobs:
     use-gcp:
       working_directory: ~/etl_flow
       executor: gcp-cli/google
-            version: 3.9
       steps:
         - checkout
         - gcp-cli/setup:
@@ -57,7 +56,7 @@ jobs:
             name: Run tests
             command: |
               # Run your tests that connect to the Cloud SQL instance
-              python3.9 ./preingestion/detect_tcia_collection_name_changes.py
+              python3 ./preingestion/detect_tcia_collection_name_changes.py
 
 workflows:
   run-cloud-sql-proxy:
