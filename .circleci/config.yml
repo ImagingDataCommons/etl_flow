@@ -13,6 +13,7 @@ jobs:
 #      - gcp-cli/initialize:
 #          project-id: $GCP_PROJECT_ID
 #          service-account-key: $GCP_SA_KEY
+  
     working_directory: ~/etl_flow
     use-gcp:
       executor: gcp-cli/google
