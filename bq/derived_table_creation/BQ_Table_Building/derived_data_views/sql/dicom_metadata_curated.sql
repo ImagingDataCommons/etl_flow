@@ -1,0 +1,59 @@
+SELECT
+  SOPInstanceUID,
+  SAFE_CAST(SliceThickness AS FLOAT64) AS SliceThickness,
+  CASE
+    WHEN BodyPartExamined IN ('PORT ABDOMEN', 'J BRZUSZNA', 'ABD', 'BD BD MR ABDOME', 'BD CT ABD WO_W', 'J brzuszna') THEN 'ABDOMEN'
+    WHEN BodyPartExamined IN ('Pelvis') THEN 'PELVIS'
+    WHEN BodyPartExamined IN ('PET_ABDOMEN_PEL', 'CT ABD PELVIS', 'ABD PEL', 'ABD PELV', 'ABDOMEN PEL', 'ABDOMEN PELVIS', 'ABDOMEN TO PEL', 'ABDOMEN_PELVIS', 'ABDPEL', 'ABDOMEN_PELVIS C', 'PET_ABDOMEN_PELV') THEN 'ABDOMENPELVIS'
+    WHEN BodyPartExamined IN ('TH CT CHEST WO',
+    'SPI CHEST 5MM',
+    'PORT CHEST',
+    'PET_CT SCAN CHE',
+    'CTA CHEST',
+    'CT CHEST W_ENHA',
+    'CT CHEST WITH C',
+    'CT CHEST WO CE',
+    'AP PORTABLE CHE',
+    'CHEST COMPUTED',
+    'CHEST INF',
+    'CHEST NO GRID',
+    'CHEST PE',
+    'Chest',
+    'CT CHEST W_ENHAN',
+    'CHEST COMPUTED T',
+    'PET_CT SCAN CHES',
+    'AP PORTABLE CHES') THEN 'CHEST'
+    WHEN BodyPartExamined IN ('MR BRAIN W CON', 'MR NEURO BRAIN', 'BRAIN W/WO_AH', 'BRAIN W/WO_AH32') THEN 'BRAIN'
+    WHEN BodyPartExamined IN ('CHEST_TO_PELVIS',
+    'CAP',
+    'CAP INFUSION',
+    'CHABDPELV',
+    'CHEST ABD PEL',
+    'CHEST ABD PELVI',
+    'CHEST TO PEL',
+    'CHEST TO PELVIS',
+    'CHEST_ABD_PEL',
+    'CHEST ABD PELVIS') THEN 'CHESTABDPELVIS'
+    WHEN BodyPartExamined IN ('CERVICAL_SPINE') THEN 'CSPINE'
+    WHEN BodyPartExamined IN ('THORAXABD',
+    'CT_CHABD',
+    'CHEST ABDOMEN',
+    'CHEST_ABDOMEN',
+    'CHEST/ABD') THEN 'CHESTABDOMEN'
+    WHEN BodyPartExamined IN ('CT 3PHASE REN', 'Kidney') THEN 'KIDNEY'
+    WHEN BodyPartExamined IN ('THORAX CT _AH05',
+    'THORAX CT _OT01',
+    'CT THORAX W CNT',
+    'Thorax') THEN 'THORAX'
+    WHEN BodyPartExamined IN ('HEAD_NECK', 'HEAD-AND-NECK', 'HEAD-NECK', 'HEADANDNECK') THEN 'HEADNECK'
+    WHEN BodyPartExamined IN ('LUMBO-SACRAL SP',
+    'LUMBO-SACRAL SPI') THEN 'LSSPINE'
+    WHEN BodyPartExamined IN ('NECK TO PELVIS', 'NECKCHESTABDPEL') THEN 'NECKCHESTABDPELV'
+    WHEN BodyPartExamined IN ('THORACIC SPINE') THEN 'TSPINE'
+    WHEN BodyPartExamined IN ('WHOLE BODY') THEN 'WHOLEBODY'
+  ELSE
+  BodyPartExamined
+END
+  AS BodyPartExamined
+FROM
+  `{project}.{dataset}.dicom_metadata` AS dcm
