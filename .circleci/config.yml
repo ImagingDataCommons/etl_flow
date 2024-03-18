@@ -16,10 +16,6 @@ jobs:
     use-gcp:
       executor: gcp-cli/google
       steps:
-        - run:
-            name: Staging
-            command: |
-              sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
         - gcp-cli/setup:
             version: 404.0.0
             service_account_email: IDC_ETL_PROCESSING_SA
@@ -31,6 +27,10 @@ jobs:
               wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O cloud_sql_proxy
               chmod +x cloud_sql_proxy
               mv cloud_sql_proxy $HOME/google-cloud-sdk/
+        - run:
+            name: Staging
+            command: |
+              /bin/bash ./shell/gcloud-pull-staging-files.sh
         - run:
             name: Run Cloud SQL Proxy
             command: |
