@@ -17,10 +17,10 @@ jobs:
     use-gcp:
       working_directory: ~/etl_flow
       executor: gcp-cli/google
+            version: 3.9
       steps:
         - checkout
         - gcp-cli/setup:
-            version: 3.9
             service_account_email: IDC_ETL_PROCESSING_SA
             gcloud_service_key: IDC_ETL_PROCESSING_SERVICE_KEY
             google_project_id: ETL_FLOW_PROJECT_ID
