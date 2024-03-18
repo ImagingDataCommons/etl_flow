@@ -18,6 +18,7 @@ jobs:
       working_directory: ~/etl_flow
       executor: gcp-cli/google
       steps:
+        - checkout
         - gcp-cli/setup:
             service_account_email: IDC_ETL_PROCESSING_SA
             gcloud_service_key: IDC_ETL_PROCESSING_SERVICE_KEY
