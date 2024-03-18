@@ -19,6 +19,8 @@ jobs:
         - gcp-cli/setup:
             service_account_email: IDC_ETL_PROCESSING_SA
             gcloud_service_key: IDC_ETL_PROCESSING_SERVICE_KEY
+            google_project_id: ETL_FLOW_PROJECT_ID
+            google_project_number: ETL_FLOW_PROJECT_NUMBER
         - run:
             name: Install Cloud SQL Proxy
             command: |
