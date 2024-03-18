@@ -26,7 +26,7 @@ jobs:
             command: |
               mkdir -p $HOME/google-cloud-sdk/
               export CLOUD_SQL_PROXY_VERSION=v1.19.1
-              curl -O cloud_sql_proxy https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64
+              curl -o cloud_sql_proxy https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64
               chmod +x cloud_sql_proxy
               mv cloud_sql_proxy $HOME/google-cloud-sdk/
         - run:
