@@ -4,15 +4,20 @@ orbs:
   gcp-cli: circleci/gcp-cli@3.1.1
 
 jobs:
-  run-cloud-sql-proxy:
-    docker:
-      - image: cimg/python:3.9
-    resource_class: medium
+#  run-cloud-sql-proxy:
+#    docker:
+#      - image: cimg/python:3.9
+#    resource_class: medium
+#    steps:
+#      - checkout
+#      - gcp-cli/initialize:
+#          project-id: $GCP_PROJECT_ID
+#          service-account-key: $GCP_SA_KEY
+    use-gcp:
+      executor: gcp-cli/default
     steps:
-      - checkout
-      - gcp-cli/initialize:
-          project-id: $GCP_PROJECT_ID
-          service-account-key: $GCP_SA_KEY
+      - gcp-cli/setup:
+          version: 404.0.0
       - run:
           name: Install Cloud SQL Proxy
           command: |
