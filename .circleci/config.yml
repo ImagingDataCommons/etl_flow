@@ -35,7 +35,7 @@ jobs:
         - run:
             name: Install sudo
             command: |
-              apt-get install sudo
+              apt-get install sudo, ps
         - run:
             name: Staging
             command: |
