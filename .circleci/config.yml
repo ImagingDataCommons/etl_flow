@@ -1,38 +1,47 @@
 version: 2.1
+
 orbs:
-  python: circleci/python@2.1.1
+  gcp-cli: circleci/gcp-cli@3.1.1
 
 jobs:
-  prelims:
+#  run-cloud-sql-proxy:
 #    docker:
-#      - image:
-#          - image: cimg/python:3.8.14
-    working_directory: ~/etl_flow
-    executor: python/default
-    steps:
-      - checkout
-      - python/install-packages:
-          pkg-manager: pip
-      - run:
-          name: Run tests
-          command: |
-            python -m temp.helloworld
-            ls -al
-#      - import_db
-#      - create_bq_datasets
-#      - detect_tcia_collection_name_changes
-#      - revise_original_collections_metadata_idc_source_table
-#      - revise_analysis_results_metadata_idc_source_table
-#      - update_analysis_results_descriptions_table
-
-#  preingestion:
-#    docker:
-#      - image:
-#          - image: cimg/python:3.8.14
+#      - image: cimg/python:3.9
+#    resource_class: medium
 #    steps:
-#      -update_idc_xxx_table_hierarchy
+#      - checkout
+#      - gcp-cli/initialize:
+#          project-id: $GCP_PROJECT_ID
+#          service-account-key: $GCP_SA_KEY
+    use-gcp:
+      executor: gcp-cli/default
+      steps:
+        - gcp-cli/setup:
+            version: 404.0.0
+            service_account_email: $IDC_ETL_PROCESSING_SA
+        - run:
+            name: Install Cloud SQL Proxy
+            command: |
+              mkdir -p $HOME/google-cloud-sdk/
+              export CLOUD_SQL_PROXY_VERSION=v1.19.1
+              wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O cloud_sql_proxy
+              chmod +x cloud_sql_proxy
+              mv cloud_sql_proxy $HOME/google-cloud-sdk/
+        - run:
+            name: Run Cloud SQL Proxy
+            command: |
+              $HOME/google-cloud-sdk/cloud_sql_proxy -instances=$CLOUD_SQL_INSTANCE_NAME=tcp:5432
+            background: true
+        - run:
+            name: Run tests
+            command: |
+              # Run your tests that connect to the Cloud SQL instance
+              preingestion/detect_tcia_collection_name_changes.py
+
 workflows:
-  flow:
+  run-cloud-sql-proxy:
     jobs:
-      - prelims
+      - use-gcp:
+          context: gcp-context
+
 
