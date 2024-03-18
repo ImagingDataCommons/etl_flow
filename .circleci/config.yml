@@ -40,7 +40,7 @@ jobs:
 workflows:
   run-cloud-sql-proxy:
     jobs:
-      - run-cloud-sql-proxy:
+      - use-gcp:
           context: gcp-context
 
 
