@@ -17,7 +17,6 @@ jobs:
       executor: gcp-cli/google
       steps:
         - gcp-cli/setup:
-            version: 404.0.0
             service_account_email: IDC_ETL_PROCESSING_SA
         - run:
             name: Install Cloud SQL Proxy
