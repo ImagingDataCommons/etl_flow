@@ -49,7 +49,9 @@ jobs:
             name: list some stuff
             command: |
               echo $PWD
-              ls -lRa
+              echo $HOME
+              ps -ef
+
         - run:
             name: Run tests
             command: |
