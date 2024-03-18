@@ -19,7 +19,7 @@ jobs:
       executor: gcp-cli/google
       steps:
         - checkout
-        - gcp-cli/google:
+        - gcp-cli/setup:
             version: 3.9
             service_account_email: IDC_ETL_PROCESSING_SA
             gcloud_service_key: IDC_ETL_PROCESSING_SERVICE_KEY
@@ -57,7 +57,7 @@ jobs:
             name: Run tests
             command: |
               # Run your tests that connect to the Cloud SQL instance
-              python ./preingestion/detect_tcia_collection_name_changes.py
+              python3.9 ./preingestion/detect_tcia_collection_name_changes.py
 
 workflows:
   run-cloud-sql-proxy:
