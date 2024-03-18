@@ -13,7 +13,7 @@ jobs:
 #      - gcp-cli/initialize:
 #          project-id: $GCP_PROJECT_ID
 #          service-account-key: $GCP_SA_KEY
-  
+
     working_directory: ~/etl_flow
     use-gcp:
       executor: gcp-cli/google
@@ -32,9 +32,13 @@ jobs:
               chmod +x cloud_sql_proxy
               mv cloud_sql_proxy $HOME/google-cloud-sdk/
         - run:
+            name: Install sudo
+            command: |
+              apt-get install sudo
+        - run:
             name: Staging
             command: |
-              /bin/bash ./shell/gcloud-pull-staging-files.sh
+              sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
         - run:
             name: Run Cloud SQL Proxy
             command: |
