@@ -14,8 +14,8 @@ jobs:
 #          project-id: $GCP_PROJECT_ID
 #          service-account-key: $GCP_SA_KEY
 
-    working_directory: ~/etl_flow
     use-gcp:
+      working_directory: ~/etl_flow
       executor: gcp-cli/google
       steps:
         - gcp-cli/setup:
