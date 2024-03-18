@@ -56,7 +56,7 @@ jobs:
             name: Run tests
             command: |
               # Run your tests that connect to the Cloud SQL instance
-              ./preingestion/detect_tcia_collection_name_changes.py
+              python ./preingestion/detect_tcia_collection_name_changes.py
 
 workflows:
   run-cloud-sql-proxy:
