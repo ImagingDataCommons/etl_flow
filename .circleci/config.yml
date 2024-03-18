@@ -35,7 +35,7 @@ jobs:
         - run:
             name: Install sudo
             command: |
-              apt-get install sudo, ps
+              apt-get update && apt-get install sudo, procps
         - run:
             name: Staging
             command: |
