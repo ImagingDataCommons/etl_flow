@@ -17,12 +17,10 @@
 import os
 
 import json
-import sys
 from subprocess import run, PIPE
 from time import sleep
 import requests
 import logging
-import pandas as pd
 import zipfile
 
 # from http.client import HTTPConnection
