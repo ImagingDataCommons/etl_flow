@@ -27,7 +27,7 @@ jobs:
         - run:
             name: Set HOME
             command: |
-              export HOME=$PWD
+              echo "export HOME=$PWD" >> $BASH_ENV
               echo $HOME
         - run:
             name: Install Cloud SQL Proxy
