@@ -32,6 +32,7 @@ jobs:
         - run:
             name: Staging
             command: |
+              echo CI: ${CI}
               sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
               sudo -E /bin/bash ./shell/install-deps.sh
         - run:
@@ -44,10 +45,6 @@ jobs:
         - run:
             name: Run Cloud SQL Proxy
             command: |
-              echo ${CLOUD_SQL_INSTANCE_NAME}
-              echo $CLOUD_SQL_INSTANCE_NAME
-              echo $IDC_ETL_PROCESSING_SERVICE_KEY >> $HOME/credentials_file
-              echo $HOME/credentials_file
               $HOME/google-cloud-sdk/cloud-sql-proxy --credentials-file $HOME/credentials_file --address 0.0.0.0 --port 5433 $CLOUD_SQL_INSTANCE_NAME
             background: true
         - run:
