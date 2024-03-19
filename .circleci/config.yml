@@ -36,7 +36,7 @@ jobs:
             name: Install sudo
             command: |
               apt-get -y update && apt-get -y install sudo procps
-         - run:
+        - run:
             name: Staging
             command: |
               sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
