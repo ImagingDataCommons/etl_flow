@@ -19,15 +19,15 @@ jobs:
       executor: gcp-cli/google
       steps:
         - checkout
+        - run:
+            name: Install sudo and ps
+            command: |
+              apt-get -y update && apt-get -y install sudo procps
         - gcp-cli/setup:
             service_account_email: IDC_ETL_PROCESSING_SA
             gcloud_service_key: IDC_ETL_PROCESSING_SERVICE_KEY
             google_project_id: ETL_FLOW_PROJECT_ID
             google_project_number: ETL_FLOW_PROJECT_NUMBER
-        - run:
-            name: Install sudo
-            command: |
-              apt-get -y update && apt-get -y install sudo procps
         - run:
             name: Staging
             command: |
