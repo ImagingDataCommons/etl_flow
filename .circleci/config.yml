@@ -55,7 +55,8 @@ jobs:
         - run:
             name: Run tests
             command: |
-              export PYTHONPATH=$HOME/$PYTHONPATH
+              export PYTHONPATH=$HOME:${PYTHONPATH}
+              echo $PYTHONPATH
               # Run your tests that connect to the Cloud SQL instance
               python3 ./preingestion/detect_tcia_collection_name_changes.py
 
