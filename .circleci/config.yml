@@ -36,15 +36,7 @@ jobs:
             name: Install sudo
             command: |
               apt-get -y update && apt-get -y install sudo procps
-        - run:
-            name: list some stuff
-            command: |
-              echo $PWD
-              echo $HOME
-              echo $PYTHONPATH
-              echo $CI
-              ps -ef
-        - run:
+         - run:
             name: Staging
             command: |
               sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
@@ -54,7 +46,13 @@ jobs:
             command: |
               $HOME/google-cloud-sdk/cloud_sql_proxy -instances=$CLOUD_SQL_INSTANCE_NAME=tcp:0.0.0.0:5433
             background: true
-
+       - run:
+            name: list some stuff
+            command: |
+              echo $PWD
+              echo $HOME
+              echo $PYTHONPATH
+              ps -ef
         - run:
             name: Run tests
             command: |
