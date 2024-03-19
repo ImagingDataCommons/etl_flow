@@ -43,7 +43,6 @@ jobs:
         - run:
             name: Run Cloud SQL Proxy
             command: |
-#              $HOME/google-cloud-sdk/cloud-sql-proxy --instances=$CLOUD_SQL_INSTANCE_NAME=tcp:0.0.0.0:5433
               $HOME/google-cloud-sdk/cloud-sql-proxy --address 0.0.0.0 --port 5433 $CLOUD_SQL_INSTANCE_NAME
             background: true
         - run:
