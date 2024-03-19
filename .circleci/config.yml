@@ -46,7 +46,7 @@ jobs:
             command: |
               $HOME/google-cloud-sdk/cloud_sql_proxy -instances=$CLOUD_SQL_INSTANCE_NAME=tcp:0.0.0.0:5433
             background: true
-       - run:
+        - run:
             name: list some stuff
             command: |
               echo $PWD
