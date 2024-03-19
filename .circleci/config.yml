@@ -29,8 +29,8 @@ jobs:
             command: |
               mkdir -p $HOME/google-cloud-sdk/
               curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.9.0/cloud-sql-proxy.linux.amd64
-              chmod +x cloud_sql_proxy
-              mv cloud_sql_proxy $HOME/google-cloud-sdk/
+              chmod +x cloud-sql-proxy
+              mv cloud-sql-proxy $HOME/google-cloud-sdk/
         - run:
             name: Install sudo
             command: |
