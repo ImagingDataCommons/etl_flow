@@ -25,6 +25,11 @@ jobs:
             google_project_id: ETL_FLOW_PROJECT_ID
             google_project_number: ETL_FLOW_PROJECT_NUMBER
         - run:
+            name: Set HOME
+            command: |
+              export HOME=$PWD
+              echo $HOME
+        - run:
             name: Install Cloud SQL Proxy
             command: |
               mkdir -p $HOME/google-cloud-sdk/
