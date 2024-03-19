@@ -41,6 +41,7 @@ jobs:
             command: |
               echo $PWD
               echo $HOME
+              echo $PYTHONPATH
               echo $CI
               ps -ef
         - run:
