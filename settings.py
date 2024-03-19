@@ -48,9 +48,9 @@ LOCAL_PORT='5432'
 # Parameters for accessing the Cloud SQL DB server
 CLOUD_USERNAME = os.environ.get('CLOUD_USERNAME', '')
 CLOUD_PASSWORD = os.environ.get('CLOUD_PASSWORD', '')
-CLOUD_HOST='0.0.0.0'
-CLOUD_PORT='5433'
-CLOUD_INSTANCE='idc-dev-etl:us-central1:idc-dev-etl-psql-whc'
+CLOUD_HOST = os.environ.get('CLOUD_HOST', '')
+CLOUD_PORT= os.environ.get('CLOUD_PORT', '')
+CLOUD_INSTANCE = os.environ.get('CLOUD_INSTANCE', '')
 CLOUD_DATABASE = f'idc_v{CURRENT_VERSION}'
 
 # Various projects that we operate in
