@@ -25,13 +25,6 @@ jobs:
             google_project_id: ETL_FLOW_PROJECT_ID
             google_project_number: ETL_FLOW_PROJECT_NUMBER
         - run:
-            name: Install Cloud SQL Proxy
-            command: |
-              mkdir -p $HOME/google-cloud-sdk/
-              curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.9.0/cloud-sql-proxy.linux.amd64
-              chmod +x cloud-sql-proxy
-              mv cloud-sql-proxy $HOME/google-cloud-sdk/
-        - run:
             name: Install sudo
             command: |
               apt-get -y update && apt-get -y install sudo procps
@@ -41,9 +34,16 @@ jobs:
               sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
               sudo -E /bin/bash ./shell/install-deps.sh
         - run:
+            name: Install Cloud SQL Proxy
+            command: |
+              mkdir -p $HOME/google-cloud-sdk/
+              curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.9.0/cloud-sql-proxy.linux.amd64
+              chmod +x cloud-sql-proxy
+              mv cloud-sql-proxy $HOME/google-cloud-sdk/
+        - run:
             name: Run Cloud SQL Proxy
             command: |
-              $HOME/google-cloud-sdk/cloud_sql_proxy -instances=$CLOUD_SQL_INSTANCE_NAME=tcp:0.0.0.0:5433
+              $HOME/google-cloud-sdk/cloud-sql-proxy -instances=$CLOUD_SQL_INSTANCE_NAME=tcp:0.0.0.0:5433
             background: true
         - run:
             name: list some stuff
