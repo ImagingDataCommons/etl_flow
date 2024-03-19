@@ -20,8 +20,7 @@
 # are ignored
 # If there is no output, then no name changes were detected.
 
-from idc.models import Base, Version, Patient, Study, Series, Instance, Collection, All_Collections, All_Joined
-from utilities.tcia_scrapers import scrape_tcia_data_collections_page, scrape_tcia_analysis_collections_page
+from idc.models import Patient, Study, Series, Collection, All_Collections
 from utilities.tcia_helpers import get_all_tcia_metadata
 from sqlalchemy import and_, or_
 from utilities.sqlalchemy_helpers import sa_session
