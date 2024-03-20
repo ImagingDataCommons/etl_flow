@@ -43,12 +43,10 @@ jobs:
                 echo ls ${HOME}/lib:
                 ls ${HOME}/lib
               fi
+
               sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
               sudo -E /bin/bash ./shell/install-deps.sh
-              echo ls lib:
-              ls lib
-              echo ls ${HOME}/lib:
-              ls ${HOME}/lib
+
               if [ ! -d "lib" ]; then
                 echo No dir lib
               else
@@ -62,8 +60,8 @@ jobs:
                 echo Directory ${HOME}/lib exists
                 echo ls ${HOME}/lib:
                 ls ${HOME}/lib
-              fi        - save_cache:
-
+              fi
+        - save_cache:
             key: etl-flow-lib-{{ checksum "requirements.txt" }}
             paths:
               - ./lib
