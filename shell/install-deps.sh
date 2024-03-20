@@ -70,7 +70,6 @@ if [ -z "${CI}" ] || [ -z $(pip list| grep pydicom) ]; then
 else
     echo "Using restored cache for Python Libraries"
 fi
-pip3 list
 
 ## Install Google Cloud SDK
 ## If we're not on CircleCI or we are but google-cloud-sdk isn't there, install it
