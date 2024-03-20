@@ -28,7 +28,7 @@ google-resumable-media
 googleapis-common-protos
 psycopg2-binary
 pydicom
-python-dotenv
 sqlalchemy_utils
+python-dotenv
 python_settings
 sqlalchemy==1.4.50
