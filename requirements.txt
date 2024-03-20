@@ -32,3 +32,5 @@ python-dotenv
 python_settings
 sqlalchemy==1.4.50
 sqlalchemy_utils
+
+
