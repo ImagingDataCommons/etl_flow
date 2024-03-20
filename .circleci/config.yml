@@ -33,17 +33,11 @@ jobs:
             command: |
               echo "export PYTHONPATH=${PWD}:${HOME}:${HOME}/lib" >> "$BASH_ENV"
               echo ${PYTHONPATH}
-        - restore_cache:
-            keys:
-              - etl-flow-lib-{{ checksum "requirements.txt" }}
         - run:
             name: Staging
             command: |
               sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
               sudo -E /bin/bash ./shell/install-deps.sh
-        - save_cache:
-            keys:
-              - etl-flow-lib-{{ checksum "requirements.txt" }}
         - run:
             name: Install Cloud SQL Proxy
             command: |
