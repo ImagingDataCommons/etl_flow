@@ -27,8 +27,8 @@ google-crc32c
 google-resumable-media
 googleapis-common-protos
 psycopg2-binary
-pydicom
 sqlalchemy_utils
+pydicom
 python-dotenv
 python_settings
 sqlalchemy==1.4.50

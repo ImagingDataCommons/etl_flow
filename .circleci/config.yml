@@ -49,17 +49,17 @@ jobs:
                 echo ls lib:
                 ls lib
               fi
-              if [ ! -d "${HOME}/lib" ]; then
-                echo No dir ${HOME}/lib
+              if [ ! -d "./lib" ]; then
+                echo No dir ./lib
               else
-                echo Directory ${HOME}/lib exists
-                echo ls ${HOME}/lib:
-                ls ${HOME}/lib
+                echo Directory ./lib exists
+                echo ls ./lib:
+                ls ./lib
               fi
         - save_cache:
             key: etl-flow-lib-{{ checksum "requirements.txt" }}
             paths:
-              - $HOME/lib
+              - ./lib
         - run:
             name: Install Cloud SQL Proxy
             command: |
