@@ -25,7 +25,7 @@ jobs:
         - run:
             name: Set PYTHONPATH
             command: |
-              echo "export PYTHONPATH=${PWD}:/home/circleci/${CIRCLE_PROJECT_REPONAME}:/home/circleci/${CIRCLE_PROJECT_REPONAME}/lib" >> "$BASH_ENV"
+              echo "export PYTHONPATH=${PWD}:${PWD}/lib" >> "$BASH_ENV"
         - run:
             name: list some stuff
             command: |
