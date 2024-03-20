@@ -32,7 +32,7 @@ jobs:
             name: Set Python Path
             command: |
               echo "export PYTHONPATH=${HOME}/lib" >> "$BASH_ENV"
-              echo ${PYTHONPATH|
+              echo ${PYTHONPATH}
         - run:
             name: Staging
             command: |
