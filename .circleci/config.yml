@@ -31,7 +31,8 @@ jobs:
         - run:
             name: Set Python Path
             command: |
-              echo "export ${HOME}/lib:$PYTHONPATH" >> $BASH_ENV
+              export PYTHONPATH=$HOME:${PYTHONPATH}
+              echo $PYTHONPATH
         - run:
             name: Staging
             command: |
@@ -61,8 +62,6 @@ jobs:
         - run:
             name: Run tests
             command: |
-              export PYTHONPATH=$HOME:${PYTHONPATH}
-              echo $PYTHONPATH
               # Run your tests that connect to the Cloud SQL instance
               python3 ./preingestion/detect_tcia_collection_name_changes.py
 
