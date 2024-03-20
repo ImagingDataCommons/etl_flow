@@ -28,8 +28,11 @@ jobs:
             gcloud_service_key: IDC_ETL_PROCESSING_SERVICE_KEY
             google_project_id: ETL_FLOW_PROJECT_ID
             google_project_number: ETL_FLOW_PROJECT_NUMBER
-        - environment:
+        - run:
+            name: Set Python Path
+            environment:
               PYTHONPATH: $HOME/lib:${PYTHONPATH}
+            command: echo $PYTHONPATH
         - run:
             name: Staging
             command: |
