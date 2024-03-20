@@ -29,6 +29,11 @@ jobs:
             google_project_id: ETL_FLOW_PROJECT_ID
             google_project_number: ETL_FLOW_PROJECT_NUMBER
         - run:
+            name: Set Python Path
+            command: |
+              echo "export PYTHONPATH=${HOME}" >> "$BASH_ENV"
+              echo ${PYTHONPATH}
+        - run:
             name: Staging
             command: |
               sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
@@ -51,6 +56,7 @@ jobs:
             command: |
               echo $PWD
               echo $HOME
+              echo ${PYTHONPATH}
               ps -ef
         - run:
             name: Run tests
