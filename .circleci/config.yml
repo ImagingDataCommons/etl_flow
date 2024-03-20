@@ -4,16 +4,6 @@ orbs:
   gcp-cli: circleci/gcp-cli@3.1.1
 
 jobs:
-#  run-cloud-sql-proxy:
-#    docker:
-#      - image: cimg/python:3.9
-#    resource_class: medium
-#    steps:
-#      - checkout
-#      - gcp-cli/initialize:
-#          project-id: $GCP_PROJECT_ID
-#          service-account-key: $GCP_SA_KEY
-
     use-gcp:
       working_directory: ~/etl_flow
       executor: gcp-cli/google
@@ -33,11 +23,18 @@ jobs:
             command: |
               echo "export PYTHONPATH=${PWD}:${HOME}:${HOME}/lib" >> "$BASH_ENV"
               echo ${PYTHONPATH}
+        - restore_cache:
+            keys:
+              - etl-flow-lib-{{ checksum "requirements.txt" }}
         - run:
             name: Staging
             command: |
               sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
               sudo -E /bin/bash ./shell/install-deps.sh
+        - save_cache:
+            key: etl-flow-lib-{{ checksum "requirements.txt" }}
+            paths:
+              - ./lib
         - run:
             name: Install Cloud SQL Proxy
             command: |
