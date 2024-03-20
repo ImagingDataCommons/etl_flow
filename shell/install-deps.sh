@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export HOME=/home/circleci/${CIRCLE_PROJECT_REPONAME}
+
 # Install our primary python libraries
 # If we're not on CircleCI, or we are but the lib directory isn't there (cache miss), install lib
 if [ -z "${CI}" ] || [ ! -d "${HOME}/lib" ]; then
