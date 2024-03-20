@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "export HOME=/home/circleci/${CIRCLE_PROJECT_REPONAME}" >> $BASH_ENV
+echo "export HOME=/home/circleci/${CIRCLE_PROJECT_REPONAME}" >> "$BASH_ENV"
 
 # Install our primary python libraries
 # If we're not on CircleCI, or we are but the lib directory isn't there (cache miss), install lib
