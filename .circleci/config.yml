@@ -39,6 +39,7 @@ jobs:
               echo CI: ${CI}
               sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
               sudo -E /bin/bash ./shell/install-deps.sh
+              ls -lR /root/lib
         - run:
             name: Install Cloud SQL Proxy
             command: |
