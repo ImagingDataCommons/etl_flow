@@ -64,7 +64,7 @@ jobs:
         - save_cache:
             key: etl-flow-lib-{{ checksum "requirements.txt" }}
             paths:
-              - ./lib
+              - ${HOME}/lib
         - run:
             name: Install Cloud SQL Proxy
             command: |
