@@ -29,19 +29,36 @@ jobs:
         - run:
             name: Staging
             command: |
+              echo ls lib:
+              ls lib
+              echo ls ${HOME}/lib:
+              ls ${HOME}/lib
               if [ ! -d "lib" ]; then
-                echo Directory lib exists
-              else
                 echo No dir lib
+              else
+                echo Directory lib exists
               fi
               if [ ! -d "${HOME}/lib" ]; then
-                echo Directory ${HOME}/lib exists
-              else
                 echo No dir ${HOME}/lib
+              else
+                echo Directory ${HOME}/lib exists
               fi
               sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
               sudo -E /bin/bash ./shell/install-deps.sh
-        - save_cache:
+              echo ls lib:
+              ls lib
+              echo ls ${HOME}/lib:
+              ls ${HOME}/lib
+              if [ ! -d "lib" ]; then
+                echo No dir lib
+              else
+                echo Directory lib exists
+              fi
+              if [ ! -d "${HOME}/lib" ]; then
+                echo No dir ${HOME}/lib
+              else
+                echo Directory ${HOME}/lib exists
+              fi        - save_cache:
             key: etl-flow-lib-{{ checksum "requirements.txt" }}
             paths:
               - ./lib
