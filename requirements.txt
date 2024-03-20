@@ -29,6 +29,6 @@ googleapis-common-protos
 psycopg2-binary
 pydicom
 python-dotenv
-python_settings
 sqlalchemy_utils
+python_settings
 sqlalchemy==1.4.50
