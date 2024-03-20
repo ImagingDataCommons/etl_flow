@@ -20,6 +20,8 @@
 # are ignored
 # If there is no output, then no name changes were detected.
 
+import sys
+for p in sys.path: print(p)
 from idc.models import Patient, Study, Series, Collection, All_Collections
 from utilities.tcia_helpers import get_all_tcia_metadata
 from sqlalchemy import and_, or_
