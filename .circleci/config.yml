@@ -19,10 +19,15 @@ jobs:
             google_project_id: ETL_FLOW_PROJECT_ID
             google_project_number: ETL_FLOW_PROJECT_NUMBER
         - run:
+            name: Set HOME
+            command: |
+              echo "export PYTHONPATH=${PWD}:/home/circleci/${CIRCLE_PROJECT_REPONAME}:/home/circleci/${CIRCLE_PROJECT_REPONAME}/lib" >> "$BASH_ENV"
+              echo ${PYTHONPATH}
+        - run:
             name: Set Python Path
             command: |
-              echo "export PYTHONPATH=${PWD}:/home/circleci/${CIRCLE_PROJECT_REPONAME}:/home/circleci/${CIRCLE_PROJECT_REPONAME}/lib" >> $BASH_ENV
-              echo ${PYTHONPATH}
+              echo "export HOME=/home/circleci/${CIRCLE_PROJECT_REPONAME}" >> "$BASH_ENV"
+              echo ${HOME}
         - restore_cache:
             keys:
               - etl-flow-lib-{{ checksum "requirements.txt" }}
