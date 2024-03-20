@@ -29,6 +29,16 @@ jobs:
         - run:
             name: Staging
             command: |
+              if [ ! -d "lib" ]; then
+                echo Directory lib exists
+              else
+                echo No dir lib
+              fi
+              if [ ! -d "${HOME}/lib" ]; then
+                echo Directory ${HOME}/lib exists
+              else
+                echo No dir ${HOME}/lib
+              fi
               sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
               sudo -E /bin/bash ./shell/install-deps.sh
         - save_cache:
