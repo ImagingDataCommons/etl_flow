@@ -31,8 +31,8 @@ jobs:
         - run:
             name: Set Python Path
             command: |
-              echo "export PYTHONPATH=${HOME}/lib" >> $BASH_ENV
-              echo $PYTHONPATH
+              echo "export PYTHONPATH=${HOME}/lib" >> "$BASH_ENV"
+              echo ${PYTHONPATH|
         - run:
             name: Staging
             command: |
@@ -57,7 +57,7 @@ jobs:
             command: |
               echo $PWD
               echo $HOME
-              echo $PYTHONPATH
+              echo ${PYTHONPATH}
               ps -ef
         - run:
             name: Run tests
