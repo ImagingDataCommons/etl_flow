@@ -30,9 +30,9 @@ jobs:
             google_project_number: ETL_FLOW_PROJECT_NUMBER
         - run:
             name: Set Python Path
-            environment:
-              PYTHONPATH: $HOME/lib:${PYTHONPATH}
-            command: echo $PYTHONPATH
+            command: |
+              echo "export PYTHONPATH=${HOME}/lib" >> $BASH_ENV
+              echo $PYTHONPATH
         - run:
             name: Staging
             command: |
