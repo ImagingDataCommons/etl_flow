@@ -31,7 +31,7 @@ jobs:
         - run:
             name: Set Python Path
             command: |
-              export PYTHONPATH=$HOME:${PYTHONPATH}
+              export PYTHONPATH=$HOME/lib:${PYTHONPATH}
               echo $PYTHONPATH
         - run:
             name: Staging
