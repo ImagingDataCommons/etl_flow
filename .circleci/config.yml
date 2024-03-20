@@ -31,12 +31,11 @@ jobs:
         - run:
             name: Set Python Path
             command: |
-              echo "export PYTHONPATH=${HOME}/lib" >> "$BASH_ENV"
+              echo "export PYTHONPATH=${HOME}" >> "$BASH_ENV"
               echo ${PYTHONPATH}
         - run:
             name: Staging
             command: |
-              echo PYTHONPATH: ${PYTHONPATH}
               sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
               sudo -E /bin/bash ./shell/install-deps.sh
         - run:
