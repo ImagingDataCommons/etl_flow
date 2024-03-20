@@ -32,9 +32,9 @@ jobs:
               echo $PWD
               echo $HOME
               echo ${PYTHONPATH}
-#        - restore_cache:
-#            keys:
-#              - etl-flow-lib-{{ checksum "requirements.txt" }}
+        - restore_cache:
+            keys:
+              - etl-flow-lib-{{ checksum "requirements.txt" }}
         - run:
             name: Staging
             command: |
@@ -56,10 +56,10 @@ jobs:
                 echo ls ${HOME}/lib:
                 ls ${HOME}/lib
               fi
-#        - save_cache:
-#            key: etl-flow-lib-{{ checksum "requirements.txt" }}
-#            paths:
-#              - ${HOME}/lib
+        - save_cache:
+            key: etl-flow-lib-{{ checksum "requirements.txt" }}
+            paths:
+              - ${HOME}/lib
         - run:
             name: Install Cloud SQL Proxy
             command: |
