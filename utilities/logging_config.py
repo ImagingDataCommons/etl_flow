@@ -72,7 +72,7 @@ err_fh.setFormatter(errformatter)
 def save_log_dirs():
     # if os.getenv("CI"):
     if True:
-        client = storage.Client()
+        client = storage.Client(project="idc-dev-etl")
         bucket = client.bucket(settings.ETL_LOGGING_RECORDS_BUCKET)
         for log in ['success.log', 'progress.log', 'error.log']:
             blob = bucket.blob(f'v{settings.CURRENT_VERSION}/{settings.BASE_NAME}/{log}')
