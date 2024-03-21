@@ -90,12 +90,18 @@ TCIA_PASSWORD = os.environ.get('TCIA_PASSWORD')
 TCIA_CLIENT_ID = os.environ.get('TCIA_CLIENT_ID')
 TCIA_CLIENT_SECRET= os.environ.get('TCIA_CLIENT_SECRET')
 
-LOGGING_BASE = f'/mnt/disks/idc-etl/logs/v{CURRENT_VERSION}'
+if os.getenv("CI",''):
+    LOGGING_BASE = f'{os.getenv("LOG_DIR")}/v{CURRENT_VERSION}'
+else:
+    LOGGING_BASE = f'/mnt/disks/idc-etl/logs/v{CURRENT_VERSION}'
 BASE_NAME = sys.argv[0].rsplit('/',1)[-1].rsplit('.',1)[0]
 LOG_DIR = f'{LOGGING_BASE}/{BASE_NAME}'
+
+ETL_LOGGING_RECORDS_BUCKET = "etl-logging-records"
 
 AH_PROJECT = "nci-idc-bigquery-data" # Analytics Hub project
 AH_EXCHANGE_ID = "nci_idc_bigquery_data_exchange"    # ID of the Analytics Hub exchange
 AH_EXCHANGE_LOCATION = "US"
+
 
 

@@ -20,12 +20,14 @@
 # are ignored
 # If there is no output, then no name changes were detected.
 
-import sys
-for p in sys.path: print(p)
+
 from idc.models import Patient, Study, Series, Collection, All_Collections
 from utilities.tcia_helpers import get_all_tcia_metadata
 from sqlalchemy import and_, or_
 from utilities.sqlalchemy_helpers import sa_session
+from utilities.logging_config import successlogger, progresslogger, errlogger, save_log_dirs
+import argparse
+import json
 
 def compare_dois():
     with sa_session(echo=False) as sess:
@@ -48,12 +50,28 @@ def compare_dois():
         for doi in idc_dois:
             if doi in tcia_original_dois:
                 if idc_dois[doi].lower() != tcia_original_dois[doi].lower():
-                    print(f'####Collection ID mismatch, IDC: {idc_dois[doi]}, TCIA: {tcia_original_dois[doi]}')
+                    if idc_dois[doi] in args.ignored:
+                        progresslogger.info(f'Ignoring collection ID mismatch, IDC: {idc_dois[doi]}, TCIA: {tcia_original_dois[doi]}')
+                    else:
+                        errlogger.error(f'####Collection ID mismatch, IDC: {idc_dois[doi]}, TCIA: {tcia_original_dois[doi]}')
             elif not doi in tcia_analysis_dois:
-                print(f'####Collection {idc_dois[doi]}, DOI {doi}, not in TCIA DOIs')
+                if idc_dois[doi] in args.ignored:
+                    progresslogger.info(f'Ignoring collection {idc_dois[doi]}, DOI {doi}, not in TCIA DOIs')
+                else:
+                    errlogger.error(f'####Collection {idc_dois[doi]}, DOI {doi}, not in TCIA DOIs')
 
 if __name__ == '__main__':
-    compare_dois()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--ignored', default=['APOLLO', 'APOLLO-5-THYM', 'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-ESCA', 'APOLLO-5-PAAD'])
+
+    args = parser.parse_args()
+    progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
+
+
+    try:
+        compare_dois()
+    finally:
+        save_log_dirs()
 
 
 

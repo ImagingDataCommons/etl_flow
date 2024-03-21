@@ -9,9 +9,12 @@ jobs:
       executor: gcp-cli/google
       steps:
         - run:
-            name: Set HOME
+            name: Set some environment variables
             command: |
               echo "export HOME=/home/circleci/${CIRCLE_PROJECT_REPONAME}" >> "$BASH_ENV"
+              echo "export LOG_DIR=/home/circleci/${CIRCLE_PROJECT_REPONAME}/log_dir" >> "$BASH_ENV"
+              mkdir -p /home/circleci/${CIRCLE_PROJECT_REPONAME}/log_dir/
+
         - checkout
         - run:
             name: Install sudo and ps
@@ -26,36 +29,14 @@ jobs:
             name: Set PYTHONPATH
             command: |
               echo "export PYTHONPATH=${PWD}:${PWD}/lib" >> "$BASH_ENV"
-        - run:
-            name: list some stuff
-            command: |
-              echo $PWD
-              echo $HOME
-              echo ${PYTHONPATH}
         - restore_cache:
             keys:
               - etl-flow-lib-{{ checksum "requirements.txt" }}
         - run:
             name: Staging
             command: |
-
               sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
               sudo -E /bin/bash ./shell/install-deps.sh
-
-              if [ ! -d "lib" ]; then
-                echo No dir lib
-              else
-                echo Directory lib exists
-                echo ls lib:
-                ls lib
-              fi
-              if [ ! -d "./lib" ]; then
-                echo No dir ./lib
-              else
-                echo Directory ./lib exists
-                echo ls ./lib:
-                ls ./lib
-              fi
         - save_cache:
             key: etl-flow-lib-{{ checksum "requirements.txt" }}
             paths:

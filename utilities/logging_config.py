@@ -18,7 +18,8 @@ import os
 import logging
 from logging import INFO, ERROR
 import settings
-import builtins
+from google.cloud import storage
+from google.cloud.storage import blob
 
 # Suppress logging from request module
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -67,3 +68,19 @@ err_fh = logging.FileHandler('{}/error.log'.format(settings.LOG_DIR))
 errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
 errlogger.addHandler(err_fh)
 err_fh.setFormatter(errformatter)
+
+def save_log_dirs():
+    # if os.getenv("CI"):
+    if True:
+        client = storage.Client()
+        bucket = client.bucket(settings.ETL_LOGGING_RECORDS_BUCKET)
+        for log in ['success.log', 'progress.log', 'error.log']:
+            blob = bucket.blob(f'v{settings.CURRENT_VERSION}/{settings.BASE_NAME}/{log}')
+            if not blob.exists():
+                blob.upload_from_file(open(f'{settings.LOG_DIR}/{log}'))
+            else:
+                comp_blob = bucket.blob(f'v{settings.CURRENT_VERSION}/{settings.BASE_NAME}/compose.log')
+                comp_blob.upload_from_file(open(f'{settings.LOG_DIR}/{log}'))
+                blob.compose([blob, comp_blob])
+        comp_blob.delete()
+
