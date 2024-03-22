@@ -45,6 +45,8 @@ def worker(input, args, dones):
                         for blob in page:
                             successlogger.info(blob.name)
                     progresslogger.info(prefix)
+                else:
+                    print(f'Series {prefix} previously done')
             # if blob_names_todo:
             #     copy_instances(args, client, src_bucket, dst_bucket, blob_names_todo, n)
             # else:
@@ -129,6 +131,16 @@ def get_found_blobs_in_bucket(args):
 
 
 def check_all_instances_mp(args, premerge=False):
+    # try:
+    #     found_blobs = set(open(args.found_blobs).read().splitlines())
+    #     assert len(found_blobs) > 0
+    #     progresslogger.info(f'Already have found blobs')
+    # except:
+    if True:
+        progresslogger.info(f'Getting found blobs')
+        get_found_blobs_in_bucket(args)
+        found_blobs = set(open(args.found_blobs).read().splitlines())
+
     try:
         expected_blobs = set(open(args.expected_blobs).read().splitlines())
         assert len(expected_blobs) > 0
@@ -137,15 +149,6 @@ def check_all_instances_mp(args, premerge=False):
         progresslogger.info(f'Getting expected blobs')
         get_expected_blobs_in_bucket(args, premerge)
         expected_blobs = set(open(args.expected_blobs).read().splitlines())
-
-    try:
-        found_blobs = set(open(args.found_blobs).read().splitlines())
-        assert len(found_blobs) > 0
-        progresslogger.info(f'Already have found blobs')
-    except:
-        progresslogger.info(f'Getting found blobs')
-        get_found_blobs_in_bucket(args)
-        found_blobs = set(open(args.found_blobs).read().splitlines())
 
     if found_blobs == expected_blobs:
         successlogger.info(f"Bucket {args.bucket} has the correct set of blobs")
