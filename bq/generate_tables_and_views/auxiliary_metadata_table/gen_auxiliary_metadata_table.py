@@ -64,9 +64,9 @@ def build_table(args):
             if( i_source='tcia', aj.pub_gcs_tcia_url, aj.pub_gcs_idc_url), 
         #else 
             # We are generating the dev auxiliary_metadata
-            # If this instance is new in this version and we 
+            # If this series is new in this version and we 
             # have not merged new instances into dev buckets
-            if(i_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+            if(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
                 # We use the premerge url prefix
                 CONCAT('idc_v', {settings.CURRENT_VERSION}, 
                     '_',
@@ -106,7 +106,9 @@ def build_table(args):
             # We are generating the dev auxiliary_metadata
             # If this instance is new in this version and we 
             # have not merged new instances into dev buckets
-            if(i_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+            # Note that this about blobs, and thus,because of hierarchical naming,
+            # the blob is new if the containing series is new.
+            if(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
                 # We use the premerge url prefix
                 CONCAT('idc_v', {settings.CURRENT_VERSION}, 
                     '_',
@@ -127,9 +129,9 @@ def build_table(args):
         if( i_source='tcia', aj.pub_gcs_tcia_url, aj.pub_gcs_idc_url), 
     #else 
         # We are generating the dev auxiliary_metadata
-        # If this instance is new in this version and we 
+        # If this series is new in this version and we 
         # have not merged new instances into dev buckets
-        if(i_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+        if(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
             # We use the premerge url prefix
             CONCAT('idc_v', {settings.CURRENT_VERSION}, 
                 '_',

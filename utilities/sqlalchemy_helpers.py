@@ -22,14 +22,6 @@ from idc.models import Base
 
 # Create an SQLAlchemy session
 def sa_session(echo=False):
-    # print(f'''
-    # CLOUD_USERNAME: {settings.CLOUD_USERNAME}
-    # CLOUD_PASSWORD: {settings.CLOUD_PASSWORD}
-    # CLOUD_HOST: {settings.CLOUD_HOST}
-    # CLOUD_PORT: {settings.CLOUD_PORT}
-    # CLOUD_DATABASE: {settings.CLOUD_DATABASE}
-    # CLOUD_INSTANCE: {settings.CLOUD_INSTANCE}
-    # ''')
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
     sql_engine = create_engine(sql_uri, echo=echo)
 

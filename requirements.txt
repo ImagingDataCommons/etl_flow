@@ -22,14 +22,13 @@ google-auth-httplib2
 google-cloud-bigquery
 google-cloud-bigquery-storage
 google-cloud-core
-google-cloud-logging
 google-cloud-storage
 google-crc32c
 google-resumable-media
 googleapis-common-protos
-psycopg2-binary
-sqlalchemy_utils
+psycopg2
 pydicom
 python-dotenv
 python_settings
 sqlalchemy==1.4.50
+sqlalchemy_utils
