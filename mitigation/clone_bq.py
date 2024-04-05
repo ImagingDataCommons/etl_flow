@@ -14,8 +14,8 @@
 # limitations under the License.
 #
 
-# Copies all tables in datasets idc_vX, idc_vX_dev, idc_vX_pub to mitigation project
-# Duplicate idc_vxx datasets in idc_pdp_staging.
+# Copies all tables in datasets idc_vX_dev, idc_vX_pub to mitigation project
+# for some range of versions.
 import settings
 import argparse
 import json
@@ -29,25 +29,23 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--src_project', default=settings.DEV_PROJECT, help='Project from which tables are copied')
     parser.add_argument('--trg_project', default=settings.DEV_MITIGATION_PROJECT, help='Project to which tables are copied')
-    parser.add_argument('--pub_project', default="bigquery-public-data", help='Project where public datasets live')
-    parser.add_argument('--table_ids', default={}, help="Copy all tables/views unless this is non-empty.")
+    parser.add_argument('--pub_project', default=settings.DEV_MITIGATION_PROJECT, help='Project where public datasets live')
     parser.add_argument('--clinical_table_ids', default={}, help="Copy all tables/views unless this is non-empty")
-    parser.add_argument('--range', default = [7, 17], help='Range of versions over which to clone')
+    parser.add_argument('--range', default = [1,17], help='Range of versions over which to clone')
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
     for version in range(args.range[0], args.range[1]+1):
-        if version <=7:
-            args.src_dataset = f'idc_v{version}'
-            args.trg_dataset = f'idc_v{version}'
-            publish_dataset(args, args.table_ids)
-        else:
-            args.src_dataset = f'idc_v{version}_dev'
-            args.trg_dataset = f'idc_v{version}_dev'
-            publish_dataset(args, args.table_ids)
+        args.skipped_table_ids = []
+        args.table_ids = []
 
-            args.src_dataset = f'idc_v{version}_pub'
-            args.trg_dataset = f'idc_v{version}_pub'
-            publish_dataset(args, args.table_ids)
+        args.src_dataset = f'idc_v{version}_dev'
+        args.trg_dataset = f'idc_v{version}_dev'
+        progresslogger.info(f'\n\nCopying {args.src_dataset} to {args.trg_dataset}')
+        publish_dataset(args, args.table_ids, False)
 
+        args.src_dataset = f'idc_v{version}_pub'
+        args.trg_dataset = f'idc_v{version}_pub'
+        progresslogger.info(f'\nCopying {args.src_dataset} to {args.trg_dataset}')
+        publish_dataset(args, args.table_ids, False)

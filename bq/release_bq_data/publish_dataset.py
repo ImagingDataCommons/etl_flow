@@ -110,7 +110,7 @@ def copy_view(client, args, view_id):
             client.delete_table(f'{args.trg_project}.{args.trg_dataset}.{view_id}', not_found_ok=True)
             progresslogger.info(f'Deleted {view}.')
         except:
-            progresslogger.info(f'View {view_id} does not exist.')
+            pass
 
         finally:
             view = client.get_table(f'{args.src_project}.{args.src_dataset}.{view_id}')
@@ -133,15 +133,14 @@ def copy_view(client, args, view_id):
                 # # Update the schema after creating the view
                 # installed_view.schema = view.schema
                 client.update_table(installed_view, ['schema'])
-                progresslogger.info(f'Copy of view {view_id}: DONE')
+                progresslogger.info("Copied view {} to {}".format(f'{args.src_project}.{args.src_dataset}.{view_id}', f'{args.src_project}.{args.src_dataset}.{view_id}'))
             except BadRequest as exc:
                 errlogger.error(f'{exc}')
     except Exception as exc:
         errlogger.error((f'{exc}'))
-        progresslogger.info((f'Really done'))
     return
 
-def publish_dataset(args, table_ids={}):
+def publish_dataset(args, table_ids={}, skipped_table_ids={}, copy_views=True):
     client = bigquery.Client()
     # client = bigquery.Client(project=args.trg_project)
     src_dataset_ref = bigquery.DatasetReference(args.src_project, args.src_dataset)
@@ -156,16 +155,18 @@ def publish_dataset(args, table_ids={}):
         create_dataset(client, args.trg_project, args.trg_dataset, dataset_dict)
 
     progresslogger.info(f'Copying {args.src_dataset} to {args.trg_dataset}')
-    table_ids = table_ids
     if not table_ids:
         table_ids = {table.table_id: table.table_type for table in client.list_tables(f'{args.src_project}.{args.src_dataset}')}
+    for table_id in skipped_table_ids:
+        table_ids.pop(table_id,'')
     # Create tables first
     for table_id in table_ids:
         if table_ids[table_id] == 'TABLE':
             copy_table(client, args, table_id)
 
-    for table_id in table_ids:
-        if table_ids[table_id] == 'VIEW':
-            copy_view(client, args, table_id)
+    if copy_views:
+        for table_id in table_ids:
+            if table_ids[table_id] == 'VIEW':
+                copy_view(client, args, table_id)
 
     return

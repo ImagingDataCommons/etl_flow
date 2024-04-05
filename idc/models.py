@@ -534,6 +534,8 @@ class Instance(Base):
     timestamp = Column(DateTime, nullable=True, comment="Time when this object was last built")
     # Excluded instances are somehow invalid, but are included in the DB to maintain the hash
     excluded = Column(Boolean, default=False, comment="True if object should be excluded from auxiliary_metadata, etc.")
+    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+    mitigation = Column(String, default="", comment="ID of the mitigation which redacted this instance")
 
     seriess = relationship('Series',
                           secondary=series_instance,
@@ -604,6 +606,8 @@ class IDC_Instance(Base):
     size = Column(BigInteger, comment='Instance size in bytes')
     excluded = Column(Boolean, comment='True of this series should be excluded from ingestion')
     idc_version = Column(Integer, comment='IDC version when this instance was added/revised')
+    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+    mitigation = Column(String, default="", comment="ID of the mitigation which redacted this instance")
 
     seriess = relationship("IDC_Series", back_populates="instances")
 
