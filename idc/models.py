@@ -536,6 +536,7 @@ class Instance(Base):
     excluded = Column(Boolean, default=False, comment="True if object should be excluded from auxiliary_metadata, etc.")
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
     mitigation = Column(String, default="", comment="ID of the mitigation which redacted this instance")
+    ingestion_url = Column(String, default="", comment="GCS URL of the blob from which this instance was ingested. Does not apply if source='tcia'")
 
     seriess = relationship('Series',
                           secondary=series_instance,

@@ -15,56 +15,12 @@
 #
 
 # Upload tables from Cloud SQL to BQ
-import google.cloud.bigquery
 from google.cloud import bigquery
 from utilities.bq_helpers import BQ_table_exists, delete_BQ_Table, query_BQ
 from utilities.logging_config import successlogger, errlogger
 from time import time, sleep
 from python_settings import settings
 
-# def create_idc_all_joined(client, args, table, order_by):
-#     view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_all_joined"
-#     view = bigquery.Table(view_id)
-#     view.view_query = f"""
-#     SELECT
-#      c.collection_id,
-#      c.hash
-#      c_hash,
-#      p.submitter_case_id,
-#      p.hash p_hash,
-#      st.study_instance_uid,
-#      st.hash st_hash,
-#      se.series_instance_uid,
-#      se.hash se_hash,
-#      se.excluded se_excluded,
-#      source_doi,
-#      source_url,
-#      third_party,
-#      license_long_name,
-#      license_short_name,
-#      license_url,
-#      sop_instance_uid,
-#      i.hash i_hash,
-#      gcs_url,
-#      size,
-#      i.excluded i_excluded,
-#      idc_version
-#     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_collection` c
-#      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_patient` p
-#      ON c.collection_id = p.collection_id
-#      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_study` st
-#      ON p.submitter_case_id = st.submitter_case_id
-#      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_series` se
-#      ON st.study_instance_uid = se.study_instance_uid
-#      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_instance` i
-#      ON se.series_instance_uid = i.series_instance_uid
-#    """
-#     # Make an API request to create the view.
-#     view = client.create_table(view, exists_ok=True)
-#     print(f"Created {view.table_type}: {str(view.reference)}")
-#     return view
-#
-#
 def upload_version(client, args, table, order_by):
     sql = f"""
     SELECT
@@ -295,7 +251,7 @@ def upload_to_bq(args, tables):
         if BQ_table_exists(client, settings.DEV_PROJECT, settings.BQ_DEV_INT_DATASET, table):
             delete_BQ_Table(client, settings.DEV_PROJECT, settings.BQ_DEV_INT_DATASET, table)
         result = tables[table]['func'](client, args, table, tables[table]['order_by'])
-        if type(result) != google.cloud.bigquery.Table:
+        if type(result) != bigquery.Table:
             job_id = result.path.split('/')[-1]
             job = client.get_job(job_id, location='US')
             while job.state != 'DONE':

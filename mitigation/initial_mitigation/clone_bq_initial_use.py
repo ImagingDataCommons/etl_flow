@@ -33,7 +33,7 @@ if __name__ == '__main__':
     parser.add_argument('--trg_project', default=settings.DEV_MITIGATION_PROJECT, help='Project to which tables are copied')
     parser.add_argument('--pub_project', default=settings.DEV_MITIGATION_PROJECT, help='Project where public datasets live')
     parser.add_argument('--clinical_table_ids', default={}, help="Copy all tables/views unless this is non-empty")
-    parser.add_argument('--range', default = [18,18], help='Range of versions over which to clone')
+    parser.add_argument('--range', default = [12,12], help='Range of versions over which to clone')
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
@@ -91,6 +91,9 @@ if __name__ == '__main__':
             publish_dataset(args, pub_table_ids, {})
 
         elif version == 3:
+            dev_table_ids = {
+                "wsi_metadata": "TABLE"
+            }
             pub_table_ids = {
                 "analysis_results_metadata": "TABLE",
                 "auxiliary_metadata": "TABLE",
@@ -102,20 +105,24 @@ if __name__ == '__main__':
                 "qualitative_measurements": "VIEW",
                 "quantitative_measurements": "VIEW",
                 "segmentations": "VIEW",
-                "version_metadata": "TABLE"
+                "version_metadata": "TABLE",
             }
             args.src_dataset = f'idc_v{version}'
             args.trg_dataset = f'idc_v{version}_dev'
             progresslogger.info(f'\n\nCopying {args.src_dataset} to {args.trg_dataset}')
-            publish_dataset(args, {}, pub_table_ids )
+            # publish_dataset(args, {}, pub_table_ids )
+            publish_dataset(args, dev_table_ids )
 
-            pub_table_ids["dicom_metadata"] = "TABLE"
-            args.src_dataset = f'idc_v{version}'
-            args.trg_dataset = f'idc_v{version}_pub'
-            progresslogger.info(f'\nCopying {args.src_dataset} to {args.trg_dataset}')
-            publish_dataset(args, pub_table_ids, {})
+            # pub_table_ids["dicom_metadata"] = "TABLE"
+            # args.src_dataset = f'idc_v{version}'
+            # args.trg_dataset = f'idc_v{version}_pub'
+            # progresslogger.info(f'\nCopying {args.src_dataset} to {args.trg_dataset}')
+            # publish_dataset(args, pub_table_ids, {})
 
         elif version == 4:
+            dev_table_ids = {
+                "wsi_metadata": "TABLE"
+            }
             pub_table_ids = {
                 "analysis_results_metadata": "TABLE",
                 "auxiliary_metadata": "TABLE",
@@ -134,20 +141,24 @@ if __name__ == '__main__':
                 "segmentations": "VIEW",
                 "tcga_biospecimen_rel9": "TABLE",
                 "tcga_clinical_rel9": "TABLE",
-                "version_metadata": "TABLE"
+                "version_metadata": "TABLE",
             }
             args.src_dataset = f'idc_v{version}'
             args.trg_dataset = f'idc_v{version}_dev'
             progresslogger.info(f'\n\nCopying {args.src_dataset} to {args.trg_dataset}')
-            publish_dataset(args, {}, pub_table_ids )
+            # publish_dataset(args, {}, pub_table_ids )
+            publish_dataset(args, dev_table_ids )
 
-            pub_table_ids["dicom_metadata"] = "TABLE"
-            args.src_dataset = f'idc_v{version}'
-            args.trg_dataset = f'idc_v{version}_pub'
-            progresslogger.info(f'\nCopying {args.src_dataset} to {args.trg_dataset}')
-            publish_dataset(args, pub_table_ids, {})
+            # pub_table_ids["dicom_metadata"] = "TABLE"
+            # args.src_dataset = f'idc_v{version}'
+            # args.trg_dataset = f'idc_v{version}_pub'
+            # progresslogger.info(f'\nCopying {args.src_dataset} to {args.trg_dataset}')
+            # publish_dataset(args, pub_table_ids, {})
 
         elif version == 5:
+            dev_table_ids = {
+                "wsi_metadata": "TABLE"
+            }
             pub_table_ids = {
                 "analysis_results_metadata": "TABLE",
                 "auxiliary_metadata": "TABLE",
@@ -167,20 +178,24 @@ if __name__ == '__main__':
                 "segmentations": "VIEW",
                 "tcga_biospecimen_rel9": "TABLE",
                 "tcga_clinical_rel9": "TABLE",
-                "version_metadata": "TABLE"
+                "version_metadata": "TABLE",
             }
             args.src_dataset = f'idc_v{version}'
             args.trg_dataset = f'idc_v{version}_dev'
             progresslogger.info(f'\n\nCopying {args.src_dataset} to {args.trg_dataset}')
-            publish_dataset(args, {}, pub_table_ids )
+            # publish_dataset(args, {}, pub_table_ids )
+            publish_dataset(args, dev_table_ids )
 
-            pub_table_ids["dicom_metadata"] = "TABLE"
-            args.src_dataset = f'idc_v{version}'
-            args.trg_dataset = f'idc_v{version}_pub'
-            progresslogger.info(f'\nCopying {args.src_dataset} to {args.trg_dataset}')
-            publish_dataset(args, pub_table_ids, {})
+            # pub_table_ids["dicom_metadata"] = "TABLE"
+            # args.src_dataset = f'idc_v{version}'
+            # args.trg_dataset = f'idc_v{version}_pub'
+            # progresslogger.info(f'\nCopying {args.src_dataset} to {args.trg_dataset}')
+            # publish_dataset(args, pub_table_ids, {})
 
         elif version == 6:
+            dev_table_ids = {
+                "wsi_metadata": "TABLE"
+            }
             pub_table_ids = {
                 "analysis_results_metadata": "TABLE",
                 "auxiliary_metadata": "TABLE",
@@ -200,20 +215,28 @@ if __name__ == '__main__':
                 "segmentations": "VIEW",
                 "tcga_biospecimen_rel9": "TABLE",
                 "tcga_clinical_rel9": "TABLE",
-                "version_metadata": "TABLE"
+                "version_metadata": "TABLE",
             }
             args.src_dataset = f'idc_v{version}'
             args.trg_dataset = f'idc_v{version}_dev'
             progresslogger.info(f'\n\nCopying {args.src_dataset} to {args.trg_dataset}')
-            publish_dataset(args, {}, pub_table_ids )
+            # publish_dataset(args, {}, pub_table_ids )
+            publish_dataset(args, dev_table_ids )
 
-            pub_table_ids["dicom_metadata"] = "TABLE"
-            args.src_dataset = f'idc_v{version}'
-            args.trg_dataset = f'idc_v{version}_pub'
-            progresslogger.info(f'\nCopying {args.src_dataset} to {args.trg_dataset}')
-            publish_dataset(args, pub_table_ids, {})
+            # pub_table_ids["dicom_metadata"] = "TABLE"
+            # args.src_dataset = f'idc_v{version}'
+            # args.trg_dataset = f'idc_v{version}_pub'
+            # progresslogger.info(f'\nCopying {args.src_dataset} to {args.trg_dataset}')
+            # publish_dataset(args, pub_table_ids, {})
 
         elif version == 7:
+            dev_table_ids = {
+                "wsi_collection": "TABLE",
+                "wsi_patient": "TABLE",
+                "wsi_study": "TABLE",
+                "wsi_series": "TABLE",
+                "wsi_instance": "TABLE",
+            }
             pub_table_ids = {
                 "analysis_results_metadata": "TABLE",
                 "auxiliary_metadata": "TABLE",
@@ -233,18 +256,84 @@ if __name__ == '__main__':
                 "segmentations": "VIEW",
                 "tcga_biospecimen_rel9": "TABLE",
                 "tcga_clinical_rel9": "TABLE",
-                "version_metadata": "TABLE"
+                "version_metadata": "TABLE",
             }
             args.src_dataset = f'idc_v{version}'
             args.trg_dataset = f'idc_v{version}_dev'
             progresslogger.info(f'\n\nCopying {args.src_dataset} to {args.trg_dataset}')
-            publish_dataset(args, {}, pub_table_ids )
+            # publish_dataset(args, {}, pub_table_ids )
+            publish_dataset(args, dev_table_ids )
 
-            pub_table_ids["dicom_metadata"] = "TABLE"
-            args.src_dataset = f'idc_v{version}'
-            args.trg_dataset = f'idc_v{version}_pub'
-            progresslogger.info(f'\nCopying {args.src_dataset} to {args.trg_dataset}')
-            publish_dataset(args, pub_table_ids, {})
+            # pub_table_ids["dicom_metadata"] = "TABLE"
+            # args.src_dataset = f'idc_v{version}'
+            # args.trg_dataset = f'idc_v{version}_pub'
+            # progresslogger.info(f'\nCopying {args.src_dataset} to {args.trg_dataset}')
+            # publish_dataset(args, pub_table_ids, {})
+
+        elif version == 8:
+            dev_table_ids = {
+                "wsi_collection": "TABLE",
+                "wsi_patient": "TABLE",
+                "wsi_study": "TABLE",
+                "wsi_series": "TABLE",
+                "wsi_instance": "TABLE",
+            }
+            args.src_dataset = f'idc_v{version}_dev'
+            args.trg_dataset = f'idc_v{version}_dev'
+            progresslogger.info(f'\n\nCopying {args.src_dataset} to {args.trg_dataset}')
+            publish_dataset(args, dev_table_ids )
+
+        elif version == 9:
+            dev_table_ids = {
+                "wsi_collection": "TABLE",
+                "wsi_patient": "TABLE",
+                "wsi_study": "TABLE",
+                "wsi_series": "TABLE",
+                "wsi_instance": "TABLE",
+            }
+            args.src_dataset = f'idc_v{version}_dev'
+            args.trg_dataset = f'idc_v{version}_dev'
+            progresslogger.info(f'\n\nCopying {args.src_dataset} to {args.trg_dataset}')
+            publish_dataset(args, dev_table_ids )
+
+        elif version == 10:
+            dev_table_ids = {
+                "wsi_collection": "TABLE",
+                "wsi_patient": "TABLE",
+                "wsi_study": "TABLE",
+                "wsi_series": "TABLE",
+                "wsi_instance": "TABLE",
+            }
+            args.src_dataset = f'idc_v{version}_dev'
+            args.trg_dataset = f'idc_v{version}_dev'
+            progresslogger.info(f'\n\nCopying {args.src_dataset} to {args.trg_dataset}')
+            publish_dataset(args, dev_table_ids )
+
+        elif version == 11:
+            dev_table_ids = {
+                "wsi_collection": "TABLE",
+                "wsi_patient": "TABLE",
+                "wsi_study": "TABLE",
+                "wsi_series": "TABLE",
+                "wsi_instance": "TABLE",
+            }
+            args.src_dataset = f'idc_v{version}_dev'
+            args.trg_dataset = f'idc_v{version}_dev'
+            progresslogger.info(f'\n\nCopying {args.src_dataset} to {args.trg_dataset}')
+            publish_dataset(args, dev_table_ids )
+
+        elif version == 12:
+            dev_table_ids = {
+                "wsi_collection": "TABLE",
+                "wsi_patient": "TABLE",
+                "wsi_study": "TABLE",
+                "wsi_series": "TABLE",
+                "wsi_instance": "TABLE",
+            }
+            args.src_dataset = f'idc_v{version}_dev'
+            args.trg_dataset = f'idc_v{version}_dev'
+            progresslogger.info(f'\n\nCopying {args.src_dataset} to {args.trg_dataset}')
+            publish_dataset(args, dev_table_ids )
 
         else:
 

@@ -66,11 +66,12 @@ def add_a_column(version, table, column, type, default):
     return
 
 def add_columns(version):
-    if version >= 13:
-        add_a_column(version, 'idc_instance', 'redacted', "BOOLEAN", "false")
-        add_a_column(version, 'idc_instance', 'mitigation', "STRING", "''")
-    add_a_column(version, 'instance', 'redacted', "BOOLEAN", "false")
-    add_a_column(version, 'instance', 'mitigation', "STRING", "''")
+    # if version >= 13:
+    #     add_a_column(version, 'idc_instance', 'redacted', "BOOLEAN", "false")
+    #     add_a_column(version, 'idc_instance', 'mitigation', "STRING", "''")
+    # add_a_column(version, 'instance', 'redacted', "BOOLEAN", "false")
+    # add_a_column(version, 'instance', 'mitigation', "STRING", "''")
+    add_a_column(version, 'instance', 'ingestion_url', "STRING", "''")
 
     return
 

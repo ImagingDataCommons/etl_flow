@@ -283,8 +283,10 @@ def prebuild(args):
     src_bucket = storage.Bucket(client, args.src_bucket)
 
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
-    # sql_engine = create_engine(sql_uri, echo=True)
-    sql_engine = create_engine(sql_uri)
+    # sql_engine = create_engine(sql_uri, echo=True,)
+    # sql_engine = create_engine(sql_uri)
+
+    sql_engine = create_engine('bigquery://idc-dev-etl/idc_v18_dev' '?'  'dry_run=true', echo=True)
 
     with Session(sql_engine) as sess:
 
