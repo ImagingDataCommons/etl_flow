@@ -26,6 +26,7 @@ from bq.generate_tables_and_views.original_collections_metadata.schema import da
 from utilities.logging_config import errlogger
 from python_settings import settings
 
+
 clinical_data_schema = [
     bigquery.SchemaField('idc_collection_id', 'STRING', mode='NULLABLE', description='IDC collection_id'),
     bigquery.SchemaField('download_id', 'STRING', mode='NULLABLE', description='Collection manager id of this download'),
@@ -111,8 +112,8 @@ def get_raw_data():
     try:
         BQ_client = bigquery.Client(project=settings.DEV_PROJECT)
         load_BQ_from_json(BQ_client,
-                    'idc-dev-etl',
-                    'gw_temp', args.bqtable_name, metadata_json,
+                    settings.DEV_PROJECT,
+                    settings.BQ_DEV_INT_DATASET, args.bqtable_name, metadata_json,
                                 clinical_data_schema, write_disposition='WRITE_TRUNCATE')
         pass
     except Exception as exc:
@@ -128,7 +129,7 @@ def get_raw_data():
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bqtable_name', default='tcia_clinical_and_related_metadata2', help='BQ table name')
+    parser.add_argument('--bqtable_name', default='tcia_clinical_and_related_metadata', help='BQ table name')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
