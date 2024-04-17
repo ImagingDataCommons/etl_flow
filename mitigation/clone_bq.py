@@ -19,7 +19,7 @@
 import settings
 import argparse
 import json
-from utilities.logging_config import successlogger, progresslogger, errlogger
+from mitigation_utilities.logging_config import successlogger, progresslogger, errlogger
 from bq.release_bq_data.publish_dataset import publish_dataset
 
 

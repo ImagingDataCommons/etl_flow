@@ -19,11 +19,45 @@ from google.cloud import bigquery
 import settings
 import argparse
 
-
-def create_hierarchy():
+# Generate a JSON/dictionary hierarchy of mitigated data
+# Assumes a table, {settings.DEV_MITIGATION_PROJECT}.mitigations.deleted_instances,
+# and having a schema:
+"""
+Field name, Type, Mode
+c_uuid	STRING	NULLABLE	-	-	-	
+collection_id	STRING	NULLABLE	-	-	-	
+c_init_idc_version	INTEGER	NULLABLE	-	-	-	
+c_rev_idc_version	INTEGER	NULLABLE	-	-	-	
+c_final_idc_version	INTEGER	NULLABLE	-	-	-	
+p_uuid	STRING	NULLABLE	-	-	-	
+submitter_case_id	STRING	NULLABLE	-	-	-	
+p_init_idc_version	INTEGER	NULLABLE	-	-	-	
+p_rev_idc_version	INTEGER	NULLABLE	-	-	-	
+p_final_idc_version	INTEGER	NULLABLE	-	-	-	
+st_uuid	STRING	NULLABLE	-	-	-	
+StudyInstanceUID	STRING	NULLABLE	-	-	-	
+st_init_idc_version	INTEGER	NULLABLE	-	-	-	
+st_rev_idc_version	INTEGER	NULLABLE	-	-	-	
+st_final_idc_version	INTEGER	NULLABLE	-	-	-	
+se_uuid	STRING	NULLABLE	-	-	-	
+SeriesInstanceUID	STRING	NULLABLE	-	-	-	
+se_init_idc_version	INTEGER	NULLABLE	-	-	-	
+se_rev_idc_version	INTEGER	NULLABLE	-	-	-	
+se_final_idc_version	INTEGER	NULLABLE	-	-	-	
+i_uuid	STRING	NULLABLE	-	-	-	
+SOPInstanceUID	STRING	NULLABLE	-	-	-	
+i_init_idc_version	INTEGER	NULLABLE	-	-	-	
+i_rev_idc_version	INTEGER	NULLABLE	-	-	-	
+i_final_idc_version	INTEGER	NULLABLE	-	-	-	
+dev_bucket	STRING	NULLABLE	-	-	-	
+pub_gcs_bucket	STRING	NULLABLE	-	-	-	
+pub_aws_bucket	STRING	NULLABLE	-	-	-	
+i_source	STRING	NULLABLE	-	
+"""
+def create_hierarchy(mitigation_id):
     query = f"""
     SELECT * 
-    FROM `{settings.DEV_MITIGATION_PROJECT}.mitigations.deleted_instances`
+    FROM `{settings.DEV_MITIGATION_PROJECT}.mitigations.{mitigation_id}`
     """
     df = bigquery.Client().query(query).to_dataframe()
     collections = {}
@@ -80,7 +114,23 @@ def create_hierarchy():
                             'i_source': instances_df['i_source'].unique()[0],
                         }
 
-    return
+    return collections
+
+
+# Get a list of uuids of instance to be deprecated
+# Assumes a table, {settings.DEV_MITIGATION_PROJECT}.mitigations.deleted_instances,
+# and having a schema as described above
+def get_deleted_instance_uuids():
+    query = f"""
+    SELECT * 
+    FROM `{settings.DEV_MITIGATION_PROJECT}.mitigations.deleted_instances`
+    """
+    instance_uids  = [row.i_uuid for row in bigquery.Client().query(query)]
+    return instance_uids
+
+
+
+
 
 if __name__ == '__main__':
-    create_hierarchy()
+    create_hierarchy("mitigation_20240403")

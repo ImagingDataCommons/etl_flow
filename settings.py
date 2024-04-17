@@ -22,6 +22,9 @@ from dotenv import load_dotenv
 CURRENT_VERSION=19
 PREVIOUS_VERSION=18
 
+# IF MITIGATION_VERSION is defined, logging will be to m<MITIGATION_VERSION) rather than v<CURRENT_VERSION>
+MITIGATION_VERSION="m1"
+
 SECURE_LOCAL_PATH = os.environ.get('SECURE_LOCAL_PATH', '')
 
 if not exists(join(dirname(__file__), SECURE_LOCAL_PATH, '.env')):
@@ -98,8 +101,12 @@ BQ_PDP_DATASET=f'idc_v{CURRENT_VERSION}'
 if os.getenv("CI",''):
     LOGGING_BASE = f'{os.getenv("LOG_DIR")}/v{CURRENT_VERSION}'
 else:
-    LOGGING_BASE = f'/mnt/disks/idc-etl/logs/v{CURRENT_VERSION}'
+    if 'MITIGATION_VERSION' in locals():
+        LOGGING_BASE = f'/mnt/disks/idc-etl/logs/{MITIGATION_VERSION}'
+    else:
+        LOGGING_BASE = f'/mnt/disks/idc-etl/logs/v{CURRENT_VERSION}'
 BASE_NAME = sys.argv[0].rsplit('/',1)[-1].rsplit('.',1)[0]
+
 LOG_DIR = f'{LOGGING_BASE}/{BASE_NAME}'
 
 ETL_LOGGING_RECORDS_BUCKET = os.environ.get('ETL_LOGGING_RECORDS_BUCKET', '')

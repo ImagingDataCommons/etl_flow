@@ -45,6 +45,7 @@ def to_webapp(collection_id):
     return collection_id.lower().replace('-','_').replace(' ','_')
 
 BUF_SIZE = 65536
+# Compute the hash of a file
 def md5_hasher(file_path):
     md5 = hashlib.md5()
     with open(file_path, 'rb') as f:

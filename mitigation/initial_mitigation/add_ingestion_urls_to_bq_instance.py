@@ -21,26 +21,93 @@
 import settings
 from google.cloud import bigquery
 
-VERSION = 4
 
+INSTANCE_VERSION = 3
 
-def get_source_urls(version):
+def clear_ingestion_url_column(client, instance_version):
+    query = f"""
+        UPDATE `{settings.DEV_MITIGATION_PROJECT}.idc_v{instance_version}_dev.instance` i
+        SET i.ingestion_url = ""
+        WHERE True
+    """
+    result = client.query(query)
+    while result.state != 'DONE':
+        result = client.get_job(result.job_id)
+    return
 
-    if version <= 6:
-        query = f"""
-            SELECT sop_instance_uid, gcs_url
-            FROM `{settings.DEV_MITIGATION_PROJECT}.idc_v{version}_dev.wsi_metadata`
+def add_source_urls(client, instance_version, source_urls_version):
+    if source_urls_version <= 6:
+        source_urls_query = f"""
+            SELECT sop_instance_uid, gcs_url url
+            FROM `{settings.DEV_MITIGATION_PROJECT}.idc_v{source_urls_version}_dev.wsi_metadata`
         """
-        results =bigquery.Client().query(query)
-        source_urls = {row.sop_instance_uid: row.gcs_url for row in results}
+        query = f"""
+        UPDATE `{settings.DEV_MITIGATION_PROJECT}.idc_v{instance_version}_dev.instance` i
+        SET i.ingestion_url = CONCAT('gs://af-dac-wsi-conversion-results/', s_u.url)
+        FROM ({source_urls_query}) s_u
+        WHERE 
+            i.sop_instance_uid = s_u.sop_instance_uid AND
+            i.rev_idc_version = {source_urls_version} 
+        """
+    else:
+        if source_urls_version <= 12:
+            source_urls_query = f"""
+                 SELECT sop_instance_uid, url
+                 FROM `{settings.DEV_MITIGATION_PROJECT}.idc_v{source_urls_version}_dev.wsi_instance`
+             """
+        else:
+            source_urls_query = f"""
+                 SELECT sop_instance_uid, gcs_url url
+                 FROM `{settings.DEV_MITIGATION_PROJECT}.idc_v{source_urls_version}_dev.idc_instance`
+             """
 
-def add_source_urls(version, source_urls):
-    pass
+        query = f"""
+        UPDATE `{settings.DEV_MITIGATION_PROJECT}.idc_v{instance_version}_dev.instance` i
+        SET i.ingestion_url = s_u.url
+        FROM ({source_urls_query}) s_u
+        WHERE 
+            i.sop_instance_uid = s_u.sop_instance_uid AND
+            i.rev_idc_version = {source_urls_version} 
+        """
 
-def add_urls(version):
-    for v in range(3, version+1):
-        source_urls = get_source_urls(v)
-        add_source_urls(v, source_urls)
+    # job_config = bigquery.QueryJobConfig(dry_run=True, use_query_cache=False)
+    # query_job = client.query(query, job_config=job_config)
+    result = query_job = client.query(query)
+    while result.state != 'DONE':
+        result = client.get_job(result.job_id)
+
+    return
+
+def validate_table(client, instance_version):
+    query = f"""
+    SELECT COUNT(*) cnt
+    FROM `{settings.DEV_MITIGATION_PROJECT}.idc_v{instance_version}_dev.instance`
+    WHERE source != 'tcia'
+    """
+    result = client.query(query)
+    while result.state != 'DONE':
+        result = client.get_job(result.job_id)
+    print(f'Table {instance_version} IDC instances: {[row.cnt for row in result][0]}')
+
+    query = f"""
+    SELECT COUNT(*) cnt
+    FROM `{settings.DEV_MITIGATION_PROJECT}.idc_v{instance_version}_dev.instance`
+    WHERE source != 'tcia' and ingestion_url = ''
+    """
+    result = client.query(query)
+    while result.state != 'DONE':
+        result = client.get_job(result.job_id)
+    print(f'Table {instance_version} IDC instances without url: {[row.cnt for row in result][0]}')
+
+
+def add_urls(instance_version):
+    client = bigquery.Client()
+    clear_ingestion_url_column(client, instance_version)
+    for source_urls_version in range(3, instance_version+1):
+        add_source_urls(client, instance_version, source_urls_version)
+
+    validate_table(client, instance_version)
 
 if __name__ == "__main__":
-    add_urls(VERSION)
+    for instance_version in range(4,19):
+        add_urls(instance_version)

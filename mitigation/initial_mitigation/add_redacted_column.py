@@ -36,6 +36,7 @@ def add_a_column(version, table, column, type, default):
         except Exception as exc:
             breakpoint()
 
+
     query = f"""
         ALTER TABLE `{settings.DEV_MITIGATION_PROJECT}.idc_v{version}_dev.{table}`
         ALTER COLUMN {column} SET DEFAULT {default}
@@ -71,12 +72,29 @@ def add_columns(version):
     #     add_a_column(version, 'idc_instance', 'mitigation', "STRING", "''")
     # add_a_column(version, 'instance', 'redacted', "BOOLEAN", "false")
     # add_a_column(version, 'instance', 'mitigation', "STRING", "''")
-    add_a_column(version, 'instance', 'ingestion_url', "STRING", "''")
+    # add_a_column(version, 'instance', 'ingestion_url', "STRING", "''")
+    if version <=6:
+        pass
+    elif version <=12:
+        add_a_column(version, 'wsi_collection', 'redacted', "BOOLEAN", "false")
+        add_a_column(version, 'wsi_patient', 'redacted', "BOOLEAN", "false")
+        add_a_column(version, 'wsi_study', 'redacted', "BOOLEAN", "false")
+        add_a_column(version, 'wsi_series', 'redacted', "BOOLEAN", "false")
+    else:
+        add_a_column(version, 'idc_collection', 'redacted', "BOOLEAN", "false")
+        add_a_column(version, 'idc_patient', 'redacted', "BOOLEAN", "false")
+        add_a_column(version, 'idc_study', 'redacted', "BOOLEAN", "false")
+        add_a_column(version, 'idc_series', 'redacted', "BOOLEAN", "false")
+
+    add_a_column(version, 'collection', 'redacted', "BOOLEAN", "false")
+    add_a_column(version, 'patient', 'redacted', "BOOLEAN", "false")
+    add_a_column(version, 'study', 'redacted', "BOOLEAN", "false")
+    add_a_column(version, 'series', 'redacted', "BOOLEAN", "false")
 
     return
 
 if __name__ == "__main__":
-    for version in range(3,19):
+    for version in range(13,19):
         add_columns(version)
         print(f'Updated {version}')
 
