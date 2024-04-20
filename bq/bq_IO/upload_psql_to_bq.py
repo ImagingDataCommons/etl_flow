@@ -43,7 +43,7 @@ def upload_version(client, args, table, order_by):
         '''SELECT version, previous_version, min_timestamp, max_timestamp, done, 
             is_new, expanded, (hashes).tcia, (hashes).idc, (hashes).all_sources, 
             (sources).tcia AS tcia_src, (sources).idc AS idc_src, (revised).tcia AS tcia_revised, 
-            (revised).idc AS idc_revised 
+            (revised).idc AS idc_revised
         FROM {table}''')
     ORDER BY {order_by}
     """
@@ -71,14 +71,15 @@ def upload_collection(client, args, table, order_by):
       STRUCT(tcia_src AS tcia,
         idc_src AS idc) AS sources,
       STRUCT(tcia_rev AS tcia,
-        idc_rev AS idc) AS revised
+        idc_rev AS idc) AS revised,
+      redacted
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT collection_id, idc_collection_id, uuid, min_timestamp, max_timestamp, 
             init_idc_version, rev_idc_version, final_idc_version, done, is_new, expanded, 
             (hashes).tcia AS tcia_hash, (hashes).idc AS idc_hash, (hashes).all_sources AS all_hash, 
             (sources).tcia AS tcia_src, (sources).idc AS idc_src, (revised).tcia AS tcia_rev, 
-            (revised).idc AS idc_rev 
+            (revised).idc AS idc_rev, redacted
         FROM {table}''')
     ORDER BY {order_by}
     """
@@ -106,14 +107,15 @@ def upload_patient(client, args, table, order_by):
       STRUCT(tcia_src AS tcia,
         idc_src AS idc) AS sources,
       STRUCT(tcia_rev AS tcia,
-        idc_rev AS idc) AS revised
+        idc_rev AS idc) AS revised,
+      redacted
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT submitter_case_id, idc_case_id, uuid, min_timestamp, max_timestamp, 
             init_idc_version, rev_idc_version, final_idc_version, done, is_new, expanded, 
             (hashes).tcia AS tcia_hash, (hashes).idc AS idc_hash, (hashes).all_sources AS all_hash, 
             (sources).tcia AS tcia_src, (sources).idc AS idc_src, (revised).tcia AS tcia_rev, 
-            (revised).idc AS idc_rev 
+            (revised).idc AS idc_rev, redacted
         FROM {table}''')
     ORDER BY {order_by}
     """
@@ -140,14 +142,16 @@ def upload_study(client, args, table, order_by):
       STRUCT(tcia_src AS tcia,
         idc_src AS idc) AS sources,
       STRUCT(tcia_rev AS tcia,
-        idc_rev AS idc) AS revised
+        idc_rev AS idc) AS revised,
+      redacted
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT study_instance_uid, uuid, study_instances, min_timestamp, 
             max_timestamp, init_idc_version, rev_idc_version, final_idc_version, 
             done, is_new, expanded, (hashes).tcia AS tcia_hash, (hashes).idc AS idc_hash, 
             (hashes).all_sources AS all_hash, (sources).tcia AS tcia_src, 
-            (sources).idc AS idc_src, (revised).tcia AS tcia_rev, (revised).idc AS idc_rev 
+            (sources).idc AS idc_src, (revised).tcia AS tcia_rev, (revised).idc AS idc_rev,
+            redacted 
         FROM {table}''')
     ORDER BY {order_by}
     """
@@ -182,7 +186,8 @@ def upload_series(client, args, table, order_by):
       license_long_name,
       license_url,
       license_short_name,
-      third_party
+      third_party,
+      redacted
       
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
@@ -193,7 +198,7 @@ def upload_series(client, args, table, order_by):
             (sources).tcia AS tcia_src, (sources).idc AS idc_src, 
             (revised).tcia AS tcia_rev, (revised).idc AS idc_rev,
             source_url, excluded, license_long_name, license_url,
-            license_short_name, third_party
+            license_short_name, third_party, redacted
         FROM {table}''')
     ORDER BY {order_by}
     """
@@ -216,12 +221,16 @@ def upload_instance(client, args, table, order_by):
       CAST(final_idc_version AS INT) AS final_idc_version,
       source,
       timestamp,
-      excluded
+      excluded,
+      redacted,
+      mitigation,
+      ingestion_url
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT sop_instance_uid, uuid, hash, size, revised, done, is_new, 
             expanded, init_idc_version, rev_idc_version, final_idc_version, 
-            cast(source AS varchar) AS source, timestamp, excluded
+            cast(source AS varchar) AS source, timestamp, excluded, redacted,
+            mitigation, ingestion_url
         FROM {table}''')
     ORDER BY {order_by}
     """

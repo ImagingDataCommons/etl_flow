@@ -44,6 +44,7 @@ def create_all_joined(client):
     c.init_idc_version AS c_init_idc_version,
     c.rev_idc_version AS c_rev_idc_version,
     c.final_idc_version AS c_final_idc_version,
+    c.redacted AS c_redacted,
     p.submitter_case_id,
     p.idc_case_id,
     p.uuid AS p_uuid,
@@ -54,6 +55,7 @@ def create_all_joined(client):
     p.init_idc_version AS p_init_idc_version,
     p.rev_idc_version AS p_rev_idc_version,
     p.final_idc_version AS p_final_idc_version,
+    p.redacted AS p_redacted,
     st.study_instance_uid,
     st.uuid AS st_uuid,
     st.min_timestamp AS st_min_timestamp,
@@ -64,6 +66,7 @@ def create_all_joined(client):
     st.init_idc_version AS st_init_idc_version,
     st.rev_idc_version AS st_rev_idc_version,
     st.final_idc_version AS st_final_idc_version,
+    st.redacted AS st_redacted,
     se.series_instance_uid,
     se.uuid AS se_uuid,
     se.min_timestamp AS se_min_timestamp,
@@ -81,6 +84,7 @@ def create_all_joined(client):
     se.license_long_name,
     se.license_short_name,
     se.excluded,
+    se.redacted AS se_redacted,
     i.sop_instance_uid,
     i.uuid AS i_uuid,
     i.timestamp as i_timestamp,
@@ -91,6 +95,9 @@ def create_all_joined(client):
     i.init_idc_version AS i_init_idc_version,
     i.rev_idc_version AS i_rev_idc_version,
     i.final_idc_version AS i_final_idc_version,
+    i.redacted AS i_redacted,
+    i.mitigation as mitigation,
+    i.ingestion_url as ingestion_url,
     ac.dev_tcia_url,
     ac.dev_idc_url,
     ac.pub_gcs_tcia_url,
@@ -123,8 +130,8 @@ def create_all_joined(client):
     return view
 
 # All instances that are public and in the current version
-def create_all_joined_current(client):
-    view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_current"
+def create_all_joined_public_and_current(client):
+    view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current"
     view = bigquery.Table(view_id)
     # view.view_query = f"""
     # SELECT aj.* from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
@@ -138,7 +145,7 @@ def create_all_joined_current(client):
     SELECT * from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined`
     WHERE ((i_source='tcia' AND tcia_access='Public') OR (i_source='idc' AND idc_access='Public'))
     AND ((i_source='tcia' and tcia_metadata_sunset=0) OR (i_source='idc' and idc_metadata_sunset=0))
-    AND idc_version={settings.CURRENT_VERSION} and i_excluded=False
+    AND idc_version={settings.CURRENT_VERSION} AND i_excluded=False AND i_redacted=FALSE 
     """
     # Make an API request to create the view.
     client.delete_table(view_id, not_found_ok=True)
@@ -152,7 +159,7 @@ def create_all_joined_public(client):
     view = bigquery.Table(view_id)
     view.view_query = f"""
     SELECT * from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
-    WHERE (i_source='tcia' AND tcia_access='Public') OR (i_source='idc' AND idc_access='Public')
+    WHERE (i_source='tcia' AND tcia_access='Public') OR (i_source='idc' AND idc_access='Public' AND i_redacted=FALSE )
     """
     # Make an API request to create the view.
     client.delete_table(view_id, not_found_ok=True)
@@ -182,7 +189,7 @@ def create_all_joined_excluded(client):
     view = bigquery.Table(view_id)
     view.view_query = f"""
     SELECT * from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
-    WHERE (i_source='tcia' AND tcia_access='Excluded') OR (i_source='idc' AND idc_access='Excluded')
+    WHERE (i_source='tcia' AND tcia_access='Excluded') OR (i_source='idc' AND idc_access='Excluded' AND i_redacted=FALSE)
     """
     # Make an API request to create the view.
     client.delete_table(view_id, not_found_ok=True)
@@ -196,15 +203,18 @@ def create_idc_all_joined(client):
     view.view_query = f"""
     SELECT 
      c.collection_id, 
-     c.hash 
-     c_hash,
+     c.hash c_hash,
+     c.redacted c_redacted,
      p.submitter_case_id, 
      p.hash p_hash,
+     p.redacted p_redacted,
      st.study_instance_uid, 
      st.hash st_hash,
+     st.redacted st_redacted,
      se.series_instance_uid, 
      se.hash se_hash, 
-     se.excluded se_excluded, 
+     se.excluded se_excluded,
+     se.redacted se_redacted, 
      source_doi, 
      source_url, 
      third_party, 
@@ -213,10 +223,12 @@ def create_idc_all_joined(client):
      license_url,
      sop_instance_uid, 
      i.hash i_hash, 
-     gcs_url, 
+     gcs_url,
      size,
      i.excluded i_excluded, 
-     idc_version
+     idc_version,
+     i.redacted i_redacted,
+     mitigation
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_collection` c
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_patient` p
      ON c.collection_id = p.collection_id
@@ -247,7 +259,7 @@ if __name__ == '__main__':
     create_all_joined_public(BQ_client)
     create_all_joined_limited(BQ_client)
     create_all_joined_excluded(BQ_client)
-    create_all_joined_current(BQ_client)
+    create_all_joined_public_and_current(BQ_client)
     create_idc_all_joined(BQ_client)
 
 

@@ -131,9 +131,9 @@ SET
     # We do not expect to redact an entire version
     {"redacted = redactions.redacted," if parent != 'version' else ""}
     `hashes` = STRUCT(
-        if(`redactions`.`hashes`[0] IS NULL, "", `redactions`.`hashes`[0]) AS tcia_hash
-        , if(`redactions`.`hashes`[1] IS NULL, "", `redactions`.`hashes`[1]) AS idc_hash
-        {", if(`redactions`.`hashes`[2] IS NULL, "", `redactions`.`hashes`[2]) AS all_hash" if idc_version >=4 else ''}
+        if(`redactions`.`hashes`[0] IS NULL, "", `redactions`.`hashes`[0]) AS tcia_hash,
+        if(`redactions`.`hashes`[1] IS NULL, "", `redactions`.`hashes`[1]) AS idc_hash,
+        if(`redactions`.`hashes`[2] IS NULL, "", `redactions`.`hashes`[2]) AS all_hash
     )
 FROM (
     # For each parent in the mitigation metadata table,
@@ -145,20 +145,18 @@ FROM (
         if(LOGICAL_AND({child_alias}.redacted),
             # If all children are redacted, then the parent is redacted and its hashes are all null
             STRUCT(
-                "" AS tcia_hash
-                , "" AS idc_hash 
-                {''', "" AS all_hash''' if idc_version>=4 else ''}
-            ),
+                "" AS tcia_hash, 
+                "" AS idc_hash, 
+                "" AS all_hash),
             # Otherwise we separately aggregate the 'tcia', 'idc' and 'all' hash of each child. If a child is redacted,
             # its hashes are aggregated as NULLs 
             STRUCT( 
-                IF(STRING_AGG({child_alias}.hashes[0], "")="", "", 
-                    TO_HEX(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hashes[0]) ,"" ORDER BY {child_alias}.hashes[0])))) AS tcia_hash
-                , IF(STRING_AGG({child_alias}.hashes[1], "")="", "", 
-                   TO_HEX(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hashes[1]) ,"" ORDER BY {child_alias}.hashes[1])))) AS idc_hash
-                {'''if(STRING_AGG({child_alias}.hashes[2], "")="", "", 
-                       , TO_HEX(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hashes[2]) ,"" ORDER BY {child_alias}.hashes[2])))) AS all_hash'''
-                 if idc_version>=4 else ''}
+                IF(STRING_AGG({child_alias}.hashes.tcia_hash, "")="", "", 
+                    TO_HEX(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hashes[0]) ,"" ORDER BY {child_alias}.hashes[0])))) AS tcia_hash,
+                IF(STRING_AGG({child_alias}.hashes.idc_hash, "")="", "", 
+                   TO_HEX(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hashes[1]) ,"" ORDER BY {child_alias}.hashes[1])))) AS idc_hash,
+                if(STRING_AGG({child_alias}.hashes.all_hash, "")="", "", 
+                   TO_HEX(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hashes[2]) ,"" ORDER BY {child_alias}.hashes[2])))) AS all_hash
                 )
         ) hashes
     FROM `{settings.DEV_MITIGATION_PROJECT}.idc_v{idc_version}_dev.{parent}_{child}` {parent_alias}_{child_alias}
@@ -188,15 +186,15 @@ WHERE {parent_alias}.{'uuid' if parent != 'version' else 'version'}=redactions.p
 if __name__ == "__main__":
     client = bigquery.Client()
 
-    for idc_version in range(3,4):
+    for idc_version in range(18,19):
         progresslogger.info(f'Revising version {idc_version}')
-        prefix = 'x'
-        # deprecate_instance(client, idc_version, prefix, mitigation_id="m1")
-        # progresslogger.info(f'\nRevised {prefix}instance')
-        # deprecate_series(client, idc_version, prefix, mitigation_id="m1", parent="series", child="instance",
-        #                 parent_alias="se", child_alias="i", \
-        #                 parent_id="series_instance_uid", child_id="sop_instance_uid")
-        # progresslogger.info(f'\nRevised {prefix}series')
+        prefix = ''
+        deprecate_instance(client, idc_version, prefix, mitigation_id="m1")
+        progresslogger.info(f'\nRevised {prefix}instance')
+        deprecate_series(client, idc_version, prefix, mitigation_id="m1", parent="series", child="instance",
+                        parent_alias="se", child_alias="i", \
+                        parent_id="series_instance_uid", child_id="sop_instance_uid")
+        progresslogger.info(f'\nRevised {prefix}series')
         deprecate_level(client, idc_version, prefix, mitigation_id="m1",  parent="study", child="series",
                         parent_alias="st", child_alias="se", \
                         parent_id="study_instance_uid", child_id="series_instance_uid")
