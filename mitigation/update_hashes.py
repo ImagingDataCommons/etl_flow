@@ -70,6 +70,47 @@ if __name__ == '__main__':
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
+
+    query=f"""
+WITH redacted AS (
+  SELECT DISTINCT uuid as i_uuid, `hash` instance_hash
+  FROM `idc-dev-mitigation.idc_v19_dev.instance` i
+  WHERE redacted=TRUE
+)
+ SELECT DISTINCT
+    v.version,
+    if(c.hashes.all_hash='','', c.collection_id) AS collection_id,
+    c.hashes.all_hash AS collection_hash,
+    c.rev_idc_version as c_rev_idc_version,
+    c.final_idc_version as c_final_idc_version,
+    if(p.hashes.all_hash='','', p.submitter_case_id) AS submitter_case_id,
+    p.hashes.all_hash AS patient_hash,
+    p.rev_idc_version as p_rev_idc_version,
+    p.final_idc_version as p_final_idc_version,
+     if(st.hashes.all_hash='','', st.study_instance_uid) AS study_instance_uid,
+    st.hashes.all_hash AS study_hash,
+    st.rev_idc_version as st_rev_idc_version,
+    st.final_idc_version as st_final_idc_version,
+    if(se.hashes.all_hash='','', se.series_instance_uid) AS series_instance_uid,
+    se.hashes.all_hash AS series_hash,
+    se.rev_idc_version as se_rev_idc_version,
+    se.final_idc_version as se_final_idc_version,
+
+
+   FROM `idc-dev-mitigation.idc_v19_dev.version` v
+     JOIN `idc-dev-mitigation.idc_v19_dev.version_collection` vc ON v.version = vc.version
+     JOIN `idc-dev-mitigation.idc_v19_dev.collection` c ON vc.collection_uuid = c.uuid
+     JOIN `idc-dev-mitigation.idc_v19_dev.collection_patient` cp ON c.uuid = cp.collection_uuid
+     JOIN `idc-dev-mitigation.idc_v19_dev.patient` p ON cp.patient_uuid = p.uuid
+     JOIN `idc-dev-mitigation.idc_v19_dev.patient_study` ps ON p.uuid = ps.patient_uuid
+     JOIN `idc-dev-mitigation.idc_v19_dev.study` st ON ps.study_uuid = st.uuid
+     JOIN `idc-dev-mitigation.idc_v19_dev.study_series` ss ON st.uuid = ss.study_uuid
+     JOIN `idc-dev-mitigation.idc_v19_dev.series` se ON ss.series_uuid = se.uuid
+     JOIN `idc-dev-mitigation.idc_v19_dev.series_instance` si ON se.uuid = si.series_uuid
+     JOIN redacted ON si.instance_uuid = redacted.i_uuid
+     ORDER BY v.version, collection_id, submitter_case_id, study_instance_uid, series_instance_uid
+"""
+
     for version in range(args.range[0], args.range[1]+1):
         args.skipped_table_ids = []
         args.table_ids = []
