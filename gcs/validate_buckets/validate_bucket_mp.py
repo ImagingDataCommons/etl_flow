@@ -40,25 +40,7 @@ def get_expected_blobs_in_bucket(args, premerge=False):
       ORDER BY blob_name
   """
 
-    query_job = client.query(query)  # Make an API request.
-    # query_job.result()  # Wait for the query to complete.
-    #
-    # # Get the destination table for the query results.
-    # #
-    # # All queries write to a destination table. If a destination table is not
-    # # specified, the BigQuery populates it with a reference to a temporary
-    # # anonymous table after the query completes.
-    # destination = query_job.destination
-    #
-    # # Get the schema (and other properties) for the destination table.
-    # #
-    # # A schema is useful for converting from BigQuery types to Python types.
-    # destination = client.get_table(destination)
-    # with open(args.expected_blobs, 'w') as f:
-    #     for page in client.list_rows(destination, page_size=args.batch).pages:
-    #         rows = [f'{row["blob_name"]}\n' for row in page]
-    #         f.write(''.join(rows))
-
+    query_job = client.query(query)
     blob_names = set(query_job.result().to_dataframe()['blob_name'].to_list())
     return blob_names
 
@@ -148,15 +130,6 @@ def check_all_instances_mp(args, premerge=False):
         progresslogger.info(f'Getting found blobs')
         get_found_blobs_in_bucket(args)
         found_blobs = set(open(args.found_blobs).read().splitlines())
-
-    # try:
-    #     expected_blobs = set(open(args.expected_blobs).read().splitlines())
-    #     assert len(expected_blobs) > 0
-    #     progresslogger.info(f'Already have expected blobs')
-    # except:
-    #     progresslogger.info(f'Getting expected blobs')
-    #     get_expected_blobs_in_bucket(args, premerge)
-    #     expected_blobs = set(open(args.expected_blobs).read().splitlines())
 
     expected_blobs = get_expected_blobs_in_bucket(args, premerge)
 

@@ -32,7 +32,7 @@ from gcs.validate_buckets.validate_bucket_mp import check_all_instances_mp
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--processes', default=64)
+    parser.add_argument('--processes', default=32)
     parser.add_argument('--bucket', default='idc-dev-open')
     # parser.add_argument('--src_project', default=settings.DEV_PROJECT)
     parser.add_argument('--dev_or_pub', default = 'dev', help='Validating a dev or pub bucket')

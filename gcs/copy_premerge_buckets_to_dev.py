@@ -70,7 +70,7 @@ def copy_premerge_buckets(args):
     except:
         dones = set([])
 
-    for collection_id in bucket_data:
+    for collection_id in sorted(list(bucket_data.keys())):
         if client.bucket(f'idc_v{args.version}_tcia_{collection_id}').exists():
             if f'idc_v{args.version}_tcia_{collection_id}' in dones:
                 progresslogger.info(f'Bucket idc_v{args.version}_tcia_{collection_id} previously copied')
