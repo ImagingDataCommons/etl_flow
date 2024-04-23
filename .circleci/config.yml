@@ -1,0 +1,35 @@
+version: 2.1
+orbs:
+  python: circleci/python@2.1.1
+
+jobs:
+  prelims:
+#    docker:
+#      - image:
+#          - image: cimg/python:3.8.14
+    executor: python/default
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+      - run:
+          name: Run tests
+          command: python -m temp/helloworld.py
+#      - import_db
+#      - create_bq_datasets
+#      - detect_tcia_collection_name_changes
+#      - revise_original_collections_metadata_idc_source_table
+#      - revise_analysis_results_metadata_idc_source_table
+#      - update_analysis_results_descriptions_table
+
+#  preingestion:
+#    docker:
+#      - image:
+#          - image: cimg/python:3.8.14
+#    steps:
+#      -update_idc_xxx_table_hierarchy
+workflows:
+  flow:
+    jobs:
+      - prelims
+
