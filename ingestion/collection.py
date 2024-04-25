@@ -257,6 +257,8 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
 
         # Enqueue each patient in the the task queue
         # patients = sorted(collection.patients, key=lambda patient: patient.done, reverse=True)
+        all_patients = [patient for patient in collection.patients]
+        all_patients = sorted(all_patients, key=lambda patient: patient.submitter_case_id)
         patients = [patient for patient in collection.patients if patient.done==False]
         patients = sorted(patients, key=lambda patient: patient.submitter_case_id)
         # Start worker processes
@@ -269,7 +271,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
 
         args.pid = 0
         for patient in patients:
-            patient_index = f'{collection.patients.index(patient) + 1} of {len(collection.patients)}'
+            patient_index = f'{all_patients.index(patient) + 1} of {len(all_patients)}'
             if not patient.done:
                 task_queue.put((patient_index, collection.collection_id, patient.submitter_case_id))
                 enqueued_patients.append(patient.submitter_case_id)

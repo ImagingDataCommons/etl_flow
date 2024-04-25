@@ -34,18 +34,32 @@ from ingestion.utilities.utils import md5_hasher
 
 import time
 
-from pydicom import dcmread
+from ingestion.utilities.utils import get_merkle_hash
 
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, update
+from utilities.sqlalchemy_helpers import sa_session
 from google.cloud import storage
 
-import csv
+from multiprocessing import Queue, Process
+from queue import Empty
+
+from subprocess import run
 
 import argparse
 import sys
 
-def build_instance(client, args, sess, series, instance_id, hash, size, blob_name):
+PATIENT_ID = 0
+STUDY_INSTANCE_UID = 1
+SERIES_INSTANCE_UID = 2
+SOP_INSTANCE_UID = 3
+GCS_URL = 4
+
+
+def build_instance(args, bucket, series, instance_data):
+    instance_id = instance_data[SOP_INSTANCE_UID]
+    blob_name = instance_data[GCS_URL].split('/',3)[-1]
+    gcs_url = instance_data[GCS_URL]
     try:
         # Get the record of this instance if it exists
         instance = next(instance for instance in series.instances if instance.sop_instance_uid == instance_id)
@@ -55,15 +69,39 @@ def build_instance(client, args, sess, series, instance_id, hash, size, blob_nam
         instance.sop_instance_uid = instance_id
         series.instances.append(instance)
         progresslogger.info(f'\t\t\t\tInstance {blob_name} added')
+
+    blob = bucket.blob(blob_name)
+    blob.reload()
+    try:
+        hash = b64decode(blob.md5_hash).hex()
+    except TypeError:
+        # Can't get md5 hash for some blobs (maybe multipart copied/)
+        # So try to compute it
+        try:
+            # Copy the blob to disk
+            src = gcs_url
+            dst = f'{args.tmp_directory}/{blob_name}'
+            result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
+
+            hash = md5_hasher(f"{args.tmp_directory}/{blob_name}")
+            result = run(['rm', dst])
+            progresslogger.info(f'Computed md5 hash of {blob_name}')
+
+        except Exception as exc:
+            errlogger.error(f'Failed to get hash/sizeof {blob_name}')
+            exit
+
+    instance.size = blob.size
     instance.idc_version = args.version
-    instance.gcs_url = f'gs://{args.src_bucket}/{blob_name}'
+    instance.gcs_url = f'{gcs_url}'
     instance.hash = hash
-    instance.idc_version = args.version
     instance.excluded = False
-    successlogger.info(blob_name)
+    successlogger.info(gcs_url)
 
 
-def build_series(client, args, sess, study, series_id, instance_id, hash, size, blob_name):
+def build_series(args, bucket, study, series_data):
+    # study_id is the  for all rows`
+    series_id = series_data[0][SERIES_INSTANCE_UID]
     try:
         series = next(series for series in study.seriess if series.series_instance_uid == series_id)
         progresslogger.info(f'\t\t\tSeries {series_id} exists')
@@ -81,11 +119,17 @@ def build_series(client, args, sess, study, series_id, instance_id, hash, size, 
     series.source_doi = args.source_doi
     series.source_url = args.source_url
     series.excluded = False
-    build_instance(client, args, sess, series, instance_id, hash, size, blob_name)
+    # At this point, each row in series data corresponds to an instance on the series
+    for instance_data in series_data:
+        build_instance(args, bucket, series, instance_data)
+    hashes = [instance.hash for instance in series.instances]
+    series.hash = get_merkle_hash(hashes)
     return
 
 
-def build_study(client, args, sess, patient, study_id, series_id, instance_id, hash, size, blob_name):
+def build_study(args, bucket, patient, study_data):
+    # study_id is the second column and same for all rows`
+    study_id = study_data[0][STUDY_INSTANCE_UID]
     try:
         study = next(study for study in patient.studies if study.study_instance_uid == study_id)
         progresslogger.info(f'\t\tStudy {study_id} exists')
@@ -94,11 +138,20 @@ def build_study(client, args, sess, patient, study_id, series_id, instance_id, h
         study.study_instance_uid = study_id
         patient.studies.append(study)
         progresslogger.info(f'\t\tStudy {study_id} added')
-    build_series(client, args, sess, study, series_id, instance_id, hash, size, blob_name)
+    series_ids = set(row[2] for row in study_data)
+    series_ids = list(series_ids)
+    series_ids.sort()
+    for series_id in series_ids:
+        series_data = [row for row in study_data if series_id == row[SERIES_INSTANCE_UID]]
+        build_series(args, bucket, study, series_data)
+    hashes = [series.hash for series in study.seriess ]
+    study.hash = get_merkle_hash(hashes)
     return
 
 
-def build_patient(client, args, sess, collection, patient_id, study_id, series_id, instance_id, hash, size, blob_name):
+def build_patient(args, bucket, collection, patient_data):
+    # patient_id is the first column and same for all rows`
+    patient_id = patient_data[0][PATIENT_ID]
     try:
         patient = next(patient for patient in collection.patients if patient.submitter_case_id == patient_id)
         progresslogger.info(f'\tPatient {patient_id} exists')
@@ -107,11 +160,45 @@ def build_patient(client, args, sess, collection, patient_id, study_id, series_i
         patient.submitter_case_id = patient_id
         collection.patients.append(patient)
         progresslogger.info(f'\tPatient {patient_id} added')
-    build_study(client, args, sess, patient, study_id, series_id, instance_id, hash, size, blob_name)
+    study_ids = set(row[1] for row in patient_data)
+    study_ids = list(study_ids)
+    study_ids.sort()
+    for study_id in study_ids:
+        study_data = [row for row in patient_data if study_id == row[STUDY_INSTANCE_UID]]
+        build_study(args, bucket, patient, study_data)
+    hashes = [study.hash for study in patient.studies ]
+    patient.hash = get_merkle_hash(hashes)
     return
 
 
-def build_collection(client, args, sess, collection_id, patient_id, study_id, series_id, instance_id, hash, size, blob_name):
+PATIENT_TRIES=5
+def worker(input, output, args, collection_id):
+    client = storage.Client()
+    bucket = client.bucket(args.src_bucket)
+    with sa_session() as sess:
+        collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
+        for more_args in iter(input.get, 'STOP'):
+            index, patient_data = more_args
+            for attempt in range(PATIENT_TRIES):
+                try:
+                    progresslogger.info(f'Building patient {index}')
+                    build_patient(args, bucket, collection, patient_data)
+                    sess.commit()
+                    output.put(patient_data[0][PATIENT_ID])
+                    break
+                except Exception as exc:
+                    errlogger.error("p%s, exception %s; reattempt %s on patient %s/%s, %s; %s", args.pid, exc, attempt, collection.collection_id, patient.submitter_case_id, index, time.asctime())
+                    sess.rollback()
+                time.sleep((2**attempt)-1)
+
+            else:
+                errlogger.error("p%s, Failed to process patient: %s", args.pid, patient.submitter_case_id)
+                sess.rollback()
+
+def build_collection(args, sess, collection_id):
+    client = storage.Client()
+
+    # Create the collection if it is not yet in the DB
     collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
     if not collection:
         # The collection is not currently in the DB, so add it
@@ -121,7 +208,73 @@ def build_collection(client, args, sess, collection_id, patient_id, study_id, se
         progresslogger.info(f'Collection {collection_id} added')
     else:
         progresslogger.info(f'Collection {collection_id} exists')
-    build_patient(client, args, sess, collection, patient_id, study_id, series_id, instance_id, hash, size, blob_name)
+
+    # Get a list of all the 'done' instance. These are presumed to be instances having the corresponding
+    # source_doi and which have the current version
+    dones = sess.query(IDC_Series, IDC_Instance.gcs_url).join(IDC_Instance.seriess). \
+        filter(IDC_Series.source_doi == args.source_doi).filter(IDC_Instance.idc_version == args.version).all()
+    dones = set([row['gcs_url'] for row in dones])
+
+    # Read in the manifest and make a list of the (distinct) patient_ids
+    data = [row.split(',') for row in open(args.metadata_table).read().splitlines()]
+    all_patient_ids = set(str(row[0]) for row in data[1:])
+    all_patient_ids = list(all_patient_ids)
+    all_patient_ids.sort()
+    undone_data = [row for row in data[1:] if row[GCS_URL] not in dones]
+    patient_ids = set(str(row[0]) for row in undone_data[1:])
+    patient_ids = list(patient_ids)
+    patient_ids.sort()
+
+    processes = []
+    # Create queues
+    task_queue = Queue()
+    done_queue = Queue()
+    # List of patients enqueued
+    enqueued_patients = []
+    # Start worker processes
+    for process in range(min(args.processes, len(patient_ids))):
+        args.pid = process+1
+        processes.append(
+            Process(target=worker, args=(task_queue, done_queue, args, collection_id)))
+        processes[-1].start()
+
+    args.pid = 0
+    for patient_id in patient_ids:
+        # Make a list of the metadata of patient_id
+        # patient_data = [row for row in data if patient_id == row[PATIENT_ID] and not row[GCS_URL] in dones]
+        patient_data = [row for row in undone_data if patient_id == row[PATIENT_ID]]
+        patient_index = f'{all_patient_ids.index(patient_id) + 1} of {len(all_patient_ids)}'
+        # Enqueue the patient data
+        task_queue.put((patient_index, patient_data))
+        enqueued_patients.append(patient_id)
+
+    # Collect the results for each patient
+    try:
+        while not enqueued_patients == []:
+            # Timeout if waiting too long
+            results = done_queue.get(True)
+            enqueued_patients.remove(results)
+
+        # Tell child processes to stop
+        for process in processes:
+            task_queue.put('STOP')
+
+        # Wait for them to stop
+        for process in processes:
+            process.join()
+
+        sess.commit()
+
+    except Empty as e:
+        errlogger.error("Timeout in build_collection %s", collection.collection_id)
+        for process in processes:
+            process.terminate()
+            process.join()
+        sess.rollback()
+        successlogger.info("Collection %s, %s, NOT completed in %s", collection.collection_id)
+
+    hashes = [patient.hash for patient in collection.patients]
+    collection.hash= get_merkle_hash(hashes)
     return
 
 
@@ -134,101 +287,39 @@ def prebuild(args):
     sql_engine = create_engine(sql_uri)
 
     with Session(sql_engine) as sess:
-        client = storage.Client()
-        dones = sess.query(IDC_Series, IDC_Instance.gcs_url).join(IDC_Instance.seriess). \
-            filter(IDC_Series.source_doi == args.source_doi).filter(IDC_Instance.idc_version == args.version).all()
-        dones = set([row['gcs_url'].replace(f'gs://{args.src_bucket}/', '') for row in dones])
-        # dones = set(open(successlogger.handlers[0].baseFilename).read().splitlines())
-        # If we have a table of PatientID,StudyInstanceuid,seriesinstanceuid,sopInstanceuid,filepath metadata
-        bucket = client.bucket(args.src_bucket)
-        data = [row.split(',') for row in open(args.metadata_table).read().splitlines()]
-        patients = set(str(row[0]) for row in data)
-        patients = list(patients)
-        patients.sort()
-        print(time.asctime())
-        n=0
-        for patient in patients:
-            studies = [row for row in data if patient == row[0]]
-            n += 1
-            if n%100 == 0:
-                print(n)
-        print(time.asctime())
-        with open(args.metadata_table) as csvfile:
-            reader = csv.DictReader(csvfile, fieldnames=['PatientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID', 'filepath'])
-            data = open()
-            skip=True
-            n=0
-            for r in reader:
-                if skip:
-                    skip = False
-                    continue
-                patient_id = r['PatientID']
-                study_id = r['StudyInstanceUID']
-                series_id = r['SeriesInstanceUID']
-                instance_id = r['SOPInstanceUID']
-                collection_id = args.collection_id
 
-                blob_name = r['filepath'].replace(f'gs://{args.src_bucket}/', '')
-                if blob_name in dones:
-                    progresslogger.info(f"Skipping {blob_name}")
-                    continue
-                blob = bucket.blob(blob_name)
-                blob.reload()
-                try:
-                    hash = b64decode(blob.md5_hash).hex()
-                except TypeError:
-                    # Can't get md5 hash for some blobs (maybe multipart copied/)
-                    # So try to compute it
-                    try:
-                        hash = md5_hasher(f"{args.mount_point}/{blob.name}")
-                        progresslogger.info(f'Computed md5 hash of {blob_name}')
-                    except Exception as exc:
-                        errlogger.error(f'Failed to get hash/sizeof {blob_name}')
-                        exit
-                size = blob.size
-                build_collection(client, args, sess, collection_id, patient_id, study_id, series_id, instance_id, hash,
-                             size, blob.name)
-                n += 1
-                if not n%500:
-                    sess.commit()
+        build_collection(args, sess, args.collection_id)
         sess.commit()
-        if args.validate:
-            if args.third_party:
-                if validate_analysis_result(args) == -1:
-                    exit -1
-            else:
-                if validate_original_collection(args) == -1:
-                    exit -1
 
-        if args.gen_hashes:
-            gen_hashes(args.collection_id)
-        return
+    if args.validate:
+        if args.third_party:
+            if validate_analysis_result(args) == -1:
+                exit -1
+        else:
+            if validate_original_collection(args) == -1:
+                exit -1
 
 
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--src_bucket', default='dac-vhm-dst', help='Bucket containing WSI instances')
-    parser.add_argument('--metadata_table', default='./bq-results-20240223-035630-1708660660065.csv', help='csv table of study, series, SOPInstanceUID, filepath')
-    parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/visible_human_project', help='Directory on which to mount the bucket.\
-                The script will create this directory if necessary.')
-    parser.add_argument('--subdir', default='', help="Subdirectory of mount_point at which to start walking directory")
-    parser.add_argument('--startswith', default=[], help='Only include files whose name startswith a string in the list. If the list is empty, include all')
-    parser.add_argument('--collection_id', default='NLM_visible_human_project', help='idc_webapp_collection id of the collection or ID of analysis result to which instances belong.')
-    parser.add_argument('--source_doi', default='', help='Collection DOI')
-    parser.add_argument('--source_url', default='https://www.nlm.nih.gov/research/visible/visible_human.html',\
-                        help='Info page URL')
-    parser.add_argument('--license', default = {"license_url": 'https://www.nlm.nih.gov/databases/download/terms_and_conditions.html',\
-            "license_long_name": "National Library of Medicine Terms and Conditions; May 21, 2019", \
-            "license_short_name": "National Library of Medicine Terms and Conditions; May 21, 2019"})
-    parser.add_argument('--third_party', type=bool, default=False, help='True if from a third party analysis result')
-    parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
-    parser.add_argument('--gen_hashes', type=bool, default=True, help='True if hashes are to be generated')
-
-    args = parser.parse_args()
-    print("{}".format(args), file=sys.stdout)
-    args.client=storage.Client()
-
-    prebuild(args)
+# if __name__ == '__main__':
+#
+#     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+#     parser.add_argument('--version', default=settings.CURRENT_VERSION)
+#     parser.add_argument('--src_bucket', default='dac-vhm-dst', help='Bucket containing WSI instances')
+#     parser.add_argument('--metadata_table', default='./manifest.csv', help='csv table of study, series, SOPInstanceUID, filepath')
+#     parser.add_argument('--collection_id', default='NLM_visible_human_project', help='idc_webapp_collection id of the collection or ID of analysis result to which instances belong.')
+#     parser.add_argument('--source_doi', default='', help='Collection DOI')
+#     parser.add_argument('--source_url', default='https://www.nlm.nih.gov/research/visible/visible_human.html',\
+#                         help='Info page URL')
+#     parser.add_argument('--license', default = {"license_url": 'https://www.nlm.nih.gov/databases/download/terms_and_conditions.html',\
+#             "license_long_name": "National Library of Medicine Terms and Conditions; May 21, 2019", \
+#             "license_short_name": "National Library of Medicine Terms and Conditions; May 21, 2019"})
+#     parser.add_argument('--third_party', type=bool, default=False, help='True if from a third party analysis result')
+#     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
+#     parser.add_argument('--gen_hashes', type=bool, default=True, help='True if hashes are to be generated')
+#
+#     args = parser.parse_args()
+#     print("{}".format(args), file=sys.stdout)
+#     args.client=storage.Client()
+#
+#     prebuild(args)
 

@@ -29,7 +29,7 @@ def gen_revision_manifest(args):
     query= f"""
         SELECT uuid
         FROM `{args.project}.idc_v{args.version}_dev.instance` 
-        WHERE rev_idc_version = {args.version}
+        WHERE rev_idc_version = {args.version} AND excluded=False
         ORDER BY uuid
     """
 

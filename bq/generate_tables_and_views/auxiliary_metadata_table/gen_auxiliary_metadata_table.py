@@ -64,9 +64,9 @@ def build_table(args):
             if( i_source='tcia', aj.pub_gcs_tcia_url, aj.pub_gcs_idc_url), 
         #else 
             # We are generating the dev auxiliary_metadata
-            # If this instance is new in this version and we 
+            # If this series is new in this version and we 
             # have not merged new instances into dev buckets
-            if(i_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+            if(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
                 # We use the premerge url prefix
                 CONCAT('idc_v', {settings.CURRENT_VERSION}, 
                     '_',
@@ -106,7 +106,9 @@ def build_table(args):
             # We are generating the dev auxiliary_metadata
             # If this instance is new in this version and we 
             # have not merged new instances into dev buckets
-            if(i_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+            # Note that this about blobs, and thus,because of hierarchical naming,
+            # the blob is new if the containing series is new.
+            if(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
                 # We use the premerge url prefix
                 CONCAT('idc_v', {settings.CURRENT_VERSION}, 
                     '_',
@@ -127,9 +129,9 @@ def build_table(args):
         if( i_source='tcia', aj.pub_gcs_tcia_url, aj.pub_gcs_idc_url), 
     #else 
         # We are generating the dev auxiliary_metadata
-        # If this instance is new in this version and we 
+        # If this series is new in this version and we 
         # have not merged new instances into dev buckets
-        if(i_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+        if(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
             # We use the premerge url prefix
             CONCAT('idc_v', {settings.CURRENT_VERSION}, 
                 '_',
@@ -162,11 +164,11 @@ def build_table(args):
       license_url,
       license_long_name,
       license_short_name,
-      collection_id AS tcia_api_collection_id,
-      REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_') AS idc_webapp_collection_id
+--       collection_id AS tcia_api_collection_id,
+--       REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_') AS idc_webapp_collection_id
       FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_current` aj
       ORDER BY
-        tcia_api_collection_id, submitter_case_id
+        collection_name, submitter_case_id
 """
     client = bigquery.Client(project=args.dst_project)
     result = delete_BQ_Table(client, args.dst_project, args.trg_bqdataset_name, args.bqtable_name)

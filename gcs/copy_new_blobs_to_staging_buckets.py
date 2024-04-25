@@ -38,7 +38,9 @@ def get_urls(args):
     ON
       dev.instance_uuid = pub.instance_uuid
     WHERE
-      dev.instance_revised_idc_version = {args.version}
+      dev.series_revised_idc_version = {args.version} 
+      AND dev.instance_revised_idc_version < {args.version}
+    ORDER BY dev_url
     """
     # urls = list(client.query(query))
     query_job = client.query(query)  # Make an API request.

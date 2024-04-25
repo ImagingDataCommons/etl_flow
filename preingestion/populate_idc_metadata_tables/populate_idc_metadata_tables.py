@@ -53,7 +53,6 @@ def build_instance(client, args, sess, series, instance_id, hash, size, blob_nam
     instance.idc_version = args.version
     instance.gcs_url = f'gs://{args.src_bucket}/{blob_name}'
     instance.hash = hash
-    instance.idc_version = args.version
     instance.excluded = False
     successlogger.info(blob_name)
 
@@ -130,88 +129,43 @@ def prebuild(args):
 
     with Session(sql_engine) as sess:
         client = storage.Client()
-        if args.metadata_table:
-            dones = sess.query(IDC_Series, IDC_Instance.gcs_url).join(IDC_Instance.seriess).filter(IDC_Series.source_doi == args.source_doi).all()
-            dones = set([row['gcs_url'].replace(f'gs://{args.src_bucket}/', '') for row in dones])
-            # dones = set(open(successlogger.handlers[0].baseFilename).read().splitlines())
-            # If we have a table of PatientID,StudyInstanceuid,seriesinstanceuid,sopInstanceuid,filepath metadata
-            bucket = client.bucket(args.src_bucket)
-            with open(args.metadata_table) as csvfile:
-                reader = csv.DictReader(csvfile, fieldnames=['PatientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID', 'filepath'])
-                skip=True
-                n=0
-                for r in reader:
-                    if skip:
-                        skip = False
-                        continue
-                    patient_id = r['PatientID']
-                    study_id = r['StudyInstanceUID']
-                    series_id = r['SeriesInstanceUID']
-                    instance_id = r['SOPInstanceUID']
-                    collection_id = args.collection_id
-
-                    blob_name = r['filepath'].replace(f'gs://{args.src_bucket}/', '')
-                    if blob_name in dones:
-                        progresslogger.info(f"Skipping {blob_name}")
-                        continue
-                    blob = bucket.blob(blob_name)
-                    blob.reload()
-                    try:
+        iterator = client.list_blobs(src_bucket, prefix=args.subdir)
+        for page in iterator.pages:
+            if page.num_items:
+                for blob in page:
+                    if not blob.name.endswith('DICOMDIR'):
+                        with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
+                            try:
+                                r = dcmread(f, specific_tags=['PatientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID'], stop_before_pixels=True)
+                                patient_id = r.PatientID
+                                study_id = r.StudyInstanceUID
+                                series_id = r.SeriesInstanceUID
+                                instance_id = r.SOPInstanceUID
+                                if not args.collection_id:
+                                    collection_id = sess.query(Collection.collection_id).distinct().join(
+                                        Collection.patients). \
+                                        filter(Patient.submitter_case_id == patient_id).one()[0]
+                                else:
+                                    collection_id = args.collection_id
+                            except Exception as exc:
+                                errlogger.error(f'pydicom failed for {blob.name}: {exc}')
+                                continue
                         hash = b64decode(blob.md5_hash).hex()
-                    except TypeError:
-                        # Can't get md5 hash for some blobs (maybe multipart copied/)
-                        # So try to compute it
-                        try:
-                            hash = md5_hasher(f"{args.mount_point}/{blob.name}")
-                            progresslogger.info(f'Computed md5 hash of {blob_name}')
-                        except Exception as exc:
-                            errlogger.error(f'Failed to get hash/sizeof {blob_name}')
-                            exit
-                    size = blob.size
-                    build_collection(client, args, sess, collection_id, patient_id, study_id, series_id, instance_id, hash,
-                                 size, blob.name)
-                    n += 1
-                    if not n%500:
-                        sess.commit()
-
-        else:
-            iterator = client.list_blobs(src_bucket, prefix=args.subdir)
-            for page in iterator.pages:
-                if page.num_items:
-                    for blob in page:
-                        if not blob.name.endswith('DICOMDIR'):
-                            with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
-                                try:
-                                    r = dcmread(f, specific_tags=['PatientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID'], stop_before_pixels=True)
-                                    patient_id = r.PatientID
-                                    study_id = r.StudyInstanceUID
-                                    series_id = r.SeriesInstanceUID
-                                    instance_id = r.SOPInstanceUID
-                                    if not args.collection_id:
-                                        collection_id = sess.query(Collection.collection_id).distinct().join(
-                                            Collection.patients). \
-                                            filter(Patient.submitter_case_id == patient_id).one()[0]
-                                    else:
-                                        collection_id = args.collection_id
-                                except Exception as exc:
-                                    errlogger.error(f'pydicom failed for {blob.name}: {exc}')
-                                    continue
-                            hash = b64decode(blob.md5_hash).hex()
-                            size = blob.size
-                            build_collection(client, args, sess, collection_id, patient_id, study_id, series_id, instance_id, hash, size, blob.name)
-
+                        size = blob.size
+                        build_collection(client, args, sess, collection_id, patient_id, study_id, series_id, instance_id, hash, size, blob.name)
         sess.commit()
-        if args.validate:
-            if args.third_party:
-                if validate_analysis_result(args) == -1:
-                    exit -1
-            else:
-                if validate_original_collection(args) == -1:
-                    exit -1
 
-        if args.gen_hashes:
-            gen_hashes(args.collection_id)
-        return
+    if args.validate:
+        if args.third_party:
+            if validate_analysis_result(args) == -1:
+                exit -1
+        else:
+            if validate_original_collection(args) == -1:
+                exit -1
+
+    if args.gen_hashes:
+        gen_hashes(args.collection_id)
+    return
 
 
 # if __name__ == '__main__':

@@ -35,4 +35,4 @@ if __name__ == '__main__':
     print('args: {}'.format(args))
 
     load_spreadsheet(args)
-    export_table(args)
+    # export_table(args)

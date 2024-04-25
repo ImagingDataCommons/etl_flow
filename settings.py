@@ -99,10 +99,14 @@ LOGGING_BASE = f'{LOG_PATH}/v{CURRENT_VERSION}'
 BASE_NAME = sys.argv[0].rsplit('/',1)[-1].rsplit('.',1)[0]
 LOG_DIR = f'{LOGGING_BASE}/{BASE_NAME}'
 
+
 BAMF_SET={"breast-fdg-pet-ct-qa-results.csv":["qin_breast"], "kidney-ct-qa-results.csv":["tcga_kirc"], "liver-ct-qa-results.csv":["tcga_lihc"],
           "liver-mr-qa-results.csv":["tcga_lihc"], "lung-ct-qa-results.csv":["acrin_nsclc_fdg_pet", "anti_pd_1_lung", "lung_pet_ct_dx", "nsclc_radiogenomics", "rider_lung_pet_ct", "tcga_luad", "tcga_lusc"],
           "lung-fdg-pet-ct-qa-results.csv":["acrin_nsclc_fdg_pet", "anti_pd_1_lung", "lung_pet_ct_dx", "nsclc_radiogenomics", "rider_lung_pet_ct", "tcga_luad", "tcga_lusc"], "prostate-mr-qa-results.csv":["prostatex"]}
 
+AH_PROJECT = "nci-idc-bigquery-data" # Analytics Hub project
+AH_EXCHANGE_ID = "nci_idc_bigquery_data_exchange"    # ID of the Analytics Hub exchange
+AH_EXCHANGE_LOCATION = "US"
 
 
 

@@ -21,7 +21,7 @@ import sys
 import json
 import settings
 from google.cloud import bigquery
-from utilities.bq_helpers import load_BQ_from_json
+from utilities.bq_helpers import load_BQ_from_json, delete_BQ_Table
 from utilities.tcia_helpers import get_all_tcia_metadata
 from utilities.logging_config import errlogger
 
@@ -256,6 +256,7 @@ def gen_licenses_table(args):
                           sorted(all_licenses, key=lambda m: m['collection_name'])])
 
     try:
+        delete_BQ_Table(client, settings.DEV_PROJECT, settings.BQ_DEV_INT_DATASET, args.bqtable_name)
         load_BQ_from_json(client,
                     settings.DEV_PROJECT,
                     settings.BQ_DEV_INT_DATASET , args.bqtable_name, licenses,

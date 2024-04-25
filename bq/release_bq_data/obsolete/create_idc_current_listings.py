@@ -14,15 +14,15 @@
 # limitations under the License.
 #
 
-# Create Analytics Hub listings for new datasets
+# Create Analytics Hub listings for idc_current and idc_current_clinical
+# This will only be used once
 
 import settings
 import argparse
-from utilities.analytic_hub_utils import create_listing, get_listing
+from utilities.analytic_hub_utils import create_listing
 from utilities.bq_helpers import create_BQ_dataset
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
-from utilities.logging_config import successlogger, errlogger
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -44,43 +44,23 @@ This dataset provides the searchable index of the metadata accompanying the shar
 Terms of Use: If you use this dataset, please acknowledge IDC as described in this article: https://learn.canceridc.dev/frequently-asked-questions#how-to-acknowledge-idc. If you use the DICOM files referenced from this dataset tables, please use the information about license and attribution assigned on a per-file basis, as described in the Getting Started tutorials: https://github.com/ImagingDataCommons/IDC-Tutorials/tree/master/notebooks/getting_started.'''
 
     # Create idc_vX listing
-    args.listing_id = f"idc_v{settings.CURRENT_VERSION}"
-    args.display_name = f"NCI Imaging Data Commons Imaging Metadata Catalog v{settings.CURRENT_VERSION}"
-    args.dataset = f"projects/{settings.AH_PROJECT}/datasets/idc_v{settings.CURRENT_VERSION}"
+    args.listing_id = f"idc_current"
+    args.display_name = f"NCI Imaging Data Commons Current Imaging Metadata Catalog"
+    args.dataset = f"projects/{settings.AH_PROJECT}/datasets/idc_current"
     try:
-        client.get_dataset(f"{settings.AH_PROJECT}.idc_v{settings.CURRENT_VERSION}")
+        dst_dataset = client.get_dataset(args.listing_id)
     except NotFound:
-        description = f"Imaging Data Commons (IDC) - The Cancer Imaging Archive (TCIA) v{settings.CURRENT_VERSION} data"
-        try:
-            create_BQ_dataset(client, f"idc_v{settings.CURRENT_VERSION}", description)
-        except Exception as exc:
-            print(f"Failed to create datset idc_v{settings.CURRENT_VERSION}: {exc}")
-            exit
-    try:
-        get_listing(args.listing_id)
-    except:
-        try:
-            response = create_listing(args)
-            successlogger.info(f'Created listing {response}')
-        except Exception as exc:
-            errlogger.error(f'Failed to create AH listing; {exc}')
+        description = f"Imaging Data Commons (IDC) - The Cancer Imaging Archive (TCIA) current data"
+        dst_dataset = create_BQ_dataset(client, args.listing_id, description)
+    listing = create_listing(args)
 
     # Create idc_vX_clinical listing
-    args.listing_id = f"idc_v{settings.CURRENT_VERSION}_clinical"
-    args.display_name = f"NCI Imaging Data Commons Clinical Metadata Catalog v{settings.CURRENT_VERSION}"
-    args.dataset = f"projects/{settings.AH_PROJECT}/datasets/idc_v{settings.CURRENT_VERSION}_clinical"
-
+    args.listing_id = f"idc_current_clinical"
+    args.display_name = f"NCI Imaging Data Commons Current Clinical Metadata Catalog"
+    args.dataset = f"projects/{settings.AH_PROJECT}/datasets/idc_current_clinical"
     try:
-        client.get_dataset(f"{settings.AH_PROJECT}.idc_v{settings.CURRENT_VERSION}_clinical")
+        dst_dataset = client.get_dataset(args.listing_id)
     except NotFound:
-        description = f"Imaging Data Commons (IDC) - The Cancer Imaging Archive (TCIA) v{settings.CURRENT_VERSION_}_clinical data"
-        try:
-            create_BQ_dataset(client, f"idc_v{settings.CURRENT_VERSION}_clinical", description)
-        except Exception as exc:
-            print(f"Failed to create datset idc_v{settings.CURRENT_VERSION_}_clinical: {exc}")
-            exit
-    try:
-        response = create_listing(args)
-        successlogger.info(f'Created listing {response}')
-    except Exception as exc:
-        errlogger.error(f'Failed to create AH listing; {exc}')
+        description = f"Imaging Data Commons (IDC) - The Cancer Imaging Archive (TCIA) current clinical data"
+        dst_dataset = create_BQ_dataset(client, args.listing_id, description)
+    listing = create_listing(args)

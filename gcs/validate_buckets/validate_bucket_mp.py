@@ -25,36 +25,10 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 from google.cloud import storage, bigquery
 from multiprocessing import Process, Queue
 
-def worker(input, args, dones):
-    # proglogger.info('p%s: Worker starting: args: %s', args.id, args )
-    # print(f'p{args.id}: Worker starting: args: {args}')
-
-    RETRIES=3
-
-    client = storage.Client()
-    bucket = client.bucket(args.bucket)
-
-    for prefixes, n in iter(input.get, 'STOP'):
-        try:
-            for prefix in prefixes:
-                if prefix not in dones:
-                    instance_iterator = client.list_blobs(bucket, versions=False, page_size=args.batch, \
-                                         prefix=prefix)
-                    for page in instance_iterator.pages:
-
-                        for blob in page:
-                            successlogger.info(blob.name)
-                    progresslogger.info(prefix)
-            # if blob_names_todo:
-            #     copy_instances(args, client, src_bucket, dst_bucket, blob_names_todo, n)
-            # else:
-            #     progresslogger.info(f'p{args.id}: Blobs {n}:{n+len(blob_names)-1} previously copied')
-        except Exception as exc:
-            errlogger.error(f'p{args.id}: Error {exc}')
 
 def get_expected_blobs_in_bucket(args, premerge=False):
     client = bigquery.Client()
-    query = f"""from  
+    query = f"""
       SELECT distinct concat(se_uuid,'/', i_uuid, '.dcm') as blob_name
       FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
       JOIN `idc-dev-etl.idc_v{args.version}_dev.all_collections` aic
@@ -66,33 +40,57 @@ def get_expected_blobs_in_bucket(args, premerge=False):
       ORDER BY blob_name
   """
 
+    query_job = client.query(query)
+    blob_names = set(query_job.result().to_dataframe()['blob_name'].to_list())
+    return blob_names
+
+def get_expected_series_in_bucket(args):
+    client = bigquery.Client()
+    query = f"""
+      SELECT distinct concat(se_uuid,'/') as series_uuid
+      FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
+      JOIN `idc-dev-etl.idc_v{args.version}_dev.all_collections` aic
+      ON aj.idc_collection_id = aic.idc_collection_id
+      WHERE ((i_source='tcia' and aic.{"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_tcia_url="{args.bucket}")
+      OR (i_source='idc' and aic.{"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_idc_url="{args.bucket}"))
+      AND i_excluded = False
+      ORDER BY series_uuid
+  """
+
     query_job = client.query(query)  # Make an API request.
-    query_job.result()  # Wait for the query to complete.
+    series_uuids = [row.series_uuid for row in query_job.result()]
 
-    # Get the destination table for the query results.
-    #
-    # All queries write to a destination table. If a destination table is not
-    # specified, the BigQuery populates it with a reference to a temporary
-    # anonymous table after the query completes.
-    destination = query_job.destination
+    return series_uuids
 
-    # Get the schema (and other properties) for the destination table.
-    #
-    # A schema is useful for converting from BigQuery types to Python types.
-    destination = client.get_table(destination)
-    with open(args.expected_blobs, 'w') as f:
-        for page in client.list_rows(destination, page_size=args.batch).pages:
-            rows = [f'{row["blob_name"]}\n' for row in page]
-            f.write(''.join(rows))
+def worker(input, args):
+    RETRIES=3
+    client = storage.Client()
+    bucket = client.bucket(args.bucket)
+    for series_uuids, n in iter(input.get, 'STOP'):
+            for series_uuid in series_uuids:
+                try:
+                    instance_iterator = client.list_blobs(bucket, versions=False, page_size=args.batch, \
+                                     prefix=series_uuid)
+                    for page in instance_iterator.pages:
+                        for blob in page:
+                            successlogger.info(blob.name)
+                    progresslogger.info(series_uuid)
+                except Exception as exc:
+                    errlogger.error(f'p{args.id}: Error {exc}')
 
 
 def get_found_blobs_in_bucket(args):
     client = storage.Client()
     bucket = client.bucket(args.bucket)
-    page_token = ""
+
+    # Get expect series
+    expected_series = get_expected_series_in_bucket(args)
+
     # Get the completed series
     done_series = open(f'{progresslogger.handlers[0].baseFilename}').read().splitlines()
 
+    undone_series = list(set(expected_series) - set(done_series))
+    undone_series.sort()
     # Start worker processes
     num_processes = args.processes
     processes = []
@@ -100,23 +98,18 @@ def get_found_blobs_in_bucket(args):
     for process in range(num_processes):
         args.id = process + 1
         processes.append(
-            Process(group=None, target=worker, args=(task_queue, args, done_series)))
+            Process(group=None, target=worker, args=(task_queue, args)))
         processes[-1].start()
 
     # iterator = client.list_blobs(bucket, page_token=page_token, max_results=args.batch)
+    batch_size = 100
     n = 0
     with open(args.found_blobs, 'w') as f:
-        series_iterator = client.list_blobs(bucket, versions=False, page_size=args.batch, \
-                                            prefix='', delimiter='/')
-        for page in series_iterator.pages:
-            prefixes = [prefix for prefix in page.prefixes]
-            task_queue.put((prefixes, n))
-            # for prefix in page.prefixes:
-            #     instance_iterator = client.list_blobs(bucket, versions=False, page_token=page_token, page_size=args.batch, \
-            #                              prefix=prefix)
-            #     for page in instance_iterator.pages:
-            #         blobs = [f'{blob.name}\n' for blob in page]
-            #         f.write(''.join(blobs))
+        while undone_series:
+            batch = undone_series[:batch_size]
+            undone_series = undone_series[batch_size:]
+            task_queue.put((batch, n))
+
 
     # Tell child processes to stop
     for i in range(num_processes):
@@ -130,15 +123,6 @@ def get_found_blobs_in_bucket(args):
 
 def check_all_instances_mp(args, premerge=False):
     try:
-        expected_blobs = set(open(args.expected_blobs).read().splitlines())
-        assert len(expected_blobs) > 0
-        progresslogger.info(f'Already have expected blobs')
-    except:
-        progresslogger.info(f'Getting expected blobs')
-        get_expected_blobs_in_bucket(args, premerge)
-        expected_blobs = set(open(args.expected_blobs).read().splitlines())
-
-    try:
         found_blobs = set(open(args.found_blobs).read().splitlines())
         assert len(found_blobs) > 0
         progresslogger.info(f'Already have found blobs')
@@ -146,6 +130,9 @@ def check_all_instances_mp(args, premerge=False):
         progresslogger.info(f'Getting found blobs')
         get_found_blobs_in_bucket(args)
         found_blobs = set(open(args.found_blobs).read().splitlines())
+
+    expected_blobs = get_expected_blobs_in_bucket(args, premerge)
+
 
     if found_blobs == expected_blobs:
         successlogger.info(f"Bucket {args.bucket} has the correct set of blobs")

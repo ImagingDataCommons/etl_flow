@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, update
 from google.cloud import storage
 
-from validate_analysis_result import validate_analysis_result
+from preingestion.populate_idc_metadata_tables.validate_analysis_result import validate_analysis_result
 
 
 if __name__ == '__main__':

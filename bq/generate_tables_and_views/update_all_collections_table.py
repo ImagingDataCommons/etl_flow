@@ -53,7 +53,7 @@ def prebuild():
                    idc_metadata_sunset=0)
             sess.add(collection)
             progresslogger.info(f'Added collection {collection}')
-        # sess.commit()
+        sess.commit()
     with Session(sql_engine) as sess:
         collections = sess.query(All_Collections).outerjoin(Collection, Collection.idc_collection_id== \
                 All_Collections.idc_collection_id).\

@@ -49,21 +49,6 @@ def preview_deletes(args, client, bucket_data):
 
 
 def delete_buckets(args):
-    # client = storage.Client()
-    # with sa_session() as sess:
-    #     revised_collection_ids = sorted([row.collection_id for row in sess.query(Collection).filter(Collection.rev_idc_version == args.version).all()])
-    #     for collection_id in revised_collection_ids:
-    #         prestaging_collection_id = collection_id.lower().replace('-','_').replace(' ','_')
-    #         for prefix in args.prestaging_bucket_prefix:
-    #             prestaging_bucket = f"{prefix}{prestaging_collection_id}"
-    #             if client.bucket(prestaging_bucket).exists():
-    #                 args.bucket = prestaging_bucket
-    #                 progresslogger.info(f'Deleting bucket {prestaging_bucket}')
-    #                 # Delete the contents of the bucket
-    #                 pre_delete(args)
-    #                 # Delete the bucket itself
-    #                 client.bucket(prestaging_bucket).delete()
-
     client = storage.Client()
     bucket_data= get_collection_groups()
     preview_deletes(args, client, bucket_data)
