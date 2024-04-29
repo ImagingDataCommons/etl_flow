@@ -21,6 +21,9 @@
 # hashes.
 # v13-.. : As above but name changed to idc_XXX
 
+import argparse
+import settings
+import json
 from utilities.sqlalchemy_helpers import sa_session
 from utilities.logging_config import successlogger, progresslogger, errlogger
 import settings
@@ -87,26 +90,33 @@ WHERE {parent_alias}.{parent_id}=redactions.parent_id
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
+    parser.add_argument('--mitigation_id', default='m1', help='ID of this mitigation event')
+    args = parser.parse_args()
+
+    progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
+
     with sa_session(echo=True) as sess:
     
         idc_version = 19
         progresslogger.info(f'Revising version {idc_version}')
 
-        deprecate_instance(sess, idc_version, mitigation_id="m1")
+        deprecate_instance(sess, idc_version, mitigation_id=args.mitigation_id)
         progresslogger.info(f'\nRevised idc_instance')
-        deprecate_level(sess, idc_version,mitigation_id="m1", parent="series", child="instance",
+        deprecate_level(sess, idc_version,mitigation_id=args.mitigation_id, parent="series", child="instance",
                         parent_alias="se", child_alias="i", \
                         parent_id="series_instance_uid", child_id="sop_instance_uid")
         progresslogger.info(f'\nRevised idc_series')
-        deprecate_level(sess, idc_version,mitigation_id="m1",  parent="study", child="series",
+        deprecate_level(sess, idc_version,mitigation_id=args.mitigation_id,  parent="study", child="series",
                         parent_alias="st", child_alias="se", \
                         parent_id="study_instance_uid", child_id="series_instance_uid")
         progresslogger.info(f'\nRevised idc_study')
-        deprecate_level(sess, idc_version,mitigation_id="m1",  parent="patient", child="study", \
+        deprecate_level(sess, idc_version,mitigation_id=args.mitigation_id,  parent="patient", child="study", \
                         parent_alias="p", child_alias="st", \
                         parent_id="submitter_case_id", child_id="study_instance_uid")
         progresslogger.info(f'\nRevised idc_patient')
-        deprecate_level(sess, idc_version,mitigation_id="m1",  parent="collection", child="patient", \
+        deprecate_level(sess, idc_version,mitigation_id=args.mitigation_id,  parent="collection", child="patient", \
                         parent_alias="c", child_alias="p", \
                         parent_id="collection_id", child_id="submitter_case_id")
         progresslogger.info(f'\nRevised idc_collection')

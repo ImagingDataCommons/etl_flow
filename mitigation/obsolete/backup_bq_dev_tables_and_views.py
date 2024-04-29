@@ -36,29 +36,35 @@ if __name__ == '__main__':
     args.skipped_table_ids = []
     args.table_ids = []
     dev_table_ids = {
-        "all_collections": "TABLE",
-        "version": "TABLE",
-        "version_collection": "TABLE",
-        "collection": "TABLE",
-        "collection_patient": "TABLE",
-        "patient": "TABLE",
-        "patient_study": "TABLE",
-        "study": "TABLE",
-        "study_series": "TABLE",
-        "series": "TABLE",
-        "series_instance": "TABLE",
-        "instance": "TABLE",
+        # "all_collections": "TABLE",
+        # "version": "TABLE",
+        # "version_collection": "TABLE",
+        # "collection": "TABLE",
+        # "collection_patient": "TABLE",
+        # "patient": "TABLE",
+        # "patient_study": "TABLE",
+        # "study": "TABLE",
+        # "study_series": "TABLE",
+        # "series": "TABLE",
+        # "series_instance": "TABLE",
+        # "instance": "TABLE",
+        "idc_collection": "TABLE",
+        "idc_patient": "TABLE",
+        "idc_study": "TABLE",
+        "idc_series": "TABLE",
+        "idc_instance": "TABLE",
     }
     args.src_dataset = f'idc_v{args.version}_dev'
     args.trg_dataset = f'idc_v{args.version}_dev'
-    # publish_dataset(args, table_ids=dev_table_ids, copy_views=False)
+    publish_dataset(args, table_ids=dev_table_ids, copy_views=False)
 
     dev_view_ids = {
-        "all_joined": "VIEW",
-        "all_joined_excluded": "VIEW",
-        "all_joined_limited": "VIEW",
-        "all_joined_public": "VIEW",
-        "all_joined_public_and_current": "VIEW",
+        "idc_all_joined": "VIEW",
+        # "all_joined": "VIEW",
+        # "all_joined_excluded": "VIEW",
+        # "all_joined_limited": "VIEW",
+        # "all_joined_public": "VIEW",
+        # "all_joined_public_and_current": "VIEW",
     }
     args.src_dataset = f'idc_v{args.version}_dev'
     args.trg_dataset = f'idc_v{args.version}_dev'
