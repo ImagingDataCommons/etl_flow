@@ -14,7 +14,9 @@
 # limitations under the License.
 #
 
-# Mark instances as redacted in BQ 'instance' table. These tables have two  forms:
+# Mark instances, series, etc. as redacted in BQ tables that
+# document IDC sourced data. Hashes are revised as needed.
+# These tables have two  forms:
 # v1-v2: instance_uuid column
 # v3+: uuid column
 #

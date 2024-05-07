@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# This script deletes redacted instances from per-instance BQ tables such as dicom_all
+# Validate that redacted instances have been deleted from per-instance BQ tables such as dicom_all
 # in both dev and pub projects
 import settings
 import argparse
@@ -23,36 +23,68 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 from google.cloud import bigquery
 
 
-def delete_instances(args, tables_ids, version):
+def validate_instance_deletion(args, dones, tables_ids, version):
     client = bigquery.Client()
 
     for table in tables_ids:
-        if table == 'mutable_metadata':
-            query = f"""
-DELETE FROM `{args.trg_project}.{args.trg_dataset}.{table}`
-WHERE crdc_instance_uuid IN (
-SELECT DISTINCT i_uuid
-FROM `{args.dev_project}.mitigation.{args.redactions_table}`
-WHERE i_rev_idc_version <= {version}
-AND ({version} <= i_final_idc_version OR i_final_idc_version=0)
-)
-"""
+        if f'{args.trg_project}.{args.trg_dataset}.{table}' not in dones:
+
+            if table == 'mutable_metadata':
+                query = f"""
+    WITH reds as (
+      SELECT i_uuid
+      FROM `{args.dev_project}.mitigation.redactions` 
+      WHERE i_rev_idc_version <= {version}
+      AND ({version} <= i_final_idc_version OR i_final_idc_version = 0)
+    ),
+    expected AS(
+      SELECT bck.crdc_instance_uuid 
+      FROM `{args.backup_project}.{args.trg_dataset}.{table}` bck
+      LEFT JOIN reds
+      ON bck.crdc_instance_uuid = reds.i_uuid
+      WHERE reds.i_uuid IS Null
+    )
+    SELECT *
+    FROM expected
+    FULL OUTER JOIN `{args.trg_project}.{args.trg_dataset}.{table}` actual
+    ON expected.crdc_instance_uuid = actual.crdc_instance_uuid
+    WHERE (expected.crdc_instance_uuid IS NULL OR actual.crdc_instance_uuid IS NULL)
+    """
+            else:
+                query = f"""
+    WITH reds as (
+      SELECT sop_instance_uid
+      FROM `{args.dev_project}.mitigation.redactions` 
+      WHERE i_rev_idc_version <= {version}
+      AND ({version} <= i_final_idc_version OR i_final_idc_version = 0)
+    ),
+    expected AS(
+      SELECT bck.SOPInstanceUID 
+      FROM `{args.backup_project}.{args.trg_dataset}.{table}` bck
+      LEFT JOIN reds
+      ON bck.SOPInstanceUID = reds.sop_instance_uid
+      WHERE reds.sop_instance_uid IS Null
+    )
+    SELECT *
+    FROM expected
+    FULL OUTER JOIN `{args.trg_project}.{args.trg_dataset}.{table}` actual
+    ON expected.SOPInstanceUID = actual.SOPInstanceUID
+    WHERE (expected.SOPInstanceUID IS NULL OR actual.SOPInstanceUID IS NULL)
+    """
+
+            result = client.query(query)
+            while result.state != 'DONE':
+                result = client.get_job(result.job_id)
+            if result.error_result != None:
+                breakpoint()
+            if [dict(row) for row in result] == []:
+                successlogger.info(f'{args.trg_project}.{args.trg_dataset}.{table}')
+            else:
+                errlogger.error(f'{args.trg_project}.{args.trg_dataset}.{table}')
         else:
-            query = f"""
-DELETE FROM `{args.trg_project}.{args.trg_dataset}.{table}`
-WHERE SOPInstanceUID IN (
-SELECT DISTINCT sop_instance_uid as SOPInstanceUID
-FROM `{args.dev_project}.mitigation.{args.redactions_table}`
-WHERE i_rev_idc_version <= {version}
-AND ({version} <= i_final_idc_version OR i_final_idc_version=0)
-)
-"""
-        result = client.query(query)
-        while result.state != 'DONE':
-            result = client.get_job(result.job_id)
-        if result.error_result != None:
-            breakpoint()
-        successlogger.info(f"{args.trg_project}.{args.trg_dataset}.{table} ")
+            progresslogger.info((f'{args.trg_project}.{args.trg_dataset}.{table} previously validated'))
+
+
 
 
     return
@@ -68,7 +100,13 @@ if __name__ == '__main__':
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
+    dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
+
     for project in (settings.DEV_PROJECT, settings.PDP_PROJECT):
+        if project == settings.DEV_PROJECT:
+            args.backup_project = settings.DEV_MITIGATION_PROJECT
+        else:
+            args.backup_project = settings.STAGING_MITIGATION_PROJECT
         args.trg_project = project
         for version in range(args.range[0], args.range[1]+1):
             if version in (1,2,3,4,5,6,7):
@@ -77,7 +115,6 @@ if __name__ == '__main__':
                     "dicom_derived_all": "TABLE",
                     "dicom_metadata": "TABLE",
                 }
-
 
             elif version in (8,9):
                 table_ids = {
@@ -204,7 +241,8 @@ if __name__ == '__main__':
                 else:
                     args.trg_dataset = f'idc_v{version}'
 
-            delete_instances(args, table_ids, version)
+            validate_instance_deletion(args, dones, table_ids, version)
+
 
 
 

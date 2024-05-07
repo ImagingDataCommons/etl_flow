@@ -17,15 +17,36 @@
 # Backup instance to be redacted to the mitigation project
 import settings
 import argparse
+import google
+from google.auth.transport import requests
 from google.cloud import bigquery, storage
 from utilities.logging_config import successlogger, progresslogger, errlogger
+
+def delete_instance(dicomweb_session, study_instance_uid, series_instance_uid, sop_instance_uid):
+    # URL to the Cloud Healthcare API endpoint and version
+    base_url = "https://healthcare.googleapis.com/v1"
+    url = "{}/projects/{}/locations/{}".format(base_url, settings.PUB_PROJECT, settings.GCH_REGION)
+    dicomweb_path = "{}/datasets/{}/dicomStores/{}/dicomWeb/studies/{}/series/{}/instances/{}".format(
+        url, settings.GCH_DATASET, settings.GCH_DICOMSTORE, study_instance_uid, series_instance_uid, sop_instance_uid
+    )
+    # Set the required application/dicom+json; charset=utf-8 header on the request
+    headers = {"Content-Type": "application/dicom+json; charset=utf-8"}
+
+    response = dicomweb_session.delete(dicomweb_path, headers=headers)
+    try:
+        response.raise_for_status()
+        successlogger.info(sop_instance_uid)
+    except Exception as exc:
+        breakpoint()
 
 
 def get_redactions(args):
     client = bigquery.Client()
     query = f"""
-    SELECT DISTINCT collection_id, dev_bucket, pub_gcs_bucket, pub_aws_bucket, CONCAT(se_uuid, '/', i_uuid, '.dcm') blob_name
+    SELECT DISTINCT study_instance_uid, series_instance_uid, sop_instance_uid
     FROM `{settings.DEV_PROJECT}.mitigation.redactions`
+    WHERE i_rev_idc_version <= {args.version}
+    AND ({args.version} <= i_final_idc_version OR i_final_idc_version = 0)
     """
 
     try:
@@ -36,30 +57,33 @@ def get_redactions(args):
 
     return results
 
-def backup_redactions(args):
+
+def delete_redactions(args):
     client = storage.Client()
+
+    scoped_credentials, project = google.auth.default(
+        ["https://www.googleapis.com/auth/cloud-platform"]
+    )
+    # Create a DICOMweb requests Session object with the credentials.
+    dicomweb_session = requests.AuthorizedSession(scoped_credentials)
     instances = get_redactions(args)
 
+    # Get previously deleted instances
+    dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
+
+
     for instance in instances:
-        # Delete from dev
-        bucket = client.bucket(instance['dev_bucket'])
-        blob = bucket.blob(f'{instance["blob_name"]}')
-        blob.delete()
+        if instance['sop_instance_uid'] not in dones:
+            delete_instance(dicomweb_session, instance['study_instance_uid'], instance['series_instance_uid'], instance['sop_instance_uid'])
+            successlogger.info(instance['sop_instance_uid'])
 
-        bucket = client.bucket(instance['gcs_pub_bucket'])
-        blob = bucket.blob(f'{instance["blob_name"]}')
-        blob.delete()
-
-        successlogger.info(instance['uuid'])
-
-    pass
 
 if __name__ == '__main__':
     # (sys.argv)
     parser = argparse.ArgumentParser()
-    parser.add_argument('--trg_bucket', default='redacted_instances', help='Bucket to which to backup redacted instances')
+    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Current version')
 
     args = parser.parse_args()
 
-    backup_redactions(args)
+    delete_redactions(args)
 

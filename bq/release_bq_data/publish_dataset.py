@@ -120,10 +120,7 @@ def copy_view(client, args, view_id):
                 replace(args.src_dataset,args.trg_dataset)
 
             new_view.friendly_name = view.friendly_name
-            if view_id == 'dicom_derived_all':
-                new_view.description = "DEPRECATED: This table will likely be removed in a future IDC version"
-            else:
-                new_view.description = view.description
+            new_view.description = view.description
             new_view.labels = view.labels
             installed_view = client.create_table(new_view)
 

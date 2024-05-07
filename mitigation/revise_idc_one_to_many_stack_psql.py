@@ -14,8 +14,9 @@
 # limitations under the License.
 #
 
-# Mark instances as redacted in BQ tables that
-# document IDC sourced data. These tables have three forms:
+# Mark instances, series, etc. as redacted in BQ tables that
+# document IDC sourced data. Hashes are revised as needed.
+# These tables have three forms:
 # v3-v6: A single wsi_metadata table
 # v7-v12: A hierarchy of wsi_collection/_patient/_study/_series/_instance one-to-many tables, include hierarchical
 # hashes.
