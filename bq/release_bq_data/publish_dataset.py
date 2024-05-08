@@ -91,13 +91,6 @@ def copy_table(client, args,  table_id):
 
         progresslogger.info("\tCopied table {} to {}".format(src_table_id, trg_table_id))
 
-        if table_id == 'dicom_derived_all':
-            dataset_ref = bigquery.DatasetReference(args.trg_project, args.trg_dataset)
-            table_ref = dataset_ref.table(table_id)
-            table = client.get_table(table_ref)  # API request
-            table.description = "DEPRECATED: This table will likely be removed in a future IDC version"
-            table = client.update_table(table, ["description"])  # API request
-
         return
 
 

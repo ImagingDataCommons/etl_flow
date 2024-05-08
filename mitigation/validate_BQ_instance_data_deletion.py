@@ -43,10 +43,14 @@ def validate_instance_deletion(args, dones, tables_ids, version):
       LEFT JOIN reds
       ON bck.crdc_instance_uuid = reds.i_uuid
       WHERE reds.i_uuid IS Null
+    ),
+    actual AS (
+    SELECT crdc_instance_uuid
+    FROM  `{args.trg_project}.{args.trg_dataset}.{table}`
     )
     SELECT *
     FROM expected
-    FULL OUTER JOIN `{args.trg_project}.{args.trg_dataset}.{table}` actual
+    FULL OUTER JOIN actual
     ON expected.crdc_instance_uuid = actual.crdc_instance_uuid
     WHERE (expected.crdc_instance_uuid IS NULL OR actual.crdc_instance_uuid IS NULL)
     """
@@ -64,10 +68,14 @@ def validate_instance_deletion(args, dones, tables_ids, version):
       LEFT JOIN reds
       ON bck.SOPInstanceUID = reds.sop_instance_uid
       WHERE reds.sop_instance_uid IS Null
+    ),
+    actual AS (
+    SELECT SOPInstanceUID
+    FROM `{args.trg_project}.{args.trg_dataset}.{table}` 
     )
     SELECT *
     FROM expected
-    FULL OUTER JOIN `{args.trg_project}.{args.trg_dataset}.{table}` actual
+    FULL OUTER JOIN actual
     ON expected.SOPInstanceUID = actual.SOPInstanceUID
     WHERE (expected.SOPInstanceUID IS NULL OR actual.SOPInstanceUID IS NULL)
     """
@@ -95,7 +103,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--dev_project', default=settings.DEV_PROJECT, help="Project containing mitigation dataset")
     parser.add_argument('--redactions_table', default='redactions', help='ID of this mitigation event')
-    parser.add_argument('--range', default = [1,18], help='Range of versions over which to clone')
+    parser.add_argument('--range', default = [1,settings.CURRENT_VERSION], help='Range of versions over which to clone')
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
@@ -217,7 +225,24 @@ if __name__ == '__main__':
                     "segmentations": "TABLE",
                 }
 
-            elif version in (16,17,18):
+
+            elif version == 16:
+                table_ids = {
+                    "auxiliary_metadata": "TABLE",
+                    "dicom_all": "TABLE",
+                    "dicom_metadata": "TABLE",
+                    "dicom_metadata_curated": "TABLE",
+                    "measurement_groups": "TABLE",
+                    "mutable_metadata": "TABLE",
+                    "qualitative_measurements": "TABLE",
+                    "quantitative_measurements": "TABLE",
+                    "segmentations": "TABLE",
+                }
+                if project == settings.PDP_PROJECT:
+                    table_ids.update({"dicom_derived_all": "TABLE"})
+
+
+            elif version in (17,18):
                 table_ids = {
                     "auxiliary_metadata": "TABLE",
                     "dicom_all": "TABLE",
