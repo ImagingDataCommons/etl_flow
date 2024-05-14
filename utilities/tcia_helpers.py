@@ -674,6 +674,31 @@ if __name__ == "__main__":
     #     settings.configure(etl_settings)
     #     assert settings.configured
 
-    p = get_TCIA_patients_per_collection('CBIS-DDSM', server=NBIA_V1_URL)
+    # c=get_collection_values(server=NBIA_V2_URL)
+    # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
+    # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
+    # s = get_all_tcia_metadata_stage(type="collections")
+    d = get_all_tcia_metadata(type="collections")
+    # d = get_all_tcia_metadata(type="analysis-results")
+    d = get_all_tcia_metadata(type="downloads", query_param="include=42023,42025,42027,42029,42031")
+    # d = get_collection_metadata("ACRIN-Contralateral-Breast-MR")
+    # d = get_collection_descriptions_and_licenses()
+    # i = get_collection_id_from_doi('10.7937/k9/tcia.2016.eln8ygle')
+    # c=get_collection_values_and_counts()
+    # i=get_license_info()
+    # m=get_TCIA_series_metadata('1.2.246.352.71.2.494841863751.4253207.20190214211543')
+    # d=get_collection_descriptions_and_licenses(collection='CT-vs-PET-Ventilation-Imaging')
+    # r=get_internal_series_ids("NLST", "", third_party="no", size=100000, server="NLST" )
+    # hash = get_hash_nlst(
+    #     {'Collection': 'NLST', 'PatientID': '123342'})
+    # p = get_TCIA_patients_per_collection('NLST')
+    # st = get_TCIA_studies_per_patient('NLST', '108001')
+    # s = get_TCIA_series_metadata('1.3.6.1.4.1.14519.5.2.1.6834.5010.105031608124440650687374568136')
+    # p = get_collection_license_info()
+    # # print(p)
+    # c = get_collection_values_and_counts()
+    # h = get_hash({'Collection': 'TCGA-BRCA'})
+    # h = get_hash({'Collection': 'ACRIN-6698'})
+    # d = get_collection_descriptions_and_licenses()
     pass
 
