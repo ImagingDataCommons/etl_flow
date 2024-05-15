@@ -116,8 +116,9 @@ def build_series(args, bucket, study, series_data):
         study.seriess.append(series)
         progresslogger.info(f'\t\t\tSeries {series_id} added')
     # Always set/update the source_doi in case it has changed
-    series.source_doi = args.source_doi
-    series.source_url = args.source_url
+    series.source_doi = args.source_doi.lower()
+    series.source_url = args.source_url.lower()
+    series.versioned_source_doi = args.verioned_source_doi.lower()
     series.excluded = False
     # At this point, each row in series data corresponds to an instance on the series
     for instance_data in series_data:

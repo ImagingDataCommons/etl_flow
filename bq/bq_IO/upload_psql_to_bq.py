@@ -209,6 +209,8 @@ def upload_series(client, args, table, order_by):
       uuid,
       CAST(series_instances AS INT) AS series_instances,
       source_doi,
+      source_url,
+      versioned_source_doi,
       min_timestamp,
       max_timestamp,
       CAST(init_idc_version AS INT) AS init_idc_version,
@@ -224,7 +226,6 @@ def upload_series(client, args, table, order_by):
         idc_src AS idc) AS sources,
       STRUCT(tcia_rev AS tcia,
         idc_rev AS idc) AS revised,
-      source_url,
       excluded,
       license_long_name,
       license_url,
@@ -241,7 +242,7 @@ def upload_series(client, args, table, order_by):
             (sources).tcia AS tcia_src, (sources).idc AS idc_src, 
             (revised).tcia AS tcia_rev, (revised).idc AS idc_rev,
             source_url, excluded, license_long_name, license_url,
-            license_short_name, third_party, redacted
+            license_short_name, third_party, redacted, versioned_source_doi
         FROM {table}''')
     ORDER BY {order_by}
     """

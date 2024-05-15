@@ -72,8 +72,9 @@ def build_series(client, args, sess, study, series_id, instance_id, hash, size, 
         study.seriess.append(series)
         progresslogger.info(f'\t\t\tSeries {series_id} added')
     # Always set/update the source_doi in case it has changed
-    series.source_doi = args.source_doi
-    series.source_url = args.source_url
+    series.source_doi = args.source_doi.lower()
+    series.source_url = args.source_url.lower()
+    series.versioned_source_doi = args.verioned_source_doi.lower()
     series.excluded = False
     build_instance(client, args, sess, series, instance_id, hash, size, blob_name)
     return

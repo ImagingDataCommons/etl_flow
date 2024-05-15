@@ -50,12 +50,13 @@ def get_dois_tcia(collection, patient="", third_party="no", server=""):
                 if uri:
                     # If it's a doi.org uri, keep just the DOI
                     if 'doi.org' in uri:
-                        uri = uri.split('doi.org/')[1]
+                        uri = uri.split('doi.org/')[1].lower()
                     seriesUID = series["seriesUID"]
                     series_dois[seriesUID] = uri
                 elif collection == 'NSCLC Radiogenomics':
+                    breakpoint()
                     seriesUID = series["seriesUID"]
-                    series_dois[seriesUID] = "10.7937/K9/TCIA.2017.7hs46erv"
+                    series_dois[seriesUID] = "10.7937/K9/TCIA.2017.7hs46erv".lower()
                 else:
                     breakpoint()
                     errlogger.error(
@@ -81,7 +82,7 @@ def get_patient_dois_idc(sess, collection, patient):
             filter(IDC_Collection.collection_id == collection). \
             filter(IDC_Patient.submitter_case_id == patient). \
             filter(IDC_Series.source_doi != None)
-        series_dois = {row['SeriesInstanceUID']: row['SourceDOI'] for row in [row._asdict() for row in query.all()]}
+        series_dois = {row['SeriesInstanceUID']: row['SourceDOI'].lower() for row in [row._asdict() for row in query.all()]}
         return series_dois
     except:
         return {}
@@ -92,7 +93,7 @@ def get_patient_dois_idc(sess, collection, patient):
 def get_patient_urls_tcia(collection, patient):
     urls= get_patient_dois_tcia(collection, patient)
     for series_instance_uid, doi in urls.items():
-        urls[series_instance_uid] =f'https://doi.org/{doi}'
+        urls[series_instance_uid] =f'https://doi.org/{doi}'.lower()
     return urls
 
 
@@ -106,7 +107,7 @@ def get_patient_urls_idc(sess, collection, patient):
             filter(IDC_Collection.collection_id == collection). \
             filter(IDC_Patient.submitter_case_id == patient). \
             filter(IDC_Series.source_url != None)
-        series_urls = {row['SeriesInstanceUID']: row['SourceURL'] for row in [row._asdict() \
+        series_urls = {row['SeriesInstanceUID']: row['SourceURL'].lower() for row in [row._asdict() \
                      for row in query.all()]}
         return series_urls
     except:
