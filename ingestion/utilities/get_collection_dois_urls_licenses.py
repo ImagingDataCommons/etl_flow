@@ -52,11 +52,13 @@ def get_dois_tcia(collection, patient="", third_party="no", server=""):
                     if 'doi.org' in uri:
                         uri = uri.split('doi.org/')[1].lower()
                     seriesUID = series["seriesUID"]
-                    series_dois[seriesUID] = uri
+                    series_dois[seriesUID]['source_doi'] = uri
+                    series_dois[seriesUID]['version_source_doi'] = ""
                 elif collection == 'NSCLC Radiogenomics':
                     breakpoint()
                     seriesUID = series["seriesUID"]
-                    series_dois[seriesUID] = "10.7937/K9/TCIA.2017.7hs46erv".lower()
+                    series_dois[seriesUID]['source_doi'] = "10.7937/K9/TCIA.2017.7hs46erv".lower()
+                    series_dois[seriesUID]['version_source_doi'] = ""
                 else:
                     breakpoint()
                     errlogger.error(
@@ -77,12 +79,15 @@ def get_patient_dois_tcia(collection, patient):
 def get_patient_dois_idc(sess, collection, patient):
     try:
         query = sess.query(IDC_Series.series_instance_uid.label('SeriesInstanceUID'), \
-            IDC_Series.source_doi.label('SourceDOI')). \
+            IDC_Series.source_doi.label('source_doi'), \
+            IDC_Series.versioned_source_doi.label('versioned_source_doi')). \
             join(IDC_Collection.patients).join(IDC_Patient.studies).join(IDC_Study.seriess). \
             filter(IDC_Collection.collection_id == collection). \
             filter(IDC_Patient.submitter_case_id == patient). \
             filter(IDC_Series.source_doi != None)
-        series_dois = {row['SeriesInstanceUID']: row['SourceDOI'].lower() for row in [row._asdict() for row in query.all()]}
+        series_dois = {row['SeriesInstanceUID']: \
+                {"source_doi": row['source_doi'].lower(), "versioned_source_doi": row['versioned_source_doi'].lower()} \
+                for row in [row._asdict() for row in query.all()]}
         return series_dois
     except:
         return {}
@@ -92,8 +97,8 @@ def get_patient_dois_idc(sess, collection, patient):
 # data sourced from TCIA.
 def get_patient_urls_tcia(collection, patient):
     urls= get_patient_dois_tcia(collection, patient)
-    for series_instance_uid, doi in urls.items():
-        urls[series_instance_uid] =f'https://doi.org/{doi}'.lower()
+    for series_instance_uid, dois in urls.items():
+        urls[series_instance_uid] =f'https://doi.org/{dois["source_doi"]}'.lower()
     return urls
 
 
