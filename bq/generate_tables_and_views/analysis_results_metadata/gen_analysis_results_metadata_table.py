@@ -43,7 +43,7 @@ FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.licenses`
 def get_collections_containing_a_doi(client, args):
     query = f"""
         SELECT DISTINCT collection_id AS collection_id, source_doi, source_url
-        FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_current`
+        FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current`
         ORDER BY collection_id
         """
     result = client.query(query).result()
@@ -87,7 +87,7 @@ def get_idc_sourced_analysis_metadata(client):
 def count_subjects(client):
     query = f"""
 SELECT source_doi, COUNT (DISTINCT submitter_case_id) cnt
-FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_current`
+FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current`
 GROUP BY source_doi
 """
 

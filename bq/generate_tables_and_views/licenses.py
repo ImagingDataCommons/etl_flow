@@ -15,6 +15,9 @@
 #
 
 # Generate a table of current licenses for all collections
+# Note that this includes the license of the collection itself
+# as well as the license(s) of any analysis results in the
+# collection
 
 import argparse
 import sys
@@ -23,7 +26,7 @@ import settings
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json, delete_BQ_Table
 from utilities.tcia_helpers import get_all_tcia_metadata
-from utilities.logging_config import errlogger
+from utilities.logging_config import progresslogger, errlogger
 
 LICENSE_NAME_MAP = {
     'CC BY 3.0': 'Creative Commons Attribution 3.0 Unported License',
@@ -54,10 +57,10 @@ licenses_schema = [
 ]
 
 
-# Generate a dict of collections in the current version,
-# indexed by "idc_webapp_collection_ids" and mapping t
+# Generate a dict of tcia-sourced collections in the current version,
+# indexed by "idc_webapp_collection_ids" and mapping to
 # "tcia_api_collection_id". Includes sources of each collection.
-def get_all_collections_in_version(client, args):
+def get_all_tcia_collections_in_version(client, args):
     # Return collections that have specified access
     query = f"""
     SELECT DISTINCT tcia_api_collection_id collection_name
@@ -74,11 +77,6 @@ def get_all_collections_in_version(client, args):
 # may be against a TCIA sourced radiology collection. In such a case the analysis result license may differ from
 # the original data license.
 def get_idc_sourced_collection_licenses(client):
-#     query = f"""
-# SELECT DISTINCT collection_id as collection_name, STRUCT(license_url, license_long_name, license_short_name) as license
-#     FROM {settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_all_joined
-#     ORDER BY collection_name
-#      """
     query = f"""
 WITH res AS (
   SELECT
@@ -166,20 +164,37 @@ def get_tcia_original_collection_licenses(client, args, idc_collections):
                         }
                     )
                     break
+                # else:
+                # # elif download_metadata['slug'].startswith(target_slug):
+                #     errlogger.error(f'Target slug: {target_slug}; Found slug: {download_metadata["slug"]} ')
             if not next((collection for collection in tcia_licenses if collection['collection_name'] == collection_name),0):
                 errlogger.error(f'No licenses found for {collection_name}')
-
+                license_short_name = 'CC BY 4.0'
+                tcia_licenses.append(
+                    {
+                        "collection_name": collection_name,
+                        "source_doi": collection_metadata['collection_doi'].lower(),
+                        "source_url": f'https://doi.org/{collection_metadata["collection_doi"].lower()}',
+                        "source": 'tcia',
+                        "license": {
+                            "license_url": tcia_licese_metadata[license_short_name]['license_url'],
+                            "license_long_name": LICENSE_NAME_MAP[license_short_name],
+                            "license_short_name": license_short_name
+                        }
+                    }
+                )
 
         except Exception as exc:
             errlogger.error(exc)
 
     return tcia_licenses
 
-def get_idc_dois(client, args):
+# Get the source DOIs in all TCIA sourced data. This includes the DOIs of analysis results.
+def get_tcia_dois(client, args):
     # Return collections that have specified access
     query = f"""
     SELECT DISTINCT lower(source_doi) source_doi, lower(source_url)  source_url
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_current`
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current`
     WHERE se_sources.tcia = True
     """
     dois = {row.source_doi: row for row in client.query(query)}
@@ -187,16 +202,18 @@ def get_idc_dois(client, args):
 
 
 # These are licenses of analysis results sourced from TCIA and therefore TCIA sets the licenses
-def get_tcia_analysis_results_licenses(client, args, idc_collections):
+def get_tcia_analysis_results_licenses(client, args):
     # Get a list of all the source_dois in the current IDC data sourced from TCIA
-    idc_ar_dois = get_idc_dois(client, args)
+    idc_ar_dois = get_tcia_dois(client, args)
 
-    # Get metadata of all TCIA analysis results; keep only those which IDC has
+    # Get TCIA Collection Manager analysis-results metadata of all TCIA analysis results
+    all_tcia_analysis_results_metadata = get_all_tcia_metadata('analysis-results')
+    # Keep only the metadata of analysis results which IDC has
     # These are the only ARs for which we need licenses
-    tcia_ar_metadata = {row['result_short_title']:row for row in get_all_tcia_metadata('analysis-results') \
+    tcia_ar_metadata = {row['result_short_title']:row for row in all_tcia_analysis_results_metadata \
                         if row['result_doi'].lower() in idc_ar_dois}
 
-    # Get all the download and license info from the collection manager
+    # Get all the download and license info from the collection manager.
     tcia_downloads_metadata = {row['id']:row for row in get_all_tcia_metadata('downloads')}
     tcia_license_metadata = {row['license_label']:row for row in get_all_tcia_metadata('licenses')}
 
@@ -237,17 +254,17 @@ def get_tcia_analysis_results_licenses(client, args, idc_collections):
 def gen_licenses_table(args):
     client = bigquery.Client()
 
-    tcia_sourced_collections = get_all_collections_in_version(client, args)
+    tcia_sourced_collections = get_all_tcia_collections_in_version(client, args)
+
+    # Get the licenses of subcollections sourced from TCIA
+    tcia_sourced_licenses = get_tcia_original_collection_licenses(client, args, tcia_sourced_collections)
 
     # Get the licenses of analysis results sourced from TCIA
-    tcia_analysis_results = get_all_collections_in_version(client, args)
-    tcia_ar_licenses = get_tcia_analysis_results_licenses(client, args, tcia_analysis_results)
+    tcia_ar_licenses = get_tcia_analysis_results_licenses(client, args)
 
     # Get the licenses of subcollections sourced from IDC
     idc_sourced_licenses = get_idc_sourced_collection_licenses(client)
 
-    # Get the licenses of subcollections sourced from TCIA
-    tcia_sourced_licenses = get_tcia_original_collection_licenses(client, args, tcia_sourced_collections)
 
     all_licenses = idc_sourced_licenses
     all_licenses.extend(tcia_sourced_licenses)

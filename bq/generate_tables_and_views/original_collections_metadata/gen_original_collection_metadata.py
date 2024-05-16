@@ -44,7 +44,7 @@ def get_collections_in_version(client, args):
     # Return collections that have specified access
     query = f"""
     SELECT DISTINCT collection_id collection_name, c_sources.tcia tcia_source, c_sources.idc idc_source
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_current`
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current`
     """
 
     collections = {row.collection_name.lower().replace(' ','_').replace('-','_'): dict(row.items())\
@@ -57,7 +57,7 @@ def add_case_counts(client, args, collection_metadata):
     SELECT
       collection_id,
       COUNT(DISTINCT submitter_case_id ) as cases,
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_current`
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current`
     GROUP BY
         collection_id
     """
@@ -74,7 +74,7 @@ def add_image_modalities(client, args, collection_metadata):
         REPLACE(REPLACE(LOWER(collection_id),'-','_'),' ','_') AS idc_webapp_collection_id,
         STRING_AGG(DISTINCT modality, ", " ORDER BY modality) ImageTypes
       FROM
-        `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_current`
+        `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current`
       JOIN
         `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_pub.dicom_metadata`
      ON

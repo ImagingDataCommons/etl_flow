@@ -87,8 +87,9 @@ def build_table(args):
       CONCAT('s3://',
         if( i_source='tcia', aj.pub_aws_tcia_url, aj.pub_aws_idc_url),
             '/', se_uuid, '/') as series_aws_url,           
-      IF(collection_id='APOLLO', '', source_doi) AS source_doi,
-      IF(source_url is Null OR source_url='', CONCAT('https://doi.org/', source_doi), source_url) AS source_url,
+      IF(collection_id='APOLLO', '', source_doi) AS Source_DOI,
+      IF(source_url is Null OR source_url='', CONCAT('https://doi.org/', source_doi), source_url) AS Source_URL,
+      IF(versioned_source_doi is NULL, "", versioned_source_doi) versioned_Source_DOI,
       series_instances,
       se_hashes.all_hash AS series_hash,
       'Public' AS access,
@@ -163,10 +164,10 @@ def build_table(args):
       i_final_idc_version AS instance_final_idc_version,
       license_url,
       license_long_name,
-      license_short_name,
+      license_short_name
 --       collection_id AS tcia_api_collection_id,
 --       REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_') AS idc_webapp_collection_id
-      FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_current` aj
+      FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` aj
       ORDER BY
         collection_name, submitter_case_id
 """

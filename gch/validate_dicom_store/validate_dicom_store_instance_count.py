@@ -24,7 +24,7 @@ def validate_dicom_metadata_counts():
     client = bigquery.Client()
     query = f"""
     SELECT count(*) cnt
-    FROM `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined_current` ajc
+    FROM `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined_public_and_current` ajc
     FULL OUTER JOIN `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_pub.dicom_metadata` dm
     ON ajc.sop_instance_uid = dm.sopinstanceuid
     WHERE ajc.sop_instance_uid IS NULL OR dm.sopinstanceuid IS NULL

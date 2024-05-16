@@ -297,20 +297,18 @@ def create_table(target_client, target_project, target_dataset, table_name, view
     result = job.result()
 
     installed_targ_table = target_client.get_table(table_id)
-
     # Convert the schema that was generated when we created the table into a tree of SchemaField objects
     generated_schema = installed_targ_table.schema
-
-    # Add annotations to the generated view
+    # Add annotations to the generated schema
     annotated_schema = annotate_schema(generated_schema, targ_schema)
-
-    #
-    # If we created a view, update the schema after creation:
-    #
-
     installed_targ_table.schema = annotated_schema
-
     target_client.update_table(installed_targ_table, fields=["schema"])
+
+    # Add any clustering fields
+    if view_schema['clustering_fields']:
+        installed_targ_table = target_client.get_table(table_id)
+        installed_targ_table.clustering_fields = view_schema['clustering_fields']
+        target_client.update_table(installed_targ_table, fields=['clustering_fields'])
 
     return True
 
