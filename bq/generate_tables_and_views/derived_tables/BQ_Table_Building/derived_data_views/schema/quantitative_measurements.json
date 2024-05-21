@@ -208,6 +208,38 @@
         "mode": "NULLABLE",
         "name": "findingSite",
         "type": "RECORD"
+      },
+      {
+        "fields": [
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeValue",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeDesignator",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeVersion",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeMeaning",
+            "type": "STRING"
+          }
+        ],
+        "description": "Value of the TID 1500 Measurement group row corresponding to the concept \"Laterality\"",
+        "mode": "NULLABLE",
+        "name": "lateralityModifier",
+        "type": "RECORD"
       }
     ]
   }
