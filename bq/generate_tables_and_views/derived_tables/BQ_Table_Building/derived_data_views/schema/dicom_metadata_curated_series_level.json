@@ -57,6 +57,18 @@
         "type": "STRING"
       },      
       {
+        "description": "Concatenated values of `CodingSchemeDesignator` and `CodeValue` separated by `:` from SpecimenDescriptionSequence[0] > PrimaryAnatomicStructureSequence[0] > PrimaryAnatomicStructureModifierSequence[0] (applicable in SM).",
+        "mode": "NULLABLE",
+        "name": "primaryAnatomicStructureModifier_code_designator_value_str",
+        "type": "STRING"
+      },
+      {
+        "description": "`CodeMeaning` from SpecimenDescriptionSequence[0] > PrimaryAnatomicStructureSequence[0] > PrimaryAnatomicStructureModifierSequence[0] (applicable in SM).",
+        "mode": "NULLABLE",
+        "name": "primaryAnatomicStructureModifier_CodeMeaning",
+        "type": "STRING"
+      },      
+      {
         "description": "Concatenated values of `CodingSchemeDesignator` and `CodeValue` separated by `:` from OpticalPathSequence[0].IlluminationTypeCodeSequence[0] (applicable in SM).",
         "mode": "NULLABLE",
         "name": "illuminationType_code_designator_value_str",
