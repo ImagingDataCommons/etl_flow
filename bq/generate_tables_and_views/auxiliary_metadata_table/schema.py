@@ -77,9 +77,9 @@ auxiliary_metadata_schema = [
     bigquery.SchemaField('instance_revised_idc_version', 'INTEGER', mode='NULLABLE', description='The IDC version in which this instance first appeared'),
     bigquery.SchemaField('instance_final_idc_version', 'INTEGER', mode='NULLABLE', description='The IDC version in which this instance last appeared. If 0, thise is the current version.'),
     bigquery.SchemaField('access', 'STRING', mode='NULLABLE', description='Collection access status: Public or Limited'),
-    bigquery.SchemaField('license_url', 'STRING', mode='NULLABLE', description='URL of license of this analysis result'),
-    bigquery.SchemaField('license_long_name', 'STRING', mode='NULLABLE', description='Long name of license of this analysis result'),
-    bigquery.SchemaField('license_short_name', 'STRING', mode='NULLABLE', description='Short name of license of this analysis result'),
+    bigquery.SchemaField('license_url', 'STRING', mode='NULLABLE', description='URL of license of this instance'),
+    bigquery.SchemaField('license_long_name', 'STRING', mode='NULLABLE', description='Long name of license of this instance'),
+    bigquery.SchemaField('license_short_name', 'STRING', mode='NULLABLE', description='Short name of license of this instance'),
     # bigquery.SchemaField('tcia_api_collection_id', 'STRING', mode='NULLABLE', description='DEPRECATED: Collection name as used externally by IDC webapp'),
     # bigquery.SchemaField('idc_webapp_collection_id', 'STRING', mode='NULLABLE', description='DEPRECATED: Collection ID as used internally by IDC webapp and accepted by the IDC API'),
 
