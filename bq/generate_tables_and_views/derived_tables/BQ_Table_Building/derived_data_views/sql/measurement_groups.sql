@@ -7,6 +7,7 @@ WITH
       SELECT
         PatientID,
         SOPInstanceUID,
+        SeriesInstanceUID,
         SeriesDescription,
         ContentSequence
       FROM
@@ -27,6 +28,7 @@ WITH
     SELECT
       PatientID,
       SOPInstanceUID,
+      SeriesInstanceUID,
       SeriesDescription,
       contentSequence
     FROM
@@ -36,6 +38,7 @@ WITH
   SELECT
     PatientID,
     SOPInstanceUID,
+    SeriesInstanceUID,
     SeriesDescription,
     contentSequence,
     measurementGroup_number
@@ -55,6 +58,7 @@ WITH
   SELECT
     SOPInstanceUID,
     PatientID,
+    SeriesInstanceUID,
     SeriesDescription,
     measurementGroup_number,
     unnestedContentSequence.TextValue AS trackingIdentifier,
@@ -74,6 +78,7 @@ WITH
   measurementGroups_withTrackingUID AS (
   SELECT
     SOPInstanceUID,
+    SeriesInstanceUID,
     measurementGroup_number,
     unnestedContentSequence.UID AS trackingUniqueIdentifier
   FROM
@@ -171,6 +176,7 @@ WITH
 	  
 SELECT
   mWithUID.SOPInstanceUID,
+  mWithUID.SeriesInstanceUID,
   mWithUID.measurementGroup_number,
   mWithUID.trackingUniqueIdentifier,
   mWithID.trackingIdentifier,

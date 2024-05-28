@@ -8,15 +8,27 @@
   "schema": {
     "fields": [
       {
-        "description": "TBD",
+        "description": "PatientID of the patient from the Structured Report that was used to extract the measurement",
         "mode": "NULLABLE",
         "name": "PatientID",
         "type": "STRING"
       },
       {
-        "description": "TBD",
+        "description": "SOPInstanceUID of the Structured Report that was used to extract the measurement",  
         "mode": "NULLABLE",
         "name": "SOPInstanceUID",
+        "type": "STRING"
+      },
+      {
+        "description": "SeriesInstanceUID of the Structured Report that was used to extract the measurement",  
+        "mode": "NULLABLE",
+        "name": "SeriesInstanceUID",
+        "type": "STRING"
+      },
+      {
+        "description": "SeriesDescription of the Structured Report that was used to extract the measurement",  
+        "mode": "NULLABLE",
+        "name": "SeriesDescription",
         "type": "STRING"
       },
       {
