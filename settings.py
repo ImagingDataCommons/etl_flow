@@ -22,8 +22,8 @@ from dotenv import load_dotenv
 CURRENT_VERSION=19
 PREVIOUS_VERSION=18
 
-# IF MITIGATION_VERSION is defined, logging will be to m<MITIGATION_VERSION) rather than v<CURRENT_VERSION>
-MITIGATION_VERSION="m1"
+# # IF MITIGATION_VERSION is defined, logging will be to m<MITIGATION_VERSION) rather than v<CURRENT_VERSION>
+# MITIGATION_VERSION="m1"
 
 SECURE_LOCAL_PATH = os.environ.get('SECURE_LOCAL_PATH', '')
 

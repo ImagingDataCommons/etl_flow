@@ -146,7 +146,8 @@ def create_all_joined_public_and_current(client):
     SELECT * from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined`
     WHERE ((i_source='tcia' AND tcia_access='Public') OR (i_source='idc' AND idc_access='Public'))
     AND ((i_source='tcia' and tcia_metadata_sunset=0) OR (i_source='idc' and idc_metadata_sunset=0))
-    AND idc_version={settings.CURRENT_VERSION} AND i_excluded=False AND i_redacted=FALSE 
+    AND i_excluded=False AND i_redacted=FALSE 
+    AND idc_version={settings.CURRENT_VERSION} 
     """
     # Make an API request to create the view.
     client.delete_table(view_id, not_found_ok=True)
@@ -160,7 +161,8 @@ def create_all_joined_public(client):
     view = bigquery.Table(view_id)
     view.view_query = f"""
     SELECT * from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
-    WHERE (i_source='tcia' AND tcia_access='Public') OR (i_source='idc' AND idc_access='Public' AND i_redacted=FALSE )
+    WHERE ((i_source='tcia' AND tcia_access='Public') OR (i_source='idc' AND idc_access='Public')) 
+    AND i_excluded=FALSE AND i_redacted=FALSE
     """
     # Make an API request to create the view.
     client.delete_table(view_id, not_found_ok=True)
@@ -185,6 +187,8 @@ def create_all_joined_limited(client):
 
 
 # All instances that are in excluded collections, across all IDC versions
+# This does not include instances that are individually excluded,
+# but are from collections that are otherwise included
 def create_all_joined_excluded(client):
     view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_excluded"
     view = bigquery.Table(view_id)

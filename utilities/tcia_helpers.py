@@ -679,7 +679,7 @@ if __name__ == "__main__":
     # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
     # s = get_all_tcia_metadata_stage(type="collections")
     d = get_all_tcia_metadata(type="collections")
-    # d = get_all_tcia_metadata(type="analysis-results")
+    d = get_all_tcia_metadata(type="analysis-results")
     d = get_all_tcia_metadata(type="downloads", query_param="include=42023,42025,42027,42029,42031")
     # d = get_collection_metadata("ACRIN-Contralateral-Breast-MR")
     # d = get_collection_descriptions_and_licenses()
