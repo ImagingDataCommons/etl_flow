@@ -53,12 +53,12 @@ def get_dois_tcia(collection, patient="", third_party="no", server=""):
                         uri = uri.split('doi.org/')[1].lower()
                     seriesUID = series["seriesUID"]
                     series_dois[seriesUID]['source_doi'] = uri
-                    series_dois[seriesUID]['version_source_doi'] = ""
+                    series_dois[seriesUID]['versioned_source_doi'] = ""
                 elif collection == 'NSCLC Radiogenomics':
                     breakpoint()
                     seriesUID = series["seriesUID"]
                     series_dois[seriesUID]['source_doi'] = "10.7937/K9/TCIA.2017.7hs46erv".lower()
-                    series_dois[seriesUID]['version_source_doi'] = ""
+                    series_dois[seriesUID]['versioned_source_doi'] = ""
                 else:
                     breakpoint()
                     errlogger.error(
