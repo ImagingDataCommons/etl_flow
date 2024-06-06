@@ -4,7 +4,8 @@ WITH
   SELECT
     PatientID,
     SOPInstanceUID,
-	SeriesDescription,
+    SeriesInstanceUID,
+	  SeriesDescription,
     measurementGroup_number,
     segmentationInstanceUID,
     segmentationSegmentNumber,
@@ -34,7 +35,7 @@ WITH
   SELECT
     PatientID,
     SOPInstanceUID,
-	SeriesDescription,
+	  SeriesDescription,
     measurementGroup_number,
     segmentationInstanceUID,
     segmentationSegmentNumber,
@@ -119,7 +120,7 @@ WITH
   SELECT
     findings.PatientID,
     findings.SOPInstanceUID,
-	findings.SeriesDescription,
+	  findings.SeriesDescription,
     findings.finding,
     findingSites.findingSite,
     findingSites.lateralityModifier,
@@ -148,7 +149,8 @@ WITH
   SELECT
     contentSequenceLevel3numeric.PatientID,
     contentSequenceLevel3numeric.SOPInstanceUID,
-	contentSequenceLevel3numeric.SeriesDescription,
+    contentSequenceLevel3numeric.SeriesInstanceUID,
+	  contentSequenceLevel3numeric.SeriesDescription,
     contentSequenceLevel3numeric.measurementGroup_number,
     findingsAndFindingSites.segmentationInstanceUID,
     findingsAndFindingSites.segmentationSegmentNumber,

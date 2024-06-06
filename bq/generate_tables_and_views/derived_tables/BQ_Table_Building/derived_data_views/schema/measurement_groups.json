@@ -17,6 +17,12 @@
       {
         "description": "TBD",
         "mode": "NULLABLE",
+        "name": "SeriesInstanceUID",
+        "type": "STRING"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
         "name": "measurementGroup_number",
         "type": "INTEGER"
       },

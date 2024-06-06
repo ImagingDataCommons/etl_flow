@@ -3,6 +3,7 @@ WITH
   SELECT
     PatientID,
     SOPInstanceUID,
+    SeriesInstanceUID,
     measurementGroup_number,
     segmentationInstanceUID,
     segmentationSegmentNumber,
@@ -71,6 +72,7 @@ WITH
 SELECT
   contentSequenceLevel3.PatientID,
   contentSequenceLevel3.SOPInstanceUID,
+  contentSequenceLevel3.SeriesInstanceUID,
   findingsAndFindingSites.measurementGroup_number,
   findingsAndFindingSites.segmentationInstanceUID,
   findingsAndFindingSites.segmentationSegmentNumber,
