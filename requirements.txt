@@ -25,6 +25,7 @@ google-cloud-storage
 google-crc32c
 google-resumable-media
 googleapis-common-protos
+pandas
 psycopg2
 pydicom
 python-dotenv

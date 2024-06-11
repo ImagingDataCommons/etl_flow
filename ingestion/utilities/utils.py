@@ -57,7 +57,7 @@ def md5_hasher(file_path):
     return md5.hexdigest()
 
 
-# Hash a sorted list of hashes
+# Hash a list of hashes
 # Return "" if the list is empty
 def get_merkle_hash(hashes):
     if hashes:

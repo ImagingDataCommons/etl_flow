@@ -17,19 +17,26 @@
 # Generate a table of TCIA pathology metadata packages
 
 import argparse
+import os
 import sys
 import json
 from utilities.tcia_helpers import get_all_tcia_metadata
+from utilities.logging_config import successlogger, progresslogger, errlogger
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json
 from bq.generate_tables_and_views.original_collections_metadata.schema import data_collections_metadata_schema
 from utilities.logging_config import errlogger
 from python_settings import settings
+from subprocess import run
+from io import StringIO
+from csv import reader
+from ingestion.utilities.utils import get_merkle_hash
 
 pathology_data_schema = [
     bigquery.SchemaField('idc_collection_id', 'STRING', mode='NULLABLE', description='IDC collection_id'),
     bigquery.SchemaField('download_id', 'STRING', mode='NULLABLE', description='Collection manager id of this download'),
     bigquery.SchemaField('download_slug', 'STRING', mode='NULLABLE', description='Collection manager slug of this download'),
+    bigquery.SchemaField('hash', 'STRING', mode='NULLABLE', description='MD5 hash of "sums" of files in the package'),
     bigquery.SchemaField('collection_id', 'STRING', mode='NULLABLE', description='Collection manager id of this collection'),
     bigquery.SchemaField('collection_slug', 'STRING', mode='NULLABLE', description='Collection manager of this collection'),
     bigquery.SchemaField('date_updated', 'DATE', mode='NULLABLE', description='?'),
@@ -40,7 +47,45 @@ pathology_data_schema = [
     bigquery.SchemaField('download_url', 'STRING', mode='NULLABLE', description='URL from which to download pathology data'),
 ]
 
-def get_raw_data():
+
+def get_aspera_hash(download_url, directory, sums, level):
+    if directory:
+        result = run(["ascli", "--progress-bar=no", "--format=csv", "faspex5", "packages", "browse", f"--url={download_url}", directory],
+                     capture_output=True)
+    else:
+        result = run(["ascli", "--progress-bar=no", "--format=csv", "faspex5", "packages", "browse", f"--url={download_url}"],
+                     capture_output=True)
+    if result.stderr == b'':
+        with StringIO(result.stdout.decode()) as f:
+            # r = reader(f, delimiter=',')
+            for file in f:
+                print(f'\tl{level}: {file}')
+                file = file.split(',')
+                if file[0].endswith('.sums'):
+                    result = run(["ascli", "--progress-bar=no", "--format=csv", "faspex5", "packages", "receive", f"--url={download_url}", file[0]],
+                                 capture_output=True)
+                    if result.stderr == b'':
+                        with open(file[1]) as g:
+                            for sum in g:
+                                # progresslogger.info(f"\t\t{level}: {sum.split(' ')}")
+                                sums.append(sum.split(' ')[0])
+                        os.remove(file[1])
+                    else:
+                        errlogger.error(result.stderr)
+                        exit(1)
+
+                # elif len(file)>=3 and file[2] == "directory":
+                #     level += 1
+                #     get_aspera_hash(download_url, directory=file[0],  sums=sums, level=level)
+                #     level -= 1
+        return sums
+    else:
+        errlogger.error(result.stderr)
+        return ""
+
+
+
+def gen_table(args):
     collections = [ c for c in get_all_tcia_metadata("collections") if c['collection_page_accessibility'] == "Public"]
     downloads = get_all_tcia_metadata("downloads")
     pathology_downloads = {download['id']:download for download in downloads if download['download_type']=='Pathology Images'}
@@ -65,10 +110,23 @@ def get_raw_data():
     pathology_data = []
     for id, data in pathology_downloads.items():
         if 'collection_slug' in data:
+            if data["collection_slug"] not in args.skip:
+                progresslogger.info(f'{data["collection_slug"]}, {data["slug"]}')
+                sums = get_aspera_hash(data['download_url'], directory="", sums=[], level=0)
+                if sums == []:
+                    hash = ""
+                else:
+                    hash = get_merkle_hash(sums)
+            else:
+                progresslogger.info(f'Skipped {data["collection_slug"]}')
+                hash = ""
+
+
             download = dict(
                 idc_collection_id = data["collection_slug"].replace('-','_'),
                 download_id = id,
                 download_slug = data['slug'],
+                hash = hash,
                 collection_id = data["collection_id"],
                 collection_slug = data["collection_slug"],
                 date_updated = data["date_updated"],
@@ -98,8 +156,9 @@ def get_raw_data():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--bqtable_name', default='tcia_pathology_metadata', help='BQ table name')
+    parser.add_argument("--skip", default=['histologyhsi-gb'])
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
 
-    get_raw_data()
+    gen_table(args)
