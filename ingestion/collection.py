@@ -237,7 +237,6 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         for patient in patients:
             patient_index = f'{patients.index(patient) + 1} of {len(patients)}'
             if not patient.done:
-                # build_patient(sess, args, all_sources, patient_index, data_collection_doi_url, analysis_collection_dois, version, collection, patient)
                 build_patient(sess, args, all_sources, patient_index, version, collection, patient)
             else:
                 if True:

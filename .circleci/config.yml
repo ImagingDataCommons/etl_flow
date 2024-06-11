@@ -1,35 +1,76 @@
 version: 2.1
+
 orbs:
-  python: circleci/python@2.1.1
+  gcp-cli: circleci/gcp-cli@3.1.1
 
 jobs:
-  prelims:
-#    docker:
-#      - image:
-#          - image: cimg/python:3.8.14
-    executor: python/default
-    steps:
-      - checkout
-      - python/install-packages:
-          pkg-manager: pip
-      - run:
-          name: Run tests
-          command: python -m temp/helloworld.py
-#      - import_db
-#      - create_bq_datasets
-#      - detect_tcia_collection_name_changes
-#      - revise_original_collections_metadata_idc_source_table
-#      - revise_analysis_results_metadata_idc_source_table
-#      - update_analysis_results_descriptions_table
+    use-gcp:
+      working_directory: ~/etl_flow
+      executor: gcp-cli/google
+      steps:
+        - run:
+            name: Set some environment variables
+            command: |
+              echo "export HOME=/home/circleci/${CIRCLE_PROJECT_REPONAME}" >> "$BASH_ENV"
+              echo "export LOG_DIR=/home/circleci/${CIRCLE_PROJECT_REPONAME}/log_dir" >> "$BASH_ENV"
+              mkdir -p /home/circleci/${CIRCLE_PROJECT_REPONAME}/log_dir/
 
-#  preingestion:
-#    docker:
-#      - image:
-#          - image: cimg/python:3.8.14
-#    steps:
-#      -update_idc_xxx_table_hierarchy
+        - checkout
+        - run:
+            name: Install sudo and ps
+            command: |
+              apt-get -y update && apt-get -y install sudo procps
+        - gcp-cli/setup:
+            service_account_email: IDC_ETL_PROCESSING_SA
+            gcloud_service_key: IDC_ETL_PROCESSING_SERVICE_KEY
+            google_project_id: ETL_FLOW_PROJECT_ID
+            google_project_number: ETL_FLOW_PROJECT_NUMBER
+        - run:
+            name: Set PYTHONPATH
+            command: |
+              echo "export PYTHONPATH=${PWD}:${PWD}/lib" >> "$BASH_ENV"
+        - restore_cache:
+            keys:
+              - etl-flow-lib-{{ checksum "requirements.txt" }}
+        - run:
+            name: Staging
+            command: |
+              sudo -E /bin/bash ./shell/gcloud-pull-staging-files.sh
+              sudo -E /bin/bash ./shell/install-deps.sh
+        - save_cache:
+            key: etl-flow-lib-{{ checksum "requirements.txt" }}
+            paths:
+              - ./lib
+        - run:
+            name: Install Cloud SQL Proxy
+            command: |
+              mkdir -p $HOME/google-cloud-sdk/
+              curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.9.0/cloud-sql-proxy.linux.amd64
+              chmod +x cloud-sql-proxy
+              mv cloud-sql-proxy $HOME/google-cloud-sdk/
+        - run:
+            name: Run Cloud SQL Proxy
+            command: |
+              echo $IDC_ETL_PROCESSING_SERVICE_KEY >> $HOME/credentials_file
+              $HOME/google-cloud-sdk/cloud-sql-proxy --credentials-file $HOME/credentials_file --address 0.0.0.0 --port 5433 $CLOUD_SQL_INSTANCE_NAME
+            background: true
+        - run:
+            name: list some stuff
+            command: |
+              echo $PWD
+              echo $HOME
+              echo ${PYTHONPATH}
+              ps -ef
+        - run:
+            name: Run tests
+            command: |
+              # Run your tests that connect to the Cloud SQL instance
+              python3 ./preingestion/detect_tcia_collection_name_changes.py
+
 workflows:
-  flow:
+  run-cloud-sql-proxy:
     jobs:
-      - prelims
+      - use-gcp:
+          context: gcp-context
+
 

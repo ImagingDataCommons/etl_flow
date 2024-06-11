@@ -5,12 +5,19 @@
     "tbd_key_1": "value_1",
     "tbd_key_2": "value_2"
   },
+  "clustering_fields": [],
   "schema": {
     "fields": [
       {
         "description": "TBD",
         "mode": "NULLABLE",
         "name": "SOPInstanceUID",
+        "type": "STRING"
+      },
+      {
+        "description": "TBD",
+        "mode": "NULLABLE",
+        "name": "SeriesInstanceUID",
         "type": "STRING"
       },
       {

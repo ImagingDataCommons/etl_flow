@@ -48,7 +48,7 @@ def gen_instance_manifest(args):
           CONCAT('gs://', pub_gcs_idc_url,'/', se_uuid, '/', i_uuid, '.dcm', ', s3://', pub_aws_idc_url,'/', se_uuid, '/', i_uuid, '.dcm')
         ) urls
       FROM
-        `{args.project}.{args.dev_bqdataset}.all_joined_current` aj
+        `{args.project}.{args.dev_bqdataset}.all_joined_public_and_current` aj
       JOIN
         ts
       ON

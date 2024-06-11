@@ -17,12 +17,10 @@
 import os
 
 import json
-import sys
 from subprocess import run, PIPE
 from time import sleep
 import requests
 import logging
-import pandas as pd
 import zipfile
 
 # from http.client import HTTPConnection
@@ -681,8 +679,8 @@ if __name__ == "__main__":
     # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
     # s = get_all_tcia_metadata_stage(type="collections")
     d = get_all_tcia_metadata(type="collections")
-    # d = get_all_tcia_metadata(type="analysis-results")
-    d = get_all_tcia_metadata(type="downloads", query_param="include=43665, 43667")
+    d = get_all_tcia_metadata(type="analysis-results")
+    d = get_all_tcia_metadata(type="downloads", query_param="include=42023,42025,42027,42029,42031")
     # d = get_collection_metadata("ACRIN-Contralateral-Breast-MR")
     # d = get_collection_descriptions_and_licenses()
     # i = get_collection_id_from_doi('10.7937/k9/tcia.2016.eln8ygle')

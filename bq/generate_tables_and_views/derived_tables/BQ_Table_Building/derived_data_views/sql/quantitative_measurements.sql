@@ -4,7 +4,8 @@ WITH
   SELECT
     PatientID,
     SOPInstanceUID,
-	SeriesDescription,
+    SeriesInstanceUID,
+	  SeriesDescription,
     measurementGroup_number,
     segmentationInstanceUID,
     segmentationSegmentNumber,
@@ -34,7 +35,7 @@ WITH
   SELECT
     PatientID,
     SOPInstanceUID,
-	SeriesDescription,
+	  SeriesDescription,
     measurementGroup_number,
     segmentationInstanceUID,
     segmentationSegmentNumber,
@@ -46,7 +47,8 @@ WITH
     (0)] AS ConceptNameCodeSequence,
     contentSequence.ConceptCodeSequence [
   SAFE_OFFSET
-    (0)] AS ConceptCodeSequence
+    (0)] AS ConceptCodeSequence,
+  contentSequence.ContentSequence AS ContentSequence 
   FROM
     `{project}.{dataset}.measurement_groups`
   CROSS JOIN
@@ -97,7 +99,15 @@ WITH
     SOPInstanceUID,
 	SeriesDescription,
     ConceptCodeSequence AS findingSite,
-    measurementGroup_number
+    measurementGroup_number,
+    CASE ( 
+      ContentSequence[SAFE_OFFSET(0)].ConceptNameCodeSequence[SAFE_OFFSET(0)].CodeValue = "272741003" AND 
+      ContentSequence[SAFE_OFFSET(0)].ConceptNameCodeSequence[SAFE_OFFSET(0)].CodingSchemeDesignator = "SCT")
+            WHEN TRUE THEN STRUCT( contentSequenceLevel3codes.ContentSequence [ SAFE_OFFSET (0)].ConceptCodeSequence [ SAFE_OFFSET (0)].CodeValue AS CodeValue, contentSequenceLevel3codes.ContentSequence [ SAFE_OFFSET (0)].ConceptCodeSequence [ SAFE_OFFSET (0)].CodingSchemeDesignator AS CodingSchemeDesignator, contentSequenceLevel3codes.ContentSequence [ SAFE_OFFSET (0)].ConceptCodeSequence [ SAFE_OFFSET (0)].CodeMeaning AS CodeMeaning )
+    ELSE
+    STRUCT(NULL as CodeValue,NULL as CodingSchemeDesignator,NULL as CodeMeaning)
+  END
+    AS lateralityModifier,     # added
   FROM
     contentSequenceLevel3codes
   WHERE
@@ -110,9 +120,10 @@ WITH
   SELECT
     findings.PatientID,
     findings.SOPInstanceUID,
-	findings.SeriesDescription,
+	  findings.SeriesDescription,
     findings.finding,
     findingSites.findingSite,
+    findingSites.lateralityModifier,
     findingSites.measurementGroup_number,
     findings.segmentationInstanceUID,
     findings.segmentationSegmentNumber,
@@ -138,7 +149,8 @@ WITH
   SELECT
     contentSequenceLevel3numeric.PatientID,
     contentSequenceLevel3numeric.SOPInstanceUID,
-	contentSequenceLevel3numeric.SeriesDescription,
+    contentSequenceLevel3numeric.SeriesInstanceUID,
+	  contentSequenceLevel3numeric.SeriesDescription,
     contentSequenceLevel3numeric.measurementGroup_number,
     findingsAndFindingSites.segmentationInstanceUID,
     findingsAndFindingSites.segmentationSegmentNumber,
@@ -162,6 +174,7 @@ WITH
     STRUCT(NULL as CodeValue,NULL as CodingSchemeDesignator,NULL as CodeMeaning)
   END
     AS derivationModifier,
+    findingsAndFindingSites.lateralityModifier, 
     SAFE_CAST( contentSequenceLevel3numeric.MeasuredValueSequence.NumericValue [
     SAFE_OFFSET
       (0)] AS NUMERIC ) AS Value,

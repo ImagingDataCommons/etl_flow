@@ -35,7 +35,7 @@ def get_expected_blobs_in_bucket(args):
     client = bigquery.Client()
     query = f"""
       SELECT distinct concat(se_uuid,'/', i_uuid, '.dcm') as blob_name
-      FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_current` ajc
+      FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_public_and_current` ajc
       WHERE se_rev_idc_version={args.version} AND collection_id = '{args.bucket["collection_id"]}' AND i_source='{args.bucket["source"]}'
       ORDER BY blob_name
   """
@@ -102,7 +102,7 @@ def validate_all_buckets(args):
     client = bigquery.Client()
     query=f"""
     SELECT DISTINCT collection_id, i_source source, CONCAT("idc_v{args.version}_", i_source, "_", REPLACE(REPLACE(LOWER(collection_id),"-", "_"),"","_")) bucket_id
-    FROM `{settings.DEV_PROJECT}.idc_v{settings.CURRENT_VERSION}_dev.all_joined_current` aj
+    FROM `{settings.DEV_PROJECT}.idc_v{settings.CURRENT_VERSION}_dev.all_joined_public_and_current` aj
     WHERE i_rev_idc_version={settings.CURRENT_VERSION}
     """
 

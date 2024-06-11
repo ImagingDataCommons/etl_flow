@@ -21,8 +21,10 @@ from sqlalchemy.orm import Session
 from idc.models import Base
 
 # Create an SQLAlchemy session
-def sa_session(echo=False):
-    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
+def sa_session(echo=False, db=None):
+    if db is None:
+        db = settings.CLOUD_DATABASE
+    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{db}'
     sql_engine = create_engine(sql_uri, echo=echo)
 
     # Enable the underlying psycopg2 to deal with composites

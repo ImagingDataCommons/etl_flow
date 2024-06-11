@@ -5,18 +5,31 @@
     "tbd_key_1": "value_1",
     "tbd_key_2": "value_2"
   },
+  "clustering_fields": [],
   "schema": {
     "fields": [
       {
-        "description": "TBD",
+        "description": "PatientID of the patient from the Structured Report that was used to extract the measurement",
         "mode": "NULLABLE",
         "name": "PatientID",
         "type": "STRING"
       },
       {
-        "description": "TBD",
+        "description": "SOPInstanceUID of the Structured Report that was used to extract the measurement",  
         "mode": "NULLABLE",
         "name": "SOPInstanceUID",
+        "type": "STRING"
+      },
+      {
+        "description": "SeriesInstanceUID of the Structured Report that was used to extract the measurement",  
+        "mode": "NULLABLE",
+        "name": "SeriesInstanceUID",
+        "type": "STRING"
+      },
+      {
+        "description": "SeriesDescription of the Structured Report that was used to extract the measurement",  
+        "mode": "NULLABLE",
+        "name": "SeriesDescription",
         "type": "STRING"
       },
       {
@@ -207,6 +220,38 @@
         "description": "Value of the TID 1500 Measurement group row corresponding to the concept \"Finding Site\" (e.g., row 2 in TID 1419)",
         "mode": "NULLABLE",
         "name": "findingSite",
+        "type": "RECORD"
+      },
+      {
+        "fields": [
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeValue",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeDesignator",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodingSchemeVersion",
+            "type": "STRING"
+          },
+          {
+            "description": "TBD",
+            "mode": "NULLABLE",
+            "name": "CodeMeaning",
+            "type": "STRING"
+          }
+        ],
+        "description": "Value of the TID 1500 Measurement group row corresponding to the concept \"Laterality\"",
+        "mode": "NULLABLE",
+        "name": "lateralityModifier",
         "type": "RECORD"
       }
     ]

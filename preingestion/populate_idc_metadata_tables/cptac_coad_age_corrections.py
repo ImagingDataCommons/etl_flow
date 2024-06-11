@@ -35,11 +35,11 @@ from google.cloud import storage
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--src_bucket', default='idc-conversion-outputs-cptac-agefixed', help='Source bucket containing instances')
+    parser.add_argument('--src_bucket', default='cptac_pathology', help='Source bucket containing instances')
     parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/preeingestion_gcsfuse_mount_point', help='Directory on which to mount the bucket.\
                 The script will create this directory if necessary.')
     parser.add_argument('--subdir', \
-            default='TiffAddedAgeFixed/05CO020 [05CO020]', \
+            default='idc-conversion-outputs-cptac-agefixed/TiffAddedAgeFixed/05CO020 [05CO020]', \
             help="Subdirectory of mount_point at which to start walking directory")
     # parser.add_argument('--startswith', \
     #         default=['1.3.6.1.4.1.5962.99.1.135739150.1698414025.1640813278990','1.3.6.1.4.1.5962.99.1.142001769.601012264.1640819541609', '1.3.6.1.4.1.5962.99.1.2118420855.830984161.1655680862583', '1.3.6.1.4.1.5962.99.1.2121651214.2110434430.1655684092942'],\
