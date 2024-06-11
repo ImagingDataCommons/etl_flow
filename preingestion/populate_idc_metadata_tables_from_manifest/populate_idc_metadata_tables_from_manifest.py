@@ -116,8 +116,9 @@ def build_series(args, bucket, study, series_data):
         study.seriess.append(series)
         progresslogger.info(f'\t\t\tSeries {series_id} added')
     # Always set/update the source_doi in case it has changed
-    series.source_doi = args.source_doi
-    series.source_url = args.source_url
+    series.source_doi = args.source_doi.lower()
+    series.source_url = args.source_url.lower()
+    series.versioned_source_doi = args.verioned_source_doi.lower()
     series.excluded = False
     # At this point, each row in series data corresponds to an instance on the series
     for instance_data in series_data:
@@ -283,8 +284,10 @@ def prebuild(args):
     src_bucket = storage.Bucket(client, args.src_bucket)
 
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
-    # sql_engine = create_engine(sql_uri, echo=True)
-    sql_engine = create_engine(sql_uri)
+    # sql_engine = create_engine(sql_uri, echo=True,)
+    # sql_engine = create_engine(sql_uri)
+
+    sql_engine = create_engine('bigquery://idc-dev-etl/idc_v18_dev' '?'  'dry_run=true', echo=True)
 
     with Session(sql_engine) as sess:
 

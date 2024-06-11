@@ -173,7 +173,7 @@ def load_BQ_from_uri(client, project, dataset, table, uri, schema=None, delimite
 
 # Perform a query and write results to dst_dataset.dst_table
 def query_BQ(client, dst_dataset, dst_table, sql, write_disposition='WRITE_APPEND',
-             schema_update_options = None, expiration=0):
+             schema_update_options = None):
 
 
     table_id = "{}.{}.{}".format(client.project, dst_dataset, dst_table)

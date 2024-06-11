@@ -5,6 +5,11 @@
     "tbd_key_1": "value_1",
     "tbd_key_2": "value_2"
   },
+  "clustering_fields": [
+    "collection_id",
+    "Modality",
+    "analysis_result_id"
+  ],
   "schema": {
     "fields": [
       {
@@ -218,6 +223,12 @@
         "type": "STRING"
       },
       {
+        "description": "If present, the DOI of a page that describes the original collection or analysis result that include this version of this instance",
+        "mode": "NULLABLE",
+        "name": "versioned_Source_DOI",
+        "type": "STRING"
+      },
+      {
         "description": "If this instance is an analysis result, then the ID of the analysis result, else NULL",
         "mode": "NULLABLE",
         "name": "analysis_result_id",
@@ -271,7 +282,6 @@
         "name": "tcia_cancerType",
         "type": "STRING"
       },
-
       {
         "description": "TBD",
         "mode": "NULLABLE",

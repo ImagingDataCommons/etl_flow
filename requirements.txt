@@ -15,8 +15,7 @@
 #
 
 backoff
-cryptography
-google
+beautifulsoup4
 google-api-python-client
 google-auth-httplib2
 google-cloud-bigquery
@@ -26,9 +25,11 @@ google-cloud-storage
 google-crc32c
 google-resumable-media
 googleapis-common-protos
+pandas
 psycopg2
 pydicom
 python-dotenv
 python_settings
+requests
 sqlalchemy==1.4.50
 sqlalchemy_utils

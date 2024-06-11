@@ -86,13 +86,9 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
         new_series.series_instance_uid = series
         new_series.uuid = str(uuid4())
         new_series.min_timestamp = datetime.utcnow()
-        # new_series.source_doi=analysis_collection_dois[series] \
-        #     if series in analysis_collection_dois \
-        #     else data_collection_doi_url['doi']
-        # new_series.source_url = data_collection_doi_url['url'] \
-        #     if not series in analysis_collection_dois else None
         try:
-            new_series.source_doi = dois_urls_licenses[series]['doi']
+            new_series.source_doi = dois_urls_licenses[series]['dois']['source_doi']
+            new_series.versioned_source_doi = dois_urls_licenses[series]['dois']['versioned_source_doi']
             new_series.source_url = dois_urls_licenses[series]['url']
             new_series.license_url = dois_urls_licenses[series]['license']['license_url']
             new_series.license_long_name = dois_urls_licenses[series]['license']['license_long_name']

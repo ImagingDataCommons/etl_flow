@@ -319,6 +319,8 @@ class Collection(Base):
         ),
         nullable=True,
     )
+    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+
     versions = relationship('Version',
                                secondary=version_collection,
                                back_populates='collections')
@@ -380,6 +382,8 @@ class Patient(Base):
         ),
         nullable=True,
     )
+    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+
     collections = relationship('Collection',
                                secondary=collection_patient,
                                back_populates='patients')
@@ -441,6 +445,8 @@ class Study(Base):
         ),
         nullable=True,
     )
+    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+
     patients = relationship('Patient',
                             secondary=patient_study,
                             back_populates='studies')
@@ -458,7 +464,7 @@ class Series(Base):
     series_instance_uid = Column(String, nullable=False, comment="DICOM SeriesInstanceUID")
     uuid = Column(String, primary_key=True, comment="IDC assigned UUID of a version of this object")
     series_instances = Column(Integer, nullable=True, comment="Instances in this series")
-    source_doi = Column(String, nullable=True, comment="A doi to the wiki page of this series")
+    source_doi = Column(String, nullable=True, comment="A DOI to the wiki page of this series")
 
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
@@ -508,6 +514,8 @@ class Series(Base):
     license_url = Column(String, comment="License URL of this series.")
     license_short_name = Column(String, comment='Short name of license')
     third_party = Column(Boolean, comment='True if this series is from a third party, else False')
+    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+    versioned_source_doi = Column(String, comment='If present, a DOI to the wiki page of this version of this series')
 
     studies = relationship('Study',
                            secondary=study_series,
@@ -534,6 +542,9 @@ class Instance(Base):
     timestamp = Column(DateTime, nullable=True, comment="Time when this object was last built")
     # Excluded instances are somehow invalid, but are included in the DB to maintain the hash
     excluded = Column(Boolean, default=False, comment="True if object should be excluded from auxiliary_metadata, etc.")
+    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+    mitigation = Column(String, default="", comment="ID of the mitigation which redacted this instance")
+    ingestion_url = Column(String, default="", comment="GCS URL of the blob from which this instance was ingested. Does not apply if source='tcia'")
 
     seriess = relationship('Series',
                           secondary=series_instance,
@@ -545,6 +556,7 @@ class IDC_Collection(Base):
     __tablename__ = 'idc_collection'
     collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
     hash = Column(String, comment='Collection hash')
+    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
 
     # vers = relationship("IDC_Version", back_populates="collections")
     patients = relationship("IDC_Patient", back_populates="collection", order_by="IDC_Patient.submitter_case_id", cascade="all, delete")
@@ -557,6 +569,7 @@ class IDC_Patient(Base):
     submitter_case_id = Column(String, nullable=False, unique=True, primary_key=True, comment="Submitter's patient ID")
     collection_id = Column(ForeignKey('idc_collection.collection_id'), comment="Containing object")
     hash = Column(String, comment='Patient hash')
+    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
 
     collection = relationship("IDC_Collection", back_populates="patients")
     studies = relationship("IDC_Study", back_populates="patient", order_by="IDC_Study.study_instance_uid", cascade="all, delete")
@@ -569,6 +582,7 @@ class IDC_Study(Base):
     study_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
     submitter_case_id = Column(ForeignKey('idc_patient.submitter_case_id'), comment="Submitter's patient ID")
     hash = Column(String, comment='Study hash')
+    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
 
     patient = relationship("IDC_Patient", back_populates="studies")
     seriess = relationship("IDC_Series", back_populates="study", order_by="IDC_Series.series_instance_uid", cascade="all, delete")
@@ -588,6 +602,8 @@ class IDC_Series(Base):
     license_url = Column(String, comment='URL of license description')
     license_long_name = Column(String, comment='Long name of license')
     license_short_name = Column(String, comment='short name of license')
+    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+    versioned_source_doi = Column(String, comment='If present, a DOI to the wiki page of this version of this series')
 
     study = relationship("IDC_Study", back_populates="seriess")
     instances = relationship("IDC_Instance", back_populates="seriess", order_by="IDC_Instance.sop_instance_uid", cascade="all, delete")
@@ -604,6 +620,8 @@ class IDC_Instance(Base):
     size = Column(BigInteger, comment='Instance size in bytes')
     excluded = Column(Boolean, comment='True of this series should be excluded from ingestion')
     idc_version = Column(Integer, comment='IDC version when this instance was added/revised')
+    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+    mitigation = Column(String, default="", comment="ID of the mitigation which redacted this instance")
 
     seriess = relationship("IDC_Series", back_populates="instances")
 

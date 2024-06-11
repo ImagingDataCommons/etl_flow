@@ -34,7 +34,7 @@ from google.cloud import storage
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--processes', default=12)
+    parser.add_argument('--processes', default=1)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--tmp_directory', default='/mnt/disks/idc-etl/tmp')
     parser.add_argument('--src_bucket', default='012624-nlst-126k-cohort', help='Source bucket containing instances')

@@ -19,19 +19,22 @@ import sys
 from os.path import join, dirname, exists
 from dotenv import load_dotenv
 
-CURRENT_VERSION=18
-PREVIOUS_VERSION=17
+CURRENT_VERSION=19
+PREVIOUS_VERSION=18
+
+# # IF MITIGATION_VERSION is defined, logging will be to m<MITIGATION_VERSION) rather than v<CURRENT_VERSION>
+# MITIGATION_VERSION="m1"
 
 SECURE_LOCAL_PATH = os.environ.get('SECURE_LOCAL_PATH', '')
 
-if not exists(join(dirname(__file__), SECURE_LOCAL_PATH, '.env.idc-dev-etl')):
+if not exists(join(dirname(__file__), SECURE_LOCAL_PATH, '.env')):
     print("[ERROR] Couldn't open .env.idc-dev-etl file expected at {}!".format(
-        join(dirname(__file__), SECURE_LOCAL_PATH, '.env.idc-dev-etl'))
+        join(dirname(__file__), SECURE_LOCAL_PATH, '.env'))
     )
     print("[ERROR] Exiting settings.py load - check your Pycharm settings and secure_path.env file.")
     exit(1)
 
-load_dotenv(dotenv_path=join(dirname(__file__), SECURE_LOCAL_PATH, '.env.idc-dev-etl'))
+load_dotenv(dotenv_path=join(dirname(__file__), SECURE_LOCAL_PATH, '.env'))
 
 DEBUG = (os.environ.get('DEBUG', 'False') == 'True')
 
@@ -48,33 +51,38 @@ LOCAL_PORT='5432'
 # Parameters for accessing the Cloud SQL DB server
 CLOUD_USERNAME = os.environ.get('CLOUD_USERNAME', '')
 CLOUD_PASSWORD = os.environ.get('CLOUD_PASSWORD', '')
-CLOUD_HOST='0.0.0.0'
-CLOUD_PORT='5433'
-CLOUD_INSTANCE='idc-dev-etl:us-central1:idc-dev-etl-psql-whc'
+CLOUD_HOST = os.environ.get('CLOUD_HOST', '')
+CLOUD_PORT= os.environ.get('CLOUD_PORT', '')
+CLOUD_INSTANCE = os.environ.get('CLOUD_INSTANCE', '')
 CLOUD_DATABASE = f'idc_v{CURRENT_VERSION}'
 
 # Various projects that we operate in
-DEV_PROJECT='idc-dev-etl'
-PDP_PROJECT='idc-pdp-staging'
-PUB_PROJECT='canceridc-data'
+DEV_PROJECT=os.environ.get('DEV_PROJECT', '')
+PDP_PROJECT=os.environ.get('PDP_PROJECT', '')
+PUB_PROJECT=os.environ.get('PUB_PROJECT', '')
+
+DEV_MITIGATION_PROJECT=os.environ.get('DEV_MITIGATION_PROJECT', '')
+STAGING_MITIGATION_PROJECT=os.environ.get('STAGING_MITIGATION_PROJECT', '')
+
+SUBMISSION_PROJECT=os.environ.get('SUBMISSION_PROJECT', '')
 
 # GCH DICOM stores are now only created in the PUB_PROJECT
-GCH_PROJECT=PUB_PROJECT
-GCH_REGION='us'
-GCH_DATASET='idc'
+GCH_PROJECT=os.environ.get('GCH_PROJECT', '')
+GCH_REGION=os.environ.get('GCH_REGION', '')
+GCH_DATASET=os.environ.get('GCH_DATASET', '')
 GCH_DICOMSTORE=f'v{CURRENT_VERSION}'
 
 # IDs of the various dev buckets
-GCS_DEV_OPEN='idc-dev-open'
-GCS_DEV_CR='idc-dev-cr'
-GCS_DEV_MASKABLE='idc-dev-defaced'
-GCS_DEV_REDACTED='idc-dev-redacted'
-GCS_DEV_EXCLUDED='idc-dev-excluded'
+GCS_DEV_OPEN=os.environ.get('GCS_DEV_OPEN', '')
+GCS_DEV_CR=os.environ.get('GCS_DEV_CR', '')
+GCS_DEV_MASKABLE=os.environ.get('GCS_DEV_MASKABLE', '')
+GCS_DEV_REDACTED=os.environ.get('GCS_DEV_REDACTED', '')
+GCS_DEV_EXCLUDED=os.environ.get('GCS_DEV_EXCLUDED', '')
 
 # IDs of the public buckets.
-GCS_PUB_OPEN='idc-open-pdp-staging'
-GCS_PUB_CR='idc-open-cr'
-GCS_PUB_MASKABLE='idc-open-idc1'
+GCS_PUB_OPEN=os.environ.get('GCS_PUB_OPEN', '')
+GCS_PUB_CR=os.environ.get('GCS_PUB_CR', '')
+GCS_PUB_MASKABLE=os.environ.get('GCS_PUB_MASKABLE', '')
 
 # IDs of the dev and public BQ datasets
 BQ_REGION='us'
@@ -85,17 +93,27 @@ BQ_PUB_DATASET=f'idc_v{CURRENT_VERSION}'
 BQ_PDP_DATASET=f'idc_v{CURRENT_VERSION}'
 
 # IDs and passwords to accessing some TCIA API endpoints
-TCIA_ID = os.environ.get('TCIA_ID')
-TCIA_PASSWORD = os.environ.get('TCIA_PASSWORD')
-TCIA_CLIENT_ID = os.environ.get('TCIA_CLIENT_ID')
-TCIA_CLIENT_SECRET= os.environ.get('TCIA_CLIENT_SECRET')
+# TCIA_ID = os.environ.get('TCIA_ID')
+# TCIA_PASSWORD = os.environ.get('TCIA_PASSWORD')
+# TCIA_CLIENT_ID = os.environ.get('TCIA_CLIENT_ID')
+# TCIA_CLIENT_SECRET= os.environ.get('TCIA_CLIENT_SECRET')
 
-LOGGING_BASE = f'/mnt/disks/idc-etl/logs/v{CURRENT_VERSION}'
+if os.getenv("CI",''):
+    LOGGING_BASE = f'{os.getenv("LOG_DIR")}/v{CURRENT_VERSION}'
+else:
+    if 'MITIGATION_VERSION' in locals():
+        LOGGING_BASE = f'/mnt/disks/idc-etl/logs/{MITIGATION_VERSION}'
+    else:
+        LOGGING_BASE = f'/mnt/disks/idc-etl/logs/v{CURRENT_VERSION}'
 BASE_NAME = sys.argv[0].rsplit('/',1)[-1].rsplit('.',1)[0]
+
 LOG_DIR = f'{LOGGING_BASE}/{BASE_NAME}'
 
-AH_PROJECT = "nci-idc-bigquery-data" # Analytics Hub project
-AH_EXCHANGE_ID = "nci_idc_bigquery_data_exchange"    # ID of the Analytics Hub exchange
-AH_EXCHANGE_LOCATION = "US"
+ETL_LOGGING_RECORDS_BUCKET = os.environ.get('ETL_LOGGING_RECORDS_BUCKET', '')
+
+AH_PROJECT = os.environ.get('AH_PROJECT', '')           # Analytics Hub project
+AH_EXCHANGE_ID = os.environ.get('AH_EXCHANGE_ID', '')    # ID of the Analytics Hub exchange
+AH_EXCHANGE_LOCATION = os.environ.get('AH_EXCHANGE_LOCATION', '')
+
 
 

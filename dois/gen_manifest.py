@@ -42,7 +42,7 @@ def s5cmd_manifest(args, collection_id, manifest_version, source_dois, service, 
     file_name = f"{collection_id.lower().replace('-','_').replace(' ','-')}_{service}.s5cmd"
     query = f"""
     SELECT distinct concat('cp s3://', pub_{service}_idc_url, '/', se_uuid, '/*  .') URL
-    FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_current` aj
+    FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_public_and_current` aj
     WHERE source_doi IN {source_dois}
     ORDER by URL
     """
@@ -69,7 +69,7 @@ def dcf_manifest(args, collection_id, manifest_version, source_dois, service, ur
     file_name = f"{collection_id.lower().replace('-','_').replace(' ','-')}_{service}.csv"
     query = f"""
     SELECT distinct concat('dg.4DFC/',i_uuid) drs_uri
-    FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_current` aj
+    FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_public_and_current` aj
     WHERE source_doi IN {source_dois}
     ORDER by drs_uri
     """
