@@ -27,6 +27,7 @@ PREVIOUS_VERSION=18
 MITIGATION_VERSION=0
 
 SECURE_LOCAL_PATH = os.environ.get('SECURE_LOCAL_PATH', '')
+LOG_PATH = os.environ.get('LOG_PATH','/mnt/disks/idc-etl/logs')
 
 if not exists(join(dirname(__file__), SECURE_LOCAL_PATH, '.env')):
     print("[ERROR] Couldn't open .env.idc-dev-etl file expected at {}!".format(
@@ -67,6 +68,7 @@ STAGING_MITIGATION_PROJECT=os.environ.get('STAGING_MITIGATION_PROJECT', '')
 
 SUBMISSION_PROJECT=os.environ.get('SUBMISSION_PROJECT', '')
 
+
 # GCH DICOM stores are now only created in the PUB_PROJECT
 GCH_PROJECT=os.environ.get('GCH_PROJECT', '')
 GCH_REGION=os.environ.get('GCH_REGION', '')
@@ -92,12 +94,16 @@ BQ_DEV_INT_DATASET=f'idc_v{CURRENT_VERSION}_dev'
 BQ_DEV_EXT_DATASET=f'idc_v{CURRENT_VERSION}_pub' if CURRENT_VERSION>=8 else f'idc_v{CURRENT_VERSION}'
 BQ_PUB_DATASET=f'idc_v{CURRENT_VERSION}'
 BQ_PDP_DATASET=f'idc_v{CURRENT_VERSION}'
+BQ_CLIN_DATASET=f'idc_v{CURRENT_VERSION}_clinical'
+BQ_CLIN_PREV_DATASET=f'idc_v{PREVIOUS_VERSION}_clinical'
+
 
 # IDs and passwords to accessing some TCIA API endpoints
-# TCIA_ID = os.environ.get('TCIA_ID')
-# TCIA_PASSWORD = os.environ.get('TCIA_PASSWORD')
-# TCIA_CLIENT_ID = os.environ.get('TCIA_CLIENT_ID')
-# TCIA_CLIENT_SECRET= os.environ.get('TCIA_CLIENT_SECRET')
+TCIA_ID = os.environ.get('TCIA_ID')
+TCIA_PASSWORD = os.environ.get('TCIA_PASSWORD')
+TCIA_CLIENT_ID = os.environ.get('TCIA_CLIENT_ID')
+TCIA_CLIENT_SECRET= os.environ.get('TCIA_CLIENT_SECRET')
+
 
 if os.getenv("CI",''):
     LOGGING_BASE = f'{os.getenv("LOG_DIR")}/v{CURRENT_VERSION}'
@@ -109,6 +115,10 @@ else:
 BASE_NAME = sys.argv[0].rsplit('/',1)[-1].rsplit('.',1)[0]
 
 LOG_DIR = f'{LOGGING_BASE}/{BASE_NAME}'
+
+BAMF_SET={"breast-fdg-pet-ct-qa-results.csv":["qin_breast"], "kidney-ct-qa-results.csv":["tcga_kirc"], "liver-ct-qa-results.csv":["tcga_lihc"],
+          "liver-mr-qa-results.csv":["tcga_lihc"], "lung-ct-qa-results.csv":["acrin_nsclc_fdg_pet", "anti_pd_1_lung", "lung_pet_ct_dx", "nsclc_radiogenomics", "rider_lung_pet_ct", "tcga_luad", "tcga_lusc"],
+          "lung-fdg-pet-ct-qa-results.csv":["acrin_nsclc_fdg_pet", "anti_pd_1_lung", "lung_pet_ct_dx", "nsclc_radiogenomics", "rider_lung_pet_ct", "tcga_luad", "tcga_lusc"], "prostate-mr-qa-results.csv":["prostatex"]}
 
 ETL_LOGGING_RECORDS_BUCKET = os.environ.get('ETL_LOGGING_RECORDS_BUCKET', '')
 

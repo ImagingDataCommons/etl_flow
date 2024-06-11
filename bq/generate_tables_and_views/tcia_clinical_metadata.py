@@ -26,12 +26,14 @@ from bq.generate_tables_and_views.original_collections_metadata.schema import da
 from utilities.logging_config import errlogger
 from python_settings import settings
 
+
 clinical_data_schema = [
     bigquery.SchemaField('idc_collection_id', 'STRING', mode='NULLABLE', description='IDC collection_id'),
     bigquery.SchemaField('download_id', 'STRING', mode='NULLABLE', description='Collection manager id of this download'),
     bigquery.SchemaField('download_slug', 'STRING', mode='NULLABLE', description='Collection manager slug of this download'),
     bigquery.SchemaField('collection_id', 'STRING', mode='NULLABLE', description='Collection manager id of this collection'),
     bigquery.SchemaField('collection_slug', 'STRING', mode='NULLABLE', description='Collection manager of this collection'),
+    bigquery.SchemaField('collection_wiki_id', 'STRING', mode='NULLABLE', description='Collection manager wiki of this collection'),
     bigquery.SchemaField('date_updated', 'DATE', mode='NULLABLE', description='?'),
     bigquery.SchemaField('download_title', 'STRING', mode='NULLABLE', description='Download title'),
     bigquery.SchemaField('file_type', 'STRING', mode='NULLABLE', description='File type'),
@@ -40,15 +42,38 @@ clinical_data_schema = [
     bigquery.SchemaField('download_url', 'STRING', mode='NULLABLE', description='URL from which to download clinical data'),
 ]
 
+
+def likely_clinical(download):
+  ret = True
+  try:
+    if not ((download['download_type'] == 'Other') or (download['download_type'] == 'Clinical Data') ):
+      ret = False
+  except:
+    ret = False
+  try:
+    if (download['download_requirements']):
+      ret = False
+  except:
+    ret = False
+  try:
+    if not (('XLSX' in download['file_type']) or ('XLS' in download['file_type']) or ('CSV' in download['file_type'])):
+      ret = False
+  except:
+    ret = False
+  return ret
+
+
 def get_raw_data():
     collections = [ c for c in get_all_tcia_metadata("collections") if c['collection_page_accessibility'] == "Public"]
     downloads = get_all_tcia_metadata("downloads")
-    clinical_downloads = {download['id']:download for download in downloads if download['download_type']=='Clinical Data'}
+    clinical_downloads = {download['id']:download for download in downloads if likely_clinical(download)}
     for collection in collections:
         for id in collection['collection_downloads']:
             if id in clinical_downloads:
                 clinical_downloads[id]['collection_id'] = collection['id']
                 clinical_downloads[id]['collection_slug'] = collection['slug']
+                clinical_downloads[id]['wiki_id'] = collection['collection_browse_title']
+
 
     # Find any clinical downloads for which there is not collection
     for d_id, d_data in clinical_downloads.items():
@@ -71,6 +96,7 @@ def get_raw_data():
                 download_slug = data['slug'],
                 collection_id = data["collection_id"],
                 collection_slug = data["collection_slug"],
+                collection_wiki_id=data['wiki_id'],
                 date_updated = data["date_updated"],
                 download_title = str(data["download_title"]),
                 file_type = str(data["file_type"]),
@@ -87,7 +113,7 @@ def get_raw_data():
         BQ_client = bigquery.Client(project=settings.DEV_PROJECT)
         load_BQ_from_json(BQ_client,
                     settings.DEV_PROJECT,
-                    settings.BQ_DEV_INT_DATASET , args.bqtable_name, metadata_json,
+                    settings.BQ_DEV_INT_DATASET, args.bqtable_name, metadata_json,
                                 clinical_data_schema, write_disposition='WRITE_TRUNCATE')
         pass
     except Exception as exc:
@@ -98,9 +124,12 @@ def get_raw_data():
     pass
 
 
+
+
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bqtable_name', default='tcia_clinical_metadata', help='BQ table name')
+    parser.add_argument('--bqtable_name', default='tcia_clinical_and_related_metadata', help='BQ table name')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
