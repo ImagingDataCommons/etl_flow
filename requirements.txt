@@ -27,6 +27,7 @@ google-resumable-media
 googleapis-common-protos
 pandas
 psycopg2
+pyarrow
 pydicom
 python-dotenv
 python_settings

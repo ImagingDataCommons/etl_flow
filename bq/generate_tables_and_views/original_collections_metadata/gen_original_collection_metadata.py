@@ -18,12 +18,14 @@
 import argparse
 import sys
 import json
+from re import split as re_split
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json, delete_BQ_Table
 from bq.generate_tables_and_views.original_collections_metadata.schema import data_collections_metadata_schema
 from utilities.tcia_helpers import get_all_tcia_metadata
 from utilities.logging_config import errlogger
 from python_settings import settings
+import requests
 
 def add_programs(client, args, collection_metadata):
     query = f"""
@@ -113,21 +115,36 @@ def get_original_collections_metadata_idc_source(client, args):
             Access = ["Public"],
             Status = row['Status'],
             Updated = row['Updated'] if row['Updated'] != 'NA' else None,
+            Location = row['Location'],
             DOI = row['DOI'],
             URL = row['URL'],
             CancerType = row['CancerType'],
-            Location = row['Location'],
             # idc_webapp_collection_id = row['collection_name'].lower().replace('-','_').replace(' ','_'),
             # tcia_api_collection_id = row['collection_name'],
             # tcia_wiki_collection_id = ''
         )
     return metadata
 
+
+def get_url(url, headers=""):  # , headers):
+    result =  requests.get(url, headers=headers)  # , headers=headers)
+    if result.status_code != 200:
+        raise RuntimeError('In get_url(): status_code=%s; url: %s', result.status_code, url)
+    return result
+
+
+def get_citation(source_url):
+    header = {"Accept": "text/x-bibliography; style=apa"}
+    citation = get_url(source_url, header).text
+    return citation
+
+
 def get_original_collections_metadata_tcia_source(client, args, idc_collections):
     tcia_collection_metadata = get_all_tcia_metadata('collections')
     metadata = {}
     for collection_id, values  in idc_collections.items():
         collection_name = values['collection_name']
+        # Find the collection manager entry corrsponding to a collection that IDC has
         try:
             collection_metadata = next(collection for collection in tcia_collection_metadata \
                         if collection_name == collection['collection_short_title'])
@@ -139,8 +156,8 @@ def get_original_collections_metadata_tcia_source(client, args, idc_collections)
                 'Prostate-Anatomical-Edge-Cases': 'Prostate Anatomical Edge Cases',
                 'QIN-BREAST': 'QIN-Breast'
             }
-            collection_metadata = next(collection for collection in tcia_collection_metadata \
-                if id_map[collection_name] == collection['collection_short_title'])
+            # collection_metadata = next(collection for collection in tcia_collection_metadata \
+            #     if id_map[collection_name] == collection['collection_short_title'])
 
         try:
             metadata[collection_id] = dict(
@@ -177,18 +194,16 @@ def get_original_collections_metadata_tcia_source(client, args, idc_collections)
     return metadata
 
 
-# Get collection metadata by scraping the TCIA Original Collections page
-# and/or from the original_collections_metadata_idc_source table
+# Get basic metadata for both TCIA and IDC sourced collections
 def get_collection_metadata(client, args):
-    # Get a dict indexed by idc_webapp_collection_ids and mapping
-    # to "tcia_api_collection_id having access==args.access
     idc_collections = get_collections_in_version(client, args)
-    idc_collection_metadata = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_original_collections_metadata_idc_source(client, args).items()}
-    tcia_only_collections = {key: val for key, val in idc_collections.items() if key not in idc_collection_metadata.keys()}
-    tcia_collection_metadata = get_original_collections_metadata_tcia_source(client, args, tcia_only_collections)
+    # Start with collections only sourced by IDC
+    idc_only_collection_metadata = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_original_collections_metadata_idc_source(client, args).items()}
+    tcia_collections = {key: val for key, val in idc_collections.items() if key not in idc_only_collection_metadata.keys()}
+    tcia_collection_metadata = get_original_collections_metadata_tcia_source(client, args, tcia_collections)
 
     # Merge the TCia collection metadata.
-    collection_metadata = tcia_collection_metadata | idc_collection_metadata
+    collection_metadata = tcia_collection_metadata | idc_only_collection_metadata
     return collection_metadata
 
 def add_descriptions(client, args, collection_metadata):
@@ -247,12 +262,22 @@ def add_licenses(client, doi, collection_metadata):
         collection_metadata[collection]["licenses"] = next(license for  source_url, license in licenses.items() if source_url.lower() == metadata['source_url'].lower())
     return collection_metadata
 
+def add_citations(collection_metadata):
+    for collection, data in collection_metadata.items():
+        if data['source_doi']:
+            citation = get_citation(data['source_url'])
+        else:
+            citation = data['source_url']
+        data['Citation'] = citation
+
+    return collection_metadata
 
 def build_metadata(client, args):
     # Now get most of the metadata for all collections
     collection_metadata = get_collection_metadata(client, args)
 
     # Add additional metadata that we get separately
+    collection_metadata = add_citations(collection_metadata)
     collection_metadata = add_licenses(client, args, collection_metadata)
     collection_metadata = add_programs(client, args, collection_metadata)
     collection_metadata = add_descriptions(client, args, collection_metadata)

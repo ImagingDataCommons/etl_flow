@@ -26,7 +26,7 @@ def load_spreadsheet(args, schema=None):
     url = f'https://docs.google.com/spreadsheets/d/{args.spreadsheet_id}/gviz/tq?tqx=out:csv&sheet={args.sheet_name}'
 
     df = pd.read_csv(url)
-    df = df.applymap(str)
+    df = df.map(str)
     df = df.replace({'nan': None})
 
     # Initialize the BigQuery client

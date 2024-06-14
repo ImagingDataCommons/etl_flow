@@ -21,12 +21,15 @@ import sys
 import os
 import json
 import time
+from re import split as re_split
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json
 from bq.generate_tables_and_views.analysis_results_metadata.schema import analysis_results_metadata_schema
 from utilities.tcia_helpers import get_all_tcia_metadata
 from utilities.logging_config import successlogger, progresslogger
 from python_settings import settings
+import requests
+
 
 
 # Get the licenses associated with each source_doi
@@ -75,7 +78,7 @@ def get_descriptions(client,args):
 def get_idc_sourced_analysis_metadata(client):
     query = f"""
 --     SELECT DISTINCT ID, Title, Access, DOI as source_doi, CancerType as CancerTypes, Location as CancerLocations, AnalysisArtifacts, Updated 
-    SELECT DISTINCT ID, Title, Access, source_doi, CancerType as CancerTypes, Location as TumorLocations, AnalysisArtifacts, Updated 
+    SELECT DISTINCT ID, Title, Access, source_doi, CancerType as CancerTypes, Location as TumorLocations, AnalysisArtifacts, Updated
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_metadata_idc_source`
     """
     results = [dict(row) for row in client.query(query).result()]
@@ -95,6 +98,24 @@ GROUP BY source_doi
     counts = {row['source_doi'].lower(): row['cnt'] for row in results}
     return counts
 
+
+def get_url(url, headers=""):  # , headers):
+    result =  requests.get(url, headers=headers)  # , headers=headers)
+    if result.status_code != 200:
+        raise RuntimeError('In get_url(): status_code=%s; url: %s', result.status_code, url)
+    return result
+
+
+def get_citation(source_doi, source_url):
+    if source_doi:
+        header = {"Accept": "text/x-bibliography; style=apa"}
+        citation = get_url(source_url, header).text
+    else:
+        citation =source_url
+
+    return citation
+
+
 def get_tcia_sourced_analysis_metadata(BQ_client):
     tcia_ars = get_all_tcia_metadata('analysis-results')
     ar_metadata = {}
@@ -107,7 +128,7 @@ def get_tcia_sourced_analysis_metadata(BQ_client):
             CancerTypes = ', '.join(ar['cancer_types']) if ar['cancer_types'] else "" ,
             TumorLocations = ', '.join(ar['cancer_locations']) if ar['cancer_locations'] else "",
             AnalysisArtifacts = ', '.join(ar['supporting_data']) if ar['supporting_data'] else "",
-            Updated = ar['date_updated']
+            Updated = ar['date_updated'],
         )
     return ar_metadata
 
@@ -145,6 +166,7 @@ def build_metadata(args, BQ_client):
             analysis_data['DOI'] = analysis_data['source_doi']
             analysis_data['CancerType'] = analysis_data['CancerTypes']
             analysis_data['Location'] = analysis_data['TumorLocations']
+            analysis_data['Citation'] = get_citation(analysis_data['source_doi'], analysis_data['source_url'])
             rows.append(json.dumps(analysis_data))
     metadata = '\n'.join(rows)
     return metadata
