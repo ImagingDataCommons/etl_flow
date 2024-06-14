@@ -63,7 +63,7 @@ def delete_all_views_in_target_dataset(target_client, args,):
         target_client.delete_table(view)
 
 
-def gen_idc_current_dataset(args):
+def gen_idc_current_dataset(args, tables=[]):
     # Client for the project where views are to be created
     trg_client = bigquery.Client(project=args.trg_project)
 
@@ -72,16 +72,20 @@ def gen_idc_current_dataset(args):
     except Exception as exc:
         print("Target dataset already exists")
 
-    # Delete any views in the target dataset
-    delete_all_views_in_target_dataset(trg_client, args)
+    # # Delete any views in the target dataset
+    # delete_all_views_in_target_dataset(trg_client, args)
 
-    # Get a list of the tables in the source dataset
-    src_tables = [table for table in trg_client.list_tables (f'{args.src_project}.{args.src_bqdataset}')]
+    if tables:
+        src_tables = tables
+    else:
+        # Get a list of the tables in the source dataset
+        src_tables = [table.table_id for table in trg_client.list_tables (f'{args.src_project}.{args.src_bqdataset}')]
 
     # For each table, get a view and create a view in the target dataset
-    for src_table in src_tables:
+    # for src_table in src_tables:
+    for table_id in src_tables:
 
-        table_id = src_table.table_id
+        # table_id = src_table.table_id
         print(f'View: {table_id}')
 
         # Create the view object
@@ -90,8 +94,9 @@ def gen_idc_current_dataset(args):
         view_sql = f"""select * from `{args.pub_project}.{args.src_bqdataset}.{table_id}`"""
         # Add the SQL to the view object
         trg_view.view_query = view_sql
+        trg_client.delete_table(f'{args.trg_project}.{args.current_bqdataset}.{table_id}')
         # Create the view in the target dataset
-        installed_targ_view = trg_client.create_table(trg_view)
+        installed_targ_view = trg_client.create_table(trg_view, exists_ok=True)
 
         # Now add get the schema from the referenced table
         src_client = bigquery.Client(project=args.src_project)

@@ -36,8 +36,10 @@ if __name__ == '__main__':
 
     args.src_bqdataset = f'idc_v{version}'
     args.current_bqdataset = f'idc_current'
-    gen_idc_current_dataset(args)
+    tables = []
+    gen_idc_current_dataset(args, tables)
 
     args.src_bqdataset = f'idc_v{version}_clinical'
     args.current_bqdataset = f'idc_current_clinical'
-    gen_idc_current_dataset(args)
+    tables = []
+    gen_idc_current_dataset(args, tables)
