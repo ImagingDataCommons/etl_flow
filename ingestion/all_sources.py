@@ -25,7 +25,7 @@ from utilities.logging_config import successlogger, progresslogger, errlogger, r
 # errlogger = logging.getLogger('root.err')
 
 
-class All:
+class All_Sources:
 
     def __init__(self, pid, sess, version, access, skipped_tcia_collections, skipped_idc_collections, lock):
         self.sess = sess
@@ -356,8 +356,8 @@ if __name__ == '__main__':
             else:
                 skipped_collections[collection_id] = [False, True]
         args.skipped_collections = skipped_collections
-        all_sources = All(args.pid, sess, settings.CURRENT_VERSION, access,
-                          args.skipped_tcia_collections, args.skipped_idc_collections, Lock())
+        all_sources = All_Sources(args.pid, sess, settings.CURRENT_VERSION, access,
+                                  args.skipped_tcia_collections, args.skipped_idc_collections, Lock())
 
         r = all_sources.get_patient_urls('NSCLC-Radiomics', 'LUNG1-015' )
         pass

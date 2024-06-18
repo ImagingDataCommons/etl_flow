@@ -31,7 +31,7 @@ from utilities.logging_config import successlogger, errlogger, progresslogger, r
 from ingestion.utilities.utils import list_skips
 from ingestion.version import clone_version, build_version
 from python_settings import settings
-from ingestion.all_sources import All
+from ingestion.all_sources import All_Sources
 
 DICOM_DIR = '/mnt/disks/idc-etl/dicom' # Directory in which to expand downloaded zip files')
 
@@ -62,8 +62,8 @@ def ingest(args):
             else:
                 skipped_collections[collection_id] = [False, True]
         args.skipped_collections = skipped_collections
-        all_sources = All(args.pid, sess, settings.CURRENT_VERSION, args.access,
-                          args.skipped_tcia_collections, args.skipped_idc_collections, Lock())
+        all_sources = All_Sources(args.pid, sess, settings.CURRENT_VERSION, args.access,
+                                  args.skipped_tcia_collections, args.skipped_idc_collections, Lock())
 
         version = sess.query(Version).filter(Version.version == settings.CURRENT_VERSION).first()
         if not version:

@@ -64,14 +64,12 @@ def build_series(client, args, sess, study, series_id, instance_id, hash, size, 
     except StopIteration:
         series = IDC_Series()
         series.series_instance_uid = series_id
-        series.third_party = args.third_party
-        series.license_url =args.license['license_url']
-        series.license_long_name =args.license['license_long_name']
-        series.license_short_name =args.license['license_short_name']
-        series.third_party = args.third_party
         study.seriess.append(series)
         progresslogger.info(f'\t\t\tSeries {series_id} added')
-    # Always set/update the source_doi in case it has changed
+    series.license_url =args.license['license_url']
+    series.license_long_name =args.license['license_long_name']
+    series.license_short_name =args.license['license_short_name']
+    series.third_party = args.third_party
     series.source_doi = args.source_doi.lower()
     series.source_url = args.source_url.lower()
     series.versioned_source_doi = args.verioned_source_doi.lower()
