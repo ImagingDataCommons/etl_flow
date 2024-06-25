@@ -16,15 +16,11 @@
 
 # Validate that the IDC DB contains the instances of some analysis result
 
-from idc.models import Base, IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, Collection, Patient
-from utilities.logging_config import successlogger, errlogger, progresslogger
 from python_settings import settings
 
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine, update
 from google.cloud import storage
 
-from preingestion.populate_idc_metadata_tables.validate_analysis_result import validate_analysis_result
+from preingestion.validation_code.validate_analysis_result import validate_analysis_result
 
 
 if __name__ == '__main__':

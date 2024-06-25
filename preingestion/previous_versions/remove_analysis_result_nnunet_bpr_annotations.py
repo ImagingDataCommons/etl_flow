@@ -25,7 +25,7 @@ from sqlalchemy import create_engine, update
 from google.cloud import storage
 
 from idc.models import IDC_Collection
-from remove_elements import remove_collection
+from preingestion.remove_elements_from_DB.remove_elements import remove_collection
 
 def prebuild(args):
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'

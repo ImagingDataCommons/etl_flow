@@ -25,11 +25,9 @@
 
 import sys
 import argparse
-import pathlib
-import subprocess
 
 from python_settings import settings
-from populate_idc_metadata_tables_from_manifest import prebuild
+from preingestion.preingestion_code.populate_idc_metadata_tables_from_manifest import prebuild_from_manifest
 from google.cloud import storage
 
 if __name__ == '__main__':
@@ -54,6 +52,6 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()
 
-    prebuild(args)
+    prebuild_from_manifest(args)
 
 

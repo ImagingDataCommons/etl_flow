@@ -23,22 +23,19 @@
 # The script walks the directory hierarchy from a specified subdirectory of the
 # gcsfuse mount point
 
-from idc.models import Base, IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, Collection, Patient
-from gen_hashes import gen_hashes
+from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, Collection, Patient
+from preingestion.preingestion_code.gen_hashes import gen_hashes
 from utilities.logging_config import successlogger, errlogger, progresslogger
 from base64 import b64decode
-from python_settings import settings
-from validate_analysis_result import validate_analysis_result
-from validate_original_collection import validate_original_collection
-from ingestion.utilities.utils import md5_hasher
+from preingestion.validation_code.validate_analysis_result import validate_analysis_result
+from preingestion.validation_code.validate_original_collection import validate_original_collection
 
 from pydicom import dcmread
 
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine, update
+from utilities.sqlalchemy_helpers import sa_session
 from google.cloud import storage
 
-import csv
+import pandas as pd
 
 def build_instance(client, args, sess, series, instance_id, hash, size, blob_name):
     try:
@@ -48,12 +45,14 @@ def build_instance(client, args, sess, series, instance_id, hash, size, blob_nam
     except StopIteration:
         instance = IDC_Instance()
         instance.sop_instance_uid = instance_id
+        instance.excluded = False
+        instance.redacted = False
+        instance.mitigation = ""
         series.instances.append(instance)
         progresslogger.info(f'\t\t\t\tInstance {blob_name} added')
     instance.idc_version = args.version
     instance.gcs_url = f'gs://{args.src_bucket}/{blob_name}'
     instance.hash = hash
-    instance.excluded = False
     successlogger.info(blob_name)
 
 
@@ -64,16 +63,17 @@ def build_series(client, args, sess, study, series_id, instance_id, hash, size, 
     except StopIteration:
         series = IDC_Series()
         series.series_instance_uid = series_id
+        series.excluded = False
+        series.redacted = False
         study.seriess.append(series)
         progresslogger.info(f'\t\t\tSeries {series_id} added')
-    series.license_url =args.license['license_url']
-    series.license_long_name =args.license['license_long_name']
-    series.license_short_name =args.license['license_short_name']
+    series.license_url = args.license['license_url']
+    series.license_long_name = args.license['license_long_name']
+    series.license_short_name = args.license['license_short_name']
     series.third_party = args.third_party
     series.source_doi = args.source_doi.lower()
     series.source_url = args.source_url.lower()
-    series.versioned_source_doi = args.verioned_source_doi.lower()
-    series.excluded = False
+    series.versioned_source_doi = args.versioned_source_doi.lower()
     build_instance(client, args, sess, series, instance_id, hash, size, blob_name)
     return
 
@@ -85,8 +85,10 @@ def build_study(client, args, sess, patient, study_id, series_id, instance_id, h
     except StopIteration:
         study = IDC_Study()
         study.study_instance_uid = study_id
+        study.redacted = False
         patient.studies.append(study)
         progresslogger.info(f'\t\tStudy {study_id} added')
+
     build_series(client, args, sess, study, series_id, instance_id, hash, size, blob_name)
     return
 
@@ -98,6 +100,7 @@ def build_patient(client, args, sess, collection, patient_id, study_id, series_i
     except StopIteration:
         patient = IDC_Patient()
         patient.submitter_case_id = patient_id
+        patient.redacted = False
         collection.patients.append(patient)
         progresslogger.info(f'\tPatient {patient_id} added')
     build_study(client, args, sess, patient, study_id, series_id, instance_id, hash, size, blob_name)
@@ -110,6 +113,7 @@ def build_collection(client, args, sess, collection_id, patient_id, study_id, se
         # The collection is not currently in the DB, so add it
         collection = IDC_Collection()
         collection.collection_id = collection_id
+        collection.redacted = False
         sess.add(collection)
         progresslogger.info(f'Collection {collection_id} added')
     else:
@@ -118,15 +122,17 @@ def build_collection(client, args, sess, collection_id, patient_id, study_id, se
     return
 
 
-def prebuild(args):
+def prebuild_from_gcsfuse(args):
     client = storage.Client()
     src_bucket = storage.Bucket(client, args.src_bucket)
 
-    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
-    # sql_engine = create_engine(sql_uri, echo=True)
-    sql_engine = create_engine(sql_uri)
+    if args.collection_map:
+        df = pd.read_csv(args.collection_map)
+        collection_map = {}
+        for index, row in df.iterrows():
+            collection_map[row['patientID']] = row['collection_id']
 
-    with Session(sql_engine) as sess:
+    with sa_session(echo=False) as sess:
         client = storage.Client()
         iterator = client.list_blobs(src_bucket, prefix=args.subdir)
         for page in iterator.pages:
@@ -140,7 +146,13 @@ def prebuild(args):
                                 study_id = r.StudyInstanceUID
                                 series_id = r.SeriesInstanceUID
                                 instance_id = r.SOPInstanceUID
-                                if not args.collection_id:
+                                if collection_map:
+                                    collection_id = collection_map[patient_id]
+                                elif not args.collection_id:
+                                    # If a collection_id is not provided, search the many-to-many Collection-Patient
+                                    # hierarchy for patient patient_id and get its collection_id
+                                    # This assumes that all pathology patients also are radiology patents which is not
+                                    # necessarily the case.
                                     collection_id = sess.query(Collection.collection_id).distinct().join(
                                         Collection.patients). \
                                         filter(Patient.submitter_case_id == patient_id).one()[0]
@@ -155,38 +167,47 @@ def prebuild(args):
         sess.commit()
 
     if args.validate:
+        if collection_map:
+            collection_ids = set(collection_map.values())
+        else:
+            collection_ids = [args.collection_id]
         if args.third_party:
-            if validate_analysis_result(args) == -1:
+            if validate_analysis_result(args, collection_ids) == -1:
                 exit -1
         else:
-            if validate_original_collection(args) == -1:
+            if validate_original_collection(args, collection_ids) == -1:
                 exit -1
 
     if args.gen_hashes:
-        gen_hashes(args.collection_id)
+        if collection_map:
+            collection_ids = set(collection_map.values())
+        else:
+            collection_ids = [args.collection_id]
+        gen_hashes(collection_ids)
     return
-
 
 # if __name__ == '__main__':
 #     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 #     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-#     parser.add_argument('--src_bucket', default='dac-vhm-dst', help='Bucket containing WSI instances')
-#     parser.add_argument('--metadata_table', default='', help='csv table of study, series, SOPInstanceUID, filepath')
-
-#     parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/visible_human_project', help='Directory on which to mount the bucket.\
+#     parser.add_argument('--src_bucket', default='cmb_pathology', help='Source bucket containing instances')
+#     parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/preeingestion_gcsfuse_mount_point', help='Directory on which to mount the bucket.\
 #                 The script will create this directory if necessary.')
-#     parser.add_argument('--subdir', default='', help="Subdirectory of mount_point at which to start walking directory")
-#     parser.add_argument('--startswith', default=[], help='Only include files whose name startswith a string in the list. If the list is empty, include all'
-#     parser.add_argument('--collection_id', default='NLM_visible_human_project', help='idc_webapp_collection id of the collection or ID of analysis result to which instances belong.')
-#     parser.add_argument('--source_doi', default='', help='Collection DOI')
-#     parser.add_argument('--source_url', default='https://www.nlm.nih.gov/research/visible/visible_human.html',\
+#     parser.add_argument('--subdir', \
+#             default='/idc-conversion-outputs-cmb', \
+#             help="Subdirectory of mount_point at which to start walking directory")
+#     parser.add_argument('--subset_of_db_expected', default=True, help='If True, validation will not report an error if the instances in the bucket are a subset of the instance in the DB')
+#     parser.add_argument('--collection_id', default='', help='collection_name of the collection or ID of analysis result to which instances belong.')
+#     parser.add_argument('--collection_map', default='cmb_collection_map.csv', help='Optional csv file that maps GCS blob name to collection_name. If present, overrides collection_name')
+#     parser.add_argument('--source_doi', default='10.5281/zenodo.11099111.', help='Concept DOI ')
+#     parser.add_argument('--source_url', default='https://doi.org/10.7937/tcia.caem-ys80',\
 #                         help='Info page URL')
-#     parser.add_argument('--license', default = {"license_url": 'https://www.nlm.nih.gov/databases/download/terms_and_conditions.html',\
-#             "license_long_name": "National Library of Medicine Terms and Conditions; May 21, 2019", \
-#             "license_short_name": "National Library of Medicine Terms and Conditions; May 21, 2019"})
+#     parser.add_argument('--versioned-source_doi', default='10.5281/zenodo.11099112', help='Version specific DOI of this ingestion')
+#     parser.add_argument('--license', default = {"license_url": 'https://creativecommons.org/licenses/by/3.0/',\
+#             "license_long_name": "Creative Commons Attribution 3.0 Unported License", \
+#             "license_short_name": "CC BY 3.0"}, help="(Sub-)Collection license")
 #     parser.add_argument('--third_party', type=bool, default=False, help='True if from a third party analysis result')
+#     parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
 #     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
-#     parser.add_argument('--gen_hashes', type=bool, default=True, help='True if hashes are to be generated')
 #
 #     args = parser.parse_args()
 #     print("{}".format(args), file=sys.stdout)
@@ -196,8 +217,9 @@ def prebuild(args):
 #         # gcsfuse mount the bucket
 #         pathlib.Path(args.mount_point).mkdir( exist_ok=True)
 #         subprocess.run(['gcsfuse', '--implicit-dirs', args.src_bucket, args.mount_point])
-#         prebuild(args)
+#         prebuild_from_gcsfuse(args)
 #     finally:
 #         # Always unmount
 #         subprocess.run(['fusermount', '-u', args.mount_point])
+
 
