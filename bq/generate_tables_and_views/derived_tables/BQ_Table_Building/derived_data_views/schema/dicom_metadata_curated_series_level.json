@@ -78,7 +78,43 @@
         "mode": "NULLABLE",
         "name": "illuminationType_CodeMeaning",
         "type": "STRING"
-      }      
+      },
+      {
+        "description": "Concatenated values of `CodingSchemeDesignator` and `CodeValue` separated by `:` for values concept `Embedding Medium` (applicable in SM).",
+        "mode": "NULLABLE",
+        "name": "embeddingMedium_code_designator_value_str",
+        "type": "STRING"
+      },
+      {
+        "description": "`CodeMeaning` for values concept `Embedding Medium`  (applicable in SM).",
+        "mode": "NULLABLE",
+        "name": "embeddingMedium_CodeMeaning",
+        "type": "STRING"
+      },
+      {
+        "description": "Concatenated values of `CodingSchemeDesignator` and `CodeValue` separated by `:` for values concept `Embedding Medium` (applicable in SM).",
+        "mode": "NULLABLE",
+        "name": "tissueFixative_code_designator_value_str",
+        "type": "STRING"
+      },
+      {
+        "description": "`CodeMeaning` for values concept `Tissue Fixative` (applicable in SM).",
+        "mode": "NULLABLE",
+        "name": "tissueFixative_CodeMeaning",
+        "type": "STRING"
+      },
+      {
+        "description": "Concatenated values of `CodingSchemeDesignator` and `CodeValue` separated by `:` for values concept `Staining > Using substance`  (applicable in SM).",
+        "mode": "NULLABLE",
+        "name": "staining_usingSubstance_code_designator_value_str",
+        "type": "STRING"
+      },
+      {
+        "description": "`CodeMeaning` for values concept `Staining > Using substance` (applicable in SM).",
+        "mode": "NULLABLE",
+        "name": "staining_usingSubstance_CodeMeaning",
+        "type": "STRING"
+      }
     ]
   }
 }
