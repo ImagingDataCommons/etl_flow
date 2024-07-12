@@ -36,6 +36,7 @@ clinical_data_schema = [
     bigquery.SchemaField('collection_wiki_id', 'STRING', mode='NULLABLE', description='Collection manager wiki of this collection'),
     bigquery.SchemaField('date_updated', 'DATE', mode='NULLABLE', description='?'),
     bigquery.SchemaField('download_title', 'STRING', mode='NULLABLE', description='Download title'),
+    bigquery.SchemaField('download_type', 'STRING', mode='NULLABLE', description='Download type'),
     bigquery.SchemaField('file_type', 'STRING', mode='NULLABLE', description='File type'),
     bigquery.SchemaField('download_size', 'STRING', mode='NULLABLE', description='Download size'),
     bigquery.SchemaField('download_size_unit', 'STRING', mode='NULLABLE', description='Download size units'),
@@ -99,11 +100,13 @@ def get_raw_data():
                 collection_wiki_id=data['wiki_id'],
                 date_updated = data["date_updated"],
                 download_title = str(data["download_title"]),
+                download_type=str(data["download_type"]),
                 file_type = str(data["file_type"]),
                 download_size = str(data["download_size"]),
                 download_size_unit = data["download_size_unit"],
-                download_url = data["download_url"] if data["download_url"].startswith('https') else \
-                        f'https://www.cancerimagingarchive.net{data["download_url"]}'
+                download_url = data["download_url"]
+                #download_url = data["download_url"] if data["download_url"].startswith('https') else \
+                        #f'https://www.cancerimagingarchive.net{data["download_url"]}'
             )
             clinical_data.append(download)
 

@@ -16,6 +16,7 @@
 
 backoff
 beautifulsoup4
+docx2python
 google-api-python-client
 google-auth-httplib2
 google-cloud-bigquery
@@ -25,8 +26,8 @@ google-cloud-storage
 google-crc32c
 google-resumable-media
 googleapis-common-protos
+openpyxl
 pandas
-psycopg2
 pydicom
 python-dotenv
 python_settings

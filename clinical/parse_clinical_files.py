@@ -24,10 +24,10 @@ settings.configure(etl_settings)
 assert settings.configured
 
 
-ORIGINAL_SRCS_PATH='./downloads/downloads_'+str(settings.CURRENT_VERSION)+'/'
+ORIGINAL_SRCS_PATH='./clinical/downloads/downloads_'+str(settings.CURRENT_VERSION)+'/'
 #ORIGINAL_SRCS_PATH= '/Users/george/fed/actcianable/output/clinical_files/'
 #NOTES_PATH = '/Users/george/fed/actcianable/output/'
-NOTES_PATH = './'
+NOTES_PATH = './clinical/'
 DEFAULT_SUFFIX='clinical'
 DEFAULT_DESCRIPTION='clinical data'
 
@@ -37,13 +37,13 @@ DEFAULT_PROJECT = settings.DEV_PROJECT
 CURRENT_VERSION = 'idc_v'+str(settings.CURRENT_VERSION)
 LAST_VERSION = 'idc_v'+str(settings.PREVIOUS_VERSION)
 LAST_DATASET = 'idc_v'+str(settings.PREVIOUS_VERSION)+'_clinical'
-DESTINATION_FOLDER='./json/clin_idc_v'+str(settings.CURRENT_VERSION)+'/'
+DESTINATION_FOLDER='./clinical/json/clin_idc_v'+str(settings.CURRENT_VERSION)+'/'
 SOURCE_BATCH_COL='source_batch'
 SOURCE_BATCH_LABEL='idc_provenance_source_batch'
 DICOM_COL= 'dicom_patient_id'
 DICOM_LABEL='idc_provenance_dicom_patient_id'
 DATASET_PATH='bigquery-public-data.'+DEFAULT_DATASET
-ARCHIVE_FOLDER = './archive/'
+ARCHIVE_FOLDER = './clinical/archive/'
 
 def get_md5(filenm):
   with open(filenm, 'rb') as file_to_check:
