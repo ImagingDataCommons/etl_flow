@@ -41,7 +41,7 @@ def validate_analysis_result(args):
         for page in iterator.pages:
             if page.num_items:
                 for blob in page:
-                    if not blob.name.endswith(('DICOMDIR','.zip','.csv')):
+                    if not blob.name.endswith(('DICOMDIR','.zip','.csv', '/')):
                         expected_blobs |= {f'gs://{args.src_bucket}/{blob.name}'}
 
         # # Generate a set of the URLs of blobs in the DB

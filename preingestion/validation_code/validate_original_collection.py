@@ -33,7 +33,7 @@ def validate_original_collection(args, collection_ids):
         for page in iterator.pages:
             if page.num_items:
                 for blob in page:
-                    if not blob.name.endswith('DICOMDIR'):
+                    if not blob.name.endswith(('DICOMDIR', '.txt', 'csv')):
                         expected_blobs |= {f'gs://{args.src_bucket}/{blob.name}'}
 
         # Generate a set of the URLs of blobs in the DB

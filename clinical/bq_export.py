@@ -18,6 +18,7 @@ DEFAULT_PROJECT ='idc-dev-etl'
 DICOM_META='idc-dev-etl.idc_v18_pub.dicom_all'
 
 #DEFAULT_PROJECT ='idc-dev'
+breakpoint()
 CURRENT_VERSION = 'idc_v18'
 LAST_VERSION = 'idc_v17'
 FINAL_PROJECT='bigquery-public-data'

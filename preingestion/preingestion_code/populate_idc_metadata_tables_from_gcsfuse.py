@@ -24,7 +24,7 @@
 # gcsfuse mount point
 
 from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, Collection, Patient
-from preingestion.preingestion_code.gen_hashes import gen_hashes
+from preingestion.preingestion_code.gen_hashes_sql import gen_hashes
 from utilities.logging_config import successlogger, errlogger, progresslogger
 from base64 import b64decode
 from preingestion.validation_code.validate_analysis_result import validate_analysis_result
@@ -126,9 +126,11 @@ def prebuild_from_gcsfuse(args):
     client = storage.Client()
     src_bucket = storage.Bucket(client, args.src_bucket)
 
-    if args.collection_map:
+    collection_ids = set()
+    collection_map = {}
+    if 'collection_map' in args and args.collection_map:
+        # In some cases we must map patientID to collection_id
         df = pd.read_csv(args.collection_map)
-        collection_map = {}
         for index, row in df.iterrows():
             collection_map[row['patientID']] = row['collection_id']
 
@@ -138,7 +140,7 @@ def prebuild_from_gcsfuse(args):
         for page in iterator.pages:
             if page.num_items:
                 for blob in page:
-                    if not blob.name.endswith('DICOMDIR'):
+                    if not blob.name.endswith(('DICOMDIR', '.txt', '.csv', '/')):
                         with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
                             try:
                                 r = dcmread(f, specific_tags=['PatientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID'], stop_before_pixels=True)
@@ -156,6 +158,7 @@ def prebuild_from_gcsfuse(args):
                                     collection_id = sess.query(Collection.collection_id).distinct().join(
                                         Collection.patients). \
                                         filter(Patient.submitter_case_id == patient_id).one()[0]
+                                    collection_ids = collection_ids | {collection_id}
                                 else:
                                     collection_id = args.collection_id
                             except Exception as exc:
@@ -167,23 +170,32 @@ def prebuild_from_gcsfuse(args):
         sess.commit()
 
     if args.validate:
-        if collection_map:
-            collection_ids = set(collection_map.values())
-        else:
-            collection_ids = [args.collection_id]
+        if not collection_ids:
+            if collection_map:
+                collection_ids = set(collection_map.values())
+            else:
+                collection_ids = [args.collection_id]
         if args.third_party:
-            if validate_analysis_result(args, collection_ids) == -1:
+            if validate_analysis_result(args) == -1:
                 exit -1
         else:
             if validate_original_collection(args, collection_ids) == -1:
                 exit -1
 
     if args.gen_hashes:
-        if collection_map:
-            collection_ids = set(collection_map.values())
-        else:
-            collection_ids = [args.collection_id]
-        gen_hashes(collection_ids)
+        # if not collection_ids:
+        #     if collection_map:
+        #         collection_ids = set(collection_map.values())
+        #     elif args.collection_id:
+        #         collection_ids = [args.collection_id]
+        #     else:
+        #         with sa_session(echo=False) as sess:
+        #             collections = sess.query(IDC_Collection).distinct().join(IDC_Collection.patients).join(
+        #                 IDC_Patient.studies).join(IDC_Study.seriess). \
+        #                 filter(IDC_Series.source_url == args.source_url).all()
+        #             collection_ids = [collection.collection_id for collection in collections]
+
+        gen_hashes()
     return
 
 # if __name__ == '__main__':

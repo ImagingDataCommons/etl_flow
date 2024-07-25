@@ -329,38 +329,38 @@ class All_Sources:
         return instance_hash
 
 
-if __name__ == '__main__':
-    from utilities.sqlalchemy_helpers import sa_session
-    from multiprocessing import Lock, shared_memory
-    import argparse
-    import settings
-
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    args = parser.parse_args()
-
-    with sa_session() as sess:
-        # Get a sharable NBIA access token
-        access = shared_memory.ShareableList(get_access_token())
-        args.pid = 0
-
-        args.skipped_tcia_collections = []
-        args.skipped_idc_collections = []
-
-        # Now create a table of collections for which tcia or idc ingestion or both, are to be skipped.
-        # Populate with tcia skips
-        skipped_collections = []
-        # Now add idc skips
-        for collection_id in args.skipped_idc_collections:
-            if collection_id in skipped_collections:
-                skipped_collections[collection_id][1] = True
-            else:
-                skipped_collections[collection_id] = [False, True]
-        args.skipped_collections = skipped_collections
-        all_sources = All_Sources(args.pid, sess, settings.CURRENT_VERSION, access,
-                                  args.skipped_tcia_collections, args.skipped_idc_collections, Lock())
-
-        r = all_sources.get_patient_urls('NSCLC-Radiomics', 'LUNG1-015' )
-        pass
+# if __name__ == '__main__':
+#     from utilities.sqlalchemy_helpers import sa_session
+#     from multiprocessing import Lock, shared_memory
+#     import argparse
+#     import settings
+#
+#     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+#     args = parser.parse_args()
+#
+#     with sa_session() as sess:
+#         # Get a sharable NBIA access token
+#         access = shared_memory.ShareableList(get_access_token())
+#         args.pid = 0
+#
+#         args.skipped_tcia_collections = []
+#         args.skipped_idc_collections = []
+#
+#         # Now create a table of collections for which tcia or idc ingestion or both, are to be skipped.
+#         # Populate with tcia skips
+#         skipped_collections = []
+#         # Now add idc skips
+#         for collection_id in args.skipped_idc_collections:
+#             if collection_id in skipped_collections:
+#                 skipped_collections[collection_id][1] = True
+#             else:
+#                 skipped_collections[collection_id] = [False, True]
+#         args.skipped_collections = skipped_collections
+#         all_sources = All_Sources(args.pid, sess, settings.CURRENT_VERSION, access,
+#                                   args.skipped_tcia_collections, args.skipped_idc_collections, Lock())
+#
+#         r = all_sources.get_patient_urls('NSCLC-Radiomics', 'LUNG1-015' )
+#         pass
 
 
 

@@ -25,7 +25,7 @@ import io
 import sys
 import argparse
 import csv
-from idc.models import Base, IDC_Collection
+from idc.models import Base, IDC_Collection, IDC_Patient, IDC_Study, IDC_Series
 from ingestion.utilities.utils import get_merkle_hash, list_skips
 from utilities.logging_config import successlogger, errlogger, progresslogger
 from python_settings import settings
@@ -38,7 +38,7 @@ def remove_instance(client, args, sess, series, instance):
     try:
         series.instances.remove(instance)
         sess.delete(instance)
-        progresslogger.info('\t\t\t\tInstance %s', instance.sop_instance_uid)
+        progresslogger.info('\t\t\t\tInstance %s deleted', instance.sop_instance_uid)
         return
     except StopIteration:
         # Instance no longer in series
@@ -150,16 +150,22 @@ def remove_patient(client, args, sess, collection, patient):
 def remove_collection(client, args, sess, collection):
     try:
         # Try to remove all patients in the collection
-        index = 0
-        while index < len(collection.patients):
-            patient = collection.patients[index]
-            remove_patient(client, args, sess, collection, patient)
-            # If the patient was not removed, advance the index
-            # if index > 0 and len(collection.patients) >= index and patient == collection.patients[index]:
-            if patient in collection.patients:
-                # We didn't remove the patient
-                index += 1
+        # index = 0
+        # while index < len(collection.patients):
+        #     patient = collection.patients[index]
+        #     remove_patient(client, args, sess, collection, patient)
+        #     # If the patient was not removed, advance the index
+        #     # if index > 0 and len(collection.patients) >= index and patient == collection.patients[index]:
+        #     if patient in collection.patients:
+        #         # We didn't remove the patient
+        #         index += 1
         # If the collection is empty. Delete it
+        patients = sess.query(IDC_Patient).distinct().join(IDC_Collection.patients).join(
+            IDC_Patient.studies).join(IDC_Study.seriess).filter(IDC_Patient.collection_id == collection.collection_id). \
+            filter(IDC_Series.source_url == args.source_url).all()
+        for patient in patients:
+            remove_patient(client, args, sess, collection, patient)
+
         if len(collection.patients) == 0:
             sess.delete(collection)
             progresslogger.info('Collection %s deleted', collection.collection_id)

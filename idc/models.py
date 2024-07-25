@@ -36,6 +36,17 @@ Base = declarative_base()
 # These tables define the ETL database. There is a separate DB for each IDC version.
 # Note that earlier IDC versions used a one-to-many schema.
 
+class Concept_And_Versioned_Dois(Base):
+    __tablename__ = 'concept_and_version_dois'
+    conceptdoi = Column(String, primary_key=True)
+    versioned_doi = Column(String, nullable=True)
+
+class Zenodo_Dois(Base):
+    __tablename__ = 'zenodo_dois'
+    collection_id = Column(String, primary_key=True)
+    record_id = Column(String, nullable=True)
+    doi = Column(String, nullable=True)
+
 # Flattened hierarchy. The underlying PSQL is a view.
 class All_Joined(Base):
     __tablename__ = 'all_joined'

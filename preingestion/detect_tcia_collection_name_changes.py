@@ -25,7 +25,7 @@ from idc.models import Patient, Study, Series, Collection, All_Collections
 from utilities.tcia_helpers import get_all_tcia_metadata
 from sqlalchemy import and_, or_
 from utilities.sqlalchemy_helpers import sa_session
-from utilities.logging_config import successlogger, progresslogger, errlogger, save_log_dirs
+from utilities.logging_config import successlogger, progresslogger, errlogger
 import argparse
 import json
 
@@ -62,10 +62,7 @@ if __name__ == '__main__':
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
 
-    try:
-        compare_dois()
-    finally:
-        save_log_dirs()
+    compare_dois()
 
 
 
