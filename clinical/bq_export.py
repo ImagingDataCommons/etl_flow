@@ -6,21 +6,17 @@ import sys
 from clinical.addcptac import addTables, CPTAC_SRC,TCGA_SRC,HTAN_SRCS,HTAN_TABLES
 
 from python_settings import settings
-import settings as etl_settings
-settings.configure(etl_settings)
-assert settings.configured
 
 
 DEFAULT_SUFFIX='clinical'
 DEFAULT_DESCRIPTION='clinical data'
 DEFAULT_PROJECT ='idc-dev-etl'
 #DEFAULT_PROJECT ='idc-dev'
-DICOM_META='idc-dev-etl.idc_v18_pub.dicom_all'
+DICOM_META='idc-dev-etl.idc_v'+str(settings.CURRENT_VERSION)+'_pub.dicom_all'
 
-#DEFAULT_PROJECT ='idc-dev'
-breakpoint()
-CURRENT_VERSION = 'idc_v18'
-LAST_VERSION = 'idc_v17'
+
+CURRENT_VERSION = 'idc_v'+str(settings.CURRENT_VERSION)
+LAST_VERSION = 'idc_v'+str(settings.PREVIOUS_VERSION)
 FINAL_PROJECT='bigquery-public-data'
 
 DATASET=CURRENT_VERSION+'_clinical'
@@ -53,7 +49,7 @@ META_SUM_SCHEMA= [
 
            ] 
 
-def create_meta_summary(project, dataset, cptacColRows):
+def create_meta_summary(project, dataset):
   client = bigquery.Client(project=project)
   dataset_id= project+"."+dataset
   table_id = dataset_id+".table_metadata"
@@ -300,7 +296,7 @@ def load_all(project,dataset,version,last_dataset, last_version):
   bqSrcMetaCol = []
   '''
 
-  create_meta_summary(project, dataset, bqSrcMetaTbl)
+  create_meta_summary(project, dataset)
   create_meta_table(project, dataset)
   filenm = "./" + CURRENT_VERSION + "_table_metadata.json"
   load_meta_summary(project, dataset, bqSrcMetaTbl,filenm)

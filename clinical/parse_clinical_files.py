@@ -24,10 +24,10 @@ settings.configure(etl_settings)
 assert settings.configured
 
 
-ORIGINAL_SRCS_PATH='./downloads/downloads_'+str(settings.CURRENT_VERSION)+'/'
+ORIGINAL_SRCS_PATH='./clinical/downloads/downloads_'+str(settings.CURRENT_VERSION)+'/'
 #ORIGINAL_SRCS_PATH= '/Users/george/fed/actcianable/output/clinical_files/'
 #NOTES_PATH = '/Users/george/fed/actcianable/output/'
-NOTES_PATH = './'
+NOTES_PATH = './clinical/'
 DEFAULT_SUFFIX='clinical'
 DEFAULT_DESCRIPTION='clinical data'
 
@@ -37,13 +37,13 @@ DEFAULT_PROJECT = settings.DEV_PROJECT
 CURRENT_VERSION = 'idc_v'+str(settings.CURRENT_VERSION)
 LAST_VERSION = 'idc_v'+str(settings.PREVIOUS_VERSION)
 LAST_DATASET = 'idc_v'+str(settings.PREVIOUS_VERSION)+'_clinical'
-DESTINATION_FOLDER='./json/clin_idc_v'+str(settings.CURRENT_VERSION)+'/'
+DESTINATION_FOLDER='./clinical/json/clin_idc_v'+str(settings.CURRENT_VERSION)+'/'
 SOURCE_BATCH_COL='source_batch'
 SOURCE_BATCH_LABEL='idc_provenance_source_batch'
 DICOM_COL= 'dicom_patient_id'
 DICOM_LABEL='idc_provenance_dicom_patient_id'
 DATASET_PATH='bigquery-public-data.'+DEFAULT_DATASET
-ARCHIVE_FOLDER = './archive/'
+ARCHIVE_FOLDER = './clinical/archive/'
 
 def get_md5(filenm):
   with open(filenm, 'rb') as file_to_check:
@@ -840,11 +840,6 @@ def parse_conventional_collection(clinJson,coll,csrc,tbltypes):
 
         write_dataframe_to_json(DESTINATION_FOLDER, nm, clinJson[coll]['mergeBatch'][attrSetInd+offset]['df'])
 
-    '''if not wJson and 'idc_webapp' in clinJson[coll]:
-      mergeAcrossAttr(clinJson, coll)
-      # recastDataFrameTypes(clinJson[coll]['df'], clinJson[coll]['ptIdSeq'][0][0][0])
-      # analyzeDataFrame(clinJson[coll])
-      # write_dataframe_to_json('./clin/',coll,clinJson)'''
 
 def nlst_handler(filenm, sheetNo, data_dict):
   wb = openpyxl.load_workbook(filename=filenm)
@@ -1193,27 +1188,26 @@ def add_from_archive():
           ndest = destdir + '/' + src
           shutil.unpack_archive(ndest, destdir)
 
-  bamfdir = ARCHIVE_FOLDER+'/bamf'
+  bamfdir = ARCHIVE_FOLDER+'bamf'
   for bfile in settings.BAMF_SET:
     srcfile = bamfdir+'/'+bfile
     colecs = settings.BAMF_SET[bfile]
+
     for colec in colecs:
       destdir = ORIGINAL_SRCS_PATH+colec
+      if not os.path.exists(destdir):
+        os.mkdir(destdir)
+      elif not os.path.isdir(destdir):
+        os.remove(destdir)
+        os.mkdir(destdir)
       shutil.copy(srcfile, destdir)
-
-
 
 
 if __name__=="__main__":
 
-  #table_id='idc-dev-etl.idc_v17_clinical.table_metadata'
-  #hist={}
-  #getHist(hist, table_id)
-  #sys.exit()
-  #add_from_archive()
-  #sys.exit()
+  add_from_archive()
+
   dirpath = Path(DESTINATION_FOLDER)
-  #ORIGINAL_SRCS_PATH=sys.argv[1]
   clinJson = read_clin_file(NOTES_PATH + 'clinical_notes.json')
   #clinJson = read_clin_file(NOTES_PATH + 'test_notes.json')
   collec=list(clinJson.keys())
@@ -1234,21 +1228,7 @@ if __name__=="__main__":
       shutil.rmtree(dirpath, ignore_errors = True)
     mkdir(dirpath)
 
-  #client = bigquery.Client()
-  #query = "select tcia_api_collection_id, tcia_wiki_collection_id, idc_webapp_collection_id from `idc-dev-etl.idc_current.original_collections_metadata` order by `tcia_wiki_collection_id`"
-  #job = client.query(query)
-  '''
-  for row in job.result():
-    tcia_api=row['tcia_api_collection_id']
-    wiki_collec=row['tcia_wiki_collection_id']
-    idc_webapp=row['idc_webapp_collection_id']
-    #print(row)
-    if wiki_collec in clinJson:
-      clinJson[wiki_collec]['idc_webapp'] = idc_webapp
-      clinJson[wiki_collec]['tcia_api'] = tcia_api
-    else:
-      print("not included " +wiki_collec)
-  '''
+
   for collID in range(len(collec)):
     coll=collec[collID]
     if 'spec' in clinJson[coll]:
@@ -1269,7 +1249,7 @@ if __name__=="__main__":
 
 
     if ('srcs2' in clinJson[coll]):
-      print("about to parse extra" + coll)
+      print("about to parse extra " + coll)
       parse_conventional_collection(clinJson, coll, 'srcs2', 'tabletypes2')
 
 

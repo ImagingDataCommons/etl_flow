@@ -15,12 +15,11 @@ assert settings.configured
 
 
 if __name__=="__main__":
-  download_dir='./downloads/downloads_'+str(settings.CURRENT_VERSION)
+  download_dir='./clinical/downloads/downloads_'+str(settings.CURRENT_VERSION)
   shutil.rmtree(download_dir, ignore_errors=True)
   mkdir(download_dir)
 
   client = bigquery.Client(project='idc-dev-etl')
-  dataset = client.dataset('gw_temp')
   client = bigquery.Client()
 
   tbl=settings.DEV_PROJECT+'.'+settings.BQ_DEV_INT_DATASET+'.tcia_clinical_and_related_metadata'
