@@ -48,7 +48,7 @@ def expand_version(sess, args, all_sources, version):
     # A boolean is True if the corresponding source 'has' the collection.
     collections = all_sources.collections()
 
-    # Get the set of IDC collections that IDC has in the DB
+    # Get the set of IDC collections that IDC has in the DB, and the sources hashes
     idc_objects_results = version.collections
     # Index by idc_collection_id
     idc_objects = {c.idc_collection_id: c for c in idc_objects_results}

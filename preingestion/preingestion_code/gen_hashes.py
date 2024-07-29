@@ -14,31 +14,22 @@
 # limitations under the License.
 #
 # Update hierarchical hashes in the WSI tables
-import io
-import os
 import sys
 import argparse
-import csv
-from idc.models import Base, IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance
-from ingestion.utilities.utils import get_merkle_hash, list_skips
+from idc.models import IDC_Collection
+from ingestion.utilities.utils import get_merkle_hash
 
-from logging import INFO, DEBUG
-from utilities.logging_config import successlogger, errlogger, progresslogger
-from base64 import b64decode
+from utilities.logging_config import progresslogger
 from python_settings import settings
 
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine, update
+from utilities.sqlalchemy_helpers import sa_session
 from google.cloud import storage
 
-def gen_hashes(collection_id=''):
-    sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
-    # sql_engine = create_engine(sql_uri, echo=True)
-    sql_engine = create_engine(sql_uri)
 
-    with Session(sql_engine) as sess:
-        if collection_id:
-             collections = sess.query(IDC_Collection).filter(IDC_Collection.collection_id==collection_id)
+def gen_hashes(collection_ids=[]):
+    with sa_session(echo=False) as sess:
+        if collection_ids:
+            collections = sess.query(IDC_Collection).filter(IDC_Collection.collection_id.in_(collection_ids))
         else:
             collections = sess.query(IDC_Collection).all()
         n = 0
@@ -56,23 +47,23 @@ def gen_hashes(collection_id=''):
                 patient.hash = get_merkle_hash(hashes)
                 progresslogger.info('\tpatient hash %s', patient.submitter_case_id)
                 n += 1
-                if not n%100:
+                if not n % 100:
                     sess.commit()
 
             hashes = [patient.hash for patient in collection.patients]
             collection.hash = get_merkle_hash(hashes)
-            progresslogger.info('Collection hash %s', collection.collection_id)\
-
+            progresslogger.info('Collection hash %s', collection.collection_id)
         sess.commit()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--collection', default='NLST', help='If not null, gen hash of this collection, else all collections')
+    parser.add_argument('--collection', default='NLST',
+                        help='If not null, gen hash of this collection, else all collections')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-    args.client=storage.Client()
+    args.client = storage.Client()
 
     gen_hashes(args.collection)
-

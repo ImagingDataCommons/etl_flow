@@ -36,6 +36,17 @@ Base = declarative_base()
 # These tables define the ETL database. There is a separate DB for each IDC version.
 # Note that earlier IDC versions used a one-to-many schema.
 
+class Concept_And_Versioned_Dois(Base):
+    __tablename__ = 'concept_and_version_dois'
+    conceptdoi = Column(String, primary_key=True)
+    versioned_doi = Column(String, nullable=True)
+
+class Zenodo_Dois(Base):
+    __tablename__ = 'zenodo_dois'
+    collection_id = Column(String, primary_key=True)
+    record_id = Column(String, nullable=True)
+    doi = Column(String, nullable=True)
+
 # Flattened hierarchy. The underlying PSQL is a view.
 class All_Joined(Base):
     __tablename__ = 'all_joined'
@@ -595,7 +606,7 @@ class IDC_Series(Base):
     series_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
     study_instance_uid = Column(ForeignKey('idc_study.study_instance_uid'), comment="Containing object")
     hash = Column(String, comment='Series hash')
-    excluded = Column(Boolean, comment='True of this series should be excluded from ingestion')
+    excluded = Column(Boolean, default=False, comment='True if this series should be excluded from ingestion')
     source_doi = Column(String, comment='Source DOI of this series\' wiki')
     source_url = Column(String, comment='Source URL of this series\' wiki')
     third_party = Column(Boolean, default=False, comment='True if from a third party analysis result')
@@ -618,7 +629,7 @@ class IDC_Instance(Base):
     hash = Column(String, comment='Instance hash')
     gcs_url = Column(String, comment='GCS URL of instance source')
     size = Column(BigInteger, comment='Instance size in bytes')
-    excluded = Column(Boolean, comment='True of this series should be excluded from ingestion')
+    excluded = Column(Boolean, default=False, comment='True if this instance should be excluded from ingestion')
     idc_version = Column(Integer, comment='IDC version when this instance was added/revised')
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
     mitigation = Column(String, default="", comment="ID of the mitigation which redacted this instance")

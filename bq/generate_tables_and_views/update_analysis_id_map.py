@@ -17,7 +17,7 @@
 # Add new analysis results to the analysis_id_map, generating a uuid4
 # for each.
 # This script assumes that the analysis_results_descriptions table has
-# been previous updated with any new analysis results.
+# been previously updated with any new analysis results.
 
 import argparse
 from google.cloud import bigquery

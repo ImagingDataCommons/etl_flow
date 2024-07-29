@@ -21,7 +21,7 @@ from uuid import uuid4
 from idc.models import instance_source, Version, Collection, Patient
 from ingestion.utilities.utils import accum_sources, empty_bucket, create_prestaging_bucket, is_skipped
 from ingestion.patient import clone_patient, build_patient, retire_patient
-from ingestion.all_sources import All
+from ingestion.all_sources import All_Sources
 from utilities.sqlalchemy_helpers import sa_session
 from python_settings import settings
 
@@ -49,8 +49,8 @@ def retire_collection(args, collection):
 PATIENT_TRIES=5
 def worker(input, output, args, access, lock):
     with sa_session() as sess:
-        all_sources = All(args.pid, sess, settings.CURRENT_VERSION, access,
-                          args.skipped_tcia_collections, args.skipped_idc_collections, lock)
+        all_sources = All_Sources(args.pid, sess, settings.CURRENT_VERSION, access,
+                                  args.skipped_tcia_collections, args.skipped_idc_collections, lock)
 
         for more_args in iter(input.get, 'STOP'):
             for attempt in range(PATIENT_TRIES):

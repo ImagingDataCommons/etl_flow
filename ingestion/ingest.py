@@ -31,7 +31,7 @@ from utilities.logging_config import successlogger, errlogger, progresslogger, r
 from ingestion.utilities.utils import list_skips
 from ingestion.version import clone_version, build_version
 from python_settings import settings
-from ingestion.all_sources import All
+from ingestion.all_sources import All_Sources
 
 DICOM_DIR = '/mnt/disks/idc-etl/dicom' # Directory in which to expand downloaded zip files')
 
@@ -62,8 +62,8 @@ def ingest(args):
             else:
                 skipped_collections[collection_id] = [False, True]
         args.skipped_collections = skipped_collections
-        all_sources = All(args.pid, sess, settings.CURRENT_VERSION, args.access,
-                          args.skipped_tcia_collections, args.skipped_idc_collections, Lock())
+        all_sources = All_Sources(args.pid, sess, settings.CURRENT_VERSION, args.access,
+                                  args.skipped_tcia_collections, args.skipped_idc_collections, Lock())
 
         version = sess.query(Version).filter(Version.version == settings.CURRENT_VERSION).first()
         if not version:
@@ -110,26 +110,17 @@ def ingest(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--num_processes', type=int, default=0, help="Number of concurrent processes")
+    parser.add_argument('--num_processes', type=int, default=16, help="Number of concurrent processes")
 
-    # parser.add_argument('--skipped_tcia_groups', nargs='*', default=['redacted_collections', 'excluded_collections'],\
-    #                     help="List of tables containing tcia_api_collection_ids of tcia collections to be skipped")
     parser.add_argument('--skipped_tcia_collections', nargs='*', \
             default=['NLST', 'APOLLO-5-ESCA', 'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-PAAD', 'APOLLO-5-THYM', \
-                    # 'ACNS0332', 'AHOD0831', 'AREN0532', 'AREN0533', 'AREN0534', 'CALGB50303', 'A091105'
                       ],
                         help='List of additional tcia collections to be skipped')
-    # parser.add_argument('--included_tcia_collections', nargs='*', default=[], help='List of tcia collections to exclude from skipped groups')
     parser.add_argument('--prestaging_tcia_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_tcia_', help='Copy tcia instances here before forwarding to --staging_bucket')
 
-    # parser.add_argument('--skipped_idc_groups', nargs='*', default=['redacted_collections', 'excluded_collections'],\
-    #                     help="List of tables containing tcia_api_collection_ids of idc collections to be skipped")
     parser.add_argument('--skipped_idc_collections', nargs='*',\
             default=[], \
                         help='List of additional idc collections to be skipped')
-    # # parser.add_argument('--included_idc_collections', nargs='*', \
-    # #         default=[], help='List of idc collections to include (exclude from skipped groups)')
-    # parser.add_argument('--server', default="", help="NBIA server to access. Set to NLST for NLST ingestion")
     parser.add_argument('--prestaging_idc_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_idc_', help='Copy idc instances here before forwarding to --staging_bucket')
 
     parser.add_argument('--stop_after_collection_summary', type=bool, default=False, \

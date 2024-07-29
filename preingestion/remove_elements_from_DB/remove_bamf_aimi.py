@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, update
 from google.cloud import storage
 
-from idc.models import IDC_Collection
+from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series
 from remove_elements import remove_collection
 
 def prebuild(args):
@@ -34,7 +34,14 @@ def prebuild(args):
 
     with Session(sql_engine) as sess:
         client = storage.Client()
-        for collection_id in args.collection_ids:
+        if not args.collection_ids:
+            collections = sess.query(IDC_Collection).distinct().join(IDC_Collection.patients).join(IDC_Patient.studies).join(IDC_Study.seriess). \
+                filter(IDC_Series.source_url == args.source_url).all()
+            collection_ids = [collection.collection_id for collection in collections]
+        else:
+            collection_ids = args.collection_ids
+        collection_ids.sort()
+        for collection_id in collection_ids:
             # print(f'{reader.line_num-1}/{rows}: {row}')
             collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
             remove_collection(client, args, sess, collection)
@@ -44,9 +51,9 @@ def prebuild(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.7539035', \
+    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.8345959', \
                         help='Only delete instances having this source_url')
-    parser.add_argument('--collection_ids', type=str, default=['NLST', 'NSCLC-Radiomics'], nargs='*', \
+    parser.add_argument('--collection_ids', type=str, default=[], nargs='*', \
       help='A list of collections to remove.')
     # parser.add_argument('--log_dir', default=f'{settings.LOGGING_BASE}/{settings.BASE_NAME}')
 

@@ -23,13 +23,12 @@
 # The script walks the directory hierarchy from a specified subdirectory of the
 # gcsfuse mount point
 
-from idc.models import Base, IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, Collection, Patient
-from preingestion.populate_idc_metadata_tables.gen_hashes import gen_hashes
+from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance
 from utilities.logging_config import successlogger, errlogger, progresslogger
 from base64 import b64decode
 from python_settings import settings
-from preingestion.populate_idc_metadata_tables.validate_analysis_result import validate_analysis_result
-from preingestion.populate_idc_metadata_tables.validate_original_collection import validate_original_collection
+from preingestion.validation_code.validate_analysis_result import validate_analysis_result
+from preingestion.validation_code.validate_original_collection import validate_original_collection
 from ingestion.utilities.utils import md5_hasher
 
 import time
@@ -37,7 +36,7 @@ import time
 from ingestion.utilities.utils import get_merkle_hash
 
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine, update
+from sqlalchemy import create_engine
 from utilities.sqlalchemy_helpers import sa_session
 from google.cloud import storage
 
@@ -45,9 +44,6 @@ from multiprocessing import Queue, Process
 from queue import Empty
 
 from subprocess import run
-
-import argparse
-import sys
 
 PATIENT_ID = 0
 STUDY_INSTANCE_UID = 1
@@ -279,7 +275,7 @@ def build_collection(args, sess, collection_id):
     return
 
 
-def prebuild(args):
+def prebuild_from_manifest(args):
     client = storage.Client()
     src_bucket = storage.Bucket(client, args.src_bucket)
 

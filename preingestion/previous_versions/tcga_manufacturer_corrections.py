@@ -29,12 +29,11 @@ import pathlib
 import subprocess
 
 from python_settings import settings
-from populate_idc_metadata_tables import prebuild
-from google.cloud import storage
+from preingestion.preingestion_code.populate_idc_metadata_tables_from_gcsfuse import prebuild_from_gcsfuse
 
-from idc.models import Base, IDC_Collection, IDC_Patient, IDC_Study, IDC_Series
+from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine, update
+from sqlalchemy import create_engine
 from google.cloud import storage
 
 
@@ -108,7 +107,7 @@ if __name__ == '__main__':
             # gcsfuse mount the bucket
             pathlib.Path(args.mount_point).mkdir( exist_ok=True)
             subprocess.run(['gcsfuse', '--implicit-dirs', args.src_bucket, args.mount_point])
-            prebuild(args)
+            prebuild_from_gcsfuse(args)
         finally:
             # Always unmount
             subprocess.run(['fusermount', '-u', args.mount_point])

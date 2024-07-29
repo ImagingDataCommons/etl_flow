@@ -27,22 +27,20 @@ from python_settings import settings
 def get_dois_urls_licenses(args, all_sources, collection_id, patient_id):
     skipped_sources = is_skipped(args.skipped_collections, collection_id)
     # Get all the dois for this patient
-    patient_dois = all_sources.get_patient_dois(collection_id, patient_id, skipped_sources)
+    dois = all_sources.get_patient_dois(collection_id, patient_id, skipped_sources)
     # Get all the urls for this patient
     urls = all_sources.get_patient_urls(collection_id, patient_id, skipped_sources)
     # Get all the licenses for this patient
     licenses = all_sources.get_patient_licenses(collection_id, patient_id, skipped_sources)
     # Populate the dictionary with any url that were found
-    dois_urls_licenses = {key: {"dois": "", "url": url} for key, url in urls.items()}
+    dois_urls_licenses = {key: {"doi": "", "url": url} for key, url in urls.items()}
     # Add dois.
-    for key, dois in patient_dois.items():
-
+    for key, doi in dois.items():
         if key in dois_urls_licenses:
-            # If this series has a url, just add the dois
-            dois_urls_licenses[key]["dois"] = dois
+            dois_urls_licenses[key]["doi"] = doi
         else:
-            # If there was no url for the series, create one from the source_doi
-            dois_urls_licenses[key] = {"dois": dois, "url": f"https://doi.org/{dois['source_doi']}"}
+            # If there was no url for the series, create one from the doi
+            dois_urls_licenses[key] = {"doi": doi, "url": f"https://doi.org/{doi}"}
     # Add licenses.
     for key, license in licenses.items():
         dois_urls_licenses[key]["license"] = license

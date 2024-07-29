@@ -69,18 +69,18 @@ errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
 errlogger.addHandler(err_fh)
 err_fh.setFormatter(errformatter)
 
-def save_log_dirs():
-    # if os.getenv("CI"):
-    if True:
-        client = storage.Client(project="idc-dev-etl")
-        bucket = client.bucket(settings.ETL_LOGGING_RECORDS_BUCKET)
-        for log in ['success.log', 'progress.log', 'error.log']:
-            blob = bucket.blob(f'v{settings.CURRENT_VERSION}/{settings.BASE_NAME}/{log}')
-            if not blob.exists():
-                blob.upload_from_file(open(f'{settings.LOG_DIR}/{log}'))
-            else:
-                comp_blob = bucket.blob(f'v{settings.CURRENT_VERSION}/{settings.BASE_NAME}/compose.log')
-                comp_blob.upload_from_file(open(f'{settings.LOG_DIR}/{log}'))
-                blob.compose([blob, comp_blob])
-        comp_blob.delete()
+# def save_log_dirs():
+#     # if os.getenv("CI"):
+#     if True:
+#         client = storage.Client(project="idc-dev-etl")
+#         bucket = client.bucket(settings.ETL_LOGGING_RECORDS_BUCKET)
+#         for log in ['success.log', 'progress.log', 'error.log']:
+#             blob = bucket.blob(f'v{settings.CURRENT_VERSION}/{settings.BASE_NAME}/{log}')
+#             if not blob.exists():
+#                 blob.upload_from_file(open(f'{settings.LOG_DIR}/{log}'))
+#             else:
+#                 comp_blob = bucket.blob(f'v{settings.CURRENT_VERSION}/{settings.BASE_NAME}/compose.log')
+#                 comp_blob.upload_from_file(open(f'{settings.LOG_DIR}/{log}'))
+#                 blob.compose([blob, comp_blob])
+#         comp_blob.delete()
 

@@ -101,7 +101,7 @@ def validate_all_buckets(args):
         validated = []
     client = bigquery.Client()
     query=f"""
-    SELECT DISTINCT collection_id, i_source source, CONCAT("idc_v{args.version}_", i_source, "_", REPLACE(REPLACE(LOWER(collection_id),"-", "_"),"","_")) bucket_id
+    SELECT DISTINCT collection_id, i_source source, CONCAT("idc_v{args.version}_", i_source, "_", REPLACE(REPLACE(LOWER(collection_id),"-", "_")," ","_")) bucket_id
     FROM `{settings.DEV_PROJECT}.idc_v{settings.CURRENT_VERSION}_dev.all_joined_public_and_current` aj
     WHERE i_rev_idc_version={settings.CURRENT_VERSION}
     """

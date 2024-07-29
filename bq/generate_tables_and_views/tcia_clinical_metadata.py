@@ -19,7 +19,7 @@
 import argparse
 import sys
 import json
-from utilities.tcia_helpers import get_all_tcia_metadata
+from utilities.tcia_helpers import get_all_tcia_metadata, get_url
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json
 from bq.generate_tables_and_views.original_collections_metadata.schema import data_collections_metadata_schema
@@ -102,8 +102,12 @@ def get_raw_data():
                 file_type = str(data["file_type"]),
                 download_size = str(data["download_size"]),
                 download_size_unit = data["download_size_unit"],
+                # download_url = data["download_url"] if data["download_url"].startswith('https') else \
+                #         f'https://www.cancerimagingarchive.net{data["download_url"]}'
+                # download_url=data["download_file"]["guid"] if data["download_file"]["guid"].startswith('https') else \
+                #     f'https://www.cancerimagingarchive.net{data["download_file"]["guid"]}'
                 download_url = data["download_url"] if data["download_url"].startswith('https') else \
-                        f'https://www.cancerimagingarchive.net{data["download_url"]}'
+                   get_url(f'https://cancerimagingarchive.net/api/wp/v2/media/{data["download_file"]["ID"]}').json()['source_url']
             )
             clinical_data.append(download)
 
