@@ -1,0 +1,3 @@
+dicom_patient_id,source_batch,cn,sfe1,sfe2,sfe3,sfe5,rec,sfe5d
+ACRIN-NSCLC-FDG-PET-183,0,183,,2,,2007,-261,-261
+ACRIN-NSCLC-FDG-PET-138,1,138,1,2,1,2007,6,6
