@@ -60,7 +60,7 @@ def write_dataframe_to_json(path,nm,df):
   nArr = []
   for i in range(len(cols)):
     col=df.columns[i]
-    dtype=df.dtypes[i].name
+    dtype=df.dtypes.iloc[i].name
     ntype=''
     if dtype=='object':
       ntype='str'
@@ -99,13 +99,13 @@ def write_clin_file(filenm, data):
 
 def recastDataFrameTypes(df, ptId):
   for i in range(len(df.columns)):
-    if not (i == ptId) and (df.dtypes[i].name == 'float64'):
+    if not (i == ptId) and (df.dtypes.iloc[i].name == 'float64'):
       try:
         df[df.columns[i]] = df[df.columns[i]].astype('Int64')
       except:
         pass
     # make all not na objects strings
-    if (df.dtypes[i].name == 'object'):
+    if (df.dtypes.iloc[i].name == 'object'):
       try:
         df[df.columns[i]] = df[df.columns[i]].map(lambda a: a if pd.isna(a) else str(a))
       except:
@@ -126,7 +126,7 @@ def analyzeDataFrame(cdic):
     try:
       if len(cdic['headers'][df.columns[i]])>0:
         cdic['headers'][df.columns[i]][0]['uniques']=uVals
-        if (df.dtypes[i].name == 'float64') or (df.dtypes[i].name == 'Int64'):
+        if (df.dtypes.iloc[i].name == 'float64') or (df.dtypes.iloc[i].name == 'Int64'):
           if (len(uVals)>0):
             cdic['headers'][df.columns[i]][0]['rng']=[float(uVals[0]),float(uVals[len(uVals)-1])]
             iii=1

@@ -27,7 +27,7 @@ def validate_original_collection(args, collection_ids):
     with sa_session(echo=False) as sess:
         client = storage.Client()
 
-        # Generate a set of the URLs of expected blobs
+        # Generate a set of the URLs of blobs in the source bucket
         expected_blobs = set()
         iterator = client.list_blobs(src_bucket, prefix=args.subdir)
         for page in iterator.pages:
