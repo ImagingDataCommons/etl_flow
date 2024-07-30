@@ -244,7 +244,7 @@ def load_clin_files(project, dataset,cpath,srcfiles):
           job=client.load_table_from_file(nfile,table_id, job_config=job_config)
           print(job.result())
         nfile.close()   
-    if file_ext=='.json':
+    if (file_ext=='.json') and not collec.startswith(CURRENT_VERSION):
       table_id =project+"."+dataset+"."+collec
       job_config= bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON)
       schema=[]
@@ -298,17 +298,17 @@ def load_all(project,dataset,version,last_dataset, last_version):
 
   create_meta_summary(project, dataset)
   create_meta_table(project, dataset)
-  filenm = "./" + CURRENT_VERSION + "_table_metadata.json"
+  filenm = "./clinical/json/clin_" + CURRENT_VERSION + "/" + CURRENT_VERSION + "_table_metadata.json"
   load_meta_summary(project, dataset, bqSrcMetaTbl,filenm)
 
-  filenm="./"+CURRENT_VERSION+"_column_metadata.json"
+  filenm = "./clinical/json/clin_" + CURRENT_VERSION + "/" + CURRENT_VERSION + "_column_metadata.json"
   load_meta(project,dataset,filenm,bqSrcMetaCol)
 
-  dirnm="./json/clin_"+CURRENT_VERSION
+  dirnm="./clinical/json/clin_"+CURRENT_VERSION
   load_clin_files(project,dataset,dirnm,None)
 
 
 if __name__=="__main__":
   load_all(DEFAULT_PROJECT, DATASET,CURRENT_VERSION, LAST_DATASET, LAST_VERSION)
-  checkData()
+  #checkData()
 
