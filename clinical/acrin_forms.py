@@ -78,7 +78,7 @@ class DictionaryReader:
     try:
       cols = list(index_df.columns)
       tbl_nm_col = cols[0]
-      return index_df.loc[index_df[tbl_nm_col] == name].iloc[0][1]
+      return index_df.loc[index_df[tbl_nm_col] == name].iloc[0].iloc[1]
     except KeyError:
       return None
     except ValueError:

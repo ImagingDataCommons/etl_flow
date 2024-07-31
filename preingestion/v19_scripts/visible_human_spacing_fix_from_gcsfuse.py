@@ -48,6 +48,7 @@ if __name__ == '__main__':
             "license_long_name": "Creative Commons Attribution 4.0 International License", \
             "license_short_name": "CC BY 4.0"}, help="(Sub-)Collection license")
     parser.add_argument('--third_party', type=bool, default=False, help='True if an analysis result')
+    parser.add_argument('--subset_of_db_expected_in_bucket', default=True, help='If True, validation will not report an error if the instances in the bucket are a subset of the instance in the DB')
     parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
 

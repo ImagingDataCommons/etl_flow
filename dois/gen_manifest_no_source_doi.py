@@ -15,7 +15,7 @@
 #
 
 # Generates manifests for all IDC sourced original collection data
-# that does not already have a Zenodo page. This is exclusively
+# that do not already have a Zenodo page. This is exclusively
 # IDC pathology except for nlm_visible_human_project
 
 import argparse
@@ -135,8 +135,8 @@ if __name__ == '__main__':
     # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version for which to build the table')
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version for which to build the table')
     parser.add_argument('--manifest_bucket', default='doi_manifests')
-    parser.add_argument('--collection_id', default='CPTAC-LSCC')
-    parser.add_argument('--idc_version', default=3, help='IDC revision of the collection whose manifest is to be generated')
+    # parser.add_argument('--collection_id', default='CPTAC-LSCC')
+    # parser.add_argument('--idc_version', default=3, help='IDC revision of the collection whose manifest is to be generated')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

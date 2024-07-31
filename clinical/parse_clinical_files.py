@@ -1062,10 +1062,10 @@ def parse_dict(fpath,collec,ndic,indx,coll):
   elif (ndic["form"]=="hcc_tace"):
     spec={"Y = 1 N = 0", "1=Male, 2=Female"}
     for index, row in df.iterrows():
-      column = formatForBQ([[row[0]]], True)[0]
-      column_label = row[1]
+      column = formatForBQ([[row.iloc[0]]], True)[0]
+      column_label = row.iloc[1]
       if column_label in spec:
-        column_label = row[0]+": "+row[1]
+        column_label = row.iloc[0]+": "+row.iloc[1]
       data_dict[column] = {}
       data_dict[column]['label'] = column_label
   elif (ndic["form"]=="covid"):
@@ -1132,17 +1132,17 @@ def parse_dict(fpath,collec,ndic,indx,coll):
 
     column=''
     for index, row in df.iterrows():
-      if (row[0] in colSet):
-        column = formatForBQ([[row[0]]], True)[0]
-        description=row[1]
+      if (row.iloc[0] in colSet):
+        column = formatForBQ([[row.iloc[0]]], True)[0]
+        description=row.iloc[1]
         data_dict[column] = {}
         data_dict[column]['label'] = description
         data_dict[column]['opts'] = []
-      elif (len(row[0])>0):
+      elif (len(row.iloc[0])>0):
         column=''
       if len(column)>0:
-        if len(row[2])>0 and ("=" in row[2]):
-          optA=row[2].split('\n')
+        if len(row.iloc[2])>0 and ("=" in row.iloc[2]):
+          optA=row.iloc[2].split('\n')
           for optS in optA:
             if ("=" in optS):
               opts=optS.split("=")

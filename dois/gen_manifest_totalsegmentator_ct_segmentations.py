@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Generate various manifests for a specified IDC sourced collection
+# Generate Zenodo manifests for a specified IDC sourced collection
 # or analysis result. The instances or series included are identified
 # by their source_doi.
 ## NOTE: Zenodo DOIs are versioned and we associated the version specific
