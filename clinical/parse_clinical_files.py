@@ -1255,11 +1255,11 @@ if __name__=="__main__":
 
 
 
-  clin_meta=  CURRENT_VERSION +'_column_metadata.json'
-  clin_summary = CURRENT_VERSION +'_table_metadata.json'
+  clin_meta=  DESTINATION_FOLDER + CURRENT_VERSION +'_column_metadata.json'
+  clin_summary = DESTINATION_FOLDER + CURRENT_VERSION +'_table_metadata.json'
   if update:
-    clin_meta = CURRENT_VERSION + '_' + updateNum + '_column_metadata.json'
-    clin_summary = CURRENT_VERSION + '_' + updateNum + '_table_metadata.json'
+    clin_meta = DESTINATION_FOLDER + CURRENT_VERSION + '_' + updateNum + '_column_metadata.json'
+    clin_summary = DESTINATION_FOLDER + CURRENT_VERSION + '_' + updateNum + '_table_metadata.json'
   export_meta_to_json(clinJson,clin_meta,clin_summary,collec)
   i=1
 
