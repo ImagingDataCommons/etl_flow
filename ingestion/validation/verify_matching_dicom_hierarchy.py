@@ -32,7 +32,7 @@ def validate_UIDs_match(args):
     SELECT distinct aji.collection_id collection_id, aji.submitter_case_id bq_patientID, dm.patientid dm_patientID, 
         aji.Study_Instance_UID bq_study, dm.StudyInstanceUID dm_study, aji.Series_Instance_UID bq_series, 
         dm.SeriesInstanceUID dm_series, aji.SOP_Instance_UID instance 
-    FROM `idc-dev-etl.{args.dev_dataset}.all_joined` aji
+    FROM `idc-dev-etl.{args.dev_dataset}.all_joined_public_and_current` aji
     JOIN `idc-dev-etl.{args.pub_dataset}.dicom_metadata` dm
     ON aji.SOP_Instance_UID=dm.SOPInstanceUID
     WHERE 
@@ -45,13 +45,14 @@ def validate_UIDs_match(args):
     if not dups:
         successlogger.info(f'DICOM UIDs match')
     else:
-        errlogger.error(f'DICOM UIDs do not match')
-        errlogger.error(f'collection_id SOPInstanceUID submitter_case_id StudyInstanceUID SeriesInstanceUID')
+        errlogger.error(f'{len(dups)} DICOM UIDs do not match')
+        errlogger.error(f'collection_id SOPInstanceUID  submitter_case_id   StudyInstanceUID    SeriesInstanceUID')
         for row in dups:
             patients_match = "Matching" if row.bq_patientID==row.dm_patientID else f'{row.bq_patientID}!={row.dm_patientID}'
             studies_match = "Matching" if row.bq_study==row.dm_study else f'{row.bq_study}!={row.dm_study}'
             series_match = "Matching" if row.bq_series==row.dm_series else f'{row.bq_series}!={row.dm_series}'
             errlogger.error(f'{row.collection_id}   {row.instance}    {patients_match}    {studies_match} {series_match}')
+        errlogger.error(f'NOTE: It is expected that 300 NLST instances have mismatching submitter_case_ids')
 
 
 if __name__ == '__main__':

@@ -31,10 +31,9 @@ def add_programs(client, args, collection_metadata):
         SELECT *
         FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.program`"""
     programs = {row['collection_id'].lower(): row['program'] for row in client.query(query).result()}
-    for collection in collection_metadata:
-            if collection_metadata[collection]['collection_id']:
-                collection_metadata[collection]["Program"] = \
-                    programs[collection_metadata[collection]['collection_id']]
+    for collection_name, metadata in collection_metadata.items():
+        metadata["Program"] = \
+            programs[metadata['collection_id']]
     return collection_metadata
     # programs = {collection: program for cur.fetchall()
 
@@ -44,12 +43,19 @@ def add_programs(client, args, collection_metadata):
 def get_collections_in_version(client, args):
     # Return collections that have specified access
     query = f"""
-    SELECT DISTINCT collection_id collection_name, c_sources.tcia tcia_source, c_sources.idc idc_source
+    SELECT DISTINCT collection_id as collection_name, REPLACE(REPLACE(LOWER(collection_id),'-','_'),' ','_') collection_id, se_sources.tcia tcia_source, se_sources.idc idc_source
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current`
     """
 
-    collections = {row.collection_name.lower().replace(' ','_').replace('-','_'): dict(row.items())\
-        for row in client.query(query)}
+    # data = {row.collection_id: dict(row.items()) for row in client.query(query)}
+    data = [row for row in client.query(query)]
+    collections = {}
+    for row in data:
+        if not row['collection_name'] in collections:
+            collections[row['collection_name']] = dict(row)
+        else:
+            collections[row['collection_name']]['tcia_source'] = True
+            collections[row['collection_name']]['idc_source'] = True
     return collections
 
 # Count the cases (patients) in each collection
@@ -63,7 +69,7 @@ def add_case_counts(client, args, collection_metadata):
         collection_id
     """
 
-    case_counts = {c['collection_id'].lower().replace(' ','_').replace('-','_'): c['cases'] for c in client.query(query).result()}
+    case_counts = {c['collection_id']: c['cases'] for c in client.query(query).result()}
     for collection in collection_metadata:
         collection_metadata[collection]['Subjects'] = case_counts[collection]
     return collection_metadata
@@ -99,38 +105,73 @@ def get_original_collections_metadata_idc_source(client, args):
     ORDER BY collection_id
     """
 
-    metadata = {}
+    idc_only_metadata = {}
+    idc_tcia_metadata = {}
     for row in client.query(query).result():
-        metadata[row['collection_id']] = dict(
-            collection_name = row['collection_name'],
-            collection_id = row['collection_name'].lower().replace('-','_').replace(' ','_'),
-            CancerTypes = row['CancerType'],
-            TumorLocations = row['Location'],
-            Subjects = 0,
-            Species = row['Species'],
-            Sources = [
-                dict(
-                Access = "Public",
-                source_doi = row['source_doi'].lower() if row['source_doi'] else "",
-                source_url = row['source_url'].lower() if row['source_url'] else "",
-                ImageTypes = "",
-                License = "",
-                Citation = ""
-                )
-            ],
-            SupportingData = row['SupportingData'],
-            Status = row['Status'],
-            Updated = row['Updated'] if row['Updated'] != 'NA' else None,
-            # Location = row['Location'],
-            DOI = row['source_doi'],
-            URL = row['source_url'],
-            CancerType = row['CancerType'],
-            Location =  row['Location']
+        if row['idc_only'] == 'True':
+            idc_only_metadata[row['collection_name']] = dict(
+                collection_name = row['collection_name'],
+                # collection_id = row['collection_name'].lower().replace('-','_').replace(' ','_'),
+                collection_id = row['collection_id'],
+                CancerTypes = row['CancerType'],
+                TumorLocations = row['Location'],
+                Subjects = 0,
+                Species = row['Species'],
+                Sources = [
+                    dict(
+                    Access = "Public",
+                    source_doi = row['source_doi'].lower() if row['source_doi'] else "",
+                    source_url = row['source_url'].lower() if row['source_url'] else "",
+                    ImageTypes = "",
+                    License = "",
+                    Citation = ""
+                    )
+                ],
+                SupportingData = row['SupportingData'],
+                Status = row['Status'],
+                Updated = row['Updated'] if row['Updated'] != 'NA' else None,
+                # Location = row['Location'],
+                DOI = row['source_doi'],
+                URL = row['source_url'],
+                CancerType = row['CancerType'],
+                Location =  row['Location']
+                # idc_webapp_collection_id = row['collection_name'].lower().replace('-','_').replace(' ','_'),
+                # tcia_api_collection_id = row['collection_name'],
+                # tcia_wiki_collection_id = ''
+            )
+        else:
+            idc_tcia_metadata[row['collection_name']] = dict(
+                collection_name=row['collection_name'],
+                # collection_id=row['collection_name'].lower().replace('-', '_').replace(' ', '_'),
+                collection_id = row['collection_id'],
+                CancerTypes=row['CancerType'],
+                TumorLocations=row['Location'],
+                Subjects=0,
+                Species=row['Species'],
+                Sources=[
+                    dict(
+                        Access="Public",
+                        source_doi=row['source_doi'].lower() if row['source_doi'] else "",
+                        source_url=row['source_url'].lower() if row['source_url'] else "",
+                        ImageTypes="",
+                        License="",
+                        Citation=""
+                    )
+                ],
+                SupportingData=row['SupportingData'],
+                Status=row['Status'],
+                Updated=row['Updated'] if row['Updated'] != 'NA' else None,
+                # Location = row['Location'],
+                DOI=row['source_doi'],
+                URL=row['source_url'],
+                CancerType=row['CancerType'],
+                Location=row['Location']
             # idc_webapp_collection_id = row['collection_name'].lower().replace('-','_').replace(' ','_'),
             # tcia_api_collection_id = row['collection_name'],
             # tcia_wiki_collection_id = ''
-        )
-    return metadata
+            )
+
+    return (idc_only_metadata, idc_tcia_metadata)
 
 
 def get_url(url, headers=""):  # , headers):
@@ -140,17 +181,34 @@ def get_url(url, headers=""):  # , headers):
     return result
 
 
+# def get_citation(source_url):
+#     header = {"Accept": "text/x-bibliography; style=apa"}
+#     citation = get_url(source_url, header).text
+#     return citation
+
+
 def get_citation(source_url):
-    header = {"Accept": "text/x-bibliography; style=apa"}
-    citation = get_url(source_url, header).text
+    if source_url:
+        if 'zenodo' in source_url:
+            params = {'access_token': settings.ZENODO_ACCESS_TOKEN}
+        else:
+            params = {}
+        header = {"Accept": "text/x-bibliography; style=apa"}
+        # citation = get_url(source_url, header).text
+        citation = requests.get(source_url, headers=header, params=params).text
+        if 'This DOI cannot be found in the DOI System' in citation:
+            errlogger.error(f'Unable to get citation for {source_url}')
+            citation = ""
+    else:
+        citation = source_url
+
     return citation
 
 
 def get_original_collections_metadata_tcia_source(client, args, idc_collections):
     tcia_collection_metadata = get_all_tcia_metadata('collections')
     metadata = {}
-    for collection_id, values  in idc_collections.items():
-        collection_name = values['collection_name']
+    for collection_name, values  in idc_collections.items():
         # Find the collection manager entry corrsponding to a collection that IDC has
         try:
             collection_metadata = next(collection for collection in tcia_collection_metadata \
@@ -167,9 +225,9 @@ def get_original_collections_metadata_tcia_source(client, args, idc_collections)
             #     if id_map[collection_name] == collection['collection_short_title'])
 
         try:
-            metadata[collection_id] = dict(
+            metadata[collection_name] = dict(
                 collection_name=collection_name,
-                collection_id=collection_id,
+                collection_id=values['collection_id'],
                 CancerTypes=", ".join(collection_metadata['cancer_types']) \
                     if isinstance(collection_metadata['cancer_types'], list) else '',
                 TumorLocations=", ".join(collection_metadata['cancer_locations']) \
@@ -222,14 +280,49 @@ def merge_metadata(tcia_collection_metadata, idc_collection_metadata):
 
 # Get basic metadata for both TCIA and IDC sourced collections
 def get_collection_metadata(client, args):
+    # Get all the collections in this version. For each collection, get whether original collection data
+    # is source from tcia and/ot idc
     idc_collections = get_collections_in_version(client, args)
-    # Start with collections sourced by IDC
-    idc_collection_metadata = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_original_collections_metadata_idc_source(client, args).items()}
+
+    # Get metadata for each collection which we source from tcia (we also source data for some from idc)
     tcia_collections = {key: val for key, val in idc_collections.items() if val['tcia_source'] == True}
     tcia_collection_metadata = get_original_collections_metadata_tcia_source(client, args, tcia_collections)
 
+    # Get metadata of two classes of collections: those for which we source data from both tcia and idc,
+    # and those for which we source data only from idc.
+    idc_only_collection_metadata, idc_and_tcia_collection_metadata = get_original_collections_metadata_idc_source(client, args)
+
     # Merge the TCia collection metadata.
-    collection_metadata = merge_metadata(tcia_collection_metadata, idc_collection_metadata)
+    collection_metadata = tcia_collection_metadata
+    for collection_id, metadata in idc_and_tcia_collection_metadata.items():
+        collection_metadata[collection_id]['Sources'].extend(metadata['Sources'])
+    collection_metadata |= idc_only_collection_metadata
+
+    # We must now merge in source data for analysis results. For this purpose
+    query = f"""
+    SELECT DISTINCT collection_id, source_doi, source_url 
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current`
+    ORDER by collection_id
+    """
+
+    for row in client.query(query):
+        if next((source for source in collection_metadata[row['collection_id']]['Sources'] if source['source_doi'] == row['source_doi']), 0) == 0:
+            # This analysis result source is not already in this collections Sources
+            collection_metadata[row['collection_id']]['Sources'].append(
+                dict(
+                    Access="Public",
+                    source_doi=row['source_doi'].lower(),
+                    source_url=row['source_url'].lower(),
+                    ImageTypes="",
+                    License="",
+                    Citation="")
+            )
+
+
+
+
+
+    # collection_metadata = merge_metadata(tcia_collection_metadata, idc_collection_metadata)
     return collection_metadata
 
 def add_descriptions(client, args, collection_metadata):
@@ -244,9 +337,9 @@ def add_descriptions(client, args, collection_metadata):
         descriptions[row['collection_id']] = dict(
             description = row['description']
         )
-    for collection in collection_metadata:
+    for collection, metadata in collection_metadata.items():
         try:
-            collection_metadata[collection]['Description'] = descriptions[collection]['description']
+            metadata['Description'] = descriptions[collection.lower().replace('-','_').replace(' ','_')]['description']
         except Exception as exc:
             errlogger.error(f'No description for {collection}: {exc}')
         # collection_metadata[collection]['Description'] = ""
@@ -306,17 +399,18 @@ def add_modalities(client, collection_metadata):
 
     query = f"""
 
-  SELECT distinct aj.collection_id, aj.source_url,string_agg(DISTINCT Modality, ', ' ORDER BY Modality) modalities
+  SELECT distinct aj.collection_id, aj.source_doi, aj.source_url, string_agg(DISTINCT Modality, ', ' ORDER BY Modality) modalities
   FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_EXT_DATASET}.dicom_metadata` dm
   JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` aj
   ON dm.SOPInstanceUID = aj.sop_instance_uid
-  GROUP BY aj.source_url, aj.collection_id
+  GROUP BY aj.source_url, aj.collection_id, aj.source_url, aj.source_doi
   ORDER BY aj.collection_id    
     """
 
     modalities = {}
     for row in client.query(query).result():
-        collection_name = row['collection_id'].lower().replace('-', '_').replace(' ','_')
+        # collection_name = row['collection_id'].lower().replace('-', '_').replace(' ','_')
+        collection_name = row['collection_id']
         if collection_name in modalities:
             modalities[collection_name][row['source_url']] = row['modalities']
         else:
@@ -336,12 +430,12 @@ def build_metadata(client, args):
     collection_metadata = get_collection_metadata(client, args)
 
     # Add additional metadata that we get separately
+    collection_metadata = add_citations(collection_metadata)
+    collection_metadata = add_case_counts(client, args, collection_metadata)
+    collection_metadata = add_programs(client, args, collection_metadata)
     collection_metadata = add_descriptions(client, args, collection_metadata)
     collection_metadata = add_licenses(client, args, collection_metadata)
     collection_metadata = add_modalities(client, collection_metadata)
-    collection_metadata = add_citations(collection_metadata)
-    collection_metadata = add_programs(client, args, collection_metadata)
-    collection_metadata = add_case_counts(client, args, collection_metadata)
     # collection_metadata = add_image_modalities(client, args, collection_metadata)
 
     # Convert dictionary to list of dicts

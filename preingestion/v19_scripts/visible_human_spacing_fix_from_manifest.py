@@ -32,24 +32,24 @@ from google.cloud import storage
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--processes', default=32)
+    parser.add_argument('--processes', default=1)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--tmp_directory', default='/mnt/disks/idc-etl/tmp')
-    parser.add_argument('--src_bucket', default='gtex_pathology', help='Source bucket and subfolder hierarchy containing instances')
-    parser.add_argument('--subdir', default='v1', help="Subdirectory of mount_point to add to blob name. Only if needed to prefix file name in manifest")
+    parser.add_argument('--src_bucket', default='nlm_visible_human_project_radiology', help='Source bucket and subfolder hierarchy containing instances')
+    parser.add_argument('--subdir', default='dac-vhm-radiological-fixed-dst', help="Subdirectory of mount_point to add to blob name. Only if needed to prefix file name in manifest")
     # parser.add_argument('--manifest', default='gs://gtex_pathology/v1/identifiers.txt', help='gcs URL of a manifest')
-    parser.add_argument('--manifest', default='./gtex_manifest.csv', help='gcs URL of a manifest')
-    parser.add_argument('--collection_id', default='GTEx', help='collection_name of the collection or ID of analysis result to which instances belong.')
-    parser.add_argument('--source_doi', default='10.5281/zenodo.11099099', help='Collection DOI. Might be empty string.')
-    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.11099099',\
+    parser.add_argument('--manifest', default='./visible_human_spacing_fix_generated_manifest.csv', help='gcs URL of a manifest')
+    parser.add_argument('--collection_id', default='NLM-Visible-Human-Project', help='collection_name of the collection or ID of analysis result to which instances belong.')
+    parser.add_argument('--source_doi', default='10.5281/zenodo.12690049', help='Collection DOI. Might be empty string.')
+    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.12690049',\
                         help='Info page URL')
     parser.add_argument('--license', default = {"license_url": 'https://creativecommons.org/licenses/by/4.0/',\
             "license_long_name": "Creative Commons Attribution 4.0 International License", \
             "license_short_name": "CC BY 4.0"}, help="(Sub-)Collection license")
     parser.add_argument('--third_party', type=bool, default=False, help='True if an analysis result')
-    parser.add_argument('--gen_hashes', default=False, help=' Generate hierarchical hashes of collection if True.')
+    parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
-
+    parser.add_argument('--subset_of_db_expected_in_bucket', default=True, help='If true, expect that the DB will have more instances than the bucket')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()

@@ -63,9 +63,9 @@ def build_instance(args, bucket, series, instance_data):
         # url is relative to the bucket.
         if url.startswith('./'):
             url = url.split('/',1)[-1]
-        if args.subdir:
-            # If relative to a subdirectory of the bucket, add it
-            blob_name = f'{args.subdir}/{url}'
+        # if args.subdir:
+        #     # If relative to a subdirectory of the bucket, add it
+        #     blob_name = f'{args.subdir}/{url}'
         else:
             blob_name = f'{url}'
 
@@ -75,13 +75,19 @@ def build_instance(args, bucket, series, instance_data):
         instance = next(instance for instance in series.instances if instance.sop_instance_uid == instance_id)
         progresslogger.info(f'{args.pid}\t\t\t\tInstance {blob_name} exists')
     except StopIteration:
-        instance = IDC_Instance()
-        instance.sop_instance_uid = instance_id
-        instance.excluded = False
-        instance.redacted = False
-        instance.mitigation = ""
-        series.instances.append(instance)
-        progresslogger.info(f'{args.pid}\t\t\t\tInstance {blob_name} added')
+        try:
+            instance = IDC_Instance()
+            instance.sop_instance_uid = instance_id
+            instance.excluded = False
+            instance.redacted = False
+            instance.mitigation = ""
+            series.instances.append(instance)
+            progresslogger.info(f'{args.pid}\t\t\t\tInstance {blob_name} added')
+        except Exception as exc1:
+            errlogger.error(f'Error creating new instance: {exc1}')
+            raise
+    except Exception as exc:
+        raise
 
     blob = bucket.blob(blob_name)
     blob.reload()
@@ -133,12 +139,18 @@ def build_series(args, bucket, study, series_data):
         series = next(series for series in study.seriess if series.series_instance_uid == series_id)
         progresslogger.info(f'{args.pid}\t\t\tSeries {series_id} exists')
     except StopIteration:
-        series = IDC_Series()
-        series.series_instance_uid = series_id
-        series.excluded = False
-        series.redacted = False
-        study.seriess.append(series)
-        progresslogger.info(f'{args.pid}\t\t\tSeries {series_id} added')
+        try:
+            series = IDC_Series()
+            series.series_instance_uid = series_id
+            series.excluded = False
+            series.redacted = False
+            study.seriess.append(series)
+            progresslogger.info(f'{args.pid}\t\t\tSeries {series_id} added')
+        except Exception as exc1:
+            errlogger.error(f'Error creating new series: {exc1}')
+            raise
+    except Exception as exc:
+        raise
     # Always set/update the source_doi in case it has changed
     series.license_url = args.license['license_url']
     series.license_long_name = args.license['license_long_name']
@@ -149,7 +161,10 @@ def build_series(args, bucket, study, series_data):
     # series.versioned_source_doi = args.verioned_source_doi.lower()
     # At this point, each row in series data corresponds to an instance of the series
     for _,instance_data in series_data.iterrows():
-        build_instance(args, bucket, series, instance_data)
+        try:
+            build_instance(args, bucket, series, instance_data)
+        except Exception as esc:
+            raise
     hashes = [instance.hash for instance in series.instances]
     series.hash = get_merkle_hash(hashes)
     return
@@ -162,15 +177,25 @@ def build_study(args, bucket, patient, study_data):
         study = next(study for study in patient.studies if study.study_instance_uid == study_id)
         progresslogger.info(f'{args.pid}\t\tStudy {study_id} exists')
     except StopIteration:
-        study = IDC_Study()
-        study.study_instance_uid = study_id
-        study.redacted = False
-        patient.studies.append(study)
-        progresslogger.info(f'{args.pid}\t\tStudy {study_id} added')
+        try:
+            study = IDC_Study()
+            study.study_instance_uid = study_id
+            study.redacted = False
+            patient.studies.append(study)
+            progresslogger.info(f'{args.pid}\t\tStudy {study_id} added')
+        except Exception as exc1:
+            errlogger.error(f'Error creating new study: {exc1}')
+            raise
+    except Exception as exc:
+        raise
+
     series_ids = sorted(study_data['SeriesInstanceUID'].unique())
     for series_id in series_ids:
         series_data = study_data[study_data["SeriesInstanceUID"] == series_id]
-        build_series(args, bucket, study, series_data)
+        try:
+            build_series(args, bucket, study, series_data)
+        except Exception as exc:
+            raise
     hashes = [series.hash for series in study.seriess ]
     study.hash = get_merkle_hash(hashes)
     return
@@ -183,70 +208,72 @@ def build_patient(args, bucket, collection, patient_data):
         patient = next(patient for patient in collection.patients if patient.submitter_case_id == patient_id)
         progresslogger.info(f'{args.pid}\tPatient {patient_id} exists')
     except StopIteration:
-        patient = IDC_Patient()
-        patient.submitter_case_id = patient_id
-        patient.redacted = False
-        collection.patients.append(patient)
-        progresslogger.info(f'{args.pid}\tPatient {patient_id} added')
+        try:
+            patient = IDC_Patient()
+            patient.submitter_case_id = patient_id
+            patient.redacted = False
+            collection.patients.append(patient)
+            progresslogger.info(f'{args.pid}\tPatient {patient_id} added')
+        except Exception as exc1:
+            errlogger.error(f'Error creating new patient: {exc1}')
+            raise
+    except Exception as exc:
+        raise
     study_ids = sorted(patient_data["StudyInstanceUID"].unique())
     for study_id in study_ids:
         study_data = patient_data[patient_data["StudyInstanceUID"] == study_id]
-        build_study(args, bucket, patient, study_data)
+        try:
+            build_study(args, bucket, patient, study_data)
+        except Exception as exc:
+            raise
     hashes = [study.hash for study in patient.studies ]
     patient.hash = get_merkle_hash(hashes)
     return
 
 
 PATIENT_TRIES=5
-def worker(input, output, args, sess, collection_id):
-    client = storage.Client()
-    bucket = client.bucket(args.src_bucket)
-    # with sa_session() as sess:
-    collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
-    for more_args in iter(input.get, 'STOP'):
-        index, patient_data = more_args
-        for attempt in range(PATIENT_TRIES):
-            try:
-                progresslogger.info(f'Building patient {index}')
-                build_patient(args, bucket, collection, patient_data)
-                # sess.commit()
-                output.put(patient_data.iloc[0]["patientID"])
-                break
-            except Exception as exc:
-                errlogger.error("p%s, exception %s; reattempt %s on patient %s/%s, %s; %s", args.pid, exc, attempt, collection.collection_id, patient_data.iloc[0]["patientID"], index, time.asctime())
-                sess.rollback()
-            time.sleep((2**attempt)-1)
+def worker(input, output, args, collection_id):
+    with sa_session() as sess:
+        client = storage.Client()
+        bucket = client.bucket(args.src_bucket)
+        # with sa_session() as sess:
+        collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
+        for more_args in iter(input.get, 'STOP'):
+            index, patient_data = more_args
+            for attempt in range(PATIENT_TRIES):
+                try:
+                    progresslogger.info(f'Building patient {index}')
+                    try:
+                        build_patient(args, bucket, collection, patient_data)
+                    except Exception as exc:
+                        raise
+                    sess.commit()
+                    output.put(patient_data.iloc[0]["patientID"])
+                    break
+                except Exception as exc:
+                    errlogger.error("p%s, exception %s; reattempt %s on patient %s/%s, %s; %s", args.pid, exc, attempt, collection.collection_id, patient_data.iloc[0]["patientID"], index, time.asctime())
+                    sess.rollback()
+                time.sleep((2**attempt)-1)
 
-        else:
-            errlogger.error("p%s, Failed to process patient: %s", args.pid, patient_data.iloc[0]["patientID"])
-            sess.rollback()
+            else:
+                errlogger.error("p%s, Failed to process patient: %s", args.pid, patient_data.iloc[0]["patientID"])
+                sess.rollback()
 
 def build_collection(args, sess, collection_id):
     client = storage.Client()
-
-    # Create the collection if it is not yet in the DB
-    collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
-    if not collection:
-        # The collection is not currently in the DB, so add it
-        collection = IDC_Collection()
-        collection.collection_id = collection_id
-        collection.redacted = False
-        sess.add(collection)
-        progresslogger.info(f'Collection {collection_id} added')
-    else:
-        progresslogger.info(f'Collection {collection_id} exists')
 
     # Get a list of all the 'done' instance. These are presumed to be instances having the corresponding
     # source_doi and which have the current version
     dones = sess.query(IDC_Series, IDC_Instance.gcs_url).join(IDC_Instance.seriess). \
         filter(IDC_Series.source_doi == args.source_doi).filter(IDC_Instance.idc_version == args.version).all()
-    # dones = set([row['gcs_url'] for row in dones])
-    # # Read in the manifest and make a list of the (distinct) patient_ids
-    # data = [row.split(',') for row in open(args.metadata_table).read().splitlines()]
-    done_data = pd.DataFrame(data={'gcs_url': list(set(dones))})
+    # Strip the bucket and any subdir from the gcs_url in dones:
+    done_gcs_urls = [row.gcs_url.replace(f'gs://{args.src_bucket}/', '') for row in dones]
+    # if args.subdir:
+    #     done_gcs_urls = [row.replace(f'{args.subdir}/', '') for row in done_gcs_urls]
+    done_data = pd.DataFrame(done_gcs_urls, columns=['gcs_url'])
 
     # Read the manifest into a data frame
-    data = pd.read_csv(args.manifest, sep='\t', header=0)
+    data = pd.read_csv(args.manifest, sep=',', header=0)
     # Rename columns in case they are misnamed:
     data = data.rename( columns = {
         "Filename": "gcs_url",
@@ -260,62 +287,78 @@ def build_collection(args, sess, collection_id):
     undone_data = pd.merge(data, done_data, how="left", on=['gcs_url'], indicator=True )
     undone_data = undone_data[undone_data['_merge'] == 'left_only']
 
-    all_patient_ids = sorted(data["patientID"].unique())
-    patient_ids = sorted(undone_data['patientID'].unique())
+    collection_ids = sorted(undone_data['collection_id'].unique())
+    for collection_id in collection_ids:
+        # Create the collection if it is not yet in the DB
+        collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
+        if not collection:
+            # The collection is not currently in the DB, so add it
+            collection = IDC_Collection()
+            collection.collection_id = collection_id
+            collection.redacted = False
+            sess.add(collection)
+            sess.commit()
+            progresslogger.info(f'Collection {collection_id} added')
+        else:
+            progresslogger.info(f'Collection {collection_id} exists')
 
-    processes = []
-    # Create queues
-    task_queue = Queue()
-    done_queue = Queue()
-    # List of patients enqueued
-    enqueued_patients = []
-    # Start worker processes
-    for process in range(min(args.processes, len(patient_ids))):
-        args.pid = process+1
-        processes.append(
-            Process(target=worker, args=(task_queue, done_queue, args, sess, collection_id)))
-        processes[-1].start()
+        # A df of data for just this collection
+        collection_data = undone_data[undone_data['collection_id'] == collection_id]
 
-    args.pid = 0
-    for patient_id in patient_ids:
-        # # Make a list of the metadata of patient_id
-        # # patient_data = [row for row in data if patient_id == row[PATIENT_ID] and not row[GCS_URL] in dones]
-        # patient_data = [row for row in undone_data if patient_id == row[PATIENT_ID]]
-        # patient_index = f'{all_patient_ids.index(patient_id) + 1} of {len(all_patient_ids)}'
-        # # Enqueue the patient data
-        patient_data = undone_data[undone_data['patientID'] == patient_id]
-        patient_index = f'{all_patient_ids.index(patient_id) + 1} of {len(all_patient_ids)}'
+        all_patient_ids = sorted(data["patientID"].unique())
+        # All patients in the collection
+        patient_ids = sorted(collection_data['patientID'].unique())
 
-        task_queue.put((patient_index, patient_data))
-        enqueued_patients.append(patient_id)
+        processes = []
+        # Create queues
+        task_queue = Queue()
+        done_queue = Queue()
+        # List of patients enqueued
+        enqueued_patients = []
+        # Start worker processes
+        for process in range(min(args.processes, len(patient_ids))):
+            args.pid = process+1
+            processes.append(
+                Process(target=worker, args=(task_queue, done_queue, args, collection_id)))
+            processes[-1].start()
 
-    # Collect the results for each patient
-    try:
-        while not enqueued_patients == []:
-            # Timeout if waiting too long
-            results = done_queue.get(True)
-            enqueued_patients.remove(results)
+        args.pid = 0
+        for patient_id in patient_ids:
+            # Data for this patient
+            patient_data = collection_data[collection_data['patientID'] == patient_id]
+            patient_index = f'{all_patient_ids.index(patient_id) + 1} of {len(all_patient_ids)}'
 
-        # Tell child processes to stop
-        for process in processes:
-            task_queue.put('STOP')
+            task_queue.put((patient_index, patient_data))
+            enqueued_patients.append(patient_id)
 
-        # Wait for them to stop
-        for process in processes:
-            process.join()
+        # Collect the results for each patient
+        try:
+            while not enqueued_patients == []:
+                # Timeout if waiting too long
+                results = done_queue.get(True)
+                enqueued_patients.remove(results)
 
-        # sess.commit()
+            # Tell child processes to stop
+            for process in processes:
+                task_queue.put('STOP')
 
-    except Empty as e:
-        errlogger.error("Timeout in build_collection %s", collection.collection_id)
-        for process in processes:
-            process.terminate()
-            process.join()
-        sess.rollback()
-        successlogger.info("Collection %s, %s, NOT completed in %s", collection.collection_id)
+            # Wait for them to stop
+            for process in processes:
+                process.join()
 
-    hashes = [patient.hash for patient in collection.patients]
-    collection.hash= get_merkle_hash(hashes)
+            sess.commit()
+
+        except Empty as e:
+            errlogger.error("Timeout in build_collection %s", collection.collection_id)
+            for process in processes:
+                process.terminate()
+                process.join()
+            sess.rollback()
+            successlogger.info("Collection %s, %s, NOT completed in %s", collection.collection_id)
+
+        hashes = [patient.hash for patient in collection.patients]
+        collection.hash= get_merkle_hash(hashes)
+
     return
 
 
@@ -329,15 +372,8 @@ def prebuild_from_manifest(args):
     # with Session(sql_engine) as sess:
     with sa_session(echo=False) as sess:
         build_collection(args, sess, args.collection_id)
-        # sess.commit()
+        sess.commit()
 
-    if args.validate:
-        if args.third_party:
-            if validate_analysis_result(args, [args.collection_id]) == -1:
-                exit -1
-        else:
-            if validate_original_collection(args, [args.collection_id]) == -1:
-                exit -1
 
     if args.validate:
         collection_ids = [args.collection_id]

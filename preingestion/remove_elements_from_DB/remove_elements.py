@@ -49,9 +49,13 @@ def remove_series(client, args, sess, study, series):
     try:
         if series.source_url == args.source_url:
             index = 0
-            for instance in series.instances:
+            while index < len(series.instances):
+                # for instance in series.instances:
                 instance = series.instances[index]
                 remove_instance(client, args, sess, series, instance)
+                if instance in series.instances:
+                    # We didn't remove the instance
+                    index += 1
                 # if index > 0 and len(series.instances) >= index and instance == series.instances[index]:
                 #     index += 1
             # If the series is empty, remove it from study and delete it

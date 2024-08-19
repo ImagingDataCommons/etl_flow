@@ -24,14 +24,15 @@ from ingestion.study import clone_study, build_study, retire_study
 from python_settings import settings
 
 # Return a dictionary of the dois and urls of all series in the patient
-def get_dois_urls_licenses(args, all_sources, collection_id, patient_id):
-    skipped_sources = is_skipped(args.skipped_collections, collection_id)
+def get_dois_urls_licenses(args, all_sources, collection, patient):
+    skipped_sources = is_skipped(args.skipped_collections, collection.collection_id)
     # Get all the dois for this patient
-    dois = all_sources.get_patient_dois(collection_id, patient_id, skipped_sources)
+    dois = all_sources.get_patient_dois(collection, patient, skipped_sources)
     # Get all the urls for this patient
-    urls = all_sources.get_patient_urls(collection_id, patient_id, skipped_sources)
+    # urls = all_sources.get_patient_urls(collection_id, patient_id, skipped_sources)
+    urls = {key: f'https://doi.org/{dois[key]}' for key in dois}
     # Get all the licenses for this patient
-    licenses = all_sources.get_patient_licenses(collection_id, patient_id, skipped_sources)
+    licenses = all_sources.get_patient_licenses(collection, patient, skipped_sources)
     # Populate the dictionary with any url that were found
     dois_urls_licenses = {key: {"doi": "", "url": url} for key, url in urls.items()}
     # Add dois.
@@ -137,7 +138,7 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
         # If any source is revised, then the object is revised.
         if any(revised):
             rev_study = clone_study(study, str(uuid4()))
-            rev_study.revised = True
+            # rev_study.revised = True
             rev_study.done = False
             rev_study.is_new = False
             rev_study.expanded = False
@@ -180,10 +181,13 @@ def build_patient(sess, args, all_sources, patient_index, version, collection, p
         begin = time.time()
         successlogger.debug("  p%s: Expand Patient %s, %s", args.pid, patient.submitter_case_id, patient_index)
         if not patient.expanded:
+            successlogger.info("  p%s: Expanding Patient %s, %s, %s studies, expand_time: %s, %s", args.pid, patient.submitter_case_id, patient_index, len(patient.studies), time.time()-begin, time.asctime())
             expand_patient(sess, args, all_sources, version, collection, patient)
             successlogger.info("  p%s: Expanded Patient %s, %s, %s studies, expand_time: %s, %s", args.pid, patient.submitter_case_id, patient_index, len(patient.studies), time.time()-begin, time.asctime())
 
-        dois_urls_licenses = get_dois_urls_licenses(args, all_sources, collection.collection_id, patient.submitter_case_id)
+        # Get the source_doi, source_url and license for each series in the patient
+        # dois_urls_licenses = get_dois_urls_licenses(args, all_sources, collection.collection_id, patient.submitter_case_id)
+        dois_urls_licenses = get_dois_urls_licenses(args, all_sources, collection, patient)
         for study in patient.studies:
             study_index = f'{patient.studies.index(study) + 1} of {len(patient.studies)}'
             if not study.done:
@@ -212,6 +216,6 @@ def build_patient(sess, args, all_sources, patient_index, version, collection, p
                 duration = str(timedelta(seconds=(time.time() - begin)))
                 successlogger.info("  p%s: Built Patient %s, %s, in %s, %s", args.pid, patient.submitter_case_id, patient_index, duration, time.asctime())
     except Exception as exc:
-        errlogger.exception('  p%s build_patient failed: %s', args.pid, exc)
+        errlogger.exception('  p%s build_patient failed: %s for %s', args.pid, exc, patient.submitter_case_id)
         # errlogger.error('  p%s build_patient failed: %s', args.pid, exc)
         raise exc

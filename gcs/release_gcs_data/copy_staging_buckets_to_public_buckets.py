@@ -21,7 +21,7 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--processes', default=1, help="Number of concurrent processes")
+    parser.add_argument('--processes', default=8, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/copy_bucket_mp')
 

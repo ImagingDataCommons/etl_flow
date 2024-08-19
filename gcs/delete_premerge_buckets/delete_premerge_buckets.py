@@ -51,7 +51,7 @@ def preview_deletes(args, client, bucket_data):
 def delete_buckets(args):
     client = storage.Client()
     bucket_data= get_collection_groups()
-    preview_deletes(args, client, bucket_data)
+    #preview_deletes(args, client, bucket_data)
 
     for collection_id in bucket_data:
         if client.bucket(f'idc_v{args.version}_tcia_{collection_id}').exists():

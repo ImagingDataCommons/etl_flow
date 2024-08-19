@@ -188,5 +188,5 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
                 duration = str(timedelta(seconds=(time.time() - begin)))
                 successlogger.info("      p%s: Built Series %s, %s, in %s", args.pid, series.series_instance_uid, series_index, duration)
     except Exception as exc:
-        errlogger.error('  p%s build_series failed: %s', args.pid, exc)
+        errlogger.error('  p%s build_series failed: %s for %s', args.pid, exc, series.series_instance_uid)
         raise exc

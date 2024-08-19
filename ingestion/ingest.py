@@ -110,7 +110,7 @@ def ingest(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--num_processes', type=int, default=16, help="Number of concurrent processes")
+    parser.add_argument('--num_processes', type=int, default=0, help="Number of concurrent processes")
 
     parser.add_argument('--skipped_tcia_collections', nargs='*', \
             default=['NLST', 'APOLLO-5-ESCA', 'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-PAAD', 'APOLLO-5-THYM', \

@@ -17,7 +17,7 @@ import time
 
 from utilities.tcia_helpers import  get_hash, get_TCIA_studies_per_patient, get_TCIA_patients_per_collection,\
     get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_collection_values_and_counts,\
-    get_instance_hash, get_access_token
+    get_tcia_instance_hash, get_access_token
 from idc.models  import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, instance_source
 from sqlalchemy import select
 from ingestion.utilities.get_collection_dois_urls_licenses import get_patient_dois_idc, \
@@ -203,13 +203,13 @@ class TCIA(Source):
         self.lock.acquire()
         try:
             # result = get_instance_hash(sop_instance_uid, self.access_token)
-            result = get_instance_hash(sop_instance_uid, self.access[0])
+            result = get_tcia_instance_hash(sop_instance_uid, self.access[0])
             if result.status_code == 401:
                 # # Refresh the token and try once more to get the hash
                 # self.access_token, self.refresh_token = refresh_access_token(self.refresh_token)
                 # Get a new access token
                 self.access_token, self.refresh_token = get_access_token()
-                result = get_instance_hash(sop_instance_uid, self.access_token)
+                result = get_tcia_instance_hash(sop_instance_uid, self.access_token)
                 if result.status_code != 200:
                     result = None
             elif result.status_code != 200:

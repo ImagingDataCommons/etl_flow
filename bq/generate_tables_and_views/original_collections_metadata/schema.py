@@ -31,7 +31,7 @@ data_collections_metadata_schema = [
         fields=[
             bigquery.SchemaField('Access', 'STRING', mode='NULLABLE', description='Limited or Public'),
             bigquery.SchemaField('source_doi', 'STRING', mode='NULLABLE',
-                                 description='DOI that can be resolved at doi.org to a wiki page'),
+                                 description='DOI that can be resolved at doi.org to a collection information page'),
             bigquery.SchemaField('source_url', 'STRING', mode='REQUIRED',
                                  description='URL of collection information page'),
             bigquery.SchemaField('ImageTypes', 'STRING', mode='NULLABLE',
@@ -41,11 +41,11 @@ data_collections_metadata_schema = [
                 "RECORD",
                 fields=[
                     bigquery.SchemaField('license_url', 'STRING', mode='REQUIRED',
-                                         description='URL of license of this analysis result'),
+                                         description='URL of license of this (sub)collection'),
                     bigquery.SchemaField('license_long_name', 'STRING', mode='REQUIRED',
-                                         description='Long name of license of this analysis result'),
+                                         description='Long name of license of this (sub)collection'),
                     bigquery.SchemaField('license_short_name', 'STRING', mode='REQUIRED',
-                                         description='Short name of license of this analysis result')
+                                         description='Short name of license of this (sub)collection')
                 ]
             ),
             bigquery.SchemaField('Citation', 'STRING', mode='NULLABLE',
@@ -54,13 +54,13 @@ data_collections_metadata_schema = [
     ),
     bigquery.SchemaField('SupportingData', 'STRING', mode='NULLABLE', description='Type(s) of addional available data'),
     bigquery.SchemaField('Program', 'STRING', mode='REQUIRED', description='Program to which this collection belongs'),
-    bigquery.SchemaField('Status', 'STRING', mode='REQUIRED', description='Collection status: Ongoing or Complete'),
-    bigquery.SchemaField('Updated', 'DATE', mode='NULLABLE', description='Date of ost recent update'),
+    bigquery.SchemaField('Status', 'STRING', mode='NULLABLE', description='Collection status: Ongoing or Complete'),
+    bigquery.SchemaField('Updated', 'DATE', mode='NULLABLE', description='Date of most recent update'),
     bigquery.SchemaField('Description', 'STRING', mode='REQUIRED', description='Description of collection (HTML format)'),
     bigquery.SchemaField('DOI', 'STRING', mode='NULLABLE',
                          description='DEPRECATED: Duplicate of source_doi'),
-    bigquery.SchemaField('URL', 'STRING', mode='REQUIRED', description='DEPRECATED: Duplicate of source_url'),
-    bigquery.SchemaField('CancerType', 'STRING', mode='REQUIRED', description='DEPRECATED: Duplicate of CancerTypes '),
-    bigquery.SchemaField('Location', 'STRING', mode='REQUIRED',
+    bigquery.SchemaField('URL', 'STRING', mode='NULLABLE', description='DEPRECATED: Duplicate of source_url'),
+    bigquery.SchemaField('CancerType', 'STRING', mode='NULLABLE', description='DEPRECATED: Duplicate of CancerTypes '),
+    bigquery.SchemaField('Location', 'STRING', mode='NULLABLE',
                          description='DEPRECATED: Duplicate of TumorLocations'),
 ]

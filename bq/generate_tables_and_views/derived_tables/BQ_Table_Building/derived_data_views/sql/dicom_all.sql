@@ -43,7 +43,6 @@ WITH
     aux.instance_revised_idc_version AS instance_revised_idc_version,
     aux.Source_DOI as Source_DOI,
     aux.Source_URL as Source_URL,
-    aux.versioned_Source_DOI as versioned_Source_DOI,
     aux.analysis_result_id as analysis_result_id,
     aux.license_url as license_url,
     aux.license_long_name as license_long_name,
