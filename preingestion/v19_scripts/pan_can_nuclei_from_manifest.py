@@ -25,24 +25,23 @@
 
 import sys
 import argparse
-import pathlib
-import subprocess
 
 from python_settings import settings
-from preingestion.preingestion_code.populate_idc_metadata_tables_from_gcsfuse import prebuild_from_gcsfuse
+from preingestion.preingestion_code.populate_idc_metadata_tables_from_manifest import prebuild_from_manifest
 from google.cloud import storage
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--processes', default=32)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--src_bucket', default='pancreas_ct_seg', help='Source bucket containing instances')
-    parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/pancreas_ct_gcsfuse_mount_point', help='Directory on which to mount the bucket.\
-                The script will create this directory if necessary.')
-    parser.add_argument('--subdir', default='v1', help="Subdirectory of mount_point at which to start walking directory")
+    parser.add_argument('--tmp_directory', default='/mnt/disks/idc-etl/tmp')
+    parser.add_argument('--src_bucket', default='pan_can_nuclei', help='Source bucket and subfolder hierarchy containing instances')
+    parser.add_argument('--subdir', default='pan_cancer_nuclei_polygon_2d_2024_05_21', help="Subdirectory of mount_point to add to blob name. Only if needed to prefix file name in manifest")
+    # parser.add_argument('--manifest', default='gs://gtex_pathology/v1/identifiers.txt', help='gcs URL of a manifest')
+    parser.add_argument('--manifest', default='./pan_can_nuclei_generated_manifest.csv', help='gcs URL of a manifest')
     parser.add_argument('--collection_id', default='', help='collection_name of the collection or ID of analysis result to which instances belong.')
-    parser.add_argument('--source_doi', default='10.5281/zenodo.12130275', help='Collection DOI. Might be empty string.')
-    parser.add_argument('--versioned_source_doi', default='10.5281/10.5281/zenodo.12130276', help='Collection DOI. Might be empty string.')
-    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.12130275',\
+    parser.add_argument('--source_doi', default='10.5281/zenodo.11099004', help='Collection DOI. Might be empty string.')
+    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.11099004',\
                         help='Info page URL')
     parser.add_argument('--license', default = {"license_url": 'https://creativecommons.org/licenses/by/4.0/',\
             "license_long_name": "Creative Commons Attribution 4.0 International License", \
@@ -55,12 +54,6 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()
 
-    try:
-        # gcsfuse mount the bucket
-        pathlib.Path(args.mount_point).mkdir( exist_ok=True)
-        subprocess.run(['gcsfuse', '--implicit-dirs', args.src_bucket, args.mount_point])
-        prebuild_from_gcsfuse(args)
-    finally:
-        # Always unmount
-        subprocess.run(['fusermount', '-u', args.mount_point])
+    prebuild_from_manifest(args)
+
 

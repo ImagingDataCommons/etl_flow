@@ -58,7 +58,7 @@ auxiliary_metadata_schema = [
     bigquery.SchemaField('series_aws_url', 'STRING', mode='NULLABLE', description='URL of the Amazon Web Services (AWS) folder of the series containing this instance'),
     bigquery.SchemaField('Source_DOI', 'STRING', mode='NULLABLE', description='The DOI of a wiki page that describes the original collection or analysis result that includes this instance'),
     bigquery.SchemaField('Source_URL', 'STRING', mode='NULLABLE', description='The URL of a wiki page that describes the original collection or analysis result that includes this instance'),
-    bigquery.SchemaField('versioned_Source_DOI', 'STRING', mode='NULLABLE', description='If present, the DOI of a wiki page that describes the original collection or analysis result that includes this version of this instance'),
+    # bigquery.SchemaField('versioned_Source_DOI', 'STRING', mode='NULLABLE', description='If present, the DOI of a wiki page that describes the original collection or analysis result that includes this version of this instance'),
     bigquery.SchemaField('series_instances', 'INTEGER', mode='NULLABLE', description='Number of instances in the version of the study containing this instance'),
     bigquery.SchemaField('series_hash', 'STRING', mode='NULLABLE', description='md5 hash of the data in the this version of the series containing this instance'),
     bigquery.SchemaField('series_init_idc_version', 'INTEGER', mode='NULLABLE', description='The IDC version in which the series containing this instance first appeared'),

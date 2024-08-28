@@ -24,33 +24,37 @@
 # gcsfuse mount point
 
 import sys
+import settings
 import argparse
 import pathlib
 import subprocess
 
-from python_settings import settings
-from preingestion.preingestion_code.populate_idc_metadata_tables_from_gcsfuse import prebuild_from_gcsfuse
+from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, Collection, Patient
+from utilities.logging_config import successlogger, errlogger, progresslogger
+from base64 import b64decode
+from preingestion.validation_code.validate_analysis_result import validate_analysis_result
+from preingestion.validation_code.validate_original_collection import validate_original_collection
+
+from pydicom import dcmread
+
+from utilities.sqlalchemy_helpers import sa_session
 from google.cloud import storage
+from preingestion.preingestion_code.gen_manifest_from_gcsfuse import build_manifest
+
+import pandas as pd
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--src_bucket', default='pancreas_ct_seg', help='Source bucket containing instances')
-    parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/pancreas_ct_gcsfuse_mount_point', help='Directory on which to mount the bucket.\
+    parser.add_argument('--src_bucket', default='pan_can_nuclei', help='Source bucket containing instances')
+    parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/gen_manifest_gcsfuse_mount_point', help='Directory on which to mount the bucket.\
                 The script will create this directory if necessary.')
-    parser.add_argument('--subdir', default='v1', help="Subdirectory of mount_point at which to start walking directory")
+    parser.add_argument('--subdir', \
+            default='pan_cancer_nuclei_polygon_2d_2024_05_21', \
+            help="Subdirectory of mount_point at which to start walking directory")
     parser.add_argument('--collection_id', default='', help='collection_name of the collection or ID of analysis result to which instances belong.')
-    parser.add_argument('--source_doi', default='10.5281/zenodo.12130275', help='Collection DOI. Might be empty string.')
-    parser.add_argument('--versioned_source_doi', default='10.5281/10.5281/zenodo.12130276', help='Collection DOI. Might be empty string.')
-    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.12130275',\
-                        help='Info page URL')
-    parser.add_argument('--license', default = {"license_url": 'https://creativecommons.org/licenses/by/4.0/',\
-            "license_long_name": "Creative Commons Attribution 4.0 International License", \
-            "license_short_name": "CC BY 4.0"}, help="(Sub-)Collection license")
-    parser.add_argument('--third_party', type=bool, default=True, help='True if an analysis result')
-    parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
-    parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
-
+    parser.add_argument('--manifest', default='./pan_can_nuclei_generated_manifest.csv', help='Manifest file name')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()
@@ -59,8 +63,9 @@ if __name__ == '__main__':
         # gcsfuse mount the bucket
         pathlib.Path(args.mount_point).mkdir( exist_ok=True)
         subprocess.run(['gcsfuse', '--implicit-dirs', args.src_bucket, args.mount_point])
-        prebuild_from_gcsfuse(args)
+        build_manifest(args)
     finally:
         # Always unmount
         subprocess.run(['fusermount', '-u', args.mount_point])
+
 

@@ -124,7 +124,7 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
             progresslogger.debug('**Series %s needs revision', series.series_instance_uid)
             rev_series = clone_series(series, str(uuid4()))
             rev_series.rev_idc_version = settings.CURRENT_VERSION
-            rev_series.revised = True
+            # rev_series.revised = True
             rev_series.done = False
             rev_series.is_new = False
             rev_series.expanded = False
@@ -200,7 +200,7 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
                 duration = str(timedelta(seconds=(time.time() - begin)))
                 successlogger.info("    p%s: Built Study %s, %s,  in %s", args.pid, study.study_instance_uid, study_index, duration)
     except Exception as exc:
-        errlogger.error('  p%s build_study failed: %s', args.pid, exc)
+        errlogger.error('  p%s build_study failed: %s for %s', args.pid, exc, study.study_instance_uid)
         raise exc
 
 

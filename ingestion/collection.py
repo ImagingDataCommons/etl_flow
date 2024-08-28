@@ -66,9 +66,11 @@ def worker(input, output, args, access, lock):
                     errlogger.error("p%s, exception %s; reattempt %s on patient %s/%s, %s; %s", args.pid, exc, attempt, collection.collection_id, patient.submitter_case_id, index, time.asctime())
                     sess.rollback()
 
-            if attempt == PATIENT_TRIES - 1:
+            if attempt == PATIENT_TRIES:
                 errlogger.error("p%s, Failed to process patient: %s", args.pid, patient.submitter_case_id)
                 sess.rollback()
+
+
             output.put(patient.submitter_case_id)
 
 
@@ -196,9 +198,10 @@ def expand_collection(sess, args, all_sources, collection):
             progresslogger.info('  p%s: Patient %s unchanged',  args.pid, patient.submitter_case_id)
 
     for patient in retired_objects:
-        breakpoint()
+        # breakpoint()
         retire_patient(args, patient)
         collection.patients.remove(patient)
+        progresslogger.info('  p%s: Patient %s is retired', args.pid, patient.submitter_case_id)
 
     new_patients = []
     revised_patients = []
@@ -208,15 +211,15 @@ def expand_collection(sess, args, all_sources, collection):
                 new_patients.append(patient.submitter_case_id)
             else:
                 revised_patients.append(patient.submitter_case_id)
-    progresslogger.info('New patients:')
+    progresslogger.info(f'{len(new_patients)} new patients:')
     for patient_id in sorted(new_patients):
         progresslogger.info(patient_id)
-    progresslogger.info('\nRevised patients:')
+    progresslogger.info(f'{len(revised_patients)} revised patients:')
     for patient_id in sorted(revised_patients):
         progresslogger.info(patient_id)
-    progresslogger.info('\nRetired patients:')
+    progresslogger.info(f'{len(retired_objects)} retired patients:')
     for patient in retired_objects:
-        progresslogger.info(patient.patient_id)
+        progresslogger.info(patient.submitter_case_id)
 
     collection.expanded = True
     sess.commit()
@@ -229,8 +232,10 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
     args.prestaging_tcia_bucket = f"{args.prestaging_tcia_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
     args.prestaging_idc_bucket = f"{args.prestaging_idc_bucket_prefix}{collection.collection_id.lower().replace(' ','_').replace('-','_')}"
     if not collection.expanded:
+        successlogger.info("p%s: Expanding Collection %s, %s, %s patients", args.pid, collection.collection_id,
+                           collection_index, len(collection.patients))
         expand_collection(sess, args, all_sources, collection)
-    successlogger.info("p%s: Expanded Collection %s, %s, %s patients", args.pid, collection.collection_id, collection_index, len(collection.patients))
+        successlogger.info("p%s: Expanded Collection %s, %s, %s patients", args.pid, collection.collection_id, collection_index, len(collection.patients))
 
     if args.num_processes==0:
         patients = sorted(collection.patients, key=lambda patient: patient.done, reverse=True)
@@ -253,6 +258,8 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         enqueued_patients = []
 
         num_processes = min(args.num_processes, len(collection.patients))
+        if collection.revised.tcia:
+            num_processes = min(num_processes, 8)
 
         # Enqueue each patient in the the task queue
         # patients = sorted(collection.patients, key=lambda patient: patient.done, reverse=True)
@@ -274,6 +281,8 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
             if not patient.done:
                 task_queue.put((patient_index, collection.collection_id, patient.submitter_case_id))
                 enqueued_patients.append(patient.submitter_case_id)
+                successlogger.info("  p%s: Patient %s %s enqueued", args.pid, patient.submitter_case_id,
+                            patient_index)
             else:
                 successlogger.info("  p%s: Patient %s, %s, previously built", args.pid, patient.submitter_case_id,
                             patient_index)
@@ -284,7 +293,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
                 # Timeout if waiting too long
                 results = done_queue.get(True)
                 enqueued_patients.remove(results)
-
+                successlogger.info("  p%s: Patient %s dequeued", args.pid, results)
             # Tell child processes to stop
             for process in processes:
                 task_queue.put('STOP')

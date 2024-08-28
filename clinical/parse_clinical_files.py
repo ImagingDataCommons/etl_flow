@@ -61,7 +61,7 @@ def write_dataframe_to_json(path,nm,df):
   nArr = []
   for i in range(len(cols)):
     col=df.columns[i]
-    dtype=df.dtypes[i].name
+    dtype=df.dtypes.iloc[i].name
     ntype=''
     if dtype=='object':
       ntype='str'
@@ -96,13 +96,13 @@ def write_clin_file(filenm, data):
 
 def recastDataFrameTypes(df, ptId):
   for i in range(len(df.columns)):
-    if not (i == ptId) and (df.dtypes[i].name == 'float64'):
+    if not (i == ptId) and (df.dtypes.iloc[i].name == 'float64'):
       try:
         df[df.columns[i]] = df[df.columns[i]].astype('Int64')
       except:
         pass
     # make all not na objects strings
-    if (df.dtypes[i].name == 'object'):
+    if (df.dtypes.iloc[i].name == 'object'):
       try:
         df[df.columns[i]] = df[df.columns[i]].map(lambda a: a if pd.isna(a) else str(a))
       except:
@@ -123,7 +123,7 @@ def analyzeDataFrame(cdic):
     try:
       if len(cdic['headers'][df.columns[i]])>0:
         cdic['headers'][df.columns[i]][0]['uniques']=uVals
-        if (df.dtypes[i].name == 'float64') or (df.dtypes[i].name == 'Int64'):
+        if (df.dtypes.iloc[i].name == 'float64') or (df.dtypes.iloc[i].name == 'Int64'):
           if (len(uVals)>0):
             cdic['headers'][df.columns[i]][0]['rng']=[float(uVals[0]),float(uVals[len(uVals)-1])]
             iii=1
@@ -1043,10 +1043,10 @@ def parse_dict(fpath,collec,ndic,indx,coll):
   elif (ndic["form"]=="hcc_tace"):
     spec={"Y = 1 N = 0", "1=Male, 2=Female"}
     for index, row in df.iterrows():
-      column = formatForBQ([[row[0]]], True)[0]
-      column_label = row[1]
+      column = formatForBQ([[row.iloc[0]]], True)[0]
+      column_label = row.iloc[1]
       if column_label in spec:
-        column_label = row[0]+": "+row[1]
+        column_label = row.iloc[0]+": "+row.iloc[1]
       data_dict[column] = {}
       data_dict[column]['label'] = column_label
   elif (ndic["form"]=="covid"):
@@ -1113,17 +1113,17 @@ def parse_dict(fpath,collec,ndic,indx,coll):
 
     column=''
     for index, row in df.iterrows():
-      if (row[0] in colSet):
-        column = formatForBQ([[row[0]]], True)[0]
-        description=row[1]
+      if (row.iloc[0] in colSet):
+        column = formatForBQ([[row.iloc[0]]], True)[0]
+        description=row.iloc[1]
         data_dict[column] = {}
         data_dict[column]['label'] = description
         data_dict[column]['opts'] = []
-      elif (len(row[0])>0):
+      elif (len(row.iloc[0])>0):
         column=''
       if len(column)>0:
-        if len(row[2])>0 and ("=" in row[2]):
-          optA=row[2].split('\n')
+        if len(row.iloc[2])>0 and ("=" in row.iloc[2]):
+          optA=row.iloc[2].split('\n')
           for optS in optA:
             if ("=" in optS):
               opts=optS.split("=")

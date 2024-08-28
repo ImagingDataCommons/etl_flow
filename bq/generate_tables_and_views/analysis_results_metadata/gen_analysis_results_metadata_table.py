@@ -27,7 +27,8 @@ from utilities.bq_helpers import load_BQ_from_json
 from bq.generate_tables_and_views.analysis_results_metadata.schema import analysis_results_metadata_schema
 from utilities.tcia_helpers import get_all_tcia_metadata
 from utilities.logging_config import successlogger, progresslogger
-from python_settings import settings
+# from python_settings import settings
+import settings
 import requests
 
 
@@ -108,8 +109,13 @@ def get_url(url, headers=""):  # , headers):
 
 def get_citation(source_doi, source_url):
     if source_doi:
+        if 'zenodo' in source_doi:
+            params = {'access_token': settings.ZENODO_ACCESS_TOKEN}
+        else:
+            params = {}
         header = {"Accept": "text/x-bibliography; style=apa"}
-        citation = get_url(source_url, header).text
+        # citation = get_url(source_url, header).text
+        citation = requests.get(source_url, headers=header, params=params).text
     else:
         citation =source_url
 

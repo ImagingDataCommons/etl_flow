@@ -119,7 +119,7 @@ def get_access_token(auth_server = NBIA_AUTH_URL):
 #     result = requests.get(url, headers=headers)
 #     return result
 
-def get_instance_hash(sop_instance_uid, access_token=None):
+def get_tcia_instance_hash(sop_instance_uid, access_token=None):
     # if not access_token:
     #     access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
     headers = dict(
@@ -186,26 +186,26 @@ def get_hash(request_data, access_token=None):
 #     result = requests.get(url)
 #     return result
 
+# Obsolete
+# def get_collection_values(server=NBIA_URL):
+#     if server == "NLST":
+#         server_url = NLST_URL
+#         access_token, refresh_token = get_access_token(NLST_AUTH_URL)
+#     elif server == "NBIA":
+#         server_url = NBIA_URL
+#         access_token, refresh_token = get_access_token()
+#     else:
+#         server_url = server
+#         access_token, refresh_token = get_access_token(auth_server = NLST_AUTH_URL)
+#     headers = dict(
+#         Authorization = f'Bearer {access_token}'
+#     )
+#     url = f'{server_url}/getCollectionValues'
+#     result = requests.get(url, headers=headers)
+#     collections = result.json()
+#     return collections
 
-def get_collection_values(server=NBIA_URL):
-    if server == "NLST":
-        server_url = NLST_URL
-        access_token, refresh_token = get_access_token(NLST_AUTH_URL)
-    elif server == "NBIA":
-        server_url = NBIA_URL
-        access_token, refresh_token = get_access_token()
-    else:
-        server_url = server
-        access_token, refresh_token = get_access_token(auth_server = NLST_AUTH_URL)
-    headers = dict(
-        Authorization = f'Bearer {access_token}'
-    )
-    url = f'{server_url}/getCollectionValues'
-    result = requests.get(url, headers=headers)
-    collections = result.json()
-    return collections
-
-
+# Get a list of the (public) collections that TCIA knows about. and count of the subjects in each
 def get_collection_values_and_counts(server=NBIA_URL):
     if server == "NLST":
         server_url = NLST_URL

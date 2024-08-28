@@ -26,7 +26,7 @@ import sys
 import argparse
 from googleapiclient import discovery
 from google.api_core.exceptions import Conflict, TooManyRequests, ServiceUnavailable, NotFound
-from step2_import_bucket import import_buckets
+#from step2_import_bucket import import_buckets
 from utilities.logging_config import successlogger, progresslogger, errlogger
 import settings
 from google.cloud import storage, bigquery
@@ -188,13 +188,55 @@ def populate_staging_bucket(args):
     # except:
     #     dones = []
 
+    # query = f"""
+    # WITH alls AS (
+    #     SELECT
+    #       CONCAT(aj.se_uuid, '/', aj.i_uuid, '.dcm') blob_id,
+    #     # If this series is new/revised in this version and we
+    #     # have not merged new instances into dev buckets
+    #     if(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+    #         # We use the premerge url prefix
+    #         CONCAT('idc_v', {settings.CURRENT_VERSION},
+    #             '_',
+    #             i_source,
+    #             '_',
+    #             REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_')
+    #             ),
+    #
+    #     #else
+    #         # This instance is not new so use the staging (dev) bucket prefix
+    #          if( i_source='tcia', ac.dev_tcia_url, ac.dev_idc_url)
+    #         ) bucket
+    #       FROM
+    #         `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
+    #       JOIN
+    #         `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac
+    #       ON
+    #         collection_id = ac.tcia_api_collection_id
+    #       WHERE
+    #         i_excluded is False
+    #       AND
+    #         ((i_source='tcia' AND ac.tcia_access='Public' AND (ac.tcia_metadata_sunset=0 OR ({args.version} <= ac.tcia_metadata_sunset)))
+    #         OR (i_source='idc' AND ac.idc_access='Public' AND (ac.idc_metadata_sunset=0 OR ({args.version} <= ac.idc_metadata_sunset))))
+    #       AND
+    #         idc_version = {args.version}
+    #       {f"AND collection_id IN {args.collections}" if args.collections else ""}
+    #       )
+    # SELECT alls.*
+    # FROM alls
+    # LEFT JOIN {args.dones_table_id} dones
+    # ON alls.blob_id = dones.blob_id
+    # WHERE dones.blob_id IS Null
+    # ORDER BY blob_id
+    # """
+
     query = f"""
     WITH alls AS (
         SELECT
-          CONCAT(aj.se_uuid, '/', aj.i_uuid, '.dcm') blob_id,
+          CONCAT(se_uuid, '/', i_uuid, '.dcm') blob_id,
         # If this series is new/revised in this version and we 
         # have not merged new instances into dev buckets
-        if(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+        IF(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
             # We use the premerge url prefix
             CONCAT('idc_v', {settings.CURRENT_VERSION}, 
                 '_',
@@ -202,24 +244,16 @@ def populate_staging_bucket(args):
                 '_',
                 REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_')
                 ),
-    
+
         #else
             # This instance is not new so use the staging (dev) bucket prefix
-             if( i_source='tcia', ac.dev_tcia_url, ac.dev_idc_url)
+             IF( i_source='tcia', dev_tcia_url, dev_idc_url)
             ) bucket
-          FROM
-            `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
-          JOIN
-            `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac
-          ON
-            collection_id = ac.tcia_api_collection_id
-          WHERE
-            i_excluded is False
-          AND
-            ((i_source='tcia' AND ac.tcia_access='Public' AND (ac.tcia_metadata_sunset=0 OR ({args.version} <= ac.tcia_metadata_sunset))) 
-            OR (i_source='idc' AND ac.idc_access='Public' AND (ac.idc_metadata_sunset=0 OR ({args.version} <= ac.idc_metadata_sunset))))
-          AND
-            idc_version = {args.version})
+        FROM
+          `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current`
+      
+        {f"WHERE collection_id IN {args.collections}" if args.collections else ""}
+    )
     SELECT alls.*
     FROM alls
     LEFT JOIN {args.dones_table_id} dones
@@ -229,7 +263,7 @@ def populate_staging_bucket(args):
     """
 
     query_job = client.query(query)
-    query_job.result()
+    result = query_job.result()
     destination = query_job.destination
     destination = client.get_table(destination)
 
@@ -270,6 +304,7 @@ def populate_bucket(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--client', default=storage.Client())
+    parser.add_argument('--collections', default=(), help='Collections to include. If empty, include all collections')
     parser.add_argument('--processes', default=1)
     parser.add_argument('--batch', default=1000)
     parser.add_argument('--dones_table_id', default='idc-dev-etl.whc_dev.step1_dones', help='BQ table from which to import dones')
@@ -281,4 +316,5 @@ if __name__ == '__main__':
     args.staging_bucket = f'dicom_store_import_staging_v{settings.CURRENT_VERSION}'
     progresslogger.info(f"{args}")
 
+    breakpoint()
     populate_bucket(args)

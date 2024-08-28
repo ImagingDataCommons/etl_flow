@@ -15,8 +15,7 @@
 #
 
 # Generates manifests for all IDC sourced original collection data
-# that does not already have a Zenodo page. This is exclusively
-# IDC pathology except for nlm_visible_human_project
+# for all IDC (sub)collections
 
 import argparse
 import sys
@@ -113,20 +112,21 @@ with versions AS (
  )
 )
 SELECT DISTINCT * FROM versions
-WHERE source_url NOT LIKE '%zenodo%'
 ORDER BY idc_version, collection_id"""
 
     for row in bq_client.query(query):
-        if not f'{row.collection_id}/{row.idc_version}' in dones:
-            dcf_manifest(args, row, 'dcf',
-                         'https://nci-crdc.datacommons.io/ga4gh/drs/v1/objects/')
-            s5cmd_manifest(args, row, 'gcs')
-            s5cmd_manifest(args, row, 'aws')
-            successlogger.info(f'{row.collection_id}/{row.idc_version}')
-            print(f'{row.collection_id}/{row.idc_version}')
+        if not args.collection_ids or row.collection_id in args.collection_ids:
+            if not f'{row.collection_id}/{row.idc_version}' in dones:
 
-        else:
-            print(f'{row.collection_id}/{row.idc_version} previously done')
+                dcf_manifest(args, row, 'dcf',
+                             'https://nci-crdc.datacommons.io/ga4gh/drs/v1/objects/')
+                s5cmd_manifest(args, row, 'gcs')
+                s5cmd_manifest(args, row, 'aws')
+                successlogger.info(f'{row.collection_id}/{row.idc_version}')
+                print(f'{row.collection_id}/{row.idc_version}')
+
+            else:
+                print(f'{row.collection_id}/{row.idc_version} previously done')
 
 
 
@@ -135,8 +135,9 @@ if __name__ == '__main__':
     # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version for which to build the table')
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version for which to build the table')
     parser.add_argument('--manifest_bucket', default='doi_manifests')
-    parser.add_argument('--collection_id', default='CPTAC-LSCC')
-    parser.add_argument('--idc_version', default=3, help='IDC revision of the collection whose manifest is to be generated')
+    parser.add_argument('--collection_ids', default = ['CCDI-MCI'], help='Collections to build; all collections if empty')
+    # parser.add_argument('--collection_id', default='CPTAC-LSCC')
+    # parser.add_argument('--idc_version', default=3, help='IDC revision of the collection whose manifest is to be generated')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

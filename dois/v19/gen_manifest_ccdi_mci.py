@@ -26,24 +26,25 @@
 
 import argparse
 import sys
-from gen_manifest import dcf_manifest, s5cmd_manifest
+from dois.gen_manifest import dcf_manifest, s5cmd_manifest
 import settings
 
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
+    # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version for which to build the table')
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version for which to build the table')
     parser.add_argument('--temp_table_bqdataset', default=f'whc_dev')
     parser.add_argument('--temp_table', default=f'doi_subcollection')
     parser.add_argument('--manifest_bucket', default='doi_manifests')
-    parser.add_argument('--collection_id', default='totalsegmentator_ct_segmentations')
+    parser.add_argument('--collection_id', default='ccdi_mci')
     parser.add_argument('--manifest_version', default=settings.CURRENT_VERSION, help='IDC revision of the collection whose manifest is to be generated')
-    parser.add_argument('--source_dois', default=('10.5281/zenodo.8347011', '10.5281/zenodo.8347012'), help="DOI's of series to be included in the manifest")
+    parser.add_argument('--source_doi', default='10.5281/zenodo.11099086', help="source_doi of series to be included in the manifest")
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
 
-    dcf_manifest(args, args.collection_id, args.manifest_version, args.source_dois, 'dcf', 'https://nci-crdc.datacommons.io/ga4gh/drs/v1/objects/')
-    s5cmd_manifest(args, args.collection_id, args.manifest_version, args.source_dois, 'gcs', 'https://storage.googleapis.com')
-    s5cmd_manifest(args, args.collection_id, args.manifest_version, args.source_dois, 'aws', 'https://s3.amazonaws.com')
+    dcf_manifest(args, args.collection_id, args.manifest_version, args.source_doi, 'dcf', 'https://nci-crdc.datacommons.io/ga4gh/drs/v1/objects/')
+    s5cmd_manifest(args, args.collection_id, args.manifest_version, args.source_doi, 'gcs', 'https://storage.googleapis.com')
+    s5cmd_manifest(args, args.collection_id, args.manifest_version, args.source_doi, 'aws', 'https://s3.amazonaws.com')
 

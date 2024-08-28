@@ -35,19 +35,20 @@ from google.cloud import storage
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--src_bucket', default='pancreas_ct_seg', help='Source bucket containing instances')
-    parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/pancreas_ct_gcsfuse_mount_point', help='Directory on which to mount the bucket.\
+    parser.add_argument('--src_bucket', default='pan_can_nuclei', help='Source bucket containing instances')
+    parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/preeingestion_gcsfuse_mount_point', help='Directory on which to mount the bucket.\
                 The script will create this directory if necessary.')
-    parser.add_argument('--subdir', default='v1', help="Subdirectory of mount_point at which to start walking directory")
+    parser.add_argument('--subdir', default='pan_cancer_nuclei_polygon_2d_2024_05_21', help="Subdirectory of mount_point at which to start walking directory")
     parser.add_argument('--collection_id', default='', help='collection_name of the collection or ID of analysis result to which instances belong.')
-    parser.add_argument('--source_doi', default='10.5281/zenodo.12130275', help='Collection DOI. Might be empty string.')
-    parser.add_argument('--versioned_source_doi', default='10.5281/10.5281/zenodo.12130276', help='Collection DOI. Might be empty string.')
-    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.12130275',\
+    parser.add_argument('--source_doi', default="10.5281/zenodo.11099004", help='Collection DOI. Might be empty string.')
+    parser.add_argument('--versioned_source_doi', default="10.5281/zenodo.11099005", help='Collection DOI. Might be empty string.')
+    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.11099004',\
                         help='Info page URL')
-    parser.add_argument('--license', default = {"license_url": 'https://creativecommons.org/licenses/by/4.0/',\
+    parser.add_argument('--license', default = {"license_url": 'https://creativeco0mmons.org/licenses/by/4.0/',\
             "license_long_name": "Creative Commons Attribution 4.0 International License", \
             "license_short_name": "CC BY 4.0"}, help="(Sub-)Collection license")
     parser.add_argument('--third_party', type=bool, default=True, help='True if an analysis result')
+    parser.add_argument('--subset_of_db_expected_in_bucket', default=False, help='If True, validation will not report an error if the instances in the bucket are a subset of the instance in the DB')
     parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
 

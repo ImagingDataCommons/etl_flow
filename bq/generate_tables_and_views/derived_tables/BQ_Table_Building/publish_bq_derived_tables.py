@@ -147,12 +147,14 @@ def make_schema_list(field_list):
             field_list = make_schema_list(sf["fields"])
             if not "description" in sf:
                 sf["description"] = "TBD"
-            next_field = bigquery.SchemaField(sf["name"], sf["type"], sf["mode"], sf["description"], field_list)
+            next_field = bigquery.SchemaField(name=["name"], field_type=sf["type"], mode=sf["mode"], \
+                                              description=sf["description"], fields=field_list)
         else:
             try:
                 if not "description" in sf:
                     sf["description"] = "TBD"
-                next_field = bigquery.SchemaField(sf["name"], sf["type"], sf["mode"], sf["description"])
+                next_field = bigquery.SchemaField(name=sf["name"], field_type=sf["type"], mode=sf["mode"], \
+                                                  description=sf["description"])
             except KeyError as e:
                 print("KeyError: {}".format(e))
         full_list.append(next_field)
@@ -286,7 +288,7 @@ def create_table(target_client, target_project, target_dataset, table_name, view
     # #
     # targ_table.view_query = view_sql
 
-    # Create the view
+    # Create the table
     empty_targ_table = target_client.create_table(targ_table)
 
     # Populate the table
