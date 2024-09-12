@@ -89,7 +89,7 @@ def build_table(args):
             '/', se_uuid, '/') as series_aws_url,           
       IF(collection_id='APOLLO', '', source_doi) AS Source_DOI,
       IF(source_url is Null OR source_url='', CONCAT('https://doi.org/', source_doi), source_url) AS Source_URL,
-      IF(versioned_source_doi is NULL, "", versioned_source_doi) versioned_Source_DOI,
+--       IF(versioned_source_doi is NULL, "", versioned_source_doi) versioned_Source_DOI,
       series_instances,
       se_hashes.all_hash AS series_hash,
       'Public' AS access,

@@ -126,5 +126,5 @@ AH_PROJECT = os.environ.get('AH_PROJECT', '')           # Analytics Hub project
 AH_EXCHANGE_ID = os.environ.get('AH_EXCHANGE_ID', '')    # ID of the Analytics Hub exchange
 AH_EXCHANGE_LOCATION = os.environ.get('AH_EXCHANGE_LOCATION', '')
 
-
+ZENODO_ACCESS_TOKEN = os.environ.get('ZENODO_ACCESS_TOKEN', '')
 

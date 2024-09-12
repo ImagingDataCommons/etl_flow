@@ -36,7 +36,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--src_bucket', default='pancreas_ct_seg', help='Source bucket containing instances')
-    parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/preeingestion_gcsfuse_mount_point', help='Directory on which to mount the bucket.\
+    parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/pancreas_ct_gcsfuse_mount_point', help='Directory on which to mount the bucket.\
                 The script will create this directory if necessary.')
     parser.add_argument('--subdir', default='v1', help="Subdirectory of mount_point at which to start walking directory")
     parser.add_argument('--collection_id', default='', help='collection_name of the collection or ID of analysis result to which instances belong.')

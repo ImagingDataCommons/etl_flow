@@ -34,9 +34,11 @@ import subprocess
 def get_expected_blobs_in_bucket(args):
     client = bigquery.Client()
     query = f"""
-      SELECT distinct concat(se_uuid,'/', i_uuid, '.dcm') as blob_name
+      SELECT distinct concat(se_uuid,'/', i_uuid, '.dcm') as blob_name, i.gcs_url
       FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_public_and_current` ajc
-      WHERE se_rev_idc_version={args.version} AND collection_id = '{args.bucket["collection_id"]}' AND i_source='{args.bucket["source"]}'
+      LEFT JOIN `idc-dev-etl.idc_v{args.version}_dev.idc_instance` i 
+      ON ajc.sop_instance_uid = i.sop_instance_uid
+      WHERE i_rev_idc_version={args.version} AND collection_id = '{args.bucket["collection_id"]}' AND i_source='{args.bucket["source"]}'
       ORDER BY blob_name
   """
 
@@ -44,42 +46,45 @@ def get_expected_blobs_in_bucket(args):
     while result.state != "DONE":
         result = client.get_job(result.job_id)
     if result.error_result != None:
-        breakpoint()
+       pass
 
-    blob_names = set(result.to_dataframe()['blob_name'].to_list())
-    return blob_names
+    # blob_names = set(result.to_dataframe()['blob_name'].to_list())
+    blob_data = {row['blob_name']: row['gcs_url'] for index, row in result.to_dataframe().iterrows()}
+    return blob_data
 
 
-def get_found_blobs_in_bucket(args):
+def get_found_blobs_in_bucket(args, found_blobs_file):
     client = storage.Client()
     bucket = client.bucket(args.bucket['bucket_id'])
 
-    with open(args.found_blobs, 'w') as f:
+    with open(found_blobs_file, 'w') as f:
         result = subprocess.run(['gsutil', '-m', 'ls', f'gs://{args.bucket["bucket_id"]}/**'], stdout=f)
-    found_blobs = [row.replace(f'gs://{args.bucket["bucket_id"]}/', '') for row in set(open(args.found_blobs).read().splitlines())]
+    # found_blobs = [row.replace(f'gs://{args.bucket["bucket_id"]}/', '') for row in set(open(args.found_blobs).read().splitlines())]
+    found_blobs = [row.split('/',3)[-1] for row in set(open(found_blobs_file).read().splitlines())]
     found_blobs.sort()
-    with open(args.found_blobs, 'w') as f:
+    with open(found_blobs_file, 'w') as f:
         for row in found_blobs:
             f.write(f'{row}\n')
     return
 
 
-def check_all_instances_mp(args):
+def check_all_instances_mp(args, found_blobs_file):
     try:
-        found_blobs = set(open(args.found_blobs).read().splitlines())
+        found_blobs = set(open(found_blobs_file).read().splitlines())
         assert len(found_blobs) > 0
         progresslogger.info(f'Already have found blobs')
     except Exception as exc:
         progresslogger.info(f'Getting found blobs')
-        get_found_blobs_in_bucket(args)
-        found_blobs = set(open(args.found_blobs).read().splitlines())
+        get_found_blobs_in_bucket(args, found_blobs_file)
+        found_blobs = set(open(found_blobs_file).read().splitlines())
 
-    expected_blobs = get_expected_blobs_in_bucket(args)
+    expected_blob_data = get_expected_blobs_in_bucket(args)
+    expected_blobs = set(expected_blob_data.keys())
 
 
     if found_blobs == expected_blobs:
         progresslogger.info(f"Bucket {args.bucket['bucket_id']} has the correct set of blobs")
-        open(args.found_blobs, 'w').close()
+        open(found_blobs_file, 'w').close()
         with open(args.validated_buckets, 'a') as f:
             f.write(f"{args.bucket['bucket_id']}\n")
     else:
@@ -90,7 +95,9 @@ def check_all_instances_mp(args):
         errlogger.error(f"Expected blobs not found in bucket: {len(expected_blobs - found_blobs)}")
         for blob in expected_blobs - found_blobs:
             errlogger.error(blob)
-        breakpoint()
+        errlogger.error(f"Commands to populate missing blobs in bucket:")
+        for blob in expected_blobs - found_blobs:
+            errlogger.error((f'gsutil cp {expected_blob_data[blob]} gs://{args.bucket["bucket_id"]}/{blob}'))
 
     return
 
@@ -112,12 +119,14 @@ def validate_all_buckets(args):
     if result.error_result != None:
         breakpoint()
 
-    buckets = [dict(row) for row in result]
-    for bucket in buckets:
+    buckets = {row.collection_id: dict(row) for row in result}
+    for key in sorted(buckets):
+        bucket = buckets[key]
         if bucket['bucket_id'] not in validated:
             args.bucket = bucket
-            progresslogger.info(f'Validating {bucket}')
-            check_all_instances_mp(args)
+            found_blobs_file = f'{settings.LOG_DIR}/{args.bucket["collection_id"]}_found_blobs'
+            progresslogger.info(f'\n\nValidating {bucket}')
+            check_all_instances_mp(args, found_blobs_file)
         else:
             progresslogger.info(f'{bucket} prviously validated')
 

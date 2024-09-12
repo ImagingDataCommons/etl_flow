@@ -41,7 +41,7 @@ def build_instance(client, args, sess, series, instance_id, hash, size, blob_nam
     try:
         # Get the record of this instance if it exists
         instance = next(instance for instance in series.instances if instance.sop_instance_uid == instance_id)
-        progresslogger.info(f'\t\t\t\tInstance {blob_name} exists')
+        progresslogger.info(f'\t\t\t\tInstance {instance_id} exists')
     except StopIteration:
         instance = IDC_Instance()
         instance.sop_instance_uid = instance_id
@@ -53,6 +53,7 @@ def build_instance(client, args, sess, series, instance_id, hash, size, blob_nam
     instance.idc_version = args.version
     instance.gcs_url = f'gs://{args.src_bucket}/{blob_name}'
     instance.hash = hash
+    instance.size = size
     successlogger.info(blob_name)
 
 
@@ -183,19 +184,7 @@ def prebuild_from_gcsfuse(args):
                 exit -1
 
     if args.gen_hashes:
-        # if not collection_ids:
-        #     if collection_map:
-        #         collection_ids = set(collection_map.values())
-        #     elif args.collection_id:
-        #         collection_ids = [args.collection_id]
-        #     else:
-        #         with sa_session(echo=False) as sess:
-        #             collections = sess.query(IDC_Collection).distinct().join(IDC_Collection.patients).join(
-        #                 IDC_Patient.studies).join(IDC_Study.seriess). \
-        #                 filter(IDC_Series.source_url == args.source_url).all()
-        #             collection_ids = [collection.collection_id for collection in collections]
-
-        gen_hashes()
+         gen_hashes()
     return
 
 # if __name__ == '__main__':

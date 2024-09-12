@@ -107,14 +107,14 @@ ORDER BY
 
 
 # These are licenses of (sub)collections for which the data originates in TCIA and therefore TCIA sets the licenses
-def get_tcia_original_collection_licenses(client, args, idc_collections):
+def get_tcia_original_collection_licenses(client, args, tcia_sourced_subcollections):
     # Get all the collection manager collections data:
     tcia_collection_metadata = {row['collection_short_title']:row for row in get_all_tcia_metadata('collections')}
     tcia_downloads_metadata = {row['id']:row for row in get_all_tcia_metadata('downloads')}
     tcia_licese_metadata = {row['license_label']:row for row in get_all_tcia_metadata('licenses')}
 
     tcia_licenses = []
-    for collection_id, values in idc_collections.items():
+    for collection_id, values in tcia_sourced_subcollections.items():
         collection_name = values['collection_name']
         try:
             collection_metadata = tcia_collection_metadata[collection_name]
@@ -146,9 +146,11 @@ def get_tcia_original_collection_licenses(client, args, idc_collections):
                         'ct_colonography': 'acrin-6664-da-rad'
                     }[collection_id]
                 else:
-                    target_slug = collection_metadata['slug'] + '-da-rad'
+                    target_slug = collection_metadata['slug']
 
-                if download_metadata['slug'] == target_slug:
+                if download_metadata['slug'].startswith(target_slug) and \
+                        ('-rad-' in download_metadata['slug'] or download_metadata['slug'].endswith('-rad')) and\
+                        download_metadata['download_access'] == 'Public':
                     license_short_name = download_metadata['data_license']
                     tcia_licenses.append(
                         {
@@ -168,21 +170,21 @@ def get_tcia_original_collection_licenses(client, args, idc_collections):
                 # # elif download_metadata['slug'].startswith(target_slug):
                 #     errlogger.error(f'Target slug: {target_slug}; Found slug: {download_metadata["slug"]} ')
             if not next((collection for collection in tcia_licenses if collection['collection_name'] == collection_name),0):
-                errlogger.error(f'No licenses found for {collection_name}')
-                license_short_name = 'CC BY 4.0'
-                tcia_licenses.append(
-                    {
-                        "collection_name": collection_name,
-                        "source_doi": collection_metadata['collection_doi'].lower(),
-                        "source_url": f'https://doi.org/{collection_metadata["collection_doi"].lower()}',
-                        "source": 'tcia',
-                        "license": {
-                            "license_url": tcia_licese_metadata[license_short_name]['license_url'],
-                            "license_long_name": LICENSE_NAME_MAP[license_short_name],
-                            "license_short_name": license_short_name
-                        }
-                    }
-                )
+                errlogger.error(f'No licenses found for TCIA collection {collection_name}')
+                # license_short_name = 'CC BY 4.0'
+                # tcia_licenses.append(
+                #     {
+                #         "collection_name": collection_name,
+                #         "source_doi": collection_metadata['collection_doi'].lower(),
+                #         "source_url": f'https://doi.org/{collection_metadata["collection_doi"].lower()}',
+                #         "source": 'tcia',
+                #         "license": {
+                #             "license_url": tcia_licese_metadata[license_short_name]['license_url'],
+                #             "license_long_name": LICENSE_NAME_MAP[license_short_name],
+                #             "license_short_name": license_short_name
+                #         }
+                #     }
+                # )
 
         except Exception as exc:
             errlogger.error(exc)
@@ -245,7 +247,7 @@ def get_tcia_analysis_results_licenses(client, args):
                     )
                     break
             if not next((collection for collection in tcia_licenses if collection['collection_name'] == result_short_title),0):
-                errlogger.error(f'No licenses found for {result_short_title}')
+                errlogger.error(f'No licenses found for TCIA analysis result {result_short_title}')
         except Exception as exc:
             errlogger.error(exc)
     return tcia_licenses
@@ -254,10 +256,10 @@ def get_tcia_analysis_results_licenses(client, args):
 def gen_licenses_table(args):
     client = bigquery.Client()
 
-    tcia_sourced_collections = get_all_tcia_collections_in_version(client, args)
+    tcia_sourced_subcollections = get_all_tcia_collections_in_version(client, args)
 
     # Get the licenses of subcollections sourced from TCIA
-    tcia_sourced_licenses = get_tcia_original_collection_licenses(client, args, tcia_sourced_collections)
+    tcia_sourced_licenses = get_tcia_original_collection_licenses(client, args, tcia_sourced_subcollections)
 
     # Get the licenses of analysis results sourced from TCIA
     tcia_ar_licenses = get_tcia_analysis_results_licenses(client, args)

@@ -27,36 +27,46 @@ def validate_original_collection(args, collection_ids):
     with sa_session(echo=False) as sess:
         client = storage.Client()
 
-        # Generate a set of the URLs of expected blobs
-        expected_blobs = set()
+        # Generate a set of the URLs of blobs in the source bucket
+        blobs_in_bucket = set()
         iterator = client.list_blobs(src_bucket, prefix=args.subdir)
         for page in iterator.pages:
             if page.num_items:
                 for blob in page:
                     if not blob.name.endswith(('DICOMDIR', '.txt', 'csv')):
-                        expected_blobs |= {f'gs://{args.src_bucket}/{blob.name}'}
+                        blobs_in_bucket |= {f'gs://{args.src_bucket}/{blob.name}'}
 
         # Generate a set of the URLs of blobs in the DB
-        found_blobs = set()
+        blobs_in_db = set()
         for collection_id in collection_ids:
-            collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
-            for patient in collection.patients:
-                for study in patient.studies:
-                    for series in study.seriess:
-                        for instance in series.instances:
-                            found_blobs |= {instance.gcs_url}
+            collection_metadata = sess.query(IDC_Collection.collection_id, IDC_Instance.gcs_url). \
+                distinct().join(IDC_Collection.patients).join(IDC_Patient.studies).join(IDC_Study.seriess).join(
+                IDC_Series.instances).filter(IDC_Collection.collection_id == collection_id).all()
+            blobs_in_db |= set(row.gcs_url for row in collection_metadata)
+        # blobs_in_db = set()
+        # for collection_id in collection_ids:
+        #     collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
+        #     for patient in collection.patients:
+        #         for study in patient.studies:
+        #             for series in study.seriess:
+        #                 for instance in series.instances:
+        #                     blobs_in_db |= {instance.gcs_url}
 
-        if expected_blobs != found_blobs:
-            if expected_blobs - found_blobs:
+        if blobs_in_bucket != blobs_in_db:
+            if blobs_in_bucket - blobs_in_db:
                 errlogger.error('The following blobs are in the bucket but not in the DB:')
-                for blob in expected_blobs - found_blobs:
+                for blob in blobs_in_bucket - blobs_in_db:
                     errlogger.error(blob)
                 return -1
-            if not args.subset_of_db_expected and found_blobs - expected_blobs:
-                errlogger.error('The following blobs are in the DB but not in the bucket:')
-                for blob in found_blobs - expected_blobs:
-                    errlogger.error(blob)
-                return -1
+            if blobs_in_db - blobs_in_bucket:
+                if not args.subset_of_db_expected_in_bucket:
+                    errlogger.error('The following blobs are in the DB but not in the bucket:')
+                    for blob in blobs_in_db - blobs_in_bucket:
+                        errlogger.error(blob)
+                    return -1
+                else:
+                    errlogger.error('Ignoring blobs in the DB but not in the bucket')
+                    return 0
         else:
             successlogger.info('All blobs in the bucket are in the DB')
 

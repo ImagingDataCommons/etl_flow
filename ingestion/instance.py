@@ -191,6 +191,8 @@ def build_instances_idc(sess, args, collection, patient, study, series):
                                 series.series_instance_uid, instance.sop_instance_uid)
                 # Copy failed. Return without marking all instances done. This will be prevent the series from being done.
                 return
+            breakpoint() # Validate the following
+            instance.ingestion_url = src_instance_metadata[instance.sop_instance_uid]['gcs_url']
             total_size += instance.size
             instance.done = True
     progresslogger.debug("        p%s: Series %s: instances: %s, gigabytes: %.2f, rate: %.2fMB/s",

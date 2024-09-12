@@ -22,18 +22,10 @@ that hold all IDC data across all versions (not just the current version)
 to open/public buckets.
 """
 
-import argparse
-import os
-# import logging
-# from logging import INFO
-# proglogger = logging.getLogger('root.prog')
-# successlogger = logging.getLogger('root.success')
-# errlogger = logging.getLogger('root.err')
 from utilities.logging_config import successlogger, progresslogger, errlogger
 import time
 from multiprocessing import Process, Queue
 from google.cloud import storage, bigquery
-from google.api_core.exceptions import ServiceUnavailable, GoogleAPICallError
 
 from python_settings import settings
 import settings as etl_settings

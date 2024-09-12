@@ -1,7 +1,100 @@
 from google.cloud import bigquery
 import json
 import traceback
+import re
+import copy
+#from parse_clinical_files import formatForBQ
 DEFAULT_PROJECT='idc-dev-etl'
+
+def formatForBQ(attrs, lc=False):
+  patt=re.compile(r"[a-zA-Z_0-9]")
+  justNum=re.compile(r"[0-9]")
+  headcols=[]
+  for i in range(len(attrs)):
+    headSet=[attrs[i][j] for j in range(len(attrs[i])) if len(attrs[i][j])>0]
+    header='_'.join(str(k) for k in headSet)
+    header=header.replace('/','_')
+    header=header.replace('-', '_')
+    header=header.replace(' ', '_')
+    normHeader = ''
+    for i in range(len(header)):
+      if bool(patt.search(header[i])):
+        normHeader = normHeader + header[i]
+    if (len(normHeader) > 0) and bool(justNum.search(normHeader[0])):
+      normHeader='c_'+normHeader
+    if lc:
+      normHeader = normHeader.lower()
+
+
+    headcols.append(normHeader)
+  return headcols
+
+
+def excelLableToIndex(lbl):
+  num=0
+  for j in range(len(lbl)):
+    num=num+j*26+ord(lbl[j])-65
+  return num
+
+def parseAMBLDic(df):
+  lbls={"negative", "postive", "low", "intermediate","high"}
+  cols=[]
+  data_dict={}
+  grptype=-1
+  dataCols=[]
+  excelCol=''
+  ordinal=["first","second","third"]
+  pos=["pos1","pos2","pos3"]
+  benign=["benign1", "benign2","benign3"]
+
+  for index, row in df.iterrows():
+    if ('column' in str(row[0])) and not ('columns' in str(row[0])):
+      excelCol=row[0].strip('column').strip()
+      dataCol = row[1]
+      colBq = formatForBQ([[dataCol]], True)[0]
+      data_dict[colBq]={}
+
+      if ((excelCol>='H') and colBq.endswith('1')):
+        dataCols = [colBq[:-1]+ str(x) for x in range(1,4)]
+      else:
+        dataCols= [colBq]
+      for col in dataCols:
+        data_dict[col]= {}
+        if ((excelCol>='H') and colBq.endswith('1')):
+          data_dict[col]['opts']=[{"option_code":"-1", "option_description":"indicates that data is missing or not applicable"}]
+
+    elif (len(str(row[0]))==0) and (len(str(row[1]))>0) and not ('see definition above' in row[1]) and (len(dataCols)>0):
+      curind=0
+      for col in dataCols:
+        lbl=row[1]
+        lbl=lbl.replace(ordinal[0], ordinal[curind])
+        lbl = lbl.replace(pos[0], pos[curind])
+        lbl = lbl.replace(benign[0], benign[curind])
+        if not ('label' in data_dict[col]):
+          data_dict[col]['label']=lbl
+        else:
+          data_dict[col]['label'] = data_dict[col]['label']+lbl
+        curind=curind+1
+    elif (str(row[0]) in lbls) or (isinstance(row[0], int)):
+      optcode= str(row[0])
+      desc= row[1]
+      opt = {"option_code": optcode, "option_description": desc}
+      for col in dataCols:
+        if not ('opts' in data_dict[col]):
+          data_dict[col]['opts']=[]
+        data_dict[col]['opts'].append(opt)
+
+  if ('reason_for_referral_id' in data_dict) and ('additional_reason_for_referral_id' in data_dict):
+     if ('label' in data_dict['reason_for_referral_id']):
+       data_dict['additional_reason_for_referral_id']['label'] = data_dict['reason_for_referral_id']['label']
+     if ('opts' in data_dict['reason_for_referral_id']):
+       data_dict['additional_reason_for_referral_id']['opts'] = copy.deepcopy(data_dict['reason_for_referral_id']['opts'])
+
+
+  return data_dict
+
+
+
 
 def parseIspyDic(df):
   data_dict={}

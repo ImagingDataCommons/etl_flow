@@ -6,9 +6,7 @@
     "tbd_key_2": "value_2"
   },
   "clustering_fields": [
-    "collection_id",
-    "Modality",
-    "analysis_result_id"
+    "collection_id"
   ],
   "schema": {
     "fields": [
@@ -220,12 +218,6 @@
         "description": "The URL of a page that describes the original collection or analysis result that include this instance",
         "mode": "NULLABLE",
         "name": "Source_URL",
-        "type": "STRING"
-      },
-      {
-        "description": "If present, the DOI of a page that describes the original collection or analysis result that include this version of this instance",
-        "mode": "NULLABLE",
-        "name": "versioned_Source_DOI",
         "type": "STRING"
       },
       {

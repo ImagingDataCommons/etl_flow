@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Duplicate idc_vxx datasets in idc_pdp_staging.
+# Duplicate idc_vxx datasets in idc_pdp_staging to the nci-idc-bigquery-data project
 import settings
 import argparse
 import json
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     parser.add_argument('--src_project', default="idc-pdp-staging", help='Project from which tables are copied')
     parser.add_argument('--trg_project', default="nci-idc-bigquery-data", help='Project to which tables are copied')
     parser.add_argument('--pub_project', default="bigquery-public-data", help='Project where public datasets live')
-    parser.add_argument('--table_ids', default={}, help="Copy all tables/views unless this is non-empty.")
+    parser.add_argument('--table_ids', default={"version_metadata":"TABLE"}, help="Copy all tables/views unless this is non-empty.")
     parser.add_argument('--clinical_table_ids', default={}, help="Copy all tables/views unless this is non-empty")
     args = parser.parse_args()
 

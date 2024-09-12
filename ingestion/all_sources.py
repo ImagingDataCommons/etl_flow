@@ -179,8 +179,9 @@ class All_Sources:
     def get_patient_dois(self, collection, patient, skipped_sources):
         patient_dois = {}
         for source in self.sources:
-            if not skipped_sources[source.value]:
-                patient_dois =  patient_dois | self.sources[source].get_patient_dois(collection, patient)
+            if not skipped_sources[source.value] and patient.revised[source.value]:
+                patient_dois =  patient_dois | \
+                        self.sources[source].get_patient_dois(collection.collection_id, patient.submitter_case_id)
         return patient_dois
 
 
@@ -197,8 +198,9 @@ class All_Sources:
     def get_patient_licenses(self, collection, patient, skipped_sources):
         patient_licenses = {}
         for source in self.sources:
-            if not skipped_sources[source.value]:
-                patient_licenses = patient_licenses | self.sources[source].get_patient_licenses(collection, patient)
+            if not skipped_sources[source.value] and patient.revised[source.value]:
+                patient_licenses = patient_licenses | \
+                       self.sources[source].get_patient_licenses(collection.collection_id, patient.submitter_case_id)
         return patient_licenses
 
     ###-------------------Studies-----------------###

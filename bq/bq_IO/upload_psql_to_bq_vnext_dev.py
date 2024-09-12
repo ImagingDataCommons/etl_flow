@@ -45,32 +45,34 @@ tables = {
         'study': {"func":upload_study, "order_by":"study_instance_uid"},
         'study_series': {"func": upload_table, "order_by": "study_uuid"},
         'version': {"func":upload_version, "order_by":"version"},
-        'version_collection': {"func": upload_table, "order_by": "version"}
+        'version_collection': {"func": upload_table, "order_by": "version"},
+        'zenodo_dois': {"func": upload_table, "order_by": "collection"}
 }
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--federated_query', default=f'idc-dev-etl.us.etl_federated_query_idc_v{settings.CURRENT_VERSION}')
     parser.add_argument('--upload', nargs='*', default= [
-        'all_collections',
+        # 'all_collections',
         'analysis_id_map',
-        'collection',
-        'collection_id_map',
-        'collection_patient',
-        'idc_collection',
-        'idc_instance',
-        'idc_patient',
-        'idc_series',
-        'idc_study',
-        'instance',
-        'patient',
-        'patient_study',
-        'series',
-        'series_instance',
-        'study',
-        'study_series',
-        'version',
-        'version_collection',
+        # 'collection',
+        # 'collection_id_map',
+        # 'collection_patient',
+        # 'idc_collection',
+        # 'idc_instance',
+        # 'idc_patient',
+        # 'idc_series',
+        # 'idc_study',
+        # 'instance',
+        # 'patient',
+        # 'patient_study',
+        # 'series',
+        # 'series_instance',
+        # 'study',
+        # 'study_series',
+        # 'version',
+        # 'version_collection',
+        # 'zenodo_dois'
     ], help="Tables to upload")
     args = parser.parse_args()
     print('args: {}'.format(args))

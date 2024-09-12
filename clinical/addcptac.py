@@ -4,6 +4,11 @@ from datetime import datetime,date
 from utils import getHist, read_clin_file
 import pytz
 
+from python_settings import settings
+import settings as etl_settings
+settings.configure(etl_settings)
+assert settings.configured
+
 DEFAULT_PROJECT ='idc-dev-etl'
 DEFAULT_SUFFIX="clinical"
 DEFAULT_DESCRIPTION="clinical data"
@@ -16,12 +21,15 @@ HTAN_TABLES=['demographics','diagnosis','exposure','familyhistory','followup','m
 CPTAC_SRC='isb-cgc-bq.CPTAC_versioned.clinical_gdc_r31'
 NLST='idc-dev-etl.idc_current'
 NLST_SRCA=['nlst_canc','nlst_ctab','nlst_ctabc','nlst_prsn','nlst_screen']
-IDC_VERSION='idc_v18'
-IDC_VERSION_LAST='idc_v17'
+
+
+IDC_VERSION = 'idc_v'+str(settings.CURRENT_VERSION)
+IDC_VERSION_LAST = 'idc_v'+str(settings.PREVIOUS_VERSION)
+
 TCGA_SRC='idc-dev-etl.'+IDC_VERSION+'_pub.tcga_clinical_rel9'
 
-IDC_COLLECTION_ID_SRC='`idc-dev-etl.idc_v18_pub.original_collections_metadata`'
-IDC_PATIENT_ID_SRC='`idc-dev-etl.idc_v18_pub.dicom_all`'
+IDC_COLLECTION_ID_SRC='`idc-dev-etl.'+IDC_VERSION+'_pub.original_collections_metadata`'
+IDC_PATIENT_ID_SRC='`idc-dev-etl.'+IDC_VERSION+'_pub.dicom_all`'
 
 
 SOURCE_BATCH_COL='source_batch'

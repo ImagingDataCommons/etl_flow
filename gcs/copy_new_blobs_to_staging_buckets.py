@@ -39,7 +39,6 @@ def get_urls(args):
       dev.instance_uuid = pub.instance_uuid
     WHERE
       dev.series_revised_idc_version = {args.version} 
-      AND dev.instance_revised_idc_version < {args.version}
     ORDER BY dev_url
     """
     # urls = list(client.query(query))
@@ -153,7 +152,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
     parser.add_argument('--batch', default=1000)
-    parser.add_argument('--processes', default=1 )
+    parser.add_argument('--processes', default=8 )
     args = parser.parse_args()
     args.id = 0 # Default process ID
 
