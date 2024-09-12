@@ -16,7 +16,7 @@
 
 # Copy most public tables/views from dev to prod.
 # Note tha auxiliary_metadata must be generated for prod since urls are different
-# Note also that views such as segmentations must also be separately generated.
+# Note also that derived tables/views, such as segmentations, must also be separately generated.
 import argparse
 import sys
 import settings

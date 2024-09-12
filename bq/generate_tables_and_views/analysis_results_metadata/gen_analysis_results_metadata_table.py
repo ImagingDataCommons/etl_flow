@@ -70,7 +70,7 @@ def get_collections_containing_a_doi(client, args):
 def get_descriptions(client,args):
     query = f"""
     SELECT ID, Description
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_descriptions` 
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_descriptions_end_user` 
     """
     descriptions = {c.ID: c.Description for c in client.query(query).result()}
     return descriptions

@@ -188,19 +188,12 @@ def get_url(url, headers=""):  # , headers):
 
 
 def get_citation(source_url):
-    if source_url:
-        if 'zenodo' in source_url:
-            params = {'access_token': settings.ZENODO_ACCESS_TOKEN}
-        else:
-            params = {}
-        header = {"Accept": "text/x-bibliography; style=apa"}
-        # citation = get_url(source_url, header).text
-        citation = requests.get(source_url, headers=header, params=params).text
-        if 'This DOI cannot be found in the DOI System' in citation:
-            errlogger.error(f'Unable to get citation for {source_url}')
-            citation = ""
-    else:
-        citation = source_url
+
+    header = {"Accept": "text/x-bibliography; style=apa"}
+    citation = requests.get(source_url, headers=header).text
+    if 'This DOI cannot be found in the DOI System' in citation:
+        errlogger.error(f'Unable to get citation for {source_url}')
+        citation = ""
 
     return citation
 
@@ -328,7 +321,7 @@ def get_collection_metadata(client, args):
 def add_descriptions(client, args, collection_metadata):
     query = f"""
     SELECT * 
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_descriptions`
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_descriptions_end_user`
     ORDER BY collection_id
     """
 
@@ -396,9 +389,7 @@ def add_citations(collection_metadata):
 
 # Get the set of modalities per collection for each of TCIA and IDC.
 def add_modalities(client, collection_metadata):
-
     query = f"""
-
   SELECT distinct aj.collection_id, aj.source_doi, aj.source_url, string_agg(DISTINCT Modality, ', ' ORDER BY Modality) modalities
   FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_EXT_DATASET}.dicom_metadata` dm
   JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` aj
@@ -425,11 +416,27 @@ def add_modalities(client, collection_metadata):
     return collection_metadata
 
 
+def add_updates(client,collection_metadata):
+    query = f"""
+    SELECT c.collection_id collection_name, vm.version_timestamp
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_EXT_DATASET}.version_metadata` vm
+    JOIN  `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection` c
+    ON vm.idc_version = c.rev_idc_version
+    WHERE c.final_idc_version=0
+    """
+    timestamps = {c['collection_name']:c['version_timestamp'] for c in client.query(query).result()}
+    for collection_name in collection_metadata:
+        collection_metadata[collection_name]['Updated'] = timestamps[collection_name]
+
+    return collection_metadata
+
+
 def build_metadata(client, args):
     # Now get most of the metadata for all collections
     collection_metadata = get_collection_metadata(client, args)
 
     # Add additional metadata that we get separately
+    collection_metadata = add_updates(client, collection_metadata)
     collection_metadata = add_citations(collection_metadata)
     collection_metadata = add_case_counts(client, args, collection_metadata)
     collection_metadata = add_programs(client, args, collection_metadata)

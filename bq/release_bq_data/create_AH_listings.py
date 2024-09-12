@@ -55,15 +55,19 @@ Terms of Use: If you use this dataset, please acknowledge IDC as described in th
             create_BQ_dataset(client, f"idc_v{settings.CURRENT_VERSION}", description)
         except Exception as exc:
             print(f"Failed to create datset idc_v{settings.CURRENT_VERSION}: {exc}")
-            exit
-    try:
-        get_listing(args.listing_id)
-    except:
-        try:
-            response = create_listing(args)
-            successlogger.info(f'Created listing {response}')
-        except Exception as exc:
-            errlogger.error(f'Failed to create AH listing; {exc}')
+            exit(1)
+
+    response = get_listing(args.listing_id)
+    if 'error' in response:
+        response = create_listing(args)
+        if 'error' in response:
+            errlogger.error(f'Failed to create AH listing; {response}')
+            exit(1)
+        else:
+            successlogger.info(f'Created listing https://console.cloud.google.com/bigquery/analytics-hub/exchanges/{response["name"]}?project=nci-idc-bigquery-data')
+    else:
+        successlogger.info(
+            f'Found listing https://console.cloud.google.com/bigquery/analytics-hub/exchanges/{response["name"]}?project=nci-idc-bigquery-data')
 
     # Create idc_vX_clinical listing
     args.listing_id = f"idc_v{settings.CURRENT_VERSION}_clinical"
@@ -73,14 +77,22 @@ Terms of Use: If you use this dataset, please acknowledge IDC as described in th
     try:
         client.get_dataset(f"{settings.AH_PROJECT}.idc_v{settings.CURRENT_VERSION}_clinical")
     except NotFound:
-        description = f"Imaging Data Commons (IDC) - The Cancer Imaging Archive (TCIA) v{settings.CURRENT_VERSION_}_clinical data"
+        description = f"Imaging Data Commons (IDC) - The Cancer Imaging Archive (TCIA) v{settings.CURRENT_VERSION}_clinical data"
         try:
             create_BQ_dataset(client, f"idc_v{settings.CURRENT_VERSION}_clinical", description)
         except Exception as exc:
-            print(f"Failed to create datset idc_v{settings.CURRENT_VERSION_}_clinical: {exc}")
-            exit
-    try:
+            print(f"Failed to create datset idc_v{settings.CURRENT_VERSION}_clinical: {exc}")
+            exit(1)
+
+    response = get_listing(args.listing_id)
+    if 'error' in response:
         response = create_listing(args)
-        successlogger.info(f'Created listing {response}')
-    except Exception as exc:
-        errlogger.error(f'Failed to create AH listing; {exc}')
+        if 'error' in response:
+            errlogger.error(f'Failed to create AH listing; {response}')
+            exit(1)
+        else:
+            successlogger.info(f'Created listing https://console.cloud.google.com/bigquery/analytics-hub/exchanges/{response["name"]}?project=nci-idc-bigquery-data')
+    else:
+        successlogger.info(
+            f'Found listing https://console.cloud.google.com/bigquery/analytics-hub/exchanges/{response["name"]}?project=nci-idc-bigquery-data')
+

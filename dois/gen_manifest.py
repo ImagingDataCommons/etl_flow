@@ -48,7 +48,7 @@ def s5cmd_manifest(args, collection_id, manifest_version, source_doi, service, u
 
     if subcollection_name:
         subcollection_id = subcollection_name.lower().replace('-','_').replace(' ','-')
-        file_name = f"{subcollection_id}_{service}.s5cmd"
+        file_name = f"{collection_id.lower().replace('-','_').replace(' ','-')}-{subcollection_id}_{service}.s5cmd"
     else:
         file_name = f"{collection_id.lower().replace('-', '_').replace(' ', '-')}_{service}.s5cmd"
 
@@ -101,7 +101,7 @@ f'''# To obtain GCS and AWS URLs of the instances in this manifest,
     bucket = gcs_client.bucket(args.manifest_bucket)
     if subcollection_name:
         subcollection_id = subcollection_name.lower().replace('-','_').replace(' ','-')
-        file_name = f"{subcollection_id}_{service}.csv"
+        file_name = f"{collection_id.lower().replace('-','_').replace(' ','-')}-{subcollection_id}_{service}.csv"
         blob = bucket.blob(f"{collection_id.lower().replace('-','_').replace(' ','-')}/v{args.manifest_version}/{subcollection_id}/{file_name}")
     else:
         file_name = f"{collection_id.lower().replace('-', '_').replace(' ', '-')}_{service}.csv"

@@ -678,7 +678,7 @@ if __name__ == "__main__":
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
     # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
     # s = get_all_tcia_metadata_stage(type="collections")
-    d = get_all_tcia_metadata(type="collections")
+    d = get_all_tcia_metadata(type="analysis-results")
     d = get_all_tcia_metadata(type="citations")
     d = get_all_tcia_metadata(type="downloads", query_param="include=42023,42025,42027,42029,42031")
     # d = get_collection_metadata("ACRIN-Contralateral-Breast-MR")
