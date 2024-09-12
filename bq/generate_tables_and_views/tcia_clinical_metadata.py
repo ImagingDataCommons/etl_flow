@@ -40,6 +40,7 @@ clinical_data_schema = [
     bigquery.SchemaField('download_size', 'STRING', mode='NULLABLE', description='Download size'),
     bigquery.SchemaField('download_size_unit', 'STRING', mode='NULLABLE', description='Download size units'),
     bigquery.SchemaField('download_url', 'STRING', mode='NULLABLE', description='URL from which to download clinical data'),
+    bigquery.SchemaField('download_type', 'STRING', mode='NULLABLE', description='type of download'),
 ]
 
 
@@ -107,7 +108,8 @@ def get_raw_data():
                 # download_url=data["download_file"]["guid"] if data["download_file"]["guid"].startswith('https') else \
                 #     f'https://www.cancerimagingarchive.net{data["download_file"]["guid"]}'
                 download_url = data["download_url"] if data["download_url"].startswith('https') else \
-                   get_url(f'https://cancerimagingarchive.net/api/wp/v2/media/{data["download_file"]["ID"]}').json()['source_url']
+                   get_url(f'https://cancerimagingarchive.net/api/wp/v2/media/{data["download_file"]["ID"]}').json()['source_url'],
+                download_type = str(data["download_type"])
             )
             clinical_data.append(download)
 

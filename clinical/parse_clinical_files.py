@@ -14,7 +14,7 @@ import hashlib
 import pytz
 from datetime import datetime
 import os
-from clinical.utils import getHist, read_clin_file, parseIspyDic
+from clinical.utils import getHist, read_clin_file, parseIspyDic, parseAMBLDic, formatForBQ
 from docx2python import docx2python
 import openpyxl
 #import copy.deepcopy
@@ -52,6 +52,7 @@ def get_md5(filenm):
     # pipe contents of the file through
     return(hashlib.md5(data).hexdigest())
 
+
 def write_dataframe_to_json(path,nm,df):
   #headers = clinJson[coll]['headers']
   filenm=path+nm+'.json'
@@ -84,10 +85,6 @@ def write_dataframe_to_json(path,nm,df):
   except:
     pass
   f.close()
-
-
-
-
 
 def write_clin_file(filenm, data):
 
@@ -274,28 +271,6 @@ def specialAttrFormat(attrs, format):
   return newatts
 
 
-def formatForBQ(attrs, lc=False):
-  patt=re.compile(r"[a-zA-Z_0-9]")
-  justNum=re.compile(r"[0-9]")
-  headcols=[]
-  for i in range(len(attrs)):
-    headSet=[attrs[i][j] for j in range(len(attrs[i])) if len(attrs[i][j])>0]
-    header='_'.join(str(k) for k in headSet)
-    header=header.replace('/','_')
-    header=header.replace('-', '_')
-    header=header.replace(' ', '_')
-    normHeader = ''
-    for i in range(len(header)):
-      if bool(patt.search(header[i])):
-        normHeader = normHeader + header[i]
-    if (len(normHeader) > 0) and bool(justNum.search(normHeader[0])):
-      normHeader='c_'+normHeader
-    if lc:
-      normHeader = normHeader.lower()
-
-
-    headcols.append(normHeader)
-  return headcols
 
 def mergeAcrossAttr(clinJson, coll):
   mbatch = clinJson[coll]['mergeBatch']
@@ -628,6 +603,8 @@ def reform_case(case_id, colec,type):
     ret='ReMIND-'+case_id.zfill(3)
   elif type=='ea1141':
     ret='EA1141-'+case_id
+  elif type=='upenn-gbm':
+    ret=case_id[:len(case_id)-3]
   return ret
 
 def add_tcia_case_id(mergeB, tcia_coll,type):
@@ -639,14 +616,14 @@ def add_tcia_case_id(mergeB, tcia_coll,type):
 
 
 def parse_acrin_collection(clinJson,coll):
-  webapp_coll=clinJson[coll]['idc_webapp']
+  webapp_coll=coll
   clinJson[coll]['mergeBatch']=[]
   clinJson[coll]['tabletypes']=[]
   colldir=coll.replace('/','_')
   colldir=colldir.replace(':','_')
   curDir= ORIGINAL_SRCS_PATH  + colldir
 
-
+  #open the zip file(s) containing the csv files with data tables, and the
   if 'uzip' in clinJson[coll]:
     if 'udir' in clinJson[coll]:
       [shutil.rmtree(curDir+ '/'+d, ignore_errors=True) for d in clinJson[coll]['udir']]
@@ -690,18 +667,15 @@ def parse_acrin_collection(clinJson,coll):
         del celem['variable_label']
         reformCdict[celem['column']]=celem
 
-
-
       srcf=npath+'/'+form_id+'.csv'
+      # special form for this collection
+      if (coll == "acrin_contralateral_breast_mr"):
+        srcf = npath+'/6667_' + form_id + ' reviewed.csv'
       if path.exists(srcf):
-        #print(srcf)
-
         clinJson[coll]['tabletypes'].append({form_id:desc})
         df = pd.read_csv(srcf)
         ptId = [[0, df.columns[0].lower()]]
         df.insert(0, 'source_batch', 0)
-        #headers['source_batch'] = {'attrs': ['NA'], 'colNo': -1}
-
         colnames = [list(df.columns)]
 
         if len(clinJson[coll]['uzip'])>1:
@@ -766,7 +740,6 @@ def parse_acrin_collection(clinJson,coll):
 
 
 def parse_conventional_collection(clinJson,coll,csrc,tbltypes):
-  #clinJson[coll]['idc_webapp']=coll
   colldir = coll.replace('/','_').replace(':','_')
   if ('uzip' in clinJson[coll]) and (csrc == 'srcs'):
     zpfile = ORIGINAL_SRCS_PATH + colldir + '/' + clinJson[coll]['uzip']
@@ -791,7 +764,10 @@ def parse_conventional_collection(clinJson,coll,csrc,tbltypes):
       for batchSetInd in range(len(clinJson[coll][csrc][attrSetInd])):
         clinJson[coll]['cols'][attrSetInd+offset2].append([])
         clinJson[coll]['cols'][attrSetInd+offset2][batchSetInd] = {}
-        srcInfo = clinJson[coll][csrc][attrSetInd][batchSetInd]
+        try:
+          srcInfo = clinJson[coll][csrc][attrSetInd][batchSetInd]
+        except:
+          print("oh no "+coll)
 
 
         #print("strcInfo " + str(srcInfo))
@@ -823,7 +799,7 @@ def parse_conventional_collection(clinJson,coll,csrc,tbltypes):
         suffix = DEFAULT_SUFFIX
         if tbltypes in clinJson[coll]:
           suffix = list(clinJson[coll][tbltypes][attrSetInd].keys())[0]
-        #nm = clinJson[coll]['idc_webapp'] + '_' + suffix
+
         nm = coll + '_' + suffix
         clinJson[coll]['mergeBatch'][attrSetInd+offset]['outfile'] = nm + '.json'
         if 'tcia_api' in clinJson[coll]:
@@ -960,6 +936,11 @@ def parse_dict(fpath,collec,ndic,indx,coll):
           for opt in opts:
             nopt=opt.strip()
             data_dict[column]['opts'].append({"option_code": nopt})
+
+  elif(ndic["form"]=="ambl"):
+    #headers = list(collec['mergeBatch'][0]['headers'].keys())
+    #skipCols=collec['srcs'][0][0]['skipCols']
+    data_dict=parseAMBLDic(df)
 
   elif (ndic["form"] =="colorectal"):
     for index, row in df.iterrows():
@@ -1170,6 +1151,7 @@ def parse_dict(fpath,collec,ndic,indx,coll):
         btch['headers'][nkey][0]['dictinfo']['values'] = data_dict[nkey]['opts']
 
 
+#get the files imported from some other source besides TCIA - mostly zenodo. The were added to an archive directory that is included in github
 def add_from_archive():
   alist = listdir(ARCHIVE_FOLDER)
   for adir in alist:
@@ -1206,13 +1188,13 @@ def add_from_archive():
 if __name__=="__main__":
 
   add_from_archive()
-
   dirpath = Path(DESTINATION_FOLDER)
   clinJson = read_clin_file(NOTES_PATH + 'clinical_notes.json')
-  #clinJson = read_clin_file(NOTES_PATH + 'test_notes.json')
+  #clinJson = read_clin_file(NOTES_PATH + 'test_old.json')
   collec=list(clinJson.keys())
   collec.sort()
 
+  # usually we do each version from scratch. In a few prior versions we added new clinical data tables after most tables were already created
   update=False
   if (len(sys.argv)>1):
     updateNum=sys.argv[1]
@@ -1227,7 +1209,6 @@ if __name__=="__main__":
     if dirpath.exists() and dirpath.is_dir():
       shutil.rmtree(dirpath, ignore_errors = True)
     mkdir(dirpath)
-
 
   for collID in range(len(collec)):
     coll=collec[collID]
@@ -1245,21 +1226,19 @@ if __name__=="__main__":
           ndic=clinJson[coll]["dict"][indx]
           if ("use" in ndic) and ndic:
             parse_dict(ORIGINAL_SRCS_PATH,clinJson[coll],ndic,indx,coll)
-    
-
 
     if ('srcs2' in clinJson[coll]):
       print("about to parse extra " + coll)
       parse_conventional_collection(clinJson, coll, 'srcs2', 'tabletypes2')
 
-
-
-
   clin_meta=  DESTINATION_FOLDER + CURRENT_VERSION +'_column_metadata.json'
   clin_summary = DESTINATION_FOLDER + CURRENT_VERSION +'_table_metadata.json'
+
+#usually we do each version from scratch. In a few prior versions we added new clinical data tables after most tables were already created
   if update:
     clin_meta = DESTINATION_FOLDER + CURRENT_VERSION + '_' + updateNum + '_column_metadata.json'
     clin_summary = DESTINATION_FOLDER + CURRENT_VERSION + '_' + updateNum + '_table_metadata.json'
+
   export_meta_to_json(clinJson,clin_meta,clin_summary,collec)
   i=1
 
