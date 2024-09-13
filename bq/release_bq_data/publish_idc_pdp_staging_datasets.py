@@ -19,7 +19,7 @@ import settings
 import argparse
 import json
 from utilities.logging_config import successlogger, progresslogger, errlogger
-from publish_dataset import publish_dataset
+from bq.copy_tables.copy_dataset import copy_dataset
 
 
 if __name__ == '__main__':
@@ -41,4 +41,4 @@ if __name__ == '__main__':
             ]:
         args.src_dataset = src_dataset
         args.trg_dataset = src_dataset
-        publish_dataset(args, table_ids)
+        copy_dataset(args, table_ids)

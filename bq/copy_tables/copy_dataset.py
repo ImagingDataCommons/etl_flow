@@ -130,7 +130,7 @@ def copy_view(client, args, view_id):
         errlogger.error((f'{exc}'))
     return
 
-def publish_dataset(args, table_ids={}, skipped_table_ids={}, copy_views=True):
+def copy_dataset(args, table_ids={}, skipped_table_ids={}, copy_views=True):
     client = bigquery.Client()
     # client = bigquery.Client(project=args.trg_project)
     src_dataset_ref = bigquery.DatasetReference(args.src_project, args.src_dataset)
