@@ -8,6 +8,9 @@ from python_settings import settings
 import settings as etl_settings
 settings.configure(etl_settings)
 assert settings.configured
+from utilities.logging_config import successlogger,progresslogger, warninglogger, errlogger
+import logging
+progresslogger.setLevel(logging.DEBUG)
 
 DEFAULT_PROJECT ='idc-dev-etl'
 DEFAULT_SUFFIX="clinical"
@@ -175,16 +178,15 @@ def copy_table(dataset_id, table_name, lst, src_table_id, id_col, intIds):
       inp =",".join(qslst)
     query = "select " + id_col + " as dicom_patient_id, 0 as source_batch, * from `" + src_table_id + "` where " + id_col + " in (" + inp + ")"
   job_config=bigquery.QueryJobConfig(destination=dest_table_id)
+  progresslogger.debug(query)
   query_job=client.query(query, job_config=job_config)
-  print(query_job.result())
+  progresslogger.debug(query_job.result())
   dest_table=client.get_table(dest_table_id)
   nrows=dest_table.num_rows
   if nrows==0:
     client.delete_table(dest_table_id, not_found_ok=True)
   return(nrows)
   kk=1
-
-
 
 
 def get_ids(program,collection):
@@ -197,7 +199,7 @@ def get_ids(program,collection):
     query = query + "t1.collection_id = '" + collection + "' and "
   query = query + "t1.collection_id = t2.collection_id "\
           "order by t1.collection_id, PatientID"
-  print(query)
+  progresslogger.info(query)
   job = client.query(query)
   cptac=[]
   cptacDic={}
@@ -217,6 +219,7 @@ def get_ids(program,collection):
 def addTables(proj_id, dataset_id, version,program,collection,types,table_srcs, id_col,intIds,dataset_id_lst,version_lst):
   nrows=[]
   colrows=[]
+  # Get HTAN patient IDs
   collec_id_mp = get_ids(program, collection)
   dataset_id = proj_id + "." + dataset_id
   dataset_id_lst = proj_id + "." + dataset_id_lst

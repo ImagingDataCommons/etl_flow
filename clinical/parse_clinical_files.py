@@ -22,6 +22,9 @@ from python_settings import settings
 import settings as etl_settings
 settings.configure(etl_settings)
 assert settings.configured
+from utilities.logging_config import successlogger,progresslogger, warninglogger, errlogger
+import logging
+progresslogger.setLevel(logging.DEBUG)
 
 
 ORIGINAL_SRCS_PATH='./clinical/downloads/downloads_'+str(settings.CURRENT_VERSION)+'/'

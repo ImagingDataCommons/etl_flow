@@ -4,8 +4,9 @@ from os import listdir
 from os.path import isfile,join,splitext
 import sys
 from clinical.addcptac import addTables, CPTAC_SRC,TCGA_SRC,HTAN_SRCS,HTAN_TABLES
-
 from python_settings import settings
+
+from utilities.logging_config import successlogger, progresslogger, errlogger, warninglogger
 
 
 DEFAULT_SUFFIX='clinical'
@@ -97,7 +98,7 @@ def load_meta_summary(project, dataset, cptacColRows,filenm):
   f.close()
   metaD.extend(cptacColRows)
   job = client.load_table_from_json(metaD, table, job_config=job_config)
-  print(job.result())
+  progresslogger.info(job.result())
 
 
 def create_meta_table(project, dataset):
@@ -148,7 +149,7 @@ def load_meta(project, dataset, filenm,cptacRows):
     f.close()
     metaD.extend(cptacRows)
     job=client.load_table_from_json(metaD, table, job_config=job_config)
-    print(job.result())
+    progresslogger.info(job.result())
 
 def checkData():  
   dataset_id=DEFAULT_PROJECT+'.'+DATASET
@@ -160,7 +161,7 @@ def checkData():
     colec=row['idc_webapp_collection_id']
     cid=row['PatientID']
     if not (colec in ids):
-        print("Collecs "+colec)
+        progresslogger.info("Collecs "+colec)
         ids[colec]={}
     ids[colec][cid]=1
 
@@ -170,11 +171,11 @@ def checkData():
   if ("table_metadata" in tableNms):
     tableNms.remove("table_metadata")
   else:
-    print("table_metadata is missing!")
+    errlogger.error("table_metadata is missing!")
   if ("column_metadata" in tableNms):
     tableNms.remove("column_metadata")
   else:
-    print("column_metadata is missing!")
+    errlogger.error("column_metadata is missing!")
 
   tableNms.sort()
 
@@ -184,7 +185,7 @@ def checkData():
   tableL = [x.split('.')[len(x.split('.'))-1] for x in tableL]
   tableL.sort()
   if not (tableNms == tableL):
-    print("table_metadata list is incorrect")
+    errlogger.error("table_metadata list is incorrect")
 
   query = "select distinct table_name from " + dataset_id + ".column_metadata "
   job = client.query(query)
@@ -192,23 +193,23 @@ def checkData():
   tableL = [x.split('.')[len(x.split('.'))-1] for x in tableL]
   tableL.sort()
   if not (tableNms == tableL):
-    print("column_metadata table list is incorrect")
+    errlogger.error("column_metadata table list is incorrect")
 
   for tableNm in tableNms:
     table_id=dataset_id+'.'+tableNm
     colec=tableNm.rsplit('_',1)[0]
-    print("colec "+colec)
+    progresslogger.info("colec "+colec)
     table=client.get_table(table_id)
     colNames=[col.name for col in table.schema]
     colNames.sort()
     final_id=FINAL_PROJECT+"."+CURRENT_VERSION+"_clinical."+tableNm 
     query = "select table_name,column from " + dataset_id + ".column_metadata where table_name= '"+final_id+"'"
     job = client.query(query)
-    print(query)
+    progresslogger.info(query)
     colL = [row.column for row in job.result()]
     colL.sort()
     if not (colNames == colL):
-      print ("mismatch in columns for table "+tableNm+"!")
+      errlogger.error ("mismatch in columns for table "+tableNm+"!")
     i=1
     numExt=0
     curDic=ids[colec]
@@ -219,7 +220,7 @@ def checkData():
       if not (cid in curDic):
         numExt=numExt+1
     if (numExt>0):
-      print("for table "+tableNm+ " "+str(numExt)+" ids not in dicom ")
+      errlogger.error("for table "+tableNm+ " "+str(numExt)+" ids not in dicom ")
 
 
 def load_clin_files(project, dataset,cpath,srcfiles):
@@ -235,14 +236,14 @@ def load_clin_files(project, dataset,cpath,srcfiles):
     cfile= join(cpath,ofile)
     collec = splitext(ofile)[0]
     file_ext = splitext(ofile)[1]
-    print(collec+" "+file_ext)
+    progresslogger.info(collec+" "+file_ext)
     if file_ext=='.csv':
         table_id=project+"."+dataset+"."+collec
         job_config=bigquery.LoadJobConfig(autodetect=True,source_format=bigquery.SourceFormat.CSV)
-        print(cfile)
+        progresslogger.info(cfile)
         with open(cfile,'rb') as nfile:
           job=client.load_table_from_file(nfile,table_id, job_config=job_config)
-          print(job.result())
+          progresslogger.info(job.result())
         nfile.close()   
     if (file_ext=='.json') and not collec.startswith(CURRENT_VERSION):
       table_id =project+"."+dataset+"."+collec
@@ -267,11 +268,11 @@ def load_clin_files(project, dataset,cpath,srcfiles):
       job_config =bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON, schema=schema, write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE)
       try:
         job= client.load_table_from_json(cdata, table, job_config=job_config)    
-        print(job.result())
+        progresslogger.info(job.result())
       except:
         error_sets.append(collec)        
-  print('error sets')
-  print(str(error_sets)) 
+  errlogger.error('error sets')
+  errlogger.error(str(error_sets))
 
 
 def load_all(project,dataset,version,last_dataset, last_version):
@@ -281,8 +282,6 @@ def load_all(project,dataset,version,last_dataset, last_version):
   ds.location = 'US'
   client.delete_dataset(dataset_id, delete_contents=True, not_found_ok=True)
   ds = client.create_dataset(dataset_id)
-
-
 
   htan = addTables(project,dataset,version, "HTAN", None, HTAN_TABLES, HTAN_SRCS, "HTAN_Participant_ID",False, last_dataset, last_version)
 

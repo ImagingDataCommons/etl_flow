@@ -44,7 +44,8 @@ class DictionaryReader:
     for form_id in self.get_dictionary_names():
       # remove all blank rows
       frame = self._dict_df[form_id]
-      frame.replace(r'^\s*$', np.nan, regex=True, inplace=True)
+      with pd.option_context("future.no_silent_downcasting", True):
+        frame.replace(r'^\s*$', np.nan, regex=True, inplace=True)
       #frame.replace('', np.nan)
       self._dict_df[form_id] = frame.dropna(how='all', inplace=False)
 
