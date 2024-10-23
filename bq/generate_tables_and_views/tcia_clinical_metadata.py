@@ -47,21 +47,21 @@ clinical_data_schema = [
 def likely_clinical(download):
   ret = True
   try:
-    if not ((download['download_type'] == 'Other') or (download['download_type'] == 'Clinical Data') ):
-      ret = False
+    if not ((download['download_type'] == 'Other') or (download['download_type'] == 'Clinical Data') or ('Clinical Data' in download['download_type'])):
+      return False
   except:
-    ret = False
+    return False
   try:
     if (download['download_requirements']):
-      ret = False
+      return False
   except:
-    ret = False
+    return False
   try:
     if not (('XLSX' in download['file_type']) or ('XLS' in download['file_type']) or ('CSV' in download['file_type'])):
-      ret = False
+      return False
   except:
-    ret = False
-  return ret
+    return False
+  return True
 
 
 def get_raw_data():
