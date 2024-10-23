@@ -94,6 +94,7 @@ def delete_BQ_Table(client, project, dataset, table):
 
 def load_BQ_from_json(client, project, dataset, table, json_rows, aschema=None, \
         write_disposition='WRITE_APPEND', table_description=''):
+    delete_BQ_Table(client, project, dataset, table)
     table_id = "{}.{}.{}".format(project, dataset, table)
 
     job_config = bigquery.LoadJobConfig()
