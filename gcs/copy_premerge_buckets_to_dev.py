@@ -62,32 +62,39 @@ def preview_copies(args, client, bucket_data):
 def copy_premerge_buckets(args):
     client = storage.Client()
     bucket_data= get_collection_groups()
-    preview_copies(args, client, bucket_data)
+    # preview_copies(args, client, bucket_data)
     try:
         # Create a set of previously copied blobs
         # dones = set(open(f'{args.log_dir}/{args.src_bucket}_success.log').read().splitlines())
         dones = set(open(successlogger.handlers[0].baseFilename).read().splitlines())
+        pre_done_buckets = set(open(progresslogger.handlers[0].baseFilename).read().splitlines())
+        done_buckets = []
+        for row in pre_done_buckets:
+            if row.startswith('Completed bucket'):
+                done_buckets.append(row.split(',')[0].split('Completed bucket ')[1])
+        done_buckets = set(done_buckets)
     except:
         dones = set([])
+        done_buckets = set([])
 
     for collection_id in sorted(list(bucket_data.keys())):
         if client.bucket(f'idc_v{args.version}_tcia_{collection_id}').exists():
-            if f'idc_v{args.version}_tcia_{collection_id}' in dones:
+            if f'idc_v{args.version}_tcia_{collection_id}' in done_buckets:
                 progresslogger.info(f'Bucket idc_v{args.version}_tcia_{collection_id} previously copied')
-                continue
-            copy_prestaging_to_staging(args, f'idc_v{args.version}_tcia_{collection_id}', bucket_data[collection_id]['dev_tcia_url'], dones)
+            else:
+                copy_prestaging_to_staging(args, f'idc_v{args.version}_tcia_{collection_id}', bucket_data[collection_id]['dev_tcia_url'], dones)
         if client.bucket(f'idc_v{args.version}_idc_{collection_id}').exists():
-            if f'idc_v{args.version}_idc_{collection_id}' in dones:
+            if f'idc_v{args.version}_idc_{collection_id}' in done_buckets:
                 progresslogger.info(f'Bucket idc_v{args.version}_idc_{collection_id} previously copied')
-                continue
-            copy_prestaging_to_staging(args, f'idc_v{args.version}_idc_{collection_id}', bucket_data[collection_id]['dev_idc_url'], dones)
+            else:
+                copy_prestaging_to_staging(args, f'idc_v{args.version}_idc_{collection_id}', bucket_data[collection_id]['dev_idc_url'], dones)
     return
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
-    parser.add_argument('--processes', default=32, help="Number of concurrent processes")
+    parser.add_argument('--processes', default=8, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
     args = parser.parse_args()
     args.id = 0 # Default process ID
