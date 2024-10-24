@@ -30,12 +30,32 @@ from multiprocessing import Process, Queue
 # Get all the blobs that are expected to be in the public bucket
 # Limited to series having a rev_idc_version LTE max_version
 
+def get_expected_series_in_bucket(args, max_version):
+    client = bigquery.Client()
+    query = f"""
+      SELECT distinct se_uuid 
+      FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
+      WHERE ((i_source='tcia' AND tcia_access='Public') OR (i_source='idc' AND idc_access='Public')) 
+      {"" if args.dev_or_pub=="dev" else "AND se_excluded=FALSE"} AND i_redacted=FALSE
+      AND se_rev_idc_version <= {max_version}
+      AND ((i_source='tcia' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_tcia_url="{args.bucket}")
+      OR (i_source='idc' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_idc_url="{args.bucket}"))
+      ORDER BY se_uuid
+  """
+
+    query_job = client.query(query)
+    series = set(query_job.result().to_dataframe()['se_uuid'].to_list())
+    return series
+
+
 def get_expected_blobs_in_bucket(args, max_version, premerge=False):
     client = bigquery.Client()
     query = f"""
       SELECT distinct concat(se_uuid,'/', i_uuid, '.dcm') as blob_name
-      FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_public` aj
-      WHERE se_rev_idc_version <= {max_version}
+      FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
+      WHERE ((i_source='tcia' AND tcia_access='Public') OR (i_source='idc' AND idc_access='Public')) 
+      {"" if args.dev_or_pub=="dev" else "AND i_excluded=FALSE"} AND i_redacted=FALSE
+      AND se_rev_idc_version <= {max_version}
       AND ((i_source='tcia' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_tcia_url="{args.bucket}")
       OR (i_source='idc' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_idc_url="{args.bucket}"))
 
@@ -101,8 +121,7 @@ def worker(input, args):
                 except Exception as exc:
                     errlogger.error(f'p{args.id}: Error {exc}')
 
-
-def get_found_blobs_in_bucket(args):
+def get_found_series_in_bucket(args):
     client = storage.Client()
     bucket = client.bucket(args.bucket)
 
@@ -111,15 +130,39 @@ def get_found_blobs_in_bucket(args):
         with open(f"{settings.LOG_DIR}/found_series.json") as f:
             found_series = json.load(f)
     except:
-        # Get expect series
+        # Get founds series
         iterator = client.list_blobs(bucket, delimiter='/', page_size=args.batch)
         found_series = []
         for page in iterator.pages:
-            if page.num_items:
+            # if page.num_items:
+            if len(page.prefixes):
                 series = [aseries.split('/')[0] for aseries in page.prefixes]
                 found_series.extend(series)
         with open(f"{settings.LOG_DIR}/found_series.json", "w") as f:
             json.dump(found_series, f)
+
+    return set(found_series)
+
+
+def get_found_blobs_in_bucket(args, found_series):
+    client = storage.Client()
+    bucket = client.bucket(args.bucket)
+
+    # try:
+    #     # Assume we've already got the list of expected series
+    #     with open(f"{settings.LOG_DIR}/found_series.json") as f:
+    #         found_series = json.load(f)
+    # except:
+    #     # Get founds series
+    #     iterator = client.list_blobs(bucket, delimiter='/', page_size=args.batch)
+    #     found_series = []
+    #     for page in iterator.pages:
+    #         # if page.num_items:
+    #         if len(page.prefixes):
+    #             series = [aseries.split('/')[0] for aseries in page.prefixes]
+    #             found_series.extend(series)
+    #     with open(f"{settings.LOG_DIR}/found_series.json", "w") as f:
+    #         json.dump(found_series, f)
 
     # Get the completed series
     done_series = open(f'{progresslogger.handlers[0].baseFilename}').read().splitlines()
@@ -155,16 +198,57 @@ def get_found_blobs_in_bucket(args):
         print(f'Joining process: {process.name}, {process.is_alive()}')
         process.join()
 
+    # Verify that all series are done
+    # Get the completed series
+    done_series = open(f'{progresslogger.handlers[0].baseFilename}').read().splitlines()
+
+    undone_series = list(set(found_series) - set(done_series))
+    undone_series.sort()
+    if undone_series:
+        errlogger.error("Some series not done:")
+        for series in undone_series:
+            print(series)
+
+    return
+
+
 
 def check_all_instances_mp(args, premerge=False, max_version=settings.CURRENT_VERSION):
-    try:
-        found_blobs = set(open(args.found_blobs).read().splitlines())
-        assert len(found_blobs) > 0
-        progresslogger.info(f'Already have found blobs')
-    except:
+
+    found_series = get_found_series_in_bucket(args)
+    expected_series = get_expected_series_in_bucket(args, max_version)
+
+    if found_series == expected_series:
+        progresslogger.info(f"Bucket {args.bucket} has the correct set of series")
+    else:
+        errlogger.error(f"Bucket {args.bucket} does not have the correct set of series")
+        unexpected_series = list(found_series - expected_series)
+        unfound_series = list(expected_series - found_series)
+        # Release memory
+        del found_series
+        del expected_series
+        if unexpected_series:
+            unexpected_series.sort()
+            errlogger.error(f"Unexpected series in bucket: {len(unexpected_series)}")
+            for series in unexpected_series:
+                errlogger.error(series)
+            with open(f"{settings.LOG_DIR}/unexpected_series.json", "w") as f:
+                json.dump(unexpected_series, f)
+        if unfound_series:
+            unfound_series.sort()
+            errlogger.error(f"Expected series not found in bucket: {len(unfound_series)}")
+            for series in unfound_series:
+                errlogger.error(series)
+            with open(f"{settings.LOG_DIR}/unfound_series.json") as f:
+                json.dump(unfound_series, f)
+
+    found_blobs = set(open(args.found_blobs).read().splitlines())
+    if not found_blobs or args.find_blobs:
         progresslogger.info(f'Getting found blobs')
-        get_found_blobs_in_bucket(args)
+        get_found_blobs_in_bucket(args, found_series)
         found_blobs = set(open(args.found_blobs).read().splitlines())
+    else:
+        progresslogger.info(f'Already have found blobs')
 
     expected_blobs = get_expected_blobs_in_bucket(args, max_version, premerge)
 
