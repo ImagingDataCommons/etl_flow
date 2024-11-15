@@ -13,6 +13,7 @@ def formatForBQ(attrs, lc=False):
   for i in range(len(attrs)):
     headSet=[attrs[i][j] for j in range(len(attrs[i])) if len(attrs[i][j])>0]
     header='_'.join(str(k) for k in headSet)
+    header=header.strip()
     header=header.replace('/','_')
     header=header.replace('-', '_')
     header=header.replace(' ', '_')

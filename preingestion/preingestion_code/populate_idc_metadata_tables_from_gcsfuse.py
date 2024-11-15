@@ -51,7 +51,7 @@ def build_instance(client, args, sess, series, instance_id, hash, size, blob_nam
         series.instances.append(instance)
         progresslogger.info(f'\t\t\t\tInstance {blob_name} added')
     instance.idc_version = args.version
-    instance.gcs_url = f'gs://{args.src_bucket}/{blob_name}'
+    instance.ingestion_url = f'gs://{args.src_bucket}/{blob_name}'
     instance.hash = hash
     instance.size = size
     successlogger.info(blob_name)

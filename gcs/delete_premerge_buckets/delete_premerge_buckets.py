@@ -51,7 +51,7 @@ def preview_deletes(args, client, bucket_data):
 def delete_buckets(args):
     client = storage.Client()
     bucket_data= get_collection_groups()
-    #preview_deletes(args, client, bucket_data)
+    preview_deletes(args, client, bucket_data)
 
     for collection_id in bucket_data:
         if client.bucket(f'idc_v{args.version}_tcia_{collection_id}').exists():
@@ -78,7 +78,8 @@ def delete_buckets(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=settings.CURRENT_VERSION)
+    # parser.add_argument('--version', default=settings.CURRENT_VERSION)
+    parser.add_argument('--version', default=19)
     # parser.add_argument('--prestaging_bucket_prefix', default=[f'idc_v{settings.CURRENT_VERSION}_tcia_', f'idc_v{settings.CURRENT_VERSION}_idc_'], help='Prefix of premerge buckets')
     parser.add_argument('--processes', default=8, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')

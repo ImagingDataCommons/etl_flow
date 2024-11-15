@@ -21,7 +21,7 @@ from utilities.logging_config import successlogger, errlogger, progresslogger
 from utilities.sqlalchemy_helpers import sa_session
 from google.cloud import storage
 
-def validate_original_collection(args, collection_ids):
+def validate_original_collection(args, collection_ids, ignore_if_contains=''):
     client = storage.Client()
     src_bucket = storage.Bucket(client, args.src_bucket)
     with sa_session(echo=False) as sess:
@@ -33,24 +33,17 @@ def validate_original_collection(args, collection_ids):
         for page in iterator.pages:
             if page.num_items:
                 for blob in page:
-                    if not blob.name.endswith(('DICOMDIR', '.txt', 'csv')):
+                    if not blob.name.endswith(('DICOMDIR', '.txt', 'csv')) and blob.size != 0 and \
+                            ('ignore_if_in' not in args or (args.ignore_if_in == '' or args.ignore_if_in not in blob.name)):
                         blobs_in_bucket |= {f'gs://{args.src_bucket}/{blob.name}'}
 
-        # Generate a set of the URLs of blobs in the DB
+        # Generate a set of the URLs of blobs added to the DB
         blobs_in_db = set()
         for collection_id in collection_ids:
-            collection_metadata = sess.query(IDC_Collection.collection_id, IDC_Instance.gcs_url). \
+            collection_metadata = sess.query(IDC_Collection.collection_id, IDC_Instance.ingestion_url). \
                 distinct().join(IDC_Collection.patients).join(IDC_Patient.studies).join(IDC_Study.seriess).join(
-                IDC_Series.instances).filter(IDC_Collection.collection_id == collection_id).all()
-            blobs_in_db |= set(row.gcs_url for row in collection_metadata)
-        # blobs_in_db = set()
-        # for collection_id in collection_ids:
-        #     collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
-        #     for patient in collection.patients:
-        #         for study in patient.studies:
-        #             for series in study.seriess:
-        #                 for instance in series.instances:
-        #                     blobs_in_db |= {instance.gcs_url}
+                IDC_Series.instances).filter(IDC_Collection.collection_id == collection_id).filter(IDC_Instance.idc_version == args.version).all()
+            blobs_in_db |= set(row.ingestion_url for row in collection_metadata)
 
         if blobs_in_bucket != blobs_in_db:
             if blobs_in_bucket - blobs_in_db:

@@ -35,13 +35,10 @@ def gen_blob_table(args):
       se_uuid crdc_series_uuid,
       i_uuid crdc_instance_uuid,
       CONCAT('gs://',
-          IF
-            (i_source='tcia', pub_gcs_tcia_url, pub_gcs_idc_url), '/', se_uuid, '/', i_uuid, '.dcm') gcs_url,
+          pub_gcs_bucket, '/', se_uuid, '/', i_uuid, '.dcm') gcs_url,
       CONCAT('s3://',
-           IF
-            (i_source='tcia', pub_aws_tcia_url, pub_aws_idc_url), '/', se_uuid, '/', i_uuid, '.dcm') aws_url,
-      IF
-          (i_source='tcia', tcia_access, idc_access) access,
+          pub_aws_bucket, '/', se_uuid, '/', i_uuid, '.dcm') aws_url,
+      access,
       source_url,
       source_doi,
       versioned_source_doi,
@@ -55,8 +52,6 @@ def gen_blob_table(args):
       crdc_series_uuid,
       crdc_instance_uuid    
     """
-    # client = bigquery.Client(project=args.dst_project)
-    # result=query_BQ(client, args.trg_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
 
     client = bigquery.Client(project=args.dst_project)
     result = delete_BQ_Table(client, args.dst_project, args.trg_bqdataset_name, args.bqtable_name)

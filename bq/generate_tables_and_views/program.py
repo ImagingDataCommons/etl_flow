@@ -26,11 +26,13 @@ SCHEMA = [
 
 
 def gen_table(args):
-    # Get a list of the program of each IDC sourced collectiuon
+    # Get a list of the program of each IDC sourced collection
     client = bigquery.Client()
     query = f'''
     SELECT collection_id, program
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_metadata_idc_source`'''
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_metadata_idc_source`
+    WHERE idc_only = 'True'
+'''
     idc_programs = [row.values() for row in client.query(query)]
 
     # Get a list of the program of each TCIA sourced collection

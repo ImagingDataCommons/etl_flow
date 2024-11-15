@@ -69,6 +69,7 @@ errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
 errlogger.addHandler(err_fh)
 err_fh.setFormatter(errformatter)
 
+# warninglogger = logging.getLogger('warning.err')
 warninglogger = logging.getLogger('py.warnings')
 warninglogger.setLevel(WARNING)
 for hdlr in warninglogger.handlers[:]:

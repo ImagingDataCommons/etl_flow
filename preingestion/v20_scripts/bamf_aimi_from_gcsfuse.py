@@ -38,12 +38,13 @@ if __name__ == '__main__':
     parser.add_argument('--src_bucket', default='bamf_aimi_annotations', help='Source bucket containing instances')
     parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/preeingestion_gcsfuse_mount_point', help='Directory on which to mount the bucket.\
                 The script will create this directory if necessary.')
-    parser.add_argument('--subdir', default='aimi-annotations-v2', help="Subdirectory of mount_point at which to start walking directory")
+    # parser.add_argument('--subdir', default='10%2E5281%2Fzenodo%2E13244892', help="Subdirectory of mount_point at which to start walking directory")
+    parser.add_argument('--subdir', default='10%2E5281%2Fzenodo%2E13244892', help="Subdirectory of mount_point at which to start walking directory")
     parser.add_argument('--collection_id', default='', help='collection_name of the collection or ID of analysis result to which instances belong.')
     parser.add_argument('--source_doi', default='10.5281/zenodo.8345959', help='Unversioned DOI of this collection')
-    parser.add_argument('--versioned_source_doi', default='10.5281/zenodo.12734644', help='Versioned DOI of this collection')
-    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.8345959',\
+    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.8345959', \
                         help='Info page URL')
+    parser.add_argument('--versioned_source_doi', default='10.5281/zenodo.13244892', help='Versioned DOI of this collection')
     parser.add_argument('--license', default = {"license_url": 'https://creativecommons.org/licenses/by/4.0/',\
             "license_long_name": "Creative Commons Attribution 4.0 International License", \
             "license_short_name": "CC BY 4.0"}, help="(Sub-)Collection license")

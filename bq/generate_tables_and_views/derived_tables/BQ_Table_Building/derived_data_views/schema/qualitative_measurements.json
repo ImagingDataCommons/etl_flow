@@ -27,12 +27,6 @@
         "type": "STRING"
       },
       {
-        "description": "SeriesDescription of the Structured Report that was used to extract the measurement",  
-        "mode": "NULLABLE",
-        "name": "SeriesDescription",
-        "type": "STRING"
-      },
-      {
         "description": "Measurement group number corresponding to the measurement groups within the TID 1500 report, starting from 0.",
         "mode": "NULLABLE",
         "name": "measurementGroup_number",
@@ -77,13 +71,13 @@
             "type": "STRING"
           },
           {
-                  "description": "TBD",
+            "description": "TBD",
             "mode": "NULLABLE",
             "name": "CodingSchemeDesignator",
             "type": "STRING"
           },
           {
-                  "description": "TBD",
+            "description": "TBD",
             "mode": "NULLABLE",
             "name": "CodeMeaning",
             "type": "STRING"
@@ -97,25 +91,25 @@
       {
         "fields": [
           {
-                "description": "TBD",
+            "description": "TBD",
             "mode": "NULLABLE",
             "name": "CodeValue",
             "type": "STRING"
           },
           {
-                  "description": "TBD",
+            "description": "TBD",
             "mode": "NULLABLE",
             "name": "CodingSchemeDesignator",
             "type": "STRING"
           },
           {
-                  "description": "TBD",
+            "description": "TBD",
             "mode": "NULLABLE",
             "name": "CodingSchemeVersion",
             "type": "STRING"
           },
           {
-                  "description": "TBD",
+            "description": "TBD",
             "mode": "NULLABLE",
             "name": "CodeMeaning",
             "type": "STRING"
@@ -129,25 +123,25 @@
       {
         "fields": [
           {
-                "description": "TBD",
+            "description": "TBD",
             "mode": "NULLABLE",
             "name": "CodeValue",
             "type": "STRING"
           },
           {
-                  "description": "TBD",
+            "description": "TBD",
             "mode": "NULLABLE",
             "name": "CodingSchemeDesignator",
             "type": "STRING"
           },
           {
-                  "description": "TBD",
+            "description": "TBD",
             "mode": "NULLABLE",
             "name": "CodingSchemeVersion",
             "type": "STRING"
           },
           {
-                  "description": "TBD",
+            "description": "TBD",
             "mode": "NULLABLE",
             "name": "CodeMeaning",
             "type": "STRING"
@@ -161,25 +155,25 @@
       {
         "fields": [
           {
-                "description": "TBD",
+            "description": "TBD",
             "mode": "NULLABLE",
             "name": "CodeValue",
             "type": "STRING"
           },
           {
-                  "description": "TBD",
+            "description": "TBD",
             "mode": "NULLABLE",
             "name": "CodingSchemeDesignator",
             "type": "STRING"
           },
           {
-                  "description": "TBD",
+            "description": "TBD",
             "mode": "NULLABLE",
             "name": "CodingSchemeVersion",
             "type": "STRING"
           },
           {
-                  "description": "TBD",
+            "description": "TBD",
             "mode": "NULLABLE",
             "name": "CodeMeaning",
             "type": "STRING"

@@ -10,7 +10,7 @@ settings.configure(etl_settings)
 assert settings.configured
 from utilities.logging_config import successlogger,progresslogger, warninglogger, errlogger
 import logging
-progresslogger.setLevel(logging.DEBUG)
+progresslogger.setLevel(logging.INFO)
 
 DEFAULT_PROJECT ='idc-dev-etl'
 DEFAULT_SUFFIX="clinical"
@@ -158,6 +158,7 @@ def copy_table(dataset_id, table_name, lst, src_table_id, id_col, intIds):
   if table_name is None:
     table_name="cptac_clinical"
   #src_table_id = CPTAC_SRC
+  progresslogger.info(f'Copying {table_name}')
   client = bigquery.Client(project=DEFAULT_PROJECT)
   src_table = client.get_table(src_table_id)
   nschema=[bigquery.SchemaField("dicom_patient_id","STRING"),
@@ -224,6 +225,7 @@ def addTables(proj_id, dataset_id, version,program,collection,types,table_srcs, 
   dataset_id = proj_id + "." + dataset_id
   dataset_id_lst = proj_id + "." + dataset_id_lst
   for collec in collec_id_mp:
+    progresslogger.info(f'collec: {collec}')
     for i in range(len(table_srcs)):
       table_src=table_srcs[i]
       tbltype=types[i]

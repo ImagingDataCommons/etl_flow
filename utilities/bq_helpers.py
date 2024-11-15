@@ -100,7 +100,7 @@ def load_BQ_from_json(client, project, dataset, table, json_rows, aschema=None, 
     job_config = bigquery.LoadJobConfig()
     job_config.source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
     job_config.write_disposition = write_disposition
-    job_config.destination_table_description = table_description
+    # job_config.destination_table_description = table_description
     if aschema:
         job_config.schema = aschema
     else:
@@ -114,6 +114,9 @@ def load_BQ_from_json(client, project, dataset, table, json_rows, aschema=None, 
             print('Waiting for job done. Status: {}'.format(job.state))
             time.sleep(15)
         result = job.result()
+        table = client.get_table(table_id)
+        table.description = table_description
+        table = client.update_table(table, ["description"])
     except Exception as exc:
         print("Error loading table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
               file=sys.stdout, flush=True)

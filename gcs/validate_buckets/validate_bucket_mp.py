@@ -36,10 +36,10 @@ def get_expected_series_in_bucket(args, max_version):
       SELECT distinct se_uuid 
       FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
       WHERE ((i_source='tcia' AND tcia_access='Public') OR (i_source='idc' AND idc_access='Public')) 
-      {"" if args.dev_or_pub=="dev" else "AND se_excluded=FALSE"} AND i_redacted=FALSE
+      {"" if args.dev_or_pub=="dev" else "AND i_excluded=FALSE"} AND i_redacted=FALSE
       AND se_rev_idc_version <= {max_version}
-      AND ((i_source='tcia' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_tcia_url="{args.bucket}")
-      OR (i_source='idc' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_idc_url="{args.bucket}"))
+      AND ((i_source='tcia' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_tcia_url="{args.expected_bucket}")
+      OR (i_source='idc' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_idc_url="{args.expected_bucket}"))
       ORDER BY se_uuid
   """
 
@@ -56,8 +56,8 @@ def get_expected_blobs_in_bucket(args, max_version, premerge=False):
       WHERE ((i_source='tcia' AND tcia_access='Public') OR (i_source='idc' AND idc_access='Public')) 
       {"" if args.dev_or_pub=="dev" else "AND i_excluded=FALSE"} AND i_redacted=FALSE
       AND se_rev_idc_version <= {max_version}
-      AND ((i_source='tcia' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_tcia_url="{args.bucket}")
-      OR (i_source='idc' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_idc_url="{args.bucket}"))
+      AND ((i_source='tcia' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_tcia_url="{args.expected_bucket}")
+      OR (i_source='idc' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_idc_url="{args.expected_bucket}"))
 
       ORDER BY blob_name
   """

@@ -46,30 +46,25 @@ from queue import Empty
 
 from subprocess import run
 
-# PATIENT_ID = 0
-# STUDY_INSTANCE_UID = 1
-# SERIES_INSTANCE_UID = 2
-# SOP_INSTANCE_UID = 3
-# GCS_URL = 4
-
-
 def build_instance(args, bucket, series, instance_data):
     instance_id = instance_data["SOPInstanceUID"]
-    url = instance_data["gcs_url"]
+    url = instance_data["ingestion_url"]
     if url.startswith('gs://'):
         # A full GCS URL
         blob_name = url.split('/',3)[-1]
     else:
         # url is relative to the bucket.
         if url.startswith('./'):
-            url = url.split('/',1)[-1]
+            blob_name = url.split('/',1)[-1]
         # if args.subdir:
         #     # If relative to a subdirectory of the bucket, add it
         #     blob_name = f'{args.subdir}/{url}'
         else:
             blob_name = f'{url}'
+        if args.subdir:
+            blob_name = f'{args.subdir}/{blob_name}'
 
-    gcs_url = f'gs://{bucket.name}/{blob_name}'
+    ingestion_url = f'gs://{bucket.name}/{blob_name}'
     try:
         # Get the record of this instance if it exists
         instance = next(instance for instance in series.instances if instance.sop_instance_uid == instance_id)
@@ -99,11 +94,11 @@ def build_instance(args, bucket, series, instance_data):
         try:
             # Copy the blob to disk
             # if args.subdir:
-            #     gcs_url = f"gs://{bucket.name}/{args.subdir}/{blob_name}"
+            #     ingestion_url = f"gs://{bucket.name}/{args.subdir}/{blob_name}"
             # else:
-            #     gcs_url = f"gs://{bucket.name}/{blob_name}"
+            #     ingestion_url = f"gs://{bucket.name}/{blob_name}"
 
-            src = gcs_url
+            src = ingestion_url
 
             dst = f'{args.tmp_directory}/{blob_name}'
             result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
@@ -118,21 +113,11 @@ def build_instance(args, bucket, series, instance_data):
 
     instance.size = blob.size
     instance.idc_version = args.version
-    # if instance_data["gcs_url"].startswith('gs://'):
-    #     # A full GCS URL
-    #     instance.gcs_url = instance_data["gcs_url"]
-    # else:
-    #     # gcs_url is relative to the bucket.
-    #     if args.subdir:
-    #         # If relative to a subdirectory of the bucket
-    #         instance.gcs_url = f'gs://{args.bucket_name}/{args.subdir}/{instance_data["gcs_url"]}'
-    #     else:
-    #         instance.gcs_url = f'gs://{args.bucket_name}/{instance_data["gcs_url"]}'
-    instance.gcs_url = gcs_url
-    successlogger.info(gcs_url)
+    instance.ingestion_url = ingestion_url
+    successlogger.info(instance_id)
 
 
-def build_series(args, bucket, study, series_data):
+def build_series(args, bucket, study, series_data, source_doi, versioned_source_doi):
     # study_id is the  for all rows`
     series_id = series_data.iloc[0]['SeriesInstanceUID']
     try:
@@ -156,9 +141,9 @@ def build_series(args, bucket, study, series_data):
     series.license_long_name = args.license['license_long_name']
     series.license_short_name = args.license['license_short_name']
     series.third_party = args.third_party
-    series.source_doi = args.source_doi.lower()
-    series.source_url = args.source_url.lower()
-    # series.versioned_source_doi = args.verioned_source_doi.lower()
+    series.source_doi = source_doi.lower()
+    series.source_url = f'https://doi.org/{source_doi.lower()}'
+    series.versioned_source_doi = versioned_source_doi.lower()
     # At this point, each row in series data corresponds to an instance of the series
     for _,instance_data in series_data.iterrows():
         try:
@@ -170,7 +155,7 @@ def build_series(args, bucket, study, series_data):
     return
 
 
-def build_study(args, bucket, patient, study_data):
+def build_study(args, bucket, patient, study_data, source_doi, versioned_source_doi):
     # study_id is the second column and same for all rows`
     study_id = study_data.iloc[0]["StudyInstanceUID"]
     try:
@@ -193,7 +178,7 @@ def build_study(args, bucket, patient, study_data):
     for series_id in series_ids:
         series_data = study_data[study_data["SeriesInstanceUID"] == series_id]
         try:
-            build_series(args, bucket, study, series_data)
+            build_series(args, bucket, study, series_data, source_doi, versioned_source_doi)
         except Exception as exc:
             raise
     hashes = [series.hash for series in study.seriess ]
@@ -201,7 +186,7 @@ def build_study(args, bucket, patient, study_data):
     return
 
 
-def build_patient(args, bucket, collection, patient_data):
+def build_patient(args, bucket, collection, patient_data, source_doi, versioned_source_doi):
     # patient_id is the first column and same for all rows`
     patient_id = patient_data.iloc[0]['patientID']
     try:
@@ -223,7 +208,7 @@ def build_patient(args, bucket, collection, patient_data):
     for study_id in study_ids:
         study_data = patient_data[patient_data["StudyInstanceUID"] == study_id]
         try:
-            build_study(args, bucket, patient, study_data)
+            build_study(args, bucket, patient, study_data, source_doi, versioned_source_doi)
         except Exception as exc:
             raise
     hashes = [study.hash for study in patient.studies ]
@@ -232,7 +217,7 @@ def build_patient(args, bucket, collection, patient_data):
 
 
 PATIENT_TRIES=5
-def worker(input, output, args, collection_id):
+def worker(input, output, args, collection_id, source_doi, versioned_source_doi):
     with sa_session() as sess:
         client = storage.Client()
         bucket = client.bucket(args.src_bucket)
@@ -244,7 +229,7 @@ def worker(input, output, args, collection_id):
                 try:
                     progresslogger.info(f'Building patient {index}')
                     try:
-                        build_patient(args, bucket, collection, patient_data)
+                        build_patient(args, bucket, collection, patient_data, source_doi, versioned_source_doi)
                     except Exception as exc:
                         raise
                     sess.commit()
@@ -259,35 +244,36 @@ def worker(input, output, args, collection_id):
                 errlogger.error("p%s, Failed to process patient: %s", args.pid, patient_data.iloc[0]["patientID"])
                 sess.rollback()
 
-def build_collection(args, sess, collection_id):
+def build_collections(args, sess, sep=',', source_dois=None, versioned_source_dois=None):
     client = storage.Client()
 
-    # Get a list of all the 'done' instance. These are presumed to be instances having the corresponding
-    # source_doi and which have the current version
-    dones = sess.query(IDC_Series, IDC_Instance.gcs_url).join(IDC_Instance.seriess). \
-        filter(IDC_Series.source_doi == args.source_doi).filter(IDC_Instance.idc_version == args.version).all()
-    # Strip the bucket and any subdir from the gcs_url in dones:
-    done_gcs_urls = [row.gcs_url.replace(f'gs://{args.src_bucket}/', '') for row in dones]
-    # if args.subdir:
-    #     done_gcs_urls = [row.replace(f'{args.subdir}/', '') for row in done_gcs_urls]
-    done_data = pd.DataFrame(done_gcs_urls, columns=['gcs_url'])
-
+    dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
     # Read the manifest into a data frame
-    data = pd.read_csv(args.manifest, sep=',', header=0)
+    data = pd.read_csv(args.manifest, sep=sep, header=0)
     # Rename columns in case they are misnamed:
     data = data.rename( columns = {
-        "Filename": "gcs_url",
+        "Filename": "ingestion_url",
+        "Clinical Trial Protocol ID": "collection_id",
         "Patient ID": "patientID",
         "Study Instance UID": "StudyInstanceUID",
         "Series Instance UID": "SeriesInstanceUID",
         "SOP Instance UID": "SOPInstanceUID"
         }
     )
+    # Remove whitespace
+    data = data.applymap(lambda x: x.strip())
 
-    undone_data = pd.merge(data, done_data, how="left", on=['gcs_url'], indicator=True )
+    done_data = pd.DataFrame(dones, columns=['SOPInstanceUID'])
+    undone_data = pd.merge(data, done_data, how="left", on=['SOPInstanceUID'], indicator=True )
     undone_data = undone_data[undone_data['_merge'] == 'left_only']
 
-    collection_ids = sorted(undone_data['collection_id'].unique())
+    if 'collection_id' in args and args.collection_id:
+        collection_ids =[args.collection_id]
+    elif 'collection_ids' in args and args.collection_ids:
+        collection_ids = args.collection_ids
+    else:
+        breakpoint()
+        collection_ids = sorted(undone_data['collection_id'].unique())
     for collection_id in collection_ids:
         # Create the collection if it is not yet in the DB
         collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
@@ -302,9 +288,14 @@ def build_collection(args, sess, collection_id):
         else:
             progresslogger.info(f'Collection {collection_id} exists')
 
-        # A df of data for just this collection
-        collection_data = undone_data[undone_data['collection_id'] == collection_id]
 
+        if 'collection_id' in args and args.collection_id:
+            # If there is a single collection then all patients are in that collection
+            # A df of data for just this collection
+            collection_data = undone_data
+        else:
+            # A df of data for just this collection
+            collection_data = undone_data[undone_data['collection_id'] == collection_id]
         all_patient_ids = sorted(data["patientID"].unique())
         # All patients in the collection
         patient_ids = sorted(collection_data['patientID'].unique())
@@ -319,7 +310,9 @@ def build_collection(args, sess, collection_id):
         for process in range(min(args.processes, len(patient_ids))):
             args.pid = process+1
             processes.append(
-                Process(target=worker, args=(task_queue, done_queue, args, collection_id)))
+                Process(target=worker, args=(task_queue, done_queue, args, collection_id,
+                        source_dois[collection_id] if source_dois is not None else args.source_doi,
+                        versioned_source_dois[collection_id] if versioned_source_dois is not None else args.versioned_source_doi)))
             processes[-1].start()
 
         args.pid = 0
@@ -362,21 +355,20 @@ def build_collection(args, sess, collection_id):
     return
 
 
-def prebuild_from_manifest(args):
+def prebuild_from_manifest(args, sep=',', source_dois=None, versioned_source_dois=None):
     client = storage.Client()
     src_bucket = storage.Bucket(client, args.src_bucket)
 
-    # sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'
-    # sql_engine = create_engine('bigquery://idc-dev-etl/idc_v18_dev' '?'  'dry_run=true', echo=True)
-    #
     # with Session(sql_engine) as sess:
     with sa_session(echo=False) as sess:
-        build_collection(args, sess, args.collection_id)
+        build_collections(args, sess, sep=sep, source_dois=source_dois, versioned_source_dois=versioned_source_dois)
         sess.commit()
 
-
     if args.validate:
-        collection_ids = [args.collection_id]
+        if 'collection_id' in args and args.collection_id:
+            collection_ids = [args.collection_id]
+        elif 'collection_ids' in args and args.collection_ids:
+            collection_ids = args.collection_ids
         if args.third_party:
             if validate_analysis_result(args) == -1:
                 exit -1

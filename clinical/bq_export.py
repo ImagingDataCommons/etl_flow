@@ -93,7 +93,10 @@ def load_meta_summary(project, dataset, cptacColRows,filenm):
   table = bigquery.Table(table_id)
   job_config = bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON, write_disposition=bigquery.WriteDisposition.WRITE_APPEND, schema=META_SUM_SCHEMA)
 
-  f = open(filenm, "r")
+  try:
+      f = open(filenm, "r")
+  except Exception as exc:
+      pass
   metaD = json.load(f)
   f.close()
   metaD.extend(cptacColRows)
@@ -223,7 +226,7 @@ def checkData():
       errlogger.error("for table "+tableNm+ " "+str(numExt)+" ids not in dicom ")
 
 
-def load_clin_files(project, dataset,cpath,srcfiles):
+def load_clin_files(project, dataset, cpath, srcfiles):
   error_sets=[]  
   client = bigquery.Client(project=project)
   ofiles=[]
@@ -297,13 +300,15 @@ def load_all(project,dataset,version,last_dataset, last_version):
 
   create_meta_summary(project, dataset)
   create_meta_table(project, dataset)
-  filenm = "./clinical/json/clin_" + CURRENT_VERSION + "/" + CURRENT_VERSION + "_table_metadata.json"
+  filenm = "./json/clin_" + CURRENT_VERSION + "/" + CURRENT_VERSION + "_table_metadata.json"
   load_meta_summary(project, dataset, bqSrcMetaTbl,filenm)
 
-  filenm = "./clinical/json/clin_" + CURRENT_VERSION + "/" + CURRENT_VERSION + "_column_metadata.json"
+  # filenm = "./clinical/json/clin_" + CURRENT_VERSION + "/" + CURRENT_VERSION + "_column_metadata.json"
+  filenm = "./json/clin_" + CURRENT_VERSION + "/" + CURRENT_VERSION + "_column_metadata.json"
   load_meta(project,dataset,filenm,bqSrcMetaCol)
 
-  dirnm="./clinical/json/clin_"+CURRENT_VERSION
+  # dirnm="./clinical/json/clin_"+CURRENT_VERSION
+  dirnm="./json/clin_"+CURRENT_VERSION
   load_clin_files(project,dataset,dirnm,None)
 
 

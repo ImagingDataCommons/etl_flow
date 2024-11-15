@@ -22,7 +22,7 @@ from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json, delete_BQ_Table
 from bq.generate_tables_and_views.original_collections_metadata.schema import data_collections_metadata_schema
 from utilities.tcia_helpers import get_all_tcia_metadata
-from utilities.logging_config import errlogger
+from utilities.logging_config import progresslogger, errlogger
 from python_settings import settings
 import requests
 
@@ -131,13 +131,10 @@ def get_original_collections_metadata_idc_source(client, args):
                 Status = row['Status'],
                 Updated = row['Updated'] if row['Updated'] != 'NA' else None,
                 # Location = row['Location'],
-                DOI = row['source_doi'],
-                URL = row['source_url'],
-                CancerType = row['CancerType'],
-                Location =  row['Location']
-                # idc_webapp_collection_id = row['collection_name'].lower().replace('-','_').replace(' ','_'),
-                # tcia_api_collection_id = row['collection_name'],
-                # tcia_wiki_collection_id = ''
+                # DOI = row['source_doi'],
+                # URL = row['source_url'],
+                # CancerType = row['CancerType'],
+                # Location =  row['Location']
             )
         else:
             idc_tcia_metadata[row['collection_name']] = dict(
@@ -162,13 +159,10 @@ def get_original_collections_metadata_idc_source(client, args):
                 Status=row['Status'],
                 Updated=row['Updated'] if row['Updated'] != 'NA' else None,
                 # Location = row['Location'],
-                DOI=row['source_doi'],
-                URL=row['source_url'],
-                CancerType=row['CancerType'],
-                Location=row['Location']
-            # idc_webapp_collection_id = row['collection_name'].lower().replace('-','_').replace(' ','_'),
-            # tcia_api_collection_id = row['collection_name'],
-            # tcia_wiki_collection_id = ''
+                # DOI=row['source_doi'],
+                # URL=row['source_url'],
+                # CancerType=row['CancerType'],
+                # Location=row['Location']
             )
 
     return (idc_only_metadata, idc_tcia_metadata)
@@ -241,15 +235,12 @@ def get_original_collections_metadata_tcia_source(client, args, idc_collections)
                     if isinstance(collection_metadata['supporting_data'], list) else '',
                 Status=collection_metadata['collection_status'],
                 Updated=collection_metadata['date_updated'].split('T')[0],
-                DOI=collection_metadata['collection_doi'].lower(),
-                URL=f"https://doi.org/{collection_metadata['collection_doi'].lower()}",
-                CancerType=", ".join(collection_metadata['cancer_types']) \
-                    if isinstance(collection_metadata['cancer_types'], list) else '',
-                Location=", ".join(collection_metadata['cancer_locations']) \
-                    if isinstance(collection_metadata['cancer_locations'], list) else '',
-                # idc_webapp_collection_id=collection_id,
-                # tcia_api_collection_id=collection_name,
-                # tcia_wiki_collection_id=collection_metadata['collection_browse_title']
+                # DOI=collection_metadata['collection_doi'].lower(),
+                # URL=f"https://doi.org/{collection_metadata['collection_doi'].lower()}",
+                # CancerType=", ".join(collection_metadata['cancer_types']) \
+                #     if isinstance(collection_metadata['cancer_types'], list) else '',
+                # Location=", ".join(collection_metadata['cancer_locations']) \
+                #     if isinstance(collection_metadata['cancer_locations'], list) else '',
             )
         except Exception as exc:
             print(exc)
@@ -314,7 +305,6 @@ def get_collection_metadata(client, args):
 
 
 
-
     # collection_metadata = merge_metadata(tcia_collection_metadata, idc_collection_metadata)
     return collection_metadata
 
@@ -336,6 +326,7 @@ def add_descriptions(client, args, collection_metadata):
         except Exception as exc:
             errlogger.error(f'No description for {collection}: {exc}')
         # collection_metadata[collection]['Description'] = ""
+    progresslogger.info('Added descriptions')
     return collection_metadata
 
 
@@ -370,6 +361,7 @@ def add_licenses(client, doi, collection_metadata):
             except Exception as exc:
                 errlogger.error(f'No license for {collection}, {source["source_url"]}: {exc}')
                 source["License"] = {"license_url": "", "license_long_name": "", "license_short_name": ""}
+    progresslogger.info('Added licenses')
     return collection_metadata
 
 def add_citations(collection_metadata):
@@ -385,6 +377,7 @@ def add_citations(collection_metadata):
                 citation = source['source_url']
             source['Citation'] = citation
 
+    progresslogger.info('Added citations')
     return collection_metadata
 
 # Get the set of modalities per collection for each of TCIA and IDC.
@@ -413,6 +406,7 @@ def add_modalities(client, collection_metadata):
                 source['ImageTypes'] = modalities[collection_name][source['source_url'].lower()]
             except:
                 errlogger.error(f'No modality for {collection_name}, {source["source_url"].lower()}')
+    progresslogger.info('Added modalities')
     return collection_metadata
 
 
@@ -428,6 +422,7 @@ def add_updates(client,collection_metadata):
     for collection_name in collection_metadata:
         collection_metadata[collection_name]['Updated'] = timestamps[collection_name]
 
+    progresslogger.info('Added updates')
     return collection_metadata
 
 
@@ -436,12 +431,14 @@ def build_metadata(client, args):
     collection_metadata = get_collection_metadata(client, args)
 
     # Add additional metadata that we get separately
+    collection_metadata = add_licenses(client, args, collection_metadata)
+    collection_metadata = add_descriptions(client, args, collection_metadata)
     collection_metadata = add_updates(client, collection_metadata)
     collection_metadata = add_citations(collection_metadata)
     collection_metadata = add_case_counts(client, args, collection_metadata)
     collection_metadata = add_programs(client, args, collection_metadata)
-    collection_metadata = add_descriptions(client, args, collection_metadata)
-    collection_metadata = add_licenses(client, args, collection_metadata)
+    # collection_metadata = add_descriptions(client, args, collection_metadata)
+    # collection_metadata = add_licenses(client, args, collection_metadata)
     collection_metadata = add_modalities(client, collection_metadata)
     # collection_metadata = add_image_modalities(client, args, collection_metadata)
 
@@ -453,8 +450,13 @@ def build_metadata(client, args):
 def gen_collections_table(args):
     BQ_client = bigquery.Client(project=settings.DEV_PROJECT)
 
-    metadata = build_metadata(BQ_client, args)
-
+    if args.use_cached_metadata:
+        with open(args.cached_metadata_file) as f:
+            metadata = json.load(f)
+    else:
+        metadata = build_metadata(BQ_client, args)
+        with open(args.cached_metadata_file, 'w') as f:
+            json.dump(metadata, f)
     metadata_json = '\n'.join([json.dumps(row) for row in
                         sorted(metadata, key=lambda d: d['collection_name'])])
     try:

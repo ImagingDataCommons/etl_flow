@@ -25,42 +25,36 @@
 
 import sys
 import argparse
-import pathlib
-import subprocess
 
 from python_settings import settings
-from preingestion.preingestion_code.populate_idc_metadata_tables_from_gcsfuse import prebuild_from_gcsfuse
+from preingestion.preingestion_code.populate_idc_metadata_tables_from_manifest import prebuild_from_manifest
 from google.cloud import storage
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--processes', default=1)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--src_bucket', default='bamf_aimi_annotations', help='Source bucket containing instances')
-    parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/preeingestion_gcsfuse_mount_point', help='Directory on which to mount the bucket.\
-                The script will create this directory if necessary.')
-    parser.add_argument('--subdir', default='aimi-annotations-v2', help="Subdirectory of mount_point at which to start walking directory")
-    parser.add_argument('--collection_id', default='', help='collection_name of the collection or ID of analysis result to which instances belong.')
-    parser.add_argument('--source_doi', default='10.5281/zenodo.8345959', help='Unversioned DOI of this collection')
-    parser.add_argument('--versioned_source_doi', default='10.5281/zenodo.12734644', help='Versioned DOI of this collection')
-    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.8345959',\
-                        help='Info page URL')
+    parser.add_argument('--tmp_directory', default='/mnt/disks/idc-etl/tmp')
+    parser.add_argument('--src_bucket', default='ccdi_mci_pathology', help='Source bucket containing instances')
+    parser.add_argument('--subdir', default='idc-conversion-outputs-mci_round2', help="Subdirectory of mount_point at which to start walking directory")
+    # parser.add_argument('--manifest', default='gs://gtex_pathology/v1/identifiers.txt', help='gcs URL of a manifest')
+    parser.add_argument('--manifest', default='gs://ccdi_mci_pathology/idc-conversion-outputs-mci_round2/identifiers.txt', help='gcs URL of a manifest')
     parser.add_argument('--license', default = {"license_url": 'https://creativecommons.org/licenses/by/4.0/',\
             "license_long_name": "Creative Commons Attribution 4.0 International License", \
             "license_short_name": "CC BY 4.0"}, help="(Sub-)Collection license")
-    parser.add_argument('--third_party', type=bool, default=True, help='True if an analysis result')
+    parser.add_argument('--third_party', type=bool, default=False, help='True if an analysis result')
     parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
+    parser.add_argument('--ignore_if_in', default='Ineligible', help='Ignore blob name during valadation if in blob name')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()
 
-    try:
-        # gcsfuse mount the bucket
-        pathlib.Path(args.mount_point).mkdir( exist_ok=True)
-        subprocess.run(['gcsfuse', '--implicit-dirs', args.src_bucket, args.mount_point])
-        prebuild_from_gcsfuse(args)
-    finally:
-        # Always unmount
-        subprocess.run(['fusermount', '-u', args.mount_point])
+    source_dois = {'CCDI-MCI': '10.5281/zenodo.11099086'}
+    versioned_source_dois = {'CCDI-MCI': '10.5281/zenodo.14009669'}
+    args.collection_id = 'CCDI-MCI'
+
+    prebuild_from_manifest(args, sep='\t', source_dois=source_dois, versioned_source_dois=versioned_source_dois)
+
 

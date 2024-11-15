@@ -91,14 +91,22 @@ def remove_series(client, args, sess, study, series):
 
 def remove_study(client, args, sess, patient, study):
     try:
-        index = 0
-        while index < len(study.seriess):
-            series = study.seriess[index]
+        seriess = sess.query(IDC_Series).distinct().join(IDC_Study.seriess).\
+            filter(IDC_Series.study_instance_uid == study.study_instance_uid). \
+            filter(IDC_Series.source_url == args.source_url).all()
+        if len(seriess) != len(study.seriess):
+            pass
+        for series in seriess:
             remove_series(client, args, sess, study, series)
-            # if index > 0 and len(study.seriess) >= index and series == study.seriess[index]:
-            if series in study.seriess:
-                # We didn't remove the series
-                index += 1
+
+        # index = 0
+        # while index < len(study.seriess):
+        #     series = study.seriess[index]
+        #     remove_series(client, args, sess, study, series)
+        #     # if index > 0 and len(study.seriess) >= index and series == study.seriess[index]:
+        #     if series in study.seriess:
+        #         # We didn't remove the series
+        #         index += 1
         # If the study is empty now, remove it from patient and delete it
         if len(study.seriess) == 0:
             patient.studies.remove(study)
@@ -130,13 +138,20 @@ def remove_study(client, args, sess, patient, study):
 def remove_patient(client, args, sess, collection, patient):
     try:
         index = 0
-        while index < len(patient.studies):
-            study = patient.studies[index]
-            remove_study(client,args, sess, patient, study)
-            if study in patient.studies:
-            # if index > 0 and len(patient.studies) >= index and study == patient.studies[index]:
-                # We didn't remove the study
-                index += 1
+        studies = sess.query(IDC_Study).distinct().join(IDC_Patient.studies).join(IDC_Study.seriess).\
+            filter(IDC_Study.submitter_case_id == patient.submitter_case_id). \
+            filter(IDC_Series.source_url == args.source_url).all()
+        if len(studies) != len(patient.studies):
+            pass
+        for study in studies:
+            remove_study(client, args, sess, patient, study)
+        # while index < len(patient.studies):
+        #     study = patient.studies[index]
+        #     remove_study(client,args, sess, patient, study)
+        #     if study in patient.studies:
+        #     # if index > 0 and len(patient.studies) >= index and study == patient.studies[index]:
+        #         # We didn't remove the study
+        #         index += 1
         # If the patient is empty, remove it from collection and delete it
         if len(patient.studies) == 0:
             collection.patients.remove(patient)
@@ -172,6 +187,7 @@ def remove_collection(client, args, sess, collection):
 
         if len(collection.patients) == 0:
             sess.delete(collection)
+            sess.commit()
             progresslogger.info('Collection %s deleted', collection.collection_id)
         else:
             progresslogger.info('Collection %s retained', collection.collection_id)

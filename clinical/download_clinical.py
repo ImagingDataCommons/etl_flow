@@ -14,6 +14,7 @@ assert settings.configured
 
 if __name__=="__main__":
   download_dir='./downloads/downloads_'+str(settings.CURRENT_VERSION)
+  print(download_dir)
   shutil.rmtree(download_dir, ignore_errors=True)
   mkdir(download_dir)
 

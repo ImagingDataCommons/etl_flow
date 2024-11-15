@@ -34,7 +34,7 @@ import subprocess
 def get_expected_blobs_in_bucket(args):
     client = bigquery.Client()
     query = f"""
-      SELECT distinct concat(se_uuid,'/', i_uuid, '.dcm') as blob_name, i.gcs_url
+      SELECT distinct concat(se_uuid,'/', i_uuid, '.dcm') as blob_name, i.ingestion_url
       FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_public_and_current` ajc
       LEFT JOIN `idc-dev-etl.idc_v{args.version}_dev.idc_instance` i 
       ON ajc.sop_instance_uid = i.sop_instance_uid
@@ -49,7 +49,7 @@ def get_expected_blobs_in_bucket(args):
        pass
 
     # blob_names = set(result.to_dataframe()['blob_name'].to_list())
-    blob_data = {row['blob_name']: row['gcs_url'] for index, row in result.to_dataframe().iterrows()}
+    blob_data = {row['blob_name']: row['ingestion_url'] for index, row in result.to_dataframe().iterrows()}
     return blob_data
 
 
