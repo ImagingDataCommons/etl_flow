@@ -50,6 +50,11 @@ def load_spreadsheet(args, schema=None):
     # Convert HTML to Markdown and delete empty lines
     for i, row in df.iterrows():
         description = markdownify.markdownify(df.at[i, 'description'])
+        # Clean up hyperlinks
+        description = description.replace('[','').replace(']',' ')
+        # More clean up
+        description = description.replace('**','')
+
         lines = []
         for line in description.split('\n'):
             if line:
@@ -62,12 +67,16 @@ def load_spreadsheet(args, schema=None):
     # Define the BigQuery table reference
     table_ref = client.dataset(args.bq_dataset_id, project=args.project).table(args.table_id)
 
+    client.delete_table(table_ref, not_found_ok=True )
+    table = bigquery.Table(table_ref, schema=schema)
+    client.create_table(table)
+
     # Create the BigQuery table if it doesn't exist
-    try:
-        client.get_table(table_ref)
-    except:
-        table = bigquery.Table(table_ref, schema=schema)
-        client.create_table(table)
+    # try:
+    #     client.get_table(table_ref)
+    # except:
+    #     table = bigquery.Table(table_ref, schema=schema)
+    #     client.create_table(table)
 
     # Write the DataFrame data to BigQuery
     job_config = bigquery.LoadJobConfig(schema=schema, write_disposition='WRITE_TRUNCATE')

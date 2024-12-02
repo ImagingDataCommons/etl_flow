@@ -45,30 +45,37 @@ clinical_data_schema = [
 
 
 def likely_clinical(download):
-  ret = True
-  try:
-    if not ((download['download_type'] == 'Other') or (download['download_type'] == 'Clinical Data') ):
-      ret = False
-  except:
-    ret = False
-  try:
-    if (download['download_requirements']):
-      ret = False
-  except:
-    ret = False
-  try:
-    if not (('XLSX' in download['file_type']) or ('XLS' in download['file_type']) or ('CSV' in download['file_type'])):
-      ret = False
-  except:
-    ret = False
-  return ret
+    ret = True
+    try:
+        if not (download['download_type'] == 'Other' or
+                download['download_type'] == 'Clinical Data' or
+                'Clinical Data' in download['download_type'] or
+                'Other' in download['download_type']):
+            return False
+    except:
+        return False
+    try:
+        if (download['download_requirements']):
+            return False
+    except:
+        return False
+    try:
+        if not (('XLSX' in download['file_type']) or ('XLS' in download['file_type']) or ('CSV' in download['file_type'])):
+            return False
+    except:
+        return False
+    return True
 
 
 def get_raw_data():
+    client = bigquery.Client()
+    all_collections = client.list_rows(client.get_table(f'{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections')).to_dataframe()
+    all_source_dois = all_collections['source_doi']
     collections = [ c for c in get_all_tcia_metadata("collections") if c['collection_page_accessibility'] == "Public"]
+    idc_collections = [c for c in collections if c['collection_doi'].lower() in list(all_source_dois)]
     downloads = get_all_tcia_metadata("downloads")
     clinical_downloads = {download['id']:download for download in downloads if likely_clinical(download)}
-    for collection in collections:
+    for collection in idc_collections:
         for id in collection['collection_downloads']:
             if id in clinical_downloads:
                 clinical_downloads[id]['collection_id'] = collection['id']
@@ -87,6 +94,7 @@ def get_raw_data():
                         print(f'\tParent collection {collections[c_id]["id"]}:{collections[c_id]["slug"]}:{collections[c_id]["collection_downloads"]}')
             except:
                 print(f"No collection found for {d_data['slug']}")
+
 
     clinical_data = []
     for id, data in clinical_downloads.items():

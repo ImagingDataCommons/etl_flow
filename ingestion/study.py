@@ -87,8 +87,9 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
         new_series.uuid = str(uuid4())
         new_series.min_timestamp = datetime.utcnow()
         try:
-            new_series.source_doi = dois_urls_licenses[series]['doi']
-            new_series.source_url = dois_urls_licenses[series]['url']
+            new_series.source_doi = dois_urls_licenses[series]['source_doi']
+            new_series.source_url = dois_urls_licenses[series]['source_url']
+            new_series.versioned_source_doi = dois_urls_licenses[series]['versioned_source_doi']
             new_series.license_url = dois_urls_licenses[series]['license']['license_url']
             new_series.license_long_name = dois_urls_licenses[series]['license']['license_long_name']
             new_series.license_short_name = dois_urls_licenses[series]['license']['license_short_name']
@@ -132,6 +133,7 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
             rev_series.hashes = ("","","")
             rev_series.sources = seriess[series.series_instance_uid]
             rev_series.rev_idc_version = settings.CURRENT_VERSION
+            rev_series.versioned_source_doi = dois_urls_licenses[series.series_instance_uid]['versioned_source_doi']
             study.seriess.append(rev_series)
             progresslogger.debug('      p%s:Series %s revised',  args.pid, rev_series.series_instance_uid)
 

@@ -33,77 +33,35 @@ from multiprocessing import Process, Queue
 def get_expected_series_in_bucket(args, max_version):
     client = bigquery.Client()
     query = f"""
-      SELECT distinct se_uuid 
-      FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
-      WHERE ((i_source='tcia' AND tcia_access='Public') OR (i_source='idc' AND idc_access='Public')) 
-      {"" if args.dev_or_pub=="dev" else "AND se_excluded=FALSE"} AND i_redacted=FALSE
-      AND se_rev_idc_version <= {max_version}
-      AND ((i_source='tcia' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_tcia_url="{args.bucket}")
-      OR (i_source='idc' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_idc_url="{args.bucket}"))
-      ORDER BY se_uuid
-  """
+        SELECT distinct se_uuid 
+        FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
+        WHERE se_rev_idc_version <= {max_version}
+        AND Access = '{args.access}'
+        AND {"dev_bucket" if args.dev_or_pub == "dev" else "pub_gcs_bucket"}="{args.bucket}"
+        {"" if args.dev_or_pub == "dev" else "AND i_excluded=FALSE"} AND i_redacted=FALSE
+        ORDER BY se_uuid
+    """
 
     query_job = client.query(query)
     series = set(query_job.result().to_dataframe()['se_uuid'].to_list())
     return series
 
 
-def get_expected_blobs_in_bucket(args, max_version, premerge=False):
+def get_expected_blobs_in_bucket(args, max_version):
     client = bigquery.Client()
     query = f"""
-      SELECT distinct concat(se_uuid,'/', i_uuid, '.dcm') as blob_name
-      FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
-      WHERE ((i_source='tcia' AND tcia_access='Public') OR (i_source='idc' AND idc_access='Public')) 
-      {"" if args.dev_or_pub=="dev" else "AND i_excluded=FALSE"} AND i_redacted=FALSE
-      AND se_rev_idc_version <= {max_version}
-      AND ((i_source='tcia' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_tcia_url="{args.bucket}")
-      OR (i_source='idc' and {"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_idc_url="{args.bucket}"))
-
-      ORDER BY blob_name
-  """
+        SELECT distinct concat(se_uuid,'/', i_uuid, '.dcm') as blob_name
+        FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
+        WHERE se_rev_idc_version <= {max_version}
+        AND Access = '{args.access}'
+        AND {"dev_bucket" if args.dev_or_pub == "dev" else "pub_gcs_bucket"}="{args.bucket}"
+        {"" if args.dev_or_pub == "dev" else "AND i_excluded=FALSE"} AND i_redacted=FALSE
+        ORDER BY blob_name
+    """
 
     query_job = client.query(query)
     blob_names = set(query_job.result().to_dataframe()['blob_name'].to_list())
     return blob_names
-
-# def get_expected_blobs_in_bucket(args, max_version, premerge=False):
-#     client = bigquery.Client()
-#     query = f"""
-#       SELECT distinct concat(se_uuid,'/', i_uuid, '.dcm') as blob_name
-#       FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
-#       JOIN `idc-dev-etl.idc_v{args.version}_dev.all_collections` aic
-#       ON aj.idc_collection_id = aic.idc_collection_id
-#       WHERE ((i_source='tcia' and aic.{"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_tcia_url="{args.bucket}")
-#       OR (i_source='idc' and aic.{"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_idc_url="{args.bucket}"))
-#       AND i_excluded = False and i_redacted = False
-#       AND if({premerge}, i_rev_idc_version < {args.version}, i_rev_idc_version <= {args.version})
-#       AND se_rev_idc_version <= max_version
-#       ORDER BY blob_name
-#   """
-#
-#     query_job = client.query(query)
-#     blob_names = set(query_job.result().to_dataframe()['blob_name'].to_list())
-#     return blob_names
-
-
-
-# def get_found_series_in_bucket(args):
-#     client = bigquery.Client()
-#     query = f"""
-#       SELECT distinct concat(se_uuid,'/') as series_uuid
-#       FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
-#       JOIN `idc-dev-etl.idc_v{args.version}_dev.all_collections` aic
-#       ON aj.idc_collection_id = aic.idc_collection_id
-#       WHERE ((i_source='tcia' and aic.{"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_tcia_url="{args.bucket}")
-#       OR (i_source='idc' and aic.{"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_idc_url="{args.bucket}"))
-#       AND i_excluded = False i_redacted = False
-#       ORDER BY series_uuid
-#   """
-#
-#     query_job = client.query(query)  # Make an API request.
-#     series_uuids = [row.series_uuid for row in query_job.result()]
-#
-#     return series_uuids
 
 def worker(input, args):
     RETRIES=3
@@ -130,7 +88,7 @@ def get_found_series_in_bucket(args):
         with open(f"{settings.LOG_DIR}/found_series.json") as f:
             found_series = json.load(f)
     except:
-        # Get founds series
+        # Get found series
         iterator = client.list_blobs(bucket, delimiter='/', page_size=args.batch)
         found_series = []
         for page in iterator.pages:
@@ -147,24 +105,8 @@ def get_found_series_in_bucket(args):
 def get_found_blobs_in_bucket(args, found_series):
     client = storage.Client()
     bucket = client.bucket(args.bucket)
+    progresslogger.info(f'Finding blobs in bucket')
 
-    # try:
-    #     # Assume we've already got the list of expected series
-    #     with open(f"{settings.LOG_DIR}/found_series.json") as f:
-    #         found_series = json.load(f)
-    # except:
-    #     # Get founds series
-    #     iterator = client.list_blobs(bucket, delimiter='/', page_size=args.batch)
-    #     found_series = []
-    #     for page in iterator.pages:
-    #         # if page.num_items:
-    #         if len(page.prefixes):
-    #             series = [aseries.split('/')[0] for aseries in page.prefixes]
-    #             found_series.extend(series)
-    #     with open(f"{settings.LOG_DIR}/found_series.json", "w") as f:
-    #         json.dump(found_series, f)
-
-    # Get the completed series
     done_series = open(f'{progresslogger.handlers[0].baseFilename}').read().splitlines()
 
     undone_series = list(set(found_series) - set(done_series))
@@ -250,7 +192,7 @@ def check_all_instances_mp(args, premerge=False, max_version=settings.CURRENT_VE
     else:
         progresslogger.info(f'Already have found blobs')
 
-    expected_blobs = get_expected_blobs_in_bucket(args, max_version, premerge)
+    expected_blobs = get_expected_blobs_in_bucket(args, max_version)
 
 
     if found_blobs == expected_blobs:
@@ -274,7 +216,7 @@ def check_all_instances_mp(args, premerge=False, max_version=settings.CURRENT_VE
             errlogger.error(f"Expected blobs not found in bucket: {len(unfound_blobs)}")
             for blob in unfound_blobs:
                 errlogger.error(blob)
-            with open(f"{settings.LOG_DIR}/unfound_blobs.json") as f:
+            with open(f"{settings.LOG_DIR}/unfound_blobs.json", 'w') as f:
                 json.dump(unfound_blobs, f)
 
     return

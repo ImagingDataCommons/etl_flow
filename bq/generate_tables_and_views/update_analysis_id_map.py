@@ -19,24 +19,28 @@
 # This script assumes that the analysis_results_descriptions table has
 # been previously updated with any new analysis results.
 
-import argparse
 from google.cloud import bigquery
-from utilities.sqlalchemy_helpers import sa_session
-from idc.models import Analysis_Id_Map, Analysis_Results_Descriptions
+import pandas as pd
+import pandas_gbq
 from uuid import uuid4
+import settings
 
 def update_table():
-
-    with sa_session() as sess:
-        analysis_results_with_ids = [row[0] for row in sess.query(Analysis_Id_Map.collection_id).all()]
-        analysis_results = [row[0] for row in sess.query(Analysis_Results_Descriptions.id).all()]
-        for collection_id in analysis_results:
-            if not collection_id in analysis_results_with_ids:
-                map = Analysis_Id_Map()
-                map.collection_id = collection_id
-                map.idc_id = str(uuid4())
-                sess.add(map)
-        sess.commit()
+    client = bigquery.Client()
+    query=f'''
+    SELECT *
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_id_map`
+    '''
+    analysis_id_map =  client.query_and_wait(query).to_dataframe()
+    query = f'''
+    SELECT *
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_descriptions`
+    '''
+    analysis_results_descriptions =  client.query_and_wait(query).to_dataframe()
+    for id in analysis_results_descriptions['id']:
+        if id not in analysis_id_map['collection_id'].values:
+            analysis_id_map.loc[len(analysis_id_map)] = {'collection_id': id, 'idc_id': str(uuid4())}
+    pandas_gbq.to_gbq(analysis_id_map, f'{settings.BQ_DEV_INT_DATASET}.analysis_id_mapx', project_id=settings.DEV_PROJECT, if_exists='replace')
 
 
 if __name__ == '__main__':

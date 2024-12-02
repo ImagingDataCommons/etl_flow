@@ -14,7 +14,8 @@
 # limitations under the License.
 #
 
-# Validate that dicom_metadata, and therefore, a DICOM store has the expected number of instances
+# Validate that dicom_metadata, and therefore, a DICOM store has the expected instances (actually the
+# same SOPInstanceUIDs
 from google.cloud import bigquery
 import settings
 import argparse
@@ -23,7 +24,7 @@ from utilities.logging_config import successlogger,errlogger
 def validate_dicom_metadata_counts():
     client = bigquery.Client()
     query = f"""
-    SELECT ajc.collection_id, ajc.series_instance_uid, ajc.se_uuid, ajc.sop_instance_uid, ajc,i_uuid, dm.SOPInstanceUID
+    SELECT DISTINCT ajc.collection_id, ajc.series_instance_uid, ajc.se_uuid, ajc.sop_instance_uid, ajc,i_uuid, dm.SOPInstanceUID
     FROM `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined_public_and_current` ajc
     FULL OUTER JOIN `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_pub.dicom_metadata` dm
     ON ajc.sop_instance_uid = dm.sopinstanceuid

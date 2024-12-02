@@ -1,0 +1,28 @@
+digraph etl {
+ration=0.6;
+    "dicom_all" -> {"analysis_results_metadata", "auxiliary_metadata"}
+    "original_collections_descriptions_end_user" -> "1RCS_CBEe6MWLnciaHRiClclPO3HbgUk1EI2U3AJvM6Y"
+    "original_collections_metadata_idc_source" -> "1fWG9Json963fDL8P9dPyzYEVqs11Nba6nnhZtrSJepQ"
+    "program" -> {"original_collections_metadata_idc_source", "get_all_tcia_metadata.py"}
+    "version_metadata" -> {"version", "auxiliary_metadata", "collection", "version"}
+    "licenses"-> {"all_collections", "idc_all_joined"}
+    "original_collections_metadata" -> {"original_collections_metadata_idc_source" ,
+        "program", "all_joined_public_and_current", "dicom_metadata", "original_collections_descriptions_end_user",
+        "licenses", "version_metadata", "collection", "get_original_collection_licenses.py"}
+    "get_original_collection_licenses.py" -> all_collections
+    "auxiliary_metadata" -> "gen_auxiliary_metadata_table.py" -> "all_joined_public_and_current"
+    "analysis_results_metadata" -> {"licenses", "all_joined_public_and_current", "analysis_results_descriptions_end_user",
+    "analysis_results_metadata_idc_source" -> "analysis_results_metadata_idc_source.py"}
+    "analysis_results_metadata_idc_source.py" -> "1Nu9uQNDOXBLUA9w8hp32b41cjPls6NOkjlgDwxAFgWw"
+    "analysis_results_descriptions_end_user" -> "17fBpRPlI7XHPSQlXpDIIZzL48gh4sHAWagwr9y5OL7I"
+    "analysis_id_map" -> {"update_analysis_id_map.py", "analysis_results_descriptions"}
+    "idc_all_joined" -> {"idc_collection", "idc_patient", "idc_study", "idc_series", "idc_instance"} -> "preingest.py"
+    "all_joined_public_and_current" -> "all_joined"
+    "all_joined" -> {"version", "collection", "patient", "study", "series", "instance"} -> "ingest.py"
+    "analysis_results_descriptions" -> "analysis_results_descriptions.py" -> "1C0ZLeHzx23UbWALtb5j6WfzjmFvRVjd5ieuTcOw7dfE"
+    "ingest.py" -> "collection_id_map"
+    "all_collections" -> "update_analysis_id_map.py" -> "collection_id_map" -> "detect_tcia_collection_name_changes.py"
+    "tcia_collection_descriptions" -> "tcia_collection_descriptions.py"
+    "tcia_pathology_metadata" -> "tcia_pathology_metadata.py"
+    "original_collections_descriptions" -> "original_collections_descriptions.py" -> "1GiH5ecs4E4HoeTF1HrmmcxiPxE7Ir2BvkJPjCp8A13c"
+}

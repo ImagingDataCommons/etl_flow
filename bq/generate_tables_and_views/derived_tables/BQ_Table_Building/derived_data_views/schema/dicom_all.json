@@ -221,6 +221,12 @@
         "type": "STRING"
       },
       {
+        "description": "The DOI of a page that describes the current version of the original collection or analysis result that include this instance",
+        "mode": "NULLABLE",
+        "name": "Versioned_Source_DOI",
+        "type": "STRING"
+      },
+      {
         "description": "If this instance is an analysis result, then the ID of the analysis result, else NULL",
         "mode": "NULLABLE",
         "name": "analysis_result_id",
@@ -242,36 +248,6 @@
         "description": "The short name of the license of the collection that contains this instance",
         "mode": "NULLABLE",
         "name": "license_short_name",
-        "type": "STRING"
-      },
-      {
-        "description": "DEPRECATED: Duplicate of collection_name",
-        "mode": "NULLABLE",
-        "name": "tcia_api_collection_id",
-        "type": "STRING"
-      },
-      {
-        "description": "DEPRECATED: Duplicate of collection_id",
-        "mode": "NULLABLE",
-        "name": "idc_webapp_collection_id",
-        "type": "STRING"
-      },
-      {
-        "description": "DEPRECATED: Duplicate of collection_tumorLocation",
-        "mode": "NULLABLE",
-        "name": "tcia_tumorLocation",
-        "type": "STRING"
-      },
-      {
-        "description": "DEPRECATED: Duplicate of collection_species",
-        "mode": "NULLABLE",
-        "name": "tcia_species",
-        "type": "STRING"
-      },
-      {
-        "description": "DEPRECATED: Duplicate of collection_cancerType",
-        "mode": "NULLABLE",
-        "name": "tcia_cancerType",
         "type": "STRING"
       },
       {

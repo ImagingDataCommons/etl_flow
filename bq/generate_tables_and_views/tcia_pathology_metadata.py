@@ -34,13 +34,19 @@ from ingestion.utilities.utils import get_merkle_hash
 
 pathology_data_schema = [
     bigquery.SchemaField('idc_collection_id', 'STRING', mode='NULLABLE', description='IDC collection_id'),
-    bigquery.SchemaField('download_id', 'STRING', mode='NULLABLE', description='Collection manager id of this download'),
-    bigquery.SchemaField('download_slug', 'STRING', mode='NULLABLE', description='Collection manager slug of this download'),
-    bigquery.SchemaField('hash', 'STRING', mode='NULLABLE', description='MD5 hash of "sums" of files in the package'),
-    bigquery.SchemaField('collection_id', 'STRING', mode='NULLABLE', description='Collection manager id of this collection'),
     bigquery.SchemaField('collection_slug', 'STRING', mode='NULLABLE', description='Collection manager of this collection'),
-    bigquery.SchemaField('date_updated', 'DATE', mode='NULLABLE', description='?'),
+    bigquery.SchemaField('collection_id', 'STRING', mode='NULLABLE', description='Collection manager id of this collection'),
+    bigquery.SchemaField('download_slug', 'STRING', mode='NULLABLE', description='Collection manager slug of this download'),
+    bigquery.SchemaField('download_id', 'STRING', mode='NULLABLE', description='Collection manager id of this download'),
     bigquery.SchemaField('download_title', 'STRING', mode='NULLABLE', description='Download title'),
+    # bigquery.SchemaField('hash', 'STRING', mode='NULLABLE', description='MD5 hash of "sums" of files in the package'),
+    # bigquery.SchemaField('sums_file_found', 'STRING', mode='NULLABLE',
+    #                      description='True if found, else False'),
+    # bigquery.SchemaField('sums_file_empty', 'STRING', mode='NULLABLE',
+    #                      description='True if sums file found, but empty'),
+    # bigquery.SchemaField('aspera_error_msg', 'STRING', mode='NULLABLE'),
+    bigquery.SchemaField('date_updated', 'DATE', mode='NULLABLE', description='?'),
+    bigquery.SchemaField('status', 'STRING', mode='NULLABLE', description='Public or limited'),
     bigquery.SchemaField('file_type', 'STRING', mode='NULLABLE', description='File type'),
     bigquery.SchemaField('download_size', 'STRING', mode='NULLABLE', description='Download size'),
     bigquery.SchemaField('download_size_unit', 'STRING', mode='NULLABLE', description='Download size units'),
@@ -48,47 +54,49 @@ pathology_data_schema = [
 ]
 
 
-def get_aspera_hash(download_url, directory, sums, level):
-    if directory:
-        result = run(["ascli", "--progress-bar=no", "--format=csv", "faspex5", "packages", "browse", f"--url={download_url}", directory],
-                     capture_output=True)
-    else:
-        result = run(["ascli", "--progress-bar=no", "--format=csv", "faspex5", "packages", "browse", f"--url={download_url}"],
+def get_aspera_hash(data):
+    sums = []
+    level = 0
+    download_url = data["download_url"]
+    data["sums_file_found"] = False
+    data["sums_file_empty"] = ""
+    data["aspera_error_msg"] = ""
+    result = run(["ascli", "--progress-bar=no", "--format=json", "faspex5", "packages", "browse", f"--url={download_url}"],
                      capture_output=True)
     if result.stderr == b'':
-        with StringIO(result.stdout.decode()) as f:
-            # r = reader(f, delimiter=',')
-            for file in f:
-                print(f'\tl{level}: {file}')
-                file = file.split(',')
-                if file[0].endswith('.sums'):
-                    result = run(["ascli", "--progress-bar=no", "--format=csv", "faspex5", "packages", "receive", f"--url={download_url}", file[0]],
-                                 capture_output=True)
-                    if result.stderr == b'':
-                        with open(file[1]) as g:
-                            for sum in g:
-                                # progresslogger.info(f"\t\t{level}: {sum.split(' ')}")
-                                sums.append(sum.split(' ')[0])
-                        os.remove(file[1])
-                    else:
-                        errlogger.error(result.stderr)
-                        exit(1)
+        files = json.load(StringIO(result.stdout.decode()))
+        pass
+        for file in files:
+            if file["basename"].endswith('.sums'):
+                data["sums_file_found"] = True
+                result = run(["ascli", "--progress-bar=no", "--format=json", "faspex5", "packages", "receive", f"--url={download_url}", file["basename"]],
+                             capture_output=True)
+                if result.stderr == b'':
+                    some_sums = [sum.split(' ')[0] for sum in open(file["basename"]).read().splitlines() ]
+                    if not some_sums:
+                        errlogger.error(f'{file["basename"]} is empty')
+                    data["sums_file_empty"] = some_sums == []
+                    sums.extend(some_sums)
+                    os.remove(file["basename"])
+                else:
+                    errlogger.error(result.stderr)
+                    exit(1)
 
-                # elif len(file)>=3 and file[2] == "directory":
-                #     level += 1
-                #     get_aspera_hash(download_url, directory=file[0],  sums=sums, level=level)
-                #     level -= 1
         return sums
     else:
         errlogger.error(result.stderr)
-        return ""
+        data["aspera_error_msg"] = result.stderr.decode()
+        return []
 
 
 
 def gen_table(args):
-    collections = [ c for c in get_all_tcia_metadata("collections") if c['collection_page_accessibility'] == "Public"]
+    collections = get_all_tcia_metadata("collections")
+    # collections = [ c for c in get_all_tcia_metadata("collections") if c['collection_page_accessibility'] == "Public"]
     downloads = get_all_tcia_metadata("downloads")
     pathology_downloads = {download['id']:download for download in downloads if download['download_type']=='Pathology Images'}
+
+    # Add the id and slug of the parent collection to each pathology_download
     for collection in collections:
         for id in collection['collection_downloads']:
             if id in pathology_downloads:
@@ -98,46 +106,47 @@ def gen_table(args):
     # Find any pathology downloads for which there is no collection
     for d_id, d_data in pathology_downloads.items():
         if 'collection_slug' not in d_data:
-            print(f"No collection_slug for pathology_download {d_data['id']}:{d_data['slug']}")
-            try:
-                for c_id,v in enumerate(collections):
-                    if d_data['slug'].startswith(v['slug']):
-                # c_id = next(i for i,v in enumerate(collections) if d_data['slug'].startswith(v['slug']))
-                        print(f'\tParent collection {collections[c_id]["id"]}:{collections[c_id]["slug"]}:{collections[c_id]["collection_downloads"]}')
-            except:
-                print(f"No collection found for {d_data['slug']}")
+            print(f"No parent collection for pathology_download {d_data['id']}:{d_data['slug']}")
+            d_data["collection_slug"] = ""
+            d_data["collection_id"] = ""
 
     pathology_data = []
     for id, data in pathology_downloads.items():
-        if 'collection_slug' in data:
-            if data["collection_slug"] not in args.skip:
-                progresslogger.info(f'{data["collection_slug"]}, {data["slug"]}')
-                sums = get_aspera_hash(data['download_url'], directory="", sums=[], level=0)
-                if sums == []:
-                    hash = ""
-                else:
-                    hash = get_merkle_hash(sums)
-            else:
-                progresslogger.info(f'Skipped {data["collection_slug"]}')
-                hash = ""
+        # if data["collection_slug"] not in args.skip:
+        #     progresslogger.info(f'Processing {data["collection_slug"]}, {data["slug"]}')
+        #     sums = get_aspera_hash(data)
+        #     if sums == []:
+        #         hash = ""
+        #         errlogger.error(f'\tNo sums found for {data["collection_slug"]}, {data["slug"]}')
+        #     else:
+        #         hash = get_merkle_hash(sums)
+        #         progresslogger.info(f'\t{data["collection_slug"]}, {data["slug"]}: {hash}')
+        # else:
+        #     progresslogger.info(f'\tSkipped {data["collection_slug"]}, {data["slug"]}')
+        #     hash = ""
 
+        download = dict(
+            idc_collection_id = data["collection_slug"].replace('-','_'),
+            collection_slug = data["collection_slug"],
+            collection_id = data["collection_id"],
+            download_slug = data['slug'],
+            download_title = str(data["download_title"]),
+            download_id = id,
+            # hash = hash,
+            # sums_file_found = data['sums_file_found'],
+            # sums_file_empty = data['sums_file_empty'],
+            # aspera_error_msg = data['aspera_error_msg'],
+            date_updated = data["date_updated"],
+            status = data['status'],
+            file_type = str(data["file_type"]),
+            download_size = str(data["download_size"]),
+            download_size_unit = data["download_size_unit"],
+            download_url = data["download_url"] if data["download_url"].startswith('https') else \
+                    f'https://www.cancerimagingarchive.net{data["download_url"]}',
 
-            download = dict(
-                idc_collection_id = data["collection_slug"].replace('-','_'),
-                download_id = id,
-                download_slug = data['slug'],
-                hash = hash,
-                collection_id = data["collection_id"],
-                collection_slug = data["collection_slug"],
-                date_updated = data["date_updated"],
-                download_title = str(data["download_title"]),
-                file_type = str(data["file_type"]),
-                download_size = str(data["download_size"]),
-                download_size_unit = data["download_size_unit"],
-                download_url = data["download_url"] if data["download_url"].startswith('https') else \
-                        f'https://www.cancerimagingarchive.net{data["download_url"]}'
-            )
-            pathology_data.append(download)
+        )
+        pathology_data.append(download)
+        print('\n')
 
     metadata_json = '\n'.join([json.dumps(row) for row in
                         sorted(pathology_data, key=lambda d: d['download_slug'])])
@@ -151,14 +160,14 @@ def gen_table(args):
     except Exception as exc:
         errlogger.error(f'Table creation failed: {exc}')
         exit
+    return pathology_data
+
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--bqtable_name', default='tcia_pathology_metadata', help='BQ table name')
-    parser.add_argument("--skip", default=['histologyhsi-gb'])
+    parser.add_argument("--skip", default=[])
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-
-    gen_table(args)

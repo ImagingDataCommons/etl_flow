@@ -27,8 +27,6 @@ from google.cloud import bigquery
 from utilities.bq_helpers import create_BQ_dataset
 
 tables = {
-        'all_collections': {"func": upload_table, "order_by": "tcia_api_collection_id"},
-        'analysis_id_map': {"func": upload_table, "order_by": "collection_id"},
         'collection': {"func":upload_collection, "order_by":"collection_id"},
         'collection_id_map': {"func": upload_table, "order_by": "idc_webapp_collection_id"},
         'collection_patient': {"func": upload_table, "order_by": "collection_uuid"},
@@ -46,15 +44,12 @@ tables = {
         'study_series': {"func": upload_table, "order_by": "study_uuid"},
         'version': {"func":upload_version, "order_by":"version"},
         'version_collection': {"func": upload_table, "order_by": "version"},
-        'zenodo_dois': {"func": upload_table, "order_by": "collection"}
 }
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--federated_query', default=f'idc-dev-etl.us.etl_federated_query_idc_v{settings.CURRENT_VERSION}')
     parser.add_argument('--upload', nargs='*', default= [
-        # 'all_collections',
-        'analysis_id_map',
         # 'collection',
         # 'collection_id_map',
         # 'collection_patient',
@@ -66,13 +61,12 @@ if __name__ == '__main__':
         # 'instance',
         # 'patient',
         # 'patient_study',
-        # 'series',
+        'series',
         # 'series_instance',
         # 'study',
         # 'study_series',
         # 'version',
         # 'version_collection',
-        # 'zenodo_dois'
     ], help="Tables to upload")
     args = parser.parse_args()
     print('args: {}'.format(args))

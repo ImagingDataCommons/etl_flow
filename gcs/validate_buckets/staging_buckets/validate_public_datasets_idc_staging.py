@@ -31,7 +31,7 @@ def get_expected_blobs_in_bucket(args):
     SELECT distinct CONCAT(series_uuid, '/', instance_uuid,'.dcm') as blob_name
     FROM `{settings.PDP_PROJECT}.idc_v{settings.CURRENT_VERSION}.auxiliary_metadata` 
     WHERE instance_revised_idc_version = {settings.CURRENT_VERSION}
-    AND split(gcs_url,'/')[offset(2)] = 'public-datasets-idc'
+    AND split(gcs_url,'/')[offset(2)] = 'idc-open-data'
     """
     query_job = client.query(query)  # Make an API request.
     query_job.result()  # Wait for the query to complete.

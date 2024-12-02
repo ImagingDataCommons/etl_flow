@@ -63,9 +63,9 @@ licenses_schema = [
 def get_all_tcia_collections_in_version(client, args):
     # Return collections that have specified access
     query = f"""
-    SELECT DISTINCT tcia_api_collection_id collection_name
+    SELECT DISTINCT collection_name
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections`
-    WHERE tcia_access='Public' and (tcia_metadata_sunset=0 or tcia_metadata_sunset>={settings.CURRENT_VERSION})
+    WHERE access='Public' and source='tcia' and (metadata_sunset=0 or metadata_sunset>={settings.CURRENT_VERSION})
     ORDER BY collection_name
     """
     collections = {row.collection_name.lower().replace(' ','_').replace('-','_'): dict(row.items())\
@@ -109,7 +109,10 @@ ORDER BY
 # These are licenses of (sub)collections for which the data originates in TCIA and therefore TCIA sets the licenses
 def get_tcia_original_collection_licenses(client, args, tcia_sourced_subcollections):
     # Get all the collection manager collections data:
-    tcia_collection_metadata = {row['collection_short_title']:row for row in get_all_tcia_metadata('collections')}
+    try:
+        tcia_collection_metadata = {row['collection_short_title']:row for row in get_all_tcia_metadata('collections')}
+    except Exception as exc:
+        pass
     tcia_downloads_metadata = {row['id']:row for row in get_all_tcia_metadata('downloads')}
     tcia_licese_metadata = {row['license_label']:row for row in get_all_tcia_metadata('licenses')}
 

@@ -627,7 +627,7 @@ class IDC_Instance(Base):
     sop_instance_uid = Column(String, primary_key=True, nullable=False)
     series_instance_uid = Column(ForeignKey('idc_series.series_instance_uid'), comment="Containing object")
     hash = Column(String, comment='Instance hash')
-    gcs_url = Column(String, comment='GCS URL of instance source')
+    ingestion_url = Column(String, comment='GCS URL of instance source')
     size = Column(BigInteger, comment='Instance size in bytes')
     excluded = Column(Boolean, default=False, comment='True if this instance should be excluded from ingestion')
     idc_version = Column(Integer, comment='IDC version when this instance was added/revised')

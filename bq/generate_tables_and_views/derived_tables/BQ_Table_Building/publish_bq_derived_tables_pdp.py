@@ -30,7 +30,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--project', default="idc-pdp-staging", help='Project in which tables live')
     parser.add_argument('--dataset', default=f"idc_v{settings.CURRENT_VERSION}", help="BQ dataset")
-    parser.add_argument('--view_name', default='dicom_metadata_curated_series_level', help='Build this table/view if specified, or all tables')
+    parser.add_argument('--view_name', default='', help='Build this table/view if specified, or all tables')
     parser.add_argument('--tables', default=[], help='If specified, build these tables only, else build all tables')
     args = parser.parse_args()
 

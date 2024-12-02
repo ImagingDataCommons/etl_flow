@@ -246,9 +246,8 @@ def populate_staging_bucket(args):
                 ),
 
         #else
-            # This instance is not new so use the staging (dev) bucket prefix
-             IF( i_source='tcia', dev_tcia_url, dev_idc_url)
-            ) bucket
+            # This instance is not new so use the public GCS bucket
+            dev_bucket) bucket
         FROM
           `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current`
       
@@ -316,5 +315,4 @@ if __name__ == '__main__':
     args.staging_bucket = f'dicom_store_import_staging_v{settings.CURRENT_VERSION}'
     progresslogger.info(f"{args}")
 
-    breakpoint()
     populate_bucket(args)

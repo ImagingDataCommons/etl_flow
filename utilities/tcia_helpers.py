@@ -180,11 +180,11 @@ def get_hash(request_data, access_token=None):
 #     return result
 
 
-# def get_images_with_md5_hash(SeriesInstanceUID, access_token=None):
-#     server_url = NBIA_V1_URL
-#     url = f'{server_url}/getImageWithMD5Hash?SeriesInstanceUID={SeriesInstanceUID}'
-#     result = requests.get(url)
-#     return result
+def get_images_with_md5_hash(SeriesInstanceUID, access_token=None):
+    server_url = NBIA_V1_URL
+    url = f'{server_url}/getImageWithMD5Hash?SeriesInstanceUID={SeriesInstanceUID}'
+    result = requests.get(url)
+    return result
 
 # Obsolete
 # def get_collection_values(server=NBIA_URL):
@@ -510,85 +510,86 @@ def get_collection_descriptions_and_licenses(collection=None):
         nlst_description = get_collection_descriptions_and_licenses('NLST')
         collection_descriptions['NLST'] = nlst_description['NLST']
 
-        if not 'CPTAC-GBM' in collection_descriptions:
-            collection_descriptions['CPTAC-GBM'] = {
-                'licenseId': 1,
-                'description': """
-<p>
-	<span class="conf-macro output-inline" data-hasbody="true" data-macro-name="excerpt">This collection contains subjects from the National Cancer Institute&rsquo;s <u><a class="external-link" href="https://proteomics.cancer.gov/programs/cptac" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> Glioblastoma Multiforme (CPTAC-GBM) cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics. Radiology and pathology images from CPTAC Phase 3 patients are being collected and made publicly available by The Cancer Imaging Archive to enable researchers to investigate cancer phenotypes which may correlate to corresponding proteomic, genomic and clinical data.</span></p>
-<p>
-	&nbsp;</p>
-<p>
-	<span class="iceOutTxt" id="MAINbody:collectionDescriptionPopupForm:j_id716">Please see the <a href="https://doi.org/10.7937/K9/TCIA.2018.3RJE41Q1">CPTAC-GBM</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</span></p>"""
-            }
+#         if not 'CPTAC-GBM' in collection_descriptions:
+#             collection_descriptions['CPTAC-GBM'] = {
+#                 'licenseId': 1,
+#                 'description': """
+# <p>
+# 	<span class="conf-macro output-inline" data-hasbody="true" data-macro-name="excerpt">This collection contains subjects from the National Cancer Institute&rsquo;s <u><a class="external-link" href="https://proteomics.cancer.gov/programs/cptac" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> Glioblastoma Multiforme (CPTAC-GBM) cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics. Radiology and pathology images from CPTAC Phase 3 patients are being collected and made publicly available by The Cancer Imaging Archive to enable researchers to investigate cancer phenotypes which may correlate to corresponding proteomic, genomic and clinical data.</span></p>
+# <p>
+# 	&nbsp;</p>
+# <p>
+# 	<span class="iceOutTxt" id="MAINbody:collectionDescriptionPopupForm:j_id716">Please see the <a href="https://doi.org/10.7937/K9/TCIA.2018.3RJE41Q1">CPTAC-GBM</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</span></p>"""
+#             }
+#
+#         if not 'TCGA-GBM' in collection_descriptions:
+#             collection_descriptions['TCGA-GBM'] = {
+#                 'licenseId': 1,
+#                 'description': """
+# <p>The <a href="http://imaging.cancer.gov/" target="_blank"><u>Cancer Imaging Program (CIP)</u></a> is working directly with primary investigators from institutes participating in TCGA to obtain and load images relating to the genomic, clinical, and pathological data being stored within the <a href="http://tcga-data.nci.nih.gov/" target="_blank">TCGA Data Portal</a> Currently this large MR multi-sequence image collection of glioblastoma patients can be matched by each unique case identifier with the extensive gene and expression data of the same case from The Cancer Genome Atlas Data Portal to research the link between clinical phenome and tissue genome. </p><br />
+# <a href="https://doi.org/10.7937/K9/TCIA.2016.RNYFUYE9" target="_blank">TCGA-GBM</a></span> page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
+#             }
+#
+#         if not 'TCGA-HNSC' in collection_descriptions:
+#             collection_descriptions['TCGA-HNSC'] = {
+#                 'licenseId': 1,
+#                 'description': """
+# <p>The <a href="http://imaging.cancer.gov/" target="_blank"><u>Cancer Imaging Program (CIP)</u></a> is working directly with primary investigators from institutes participating in TCGA to obtain and load images relating to the genomic, clinical, and pathological data being stored within the <a href="http://tcga-data.nci.nih.gov/" target="_blank">TCGA Data Portal</a>. Currently this large PET/CT multi-sequence image collection of  head and neck squamous cell carcinoma (HNSC) patients can be matched by each unique case identifier with the extensive gene and expression data of the same case from The Cancer Genome Atlas Data Portal to research the link between clinical phenome and tissue genome.</p>
+# </br>
+# <p>Please see the <a href="https://doi.org/10.7937/K9/TCIA.2016.LXKQ47MS" target="_blank">TCGA-HNSC</a> page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
+#             }
+#
+#         if not 'TCGA-LGG' in collection_descriptions:
+#                 collection_descriptions['TCGA-LGG'] = {
+#                     'licenseId': 1,
+#                     'description': """
+# <div>
+# 	<strong>Note:&nbsp;This collection has special restrictions on its usage. See <a href="https://wiki.cancerimagingarchive.net/x/c4hF" target="_blank">Data Usage Policies and Restrictions</a>.</strong></div>
+# </br><p>The <a href="http://imaging.cancer.gov/" target="_blank"><u>Cancer Imaging Program (CIP)</u></a> is working directly with primary investigators from institutes participating in TCGA to obtain and load images relating to the genomic, clinical, and pathological data being stored within the <a href="http://tcga-data.nci.nih.gov/" target="_blank">TCGA Data Portal</a>. Currently this large MR multi-sequence image collection of low grade glioma patients can be matched by each unique case identifier with the extensive gene and expression data of the same case from The Cancer Genome Atlas Data Portal to research the link between clinical phenome and tissue genome.</p><br />
+# <p>Please see the <a href="https://doi.org/10.7937/K9/TCIA.2016.L4LTD3TK" target="_blank">TCGA-LGG</a> page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
+#                 }
+#
+#         if not 'CPTAC-AML' in collection_descriptions:
+#             # Also descriptions for TCIA collections that don't have descriptions.
+#             collection_descriptions['CPTAC-AML'] = {
+#                 'licenseId': 1,
+#                 'description': """
+# <p>
+#     <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> Acute Myeloid Leukemia (CPTAC-AML) cohort.&nbsp;<span style="color: rgb(33,37,41);">CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics.</span></p>
+# <p>
+#     Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-AML" target="_blank">CPTAC-AML</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
+#             }
+#
+#         if not 'CPTAC-BRCA' in collection_descriptions:
+#             collection_descriptions['CPTAC-BRCA'] = {
+#                 'licenseId': 1,
+#                 'description': """
+# <p>
+#     <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> CPTAC Breast Invasive Carcinoma cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics. Radiology and pathology images from CPTAC patients are being collected and made publicly available by The Cancer Imaging Archive to enable researchers to investigate cancer phenotypes which may correlate to corresponding proteomic, genomic and clinical data.</span></p>
+# <p>
+#     Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-BRCA" target="_blank">CPTAC-BRCA</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
+#             }
+#
+#         if not 'CPTAC-COAD' in collection_descriptions:
+#             collection_descriptions['CPTAC-COAD'] = {
+#                 'licenseId': 1,
+#                 'description': """
+# <p>
+#     <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> CPTAC&nbsp;Colon Adenocarcinoma cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics.</span></p>
+# <p>
+#     Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-COAD" target="_blank">CPTAC-COAD</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
+#                 }
+#
+#         if not 'CPTAC-OV' in collection_descriptions:
+#             collection_descriptions['CPTAC-OV'] = {
+#                 'licenseId': 1,
+#                 'description': """
+# <p>
+#     <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> CPTAC&nbsp;Ovarian Serous Cystadenocarcinoma cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics.</span></p>
+# <p>
+#     Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-OV" target="_blank">CPTAC-OV</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
+#                 }
 
-        if not 'TCGA-GBM' in collection_descriptions:
-            collection_descriptions['TCGA-GBM'] = {
-                'licenseId': 1,
-                'description': """
-<p>The <a href="http://imaging.cancer.gov/" target="_blank"><u>Cancer Imaging Program (CIP)</u></a> is working directly with primary investigators from institutes participating in TCGA to obtain and load images relating to the genomic, clinical, and pathological data being stored within the <a href="http://tcga-data.nci.nih.gov/" target="_blank">TCGA Data Portal</a> Currently this large MR multi-sequence image collection of glioblastoma patients can be matched by each unique case identifier with the extensive gene and expression data of the same case from The Cancer Genome Atlas Data Portal to research the link between clinical phenome and tissue genome. </p><br />
-<a href="https://doi.org/10.7937/K9/TCIA.2016.RNYFUYE9" target="_blank">TCGA-GBM</a></span> page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
-            }
-
-        if not 'TCGA-HNSC' in collection_descriptions:
-            collection_descriptions['TCGA-HNSC'] = {
-                'licenseId': 1,
-                'description': """
-<p>The <a href="http://imaging.cancer.gov/" target="_blank"><u>Cancer Imaging Program (CIP)</u></a> is working directly with primary investigators from institutes participating in TCGA to obtain and load images relating to the genomic, clinical, and pathological data being stored within the <a href="http://tcga-data.nci.nih.gov/" target="_blank">TCGA Data Portal</a>. Currently this large PET/CT multi-sequence image collection of  head and neck squamous cell carcinoma (HNSC) patients can be matched by each unique case identifier with the extensive gene and expression data of the same case from The Cancer Genome Atlas Data Portal to research the link between clinical phenome and tissue genome.</p>
-</br>
-<p>Please see the <a href="https://doi.org/10.7937/K9/TCIA.2016.LXKQ47MS" target="_blank">TCGA-HNSC</a> page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
-            }
-
-        if not 'TCGA-LGG' in collection_descriptions:
-                collection_descriptions['TCGA-LGG'] = {
-                    'licenseId': 1,
-                    'description': """
-<div>
-	<strong>Note:&nbsp;This collection has special restrictions on its usage. See <a href="https://wiki.cancerimagingarchive.net/x/c4hF" target="_blank">Data Usage Policies and Restrictions</a>.</strong></div>
-</br><p>The <a href="http://imaging.cancer.gov/" target="_blank"><u>Cancer Imaging Program (CIP)</u></a> is working directly with primary investigators from institutes participating in TCGA to obtain and load images relating to the genomic, clinical, and pathological data being stored within the <a href="http://tcga-data.nci.nih.gov/" target="_blank">TCGA Data Portal</a>. Currently this large MR multi-sequence image collection of low grade glioma patients can be matched by each unique case identifier with the extensive gene and expression data of the same case from The Cancer Genome Atlas Data Portal to research the link between clinical phenome and tissue genome.</p><br />
-<p>Please see the <a href="https://doi.org/10.7937/K9/TCIA.2016.L4LTD3TK" target="_blank">TCGA-LGG</a> page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
-                }
-
-        if not 'CPTAC-AML' in collection_descriptions:
-            # Also descriptions for TCIA collections that don't have descriptions.
-            collection_descriptions['CPTAC-AML'] = {
-                'licenseId': 1,
-                'description': """
-<p>
-    <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> Acute Myeloid Leukemia (CPTAC-AML) cohort.&nbsp;<span style="color: rgb(33,37,41);">CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics.</span></p>
-<p>
-    Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-AML" target="_blank">CPTAC-AML</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
-            }
-
-        if not 'CPTAC-BRCA' in collection_descriptions:
-            collection_descriptions['CPTAC-BRCA'] = {
-                'licenseId': 1,
-                'description': """
-<p>
-    <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> CPTAC Breast Invasive Carcinoma cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics. Radiology and pathology images from CPTAC patients are being collected and made publicly available by The Cancer Imaging Archive to enable researchers to investigate cancer phenotypes which may correlate to corresponding proteomic, genomic and clinical data.</span></p>
-<p>
-    Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-BRCA" target="_blank">CPTAC-BRCA</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
-            }
-
-        if not 'CPTAC-COAD' in collection_descriptions:
-            collection_descriptions['CPTAC-COAD'] = {
-                'licenseId': 1,
-                'description': """
-<p>
-    <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> CPTAC&nbsp;Colon Adenocarcinoma cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics.</span></p>
-<p>
-    Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-COAD" target="_blank">CPTAC-COAD</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
-                }
-
-        if not 'CPTAC-OV' in collection_descriptions:
-            collection_descriptions['CPTAC-OV'] = {
-                'licenseId': 1,
-                'description': """
-<p>
-    <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> CPTAC&nbsp;Ovarian Serous Cystadenocarcinoma cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics.</span></p>
-<p>
-    Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-OV" target="_blank">CPTAC-OV</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
-                }
 
     return collection_descriptions
 
@@ -645,8 +646,10 @@ def get_collection_license_info():
 def get_all_tcia_metadata(type, query_param=''):
     if query_param:
         url = f"https://cancerimagingarchive.net/api/v1/{type}/?per_page=100&{query_param}"
+        # url = f"https://cancerimagingarchive.net/api/v1/{type}/?{query_param}"
     else:
         url = f"https://cancerimagingarchive.net/api/v1/{type}/?per_page=100"
+        # url = f"https://cancerimagingarchive.net/api/v1/{type}/"
     response = requests.get(url)
     if response.status_code == 200:
         # Parse the JSON response
@@ -660,6 +663,7 @@ def get_all_tcia_metadata(type, query_param=''):
             else:
                 print('Error accessing the API:', response.status_code)
                 exit
+
         return data
     else:
         print('Error accessing the API:', response.status_code)
@@ -678,6 +682,7 @@ if __name__ == "__main__":
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
     # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
     # s = get_all_tcia_metadata_stage(type="collections")
+    d = get_all_tcia_metadata(type="collections")
     d = get_all_tcia_metadata(type="analysis-results")
     d = get_all_tcia_metadata(type="citations")
     d = get_all_tcia_metadata(type="downloads", query_param="include=42023,42025,42027,42029,42031")

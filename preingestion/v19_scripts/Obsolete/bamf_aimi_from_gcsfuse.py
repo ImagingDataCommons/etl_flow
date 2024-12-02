@@ -40,8 +40,8 @@ if __name__ == '__main__':
                 The script will create this directory if necessary.')
     parser.add_argument('--subdir', default='aimi-annotations-v2', help="Subdirectory of mount_point at which to start walking directory")
     parser.add_argument('--collection_id', default='', help='collection_name of the collection or ID of analysis result to which instances belong.')
-    parser.add_argument('--source_doi', default='10.5281/zenodo.8345959', help='Collection DOI. Might be empty string.')
-    parser.add_argument('--versioned_source_doi', default='10.5281/zenodo.12734644', help='Collection DOI. Might be empty string.')
+    parser.add_argument('--source_doi', default='10.5281/zenodo.8345959', help='Unversioned DOI of this collection')
+    parser.add_argument('--versioned_source_doi', default='10.5281/zenodo.12734644', help='Versioned DOI of this collection')
     parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.8345959',\
                         help='Info page URL')
     parser.add_argument('--license', default = {"license_url": 'https://creativecommons.org/licenses/by/4.0/',\

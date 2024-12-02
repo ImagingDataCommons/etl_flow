@@ -115,7 +115,12 @@ def copy_view(client, args, view_id):
             new_view.friendly_name = view.friendly_name
             new_view.description = view.description
             new_view.labels = view.labels
-            installed_view = client.create_table(new_view)
+            try:
+                installed_view = client.create_table(new_view)
+            except Exception as exc:
+                errlogger.error(f'{exc}')
+
+            client.get_table(f'{args.trg_project}.{args.trg_dataset}.{view_id}')
 
             installed_view.schema = view.schema
 
@@ -130,7 +135,7 @@ def copy_view(client, args, view_id):
         errlogger.error((f'{exc}'))
     return
 
-def publish_dataset(args, table_ids={}, skipped_table_ids={}, copy_views=True):
+def copy_dataset(args, table_ids={}, skipped_table_ids={}, copy_views=True):
     client = bigquery.Client()
     # client = bigquery.Client(project=args.trg_project)
     src_dataset_ref = bigquery.DatasetReference(args.src_project, args.src_dataset)

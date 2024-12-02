@@ -13,6 +13,7 @@ def formatForBQ(attrs, lc=False):
   for i in range(len(attrs)):
     headSet=[attrs[i][j] for j in range(len(attrs[i])) if len(attrs[i][j])>0]
     header='_'.join(str(k) for k in headSet)
+    header=header.strip()
     header=header.replace('/','_')
     header=header.replace('-', '_')
     header=header.replace(' ', '_')
@@ -48,9 +49,9 @@ def parseAMBLDic(df):
   benign=["benign1", "benign2","benign3"]
 
   for index, row in df.iterrows():
-    if ('column' in str(row[0])) and not ('columns' in str(row[0])):
-      excelCol=row[0].strip('column').strip()
-      dataCol = row[1]
+    if ('column' in str(row.iloc[0])) and not ('columns' in str(row.iloc[0])):
+      excelCol=row.iloc[0].strip('column').strip()
+      dataCol = row.iloc[1]
       colBq = formatForBQ([[dataCol]], True)[0]
       data_dict[colBq]={}
 
@@ -63,10 +64,10 @@ def parseAMBLDic(df):
         if ((excelCol>='H') and colBq.endswith('1')):
           data_dict[col]['opts']=[{"option_code":"-1", "option_description":"indicates that data is missing or not applicable"}]
 
-    elif (len(str(row[0]))==0) and (len(str(row[1]))>0) and not ('see definition above' in row[1]) and (len(dataCols)>0):
+    elif (len(str(row.iloc[0]))==0) and (len(str(row.iloc[1]))>0) and not ('see definition above' in row.iloc[1]) and (len(dataCols)>0):
       curind=0
       for col in dataCols:
-        lbl=row[1]
+        lbl=row.iloc[1]
         lbl=lbl.replace(ordinal[0], ordinal[curind])
         lbl = lbl.replace(pos[0], pos[curind])
         lbl = lbl.replace(benign[0], benign[curind])
@@ -75,9 +76,9 @@ def parseAMBLDic(df):
         else:
           data_dict[col]['label'] = data_dict[col]['label']+lbl
         curind=curind+1
-    elif (str(row[0]) in lbls) or (isinstance(row[0], int)):
-      optcode= str(row[0])
-      desc= row[1]
+    elif (str(row.iloc[0]) in lbls) or (isinstance(row.iloc[0], int)):
+      optcode= str(row.iloc[0])
+      desc= row.iloc[1]
       opt = {"option_code": optcode, "option_description": desc}
       for col in dataCols:
         if not ('opts' in data_dict[col]):

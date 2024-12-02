@@ -66,7 +66,7 @@ def dcf_manifest(args, row, service, url):
     bq_client = bigquery.Client(project='idc-dev-etl')
     gcs_client = storage.Client(project='idc-dev-etl')
     # file_name = f"{collection_id.lower().replace('-','_').replace(' ','-')}_v{manifest_version}_{service}.csv"
-    file_name = f"{row['collection_id'].lower().replace('-','_').replace(' ','-')}_{service}.csv"
+    file_name = f"{row['collection_id'].lower().replace('-','_').replace(' ','-')}_{service}.dcf"
     query = f"""
     SELECT distinct concat('dg.4DFC/',i_uuid) drs_uri
     FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_public` aj

@@ -16,7 +16,7 @@
 
 import os
 import logging
-from logging import INFO, ERROR
+from logging import INFO, ERROR, WARNING
 import settings
 from google.cloud import storage
 from google.cloud.storage import blob
@@ -68,6 +68,17 @@ err_fh = logging.FileHandler('{}/error.log'.format(settings.LOG_DIR))
 errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
 errlogger.addHandler(err_fh)
 err_fh.setFormatter(errformatter)
+
+# warninglogger = logging.getLogger('warning.err')
+warninglogger = logging.getLogger('py.warnings')
+warninglogger.setLevel(WARNING)
+for hdlr in warninglogger.handlers[:]:
+    warninglogger.removeHandler(hdlr)
+warning_fh = logging.FileHandler('{}/warning.log'.format(settings.LOG_DIR))
+warningformatter = logging.Formatter('warning:%(message)s')
+warninglogger.addHandler(warning_fh)
+warning_fh.setFormatter(warningformatter)
+
 
 # def save_log_dirs():
 #     # if os.getenv("CI"):

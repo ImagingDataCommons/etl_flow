@@ -84,7 +84,7 @@ def create_all_joined(client):
     se.license_url,
     se.license_long_name,
     se.license_short_name,
-    se.excluded,
+    se.excluded se_excluded,
     se.redacted AS se_redacted,
     i.sop_instance_uid,
     i.uuid AS i_uuid,

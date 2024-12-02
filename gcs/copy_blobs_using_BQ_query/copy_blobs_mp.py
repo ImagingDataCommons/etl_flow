@@ -28,8 +28,8 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 import settings
 
 
-# The query should return a table with a single column, 'blobs'
-# basically <instance_uuid>.dcm
+# The query should return a table with a single column, 'blob_name'
+# basically <series_uuid>/<instance_uuid>.dcm
 def get_urls(args, query):
     client = bigquery.Client()
     query_job = client.query(query)  # Make an API request.
@@ -38,8 +38,8 @@ def get_urls(args, query):
     destination = client.get_table(destination)
     return destination
 
-TRIES = 3
 
+TRIES = 3
 def copy_instances(args, client, src_bucket, dst_bucket, blob_names, n):
     for blob_name in blob_names:
         src_blob = src_bucket.blob(blob_name)
@@ -76,7 +76,7 @@ def worker(input, args, dones):
     src_bucket = storage.Bucket(client, args.src_bucket)
     dst_bucket = storage.Bucket(client, args.dst_bucket)
     for blob_names, n in iter(input.get, 'STOP'):
-        blob_names_todo = set(blob_names) - dones
+        blob_names_todo = sorted(list(set(blob_names) - dones))
         if blob_names_todo:
             copy_instances(args, client, src_bucket, dst_bucket, blob_names_todo, n)
         else:
@@ -87,22 +87,18 @@ def worker(input, args, dones):
 # version: Version to work on)
 # src_bucket: Bucket from which to copy)
 # dst_bucket: Bucket to which to copy)
-# batch: Batch sizw to workers)
+# batch: Batch size to workers)
 # processes: Number of processes to run)
 
 def copy_all_blobs(args, query):
     bq_client = bigquery.Client()
     destination = get_urls(args, query)
-
-    num_processes = args.processes
-    processes = []
-    # Create a pair of queue for each process
-
-    task_queue = Queue()
-
-    strt = time.time()
     dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
 
+    strt = time.time()
+    num_processes = args.processes
+    processes = []
+    task_queue = Queue()
     # Start worker processes
     for process in range(num_processes):
         args.id = process + 1
@@ -113,7 +109,7 @@ def copy_all_blobs(args, query):
     # Distribute the work across the task_queues
     n = 0
     for page in bq_client.list_rows(destination, page_size=args.batch).pages:
-        urls = [row.blob for row in page]
+        urls = [row.blob_name for row in page]
         task_queue.put((urls, n))
         # print(f'Queued {n}:{n+args.batch-1}')
         n += page.num_items

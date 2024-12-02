@@ -172,10 +172,10 @@ def build_instances_idc(sess, args, collection, patient, study, series):
     # When idc is the source of instance data, the instances are already in a bucket.
     # From idc_xxx DB hierarchy, we get a table of the SOPInstanceUID, hash and GCS URL of
     # all the instances in the series
-    stmt = select(IDC_Instance.sop_instance_uid, IDC_Instance.gcs_url, IDC_Instance.hash ). \
+    stmt = select(IDC_Instance.sop_instance_uid, IDC_Instance.ingestion_url, IDC_Instance.hash ). \
         where(IDC_Instance.series_instance_uid == series.series_instance_uid)
     result = sess.execute(stmt)
-    src_instance_metadata = {i.sop_instance_uid:{'gcs_url':i.gcs_url, 'hash':i.hash} \
+    src_instance_metadata = {i.sop_instance_uid:{'ingestion_url':i.ingestion_url, 'hash':i.hash} \
                              for i in result.fetchall()}
     # Now we copy each instance to the staging bucket
     start = time.time()
@@ -184,15 +184,15 @@ def build_instances_idc(sess, args, collection, patient, study, series):
         if not instance.done:
             # Copy the instance and validate the hash
             instance.hash = src_instance_metadata[instance.sop_instance_uid]['hash']
-            instance.size, hash = copy_gcs_to_gcs(args, client, args.prestaging_idc_bucket, series, instance, src_instance_metadata[instance.sop_instance_uid]['gcs_url'])
+            instance.size, hash = copy_gcs_to_gcs(args, client, args.prestaging_idc_bucket, series, instance, src_instance_metadata[instance.sop_instance_uid]['ingestion_url'])
             if hash != instance.hash:
                 errlogger.error("       p%s: Copy files to GCS failed for %s/%s/%s/%s/%s", args.pid,
                                 collection.collection_id, patient.submitter_case_id, study.study_instance_uid,
                                 series.series_instance_uid, instance.sop_instance_uid)
                 # Copy failed. Return without marking all instances done. This will be prevent the series from being done.
                 return
-            breakpoint() # Validate the following
-            instance.ingestion_url = src_instance_metadata[instance.sop_instance_uid]['gcs_url']
+            instance.ingestion_url = src_instance_metadata[instance.sop_instance_uid]['ingestion_url']
+            assert instance.ingestion_url is not None and instance.ingestion_url != ""
             total_size += instance.size
             instance.done = True
     progresslogger.debug("        p%s: Series %s: instances: %s, gigabytes: %.2f, rate: %.2fMB/s",

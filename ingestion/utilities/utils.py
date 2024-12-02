@@ -204,10 +204,10 @@ def copy_composite_blob_to_noncomposite_blob(args, src_blob, dst_blob):
 
 # Copy an instance from a source bucket to a destination bucket. Currently used when ingesting IDC sourced data
 # which is placed in some bucket after preparation
-def copy_gcs_to_gcs(args, client, dst_bucket_name, series, instance, gcs_url):
+def copy_gcs_to_gcs(args, client, dst_bucket_name, series, instance, ingestion_url):
     # storage_client = args.client
-    idc_src_bucket = client.bucket(gcs_url.split('gs://')[1].split('/',1)[0])
-    blob_id = gcs_url.split('gs://')[1].split('/',1)[1]
+    idc_src_bucket = client.bucket(ingestion_url.split('gs://')[1].split('/',1)[0])
+    blob_id = ingestion_url.split('gs://')[1].split('/',1)[1]
     dst_bucket = client.bucket(dst_bucket_name)
     src_blob = idc_src_bucket.blob(blob_id)
     dst_blob = dst_bucket.blob(f'{series.uuid}/{instance.uuid}.dcm')

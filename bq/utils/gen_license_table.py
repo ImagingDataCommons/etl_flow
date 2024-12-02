@@ -27,12 +27,17 @@ from python_settings import settings
 # Generate a list of included or excluded collections
 def get_collections_in_version(client, args):
     # Return collections that have specified access
+    # query = f"""
+    # SELECT replace(replace(lower(tcia_api_collection_id),'-','_'),' ','_') collection_id
+    # FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections`
+    # WHERE tcia_access='{args.access}' OR idc_access='{args.access}'
+    # """
+    # collection_ids = dict(client.query(query))
     query = f"""
     SELECT replace(replace(lower(tcia_api_collection_id),'-','_'),' ','_') collection_id
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections`
-    WHERE tcia_access='{args.access}' OR idc_access='{args.access}'
+    WHERE access='{args.access}'
     """
-    # collection_ids = dict(client.query(query))
     collection_ids = [row.collection_id for row in client.query(query)]
     return collection_ids
 

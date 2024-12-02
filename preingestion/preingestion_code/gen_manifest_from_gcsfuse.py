@@ -34,6 +34,7 @@ from utilities.logging_config import successlogger, errlogger, progresslogger
 from base64 import b64decode
 from preingestion.validation_code.validate_analysis_result import validate_analysis_result
 from preingestion.validation_code.validate_original_collection import validate_original_collection
+from utilities.logging_config import progresslogger
 
 from pydicom import dcmread
 
@@ -48,7 +49,7 @@ def build_manifest(args):
 
     with open(args.manifest, 'w') as manifest:
 
-        manifest.write('collection_id,patientID,StudyInstanceUID,SeriesInstanceUID,SOPInstanceUID,gcs_url,md5_hash\n');
+        manifest.write('collection_id,patientID,StudyInstanceUID,SeriesInstanceUID,SOPInstanceUID,ingestion_url,md5_hash\n');
         collection_ids = set()
         collection_map = {}
         if 'collection_map' in args and args.collection_map:
@@ -63,7 +64,7 @@ def build_manifest(args):
             for page in iterator.pages:
                 if page.num_items:
                     for blob in page:
-                        if not blob.name.endswith(('DICOMDIR', '.txt', '.csv', '/')):
+                        if not blob.name.endswith(('DICOMDIR', '.txt', '.csv', '/')) and args.filter in blob.name:
                             with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
                                 try:
                                     r = dcmread(f, specific_tags=['PatientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID'], stop_before_pixels=True)
@@ -89,31 +90,32 @@ def build_manifest(args):
                                     continue
                             hash = b64decode(blob.md5_hash).hex()
                             manifest.write(f'{collection_id},{patient_id},{study_id},{series_id},{instance_id},{blob.name},{hash}\n')
+                            progresslogger.info(f'{collection_id},{patient_id},{study_id},{series_id},{instance_id},{blob.name},{hash}')
 
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--src_bucket', default='gtex_pathology', help='Source bucket containing instances')
-    parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/preeingestion_gcsfuse_mount_point', help='Directory on which to mount the bucket.\
-                The script will create this directory if necessary.')
-    parser.add_argument('--subdir', \
-            default='v1', \
-            help="Subdirectory of mount_point at which to start walking directory")
-    parser.add_argument('--collection_id', default='GTEx', help='collection_name of the collection or ID of analysis result to which instances belong.')
-    parser.add_argument('--manifest', default='./gtex_generated_manifest.csv', help='Manifest file name')
-    args = parser.parse_args()
-    print("{}".format(args), file=sys.stdout)
-    args.client=storage.Client()
-
-    try:
-        # gcsfuse mount the bucket
-        pathlib.Path(args.mount_point).mkdir( exist_ok=True)
-        subprocess.run(['gcsfuse', '--implicit-dirs', args.src_bucket, args.mount_point])
-        build_manifest(args)
-    finally:
-        # Always unmount
-        subprocess.run(['fusermount', '-u', args.mount_point])
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+#     parser.add_argument('--version', default=settings.CURRENT_VERSION)
+#     parser.add_argument('--src_bucket', default='gtex_pathology', help='Source bucket containing instances')
+#     parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/preeingestion_gcsfuse_mount_point', help='Directory on which to mount the bucket.\
+#                 The script will create this directory if necessary.')
+#     parser.add_argument('--subdir', \
+#             default='v1', \
+#             help="Subdirectory of mount_point at which to start walking directory")
+#     parser.add_argument('--collection_id', default='GTEx', help='collection_name of the collection or ID of analysis result to which instances belong.')
+#     parser.add_argument('--manifest', default='./gtex_generated_manifest.csv', help='Manifest file name')
+#     args = parser.parse_args()
+#     print("{}".format(args), file=sys.stdout)
+#     args.client=storage.Client()
+#
+#     try:
+#         # gcsfuse mount the bucket
+#         pathlib.Path(args.mount_point).mkdir( exist_ok=True)
+#         subprocess.run(['gcsfuse', '--implicit-dirs', args.src_bucket, args.mount_point])
+#         build_manifest(args)
+#     finally:
+#         # Always unmount
+#         subprocess.run(['fusermount', '-u', args.mount_point])
 
 
