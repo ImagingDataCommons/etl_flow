@@ -43,10 +43,11 @@ def gen_instance_manifest(args):
         i_rev_idc_version,
         ts.timestamps[ORDINAL(i_init_idc_version)] AS created,
         ts.timestamps[ORDINAL(i_rev_idc_version)] AS updated,
-        IF(i_source='tcia', 
-          CONCAT('gs://', pub_gcs_tcia_url,'/', se_uuid, '/', i_uuid, '.dcm', ', s3://', pub_aws_tcia_url,'/', se_uuid, '/', i_uuid, '.dcm'),
-          CONCAT('gs://', pub_gcs_idc_url,'/', se_uuid, '/', i_uuid, '.dcm', ', s3://', pub_aws_idc_url,'/', se_uuid, '/', i_uuid, '.dcm')
-        ) urls
+--         IF(i_source='tcia', 
+--           CONCAT('gs://', pub_gcs_tcia_url,'/', se_uuid, '/', i_uuid, '.dcm', ', s3://', pub_aws_tcia_url,'/', se_uuid, '/', i_uuid, '.dcm'),
+--           CONCAT('gs://', pub_gcs_idc_url,'/', se_uuid, '/', i_uuid, '.dcm', ', s3://', pub_aws_idc_url,'/', se_uuid, '/', i_uuid, '.dcm')
+--         ) urls
+        CONCAT('gs://', pub_gcs_bucket,'/', se_uuid, '/', i_uuid, '.dcm', ', s3://', pub_aws_bucket,'/', se_uuid, '/', i_uuid, '.dcm') urls
       FROM
         `{args.project}.{args.dev_bqdataset}.all_joined_public_and_current` aj
       JOIN

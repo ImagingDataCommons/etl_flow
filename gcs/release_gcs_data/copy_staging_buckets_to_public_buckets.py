@@ -21,7 +21,7 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--processes', default=1, help="Number of concurrent processes")
+    parser.add_argument('--processes', default=64, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
     parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/copy_bucket_mp')
 
@@ -34,7 +34,7 @@ if __name__ == '__main__':
         dones = set([])
 
     args.src_bucket = 'public-datasets-idc-staging'
-    args.dst_bucket = 'public-datasets-idc'
+    args.dst_bucket = 'idc-open-data'
     copy_all_instances(args, dones)
 
     args.src_bucket = 'idc-open-idc1-staging'

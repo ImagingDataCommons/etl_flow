@@ -39,12 +39,12 @@ pathology_data_schema = [
     bigquery.SchemaField('download_slug', 'STRING', mode='NULLABLE', description='Collection manager slug of this download'),
     bigquery.SchemaField('download_id', 'STRING', mode='NULLABLE', description='Collection manager id of this download'),
     bigquery.SchemaField('download_title', 'STRING', mode='NULLABLE', description='Download title'),
-    bigquery.SchemaField('hash', 'STRING', mode='NULLABLE', description='MD5 hash of "sums" of files in the package'),
-    bigquery.SchemaField('sums_file_found', 'STRING', mode='NULLABLE',
-                         description='True if found, else False'),
-    bigquery.SchemaField('sums_file_empty', 'STRING', mode='NULLABLE',
-                         description='True if sums file found, but empty'),
-    bigquery.SchemaField('aspera_error_msg', 'STRING', mode='NULLABLE'),
+    # bigquery.SchemaField('hash', 'STRING', mode='NULLABLE', description='MD5 hash of "sums" of files in the package'),
+    # bigquery.SchemaField('sums_file_found', 'STRING', mode='NULLABLE',
+    #                      description='True if found, else False'),
+    # bigquery.SchemaField('sums_file_empty', 'STRING', mode='NULLABLE',
+    #                      description='True if sums file found, but empty'),
+    # bigquery.SchemaField('aspera_error_msg', 'STRING', mode='NULLABLE'),
     bigquery.SchemaField('date_updated', 'DATE', mode='NULLABLE', description='?'),
     bigquery.SchemaField('status', 'STRING', mode='NULLABLE', description='Public or limited'),
     bigquery.SchemaField('file_type', 'STRING', mode='NULLABLE', description='File type'),
@@ -112,18 +112,18 @@ def gen_table(args):
 
     pathology_data = []
     for id, data in pathology_downloads.items():
-        if data["collection_slug"] not in args.skip:
-            progresslogger.info(f'Processing {data["collection_slug"]}, {data["slug"]}')
-            sums = get_aspera_hash(data)
-            if sums == []:
-                hash = ""
-                errlogger.error(f'\tNo sums found for {data["collection_slug"]}, {data["slug"]}')
-            else:
-                hash = get_merkle_hash(sums)
-                progresslogger.info(f'\t{data["collection_slug"]}, {data["slug"]}: {hash}')
-        else:
-            progresslogger.info(f'\tSkipped {data["collection_slug"]}, {data["slug"]}')
-            hash = ""
+        # if data["collection_slug"] not in args.skip:
+        #     progresslogger.info(f'Processing {data["collection_slug"]}, {data["slug"]}')
+        #     sums = get_aspera_hash(data)
+        #     if sums == []:
+        #         hash = ""
+        #         errlogger.error(f'\tNo sums found for {data["collection_slug"]}, {data["slug"]}')
+        #     else:
+        #         hash = get_merkle_hash(sums)
+        #         progresslogger.info(f'\t{data["collection_slug"]}, {data["slug"]}: {hash}')
+        # else:
+        #     progresslogger.info(f'\tSkipped {data["collection_slug"]}, {data["slug"]}')
+        #     hash = ""
 
         download = dict(
             idc_collection_id = data["collection_slug"].replace('-','_'),
@@ -132,10 +132,10 @@ def gen_table(args):
             download_slug = data['slug'],
             download_title = str(data["download_title"]),
             download_id = id,
-            hash = hash,
-            sums_file_found = data['sums_file_found'],
-            sums_file_empty = data['sums_file_empty'],
-            aspera_error_msg = data['aspera_error_msg'],
+            # hash = hash,
+            # sums_file_found = data['sums_file_found'],
+            # sums_file_empty = data['sums_file_empty'],
+            # aspera_error_msg = data['aspera_error_msg'],
             date_updated = data["date_updated"],
             status = data['status'],
             file_type = str(data["file_type"]),
@@ -160,6 +160,8 @@ def gen_table(args):
     except Exception as exc:
         errlogger.error(f'Table creation failed: {exc}')
         exit
+    return pathology_data
+
 
 
 if __name__ == "__main__":
@@ -169,5 +171,3 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-
-    gen_table(args)

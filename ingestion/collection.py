@@ -89,6 +89,10 @@ def expand_collection(sess, args, all_sources, collection):
     # retire it from the source.
     patients = all_sources.patients(collection, skipped)
 
+    # Should prestaging buckets be named by source_doi? Don't really know all the source_dois at this point
+    # It's possible that data, e.g. IDC sourced data, could have different licences, original data could be CR
+    # and analysis results data CC BY 4.0.
+    breakpoint()
     # Since we are starting, delete everything from the prestaging bucket.
     if collection.revised.tcia:
         progresslogger.info("Emptying tcia prestaging buckets")

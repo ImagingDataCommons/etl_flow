@@ -234,7 +234,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
     parser.add_argument('--num_processes', default=1)
     parser.add_argument('--local_disk_dir', default='/mnt/disks/idc-etl/series_zips')
-    parser.add_argument('--src_bucket', default='public-datasets-idc', help='Source bucket containing instances')
+    parser.add_argument('--src_bucket', default='idc-open-data', help='Source bucket containing instances')
     parser.add_argument('--dst_project', default='idc-archive', help='Project of the dst_bucket')
     parser.add_argument('--src_mount_point', default='/mnt/disks/idc-etl/src_mount_point', help='Directory on which to mount the src bucket.\
                 The script will create this directory if necessary.')

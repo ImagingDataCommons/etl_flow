@@ -62,7 +62,7 @@ def copy_some_blobs(args, client, urls, n, dones):
 
             # We don't copy directly to the public-datasets-idc bucket.
             # We copy to a staging bucket and Google copies to the public bucket
-            if 'public-datasets-idc' in pub_bucket_name:
+            if 'idc-open-data' in pub_bucket_name:
                 pub_bucket_name = 'public-datasets-idc-staging'
             elif 'idc-open-cr' in pub_bucket_name:
                 pub_bucket_name = 'idc-open-cr-staging'

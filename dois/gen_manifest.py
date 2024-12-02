@@ -47,9 +47,9 @@ def s5cmd_manifest(args, filename_prefix, source_doi, versioned_source_doi, serv
 
     if subcollection_name:
         subcollection_id = subcollection_name
-        file_name = f"{filename_prefix}-{subcollection_id}-{service}.s5cmd"
+        file_name = f"{filename_prefix}-{subcollection_id}-idc_v{args.version}-{service}.s5cmd"
     else:
-        file_name = f"{filename_prefix}-{service}.s5cmd"
+        file_name = f"{filename_prefix}-idc_v{args.version}-{service}.s5cmd"
 
     header = \
 f'''# To download the files in this manifest, 
@@ -87,9 +87,9 @@ def dcf_manifest(args, filename_prefix, source_doi, versioned_source_doi, servic
 
     if subcollection_name:
         subcollection_id = subcollection_name
-        file_name = f"{filename_prefix}-{subcollection_id}-{service}.csv"
+        file_name = f"{filename_prefix}-{subcollection_id}-idc_v{args.version}-{service}.csv"
     else:
-        file_name = f"{filename_prefix}-{service}.csv"
+        file_name = f"{filename_prefix}-idc_v{args.version}-{service}.csv"
 
     header = \
 f'''# To obtain GCS and AWS URLs of the instances in this manifest, 

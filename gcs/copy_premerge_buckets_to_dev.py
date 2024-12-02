@@ -26,75 +26,50 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 
 import settings
 from google.cloud import storage, bigquery
-from copy_bucket_mp import copy_all_instances
+from copy_blobs_using_BQ_query.copy_blobs_mp import copy_all_blobs
 
-def get_collection_groups():
+
+def preview_copies(args):
     client = bigquery.Client()
-    collections = {}
     query = f"""
-    SELECT tcia_api_collection_id, dev_tcia_url, dev_idc_url
-    FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_collections`
-    """
+SELECT DISTINCT CONCAT('idc_v{args.version}_',source,'_', REPLACE(REPLACE(LOWER(collection_id), '-','_'),' ','_')) src_bucket, dev_bucket dst_bucket
+FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` 
+WHERE i_rev_idc_version={settings.CURRENT_VERSION}
+ORDER BY src_bucket"""
 
     result = client.query(query).result()
+    progresslogger.info(f"Copy preview:")
     for row in result:
-        collections[row['tcia_api_collection_id'].lower().replace('-','_').replace(' ','_')] = {"dev_tcia_url": row["dev_tcia_url"], "dev_idc_url": row["dev_idc_url"]}
-
-    return collections
-
-def copy_prestaging_to_staging(args, prestaging_bucket, staging_bucket, dones):
-    # progresslogger.info(f'Copying {prestaging_bucket} to {staging_bucket}')
-    args.src_bucket = prestaging_bucket
-    args.dst_bucket = staging_bucket
-    copy_all_instances(args, dones)
-    return
-
-
-def preview_copies(args, client, bucket_data):
-    for collection_id in bucket_data:
-        if client.bucket(f'idc_v{args.version}_tcia_{collection_id}').exists():
-            progresslogger.info(f'Copying idc_v{args.version}_tcia_{collection_id} to {bucket_data[collection_id]["dev_tcia_url"]}')
-        if client.bucket(f'idc_v{args.version}_idc_{collection_id}').exists():
-            progresslogger.info(f'Copying idc_v{args.version}_idc_{collection_id} to {bucket_data[collection_id]["dev_idc_url"]}')
-    return
+        progresslogger.info(f'{row["src_bucket"]}-->{row["dst_bucket"]}')
+    return client.query(query).result()
 
 
 def copy_premerge_buckets(args):
     client = storage.Client()
-    bucket_data= get_collection_groups()
-    # preview_copies(args, client, bucket_data)
-    try:
-        # Create a set of previously copied blobs
-        # dones = set(open(f'{args.log_dir}/{args.src_bucket}_success.log').read().splitlines())
-        dones = set(open(successlogger.handlers[0].baseFilename).read().splitlines())
-        pre_done_buckets = set(open(progresslogger.handlers[0].baseFilename).read().splitlines())
-        done_buckets = []
-        for row in pre_done_buckets:
-            if row.startswith('Completed bucket'):
-                done_buckets.append(row.split(',')[0].split('Completed bucket ')[1])
-        done_buckets = set(done_buckets)
-    except:
-        dones = set([])
-        done_buckets = set([])
+    src_and_dst_buckets = preview_copies(args)
 
-    for collection_id in sorted(list(bucket_data.keys())):
-        if client.bucket(f'idc_v{args.version}_tcia_{collection_id}').exists():
-            if f'idc_v{args.version}_tcia_{collection_id}' in done_buckets:
-                progresslogger.info(f'Bucket idc_v{args.version}_tcia_{collection_id} previously copied')
-            else:
-                copy_prestaging_to_staging(args, f'idc_v{args.version}_tcia_{collection_id}', bucket_data[collection_id]['dev_tcia_url'], dones)
-        if client.bucket(f'idc_v{args.version}_idc_{collection_id}').exists():
-            if f'idc_v{args.version}_idc_{collection_id}' in done_buckets:
-                progresslogger.info(f'Bucket idc_v{args.version}_idc_{collection_id} previously copied')
-            else:
-                copy_prestaging_to_staging(args, f'idc_v{args.version}_idc_{collection_id}', bucket_data[collection_id]['dev_idc_url'], dones)
+    for row in src_and_dst_buckets:
+        args.src_bucket = row['src_bucket']
+        args.dst_bucket = row['dst_bucket']
+
+        query = f"""
+        SELECT DISTINCT CONCAT(se_uuid, '/', i_uuid, '.dcm') blob_name
+        FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined` 
+        WHERE i_rev_idc_version={settings.CURRENT_VERSION} 
+        AND CONCAT('idc_v{args.version}_',source,'_', REPLACE(REPLACE(LOWER(collection_id), '-','_'),' ','_')) = '{args.src_bucket}'
+        AND dev_bucket = '{args.dst_bucket}'
+        ORDER BY blob_name"""
+
+        progresslogger.info(f'p0: Copying {args.src_bucket}-->{args.dst_bucket}')
+        copy_all_blobs(args, query)
+
     return
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
-    parser.add_argument('--processes', default=8, help="Number of concurrent processes")
+    parser.add_argument('--processes', default=16, help="Number of concurrent processes")
     parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
     args = parser.parse_args()
     args.id = 0 # Default process ID

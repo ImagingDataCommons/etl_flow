@@ -33,8 +33,23 @@ from bq.generate_tables_and_views.auxiliary_metadata_table.schema import auxilia
 
 def build_table(args):
     query = f"""
-    SELECT
-      
+WITH newest as (SELECT DISTINCT source_doi, CAST(SPLIT(source_doi, '.')[2] AS INT64) sd, MAX(i_rev_idc_version) newest 
+      FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` 
+      GROUP BY source_doi, i_source
+      HAVING i_source='idc'
+      ORDER BY sd),
+newest_versioned_source_dois AS (
+      (SELECT DISTINCT aj.source_doi, aj.versioned_source_doi
+      FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` aj
+      JOIN newest
+      ON aj.source_doi = newest.source_doi AND aj.i_rev_idc_version=newest.newest
+      ORDER by aj.source_doi)
+      UNION ALL
+      (SELECT DISTINCT aj.source_doi, "" versioned_source_doi 
+      FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` aj
+      WHERE i_source='tcia')
+)
+SELECT 
       collection_id as collection_name,
       REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_') AS collection_id,
       c_min_timestamp as collection_timestamp,
@@ -87,14 +102,11 @@ def build_table(args):
       # There are no dev S3 buckets, so populate the aws_series_url 
       # the same for both dev and pub versions of auxiliary_metadata
       CONCAT('s3://',
---         if( i_source='tcia', aj.pub_aws_tcia_url, aj.pub_aws_idc_url),
         pub_aws_bucket,
             '/', se_uuid, '/') as series_aws_url,           
-      IF(collection_id='APOLLO', '', source_doi) AS Source_DOI,
+      IF(collection_id='APOLLO', '', aj.source_doi) AS Source_DOI,
       source_url AS Source_URL,
---       IF(source_url is Null OR source_url='', CONCAT('https://doi.org/', source_doi), source_url) AS Source_URL,
---       IF(versioned_source_doi is NULL, "", versioned_source_doi) versioned_Source_DOI,
-      versioned_source_doi AS versioned_Source_DOI,
+      nvsd.versioned_source_doi,
       series_instances,
       se_hashes.all_hash AS series_hash,
       access AS access,
@@ -133,7 +145,6 @@ def build_table(args):
       
     # If we are generating gcs_bucket for the public auxiliary_metadata table 
     if('{args.target}' = 'pub', 
---         if( i_source='tcia', aj.pub_gcs_tcia_url, aj.pub_gcs_idc_url),
         pub_gcs_bucket, 
     #else 
         # We are generating the dev auxiliary_metadata
@@ -149,7 +160,6 @@ def build_table(args):
                 ),
         #else
              # This instance is not new so use the public bucket prefix; the dev bucket is archived
---              if( i_source='tcia', aj.dev_tcia_url, aj.dev_idc_url)
             pub_gcs_bucket
             )
         ) as gcs_bucket,
@@ -157,12 +167,10 @@ def build_table(args):
       # There are no dev S3 buckets, so populate the aws_url 
       # the same for both dev and pub versions of auxiliary_metadata
       CONCAT('s3://',
---         if( i_source='tcia', aj.pub_aws_tcia_url, aj.pub_aws_idc_url),
         pub_aws_bucket,
             '/', se_uuid, '/', i_uuid, '.dcm') as aws_url,
       # There are no dev S3 buckets, so populate the aws_bucket 
       # the same for both dev and pub versions of auxiliary_metadata
---       if( i_source='tcia', aj.pub_aws_tcia_url, aj.pub_aws_idc_url) as aws_bucket,
       pub_aws_bucket aws_bucket,
       i_size AS instance_size,
       i_hash AS instance_hash,
@@ -173,6 +181,8 @@ def build_table(args):
       license_long_name,
       license_short_name
       FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` aj
+      JOIN newest_versioned_source_dois nvsd
+      ON aj.source_doi = nvsd.source_doi
       ORDER BY
         collection_name, submitter_case_id
 """

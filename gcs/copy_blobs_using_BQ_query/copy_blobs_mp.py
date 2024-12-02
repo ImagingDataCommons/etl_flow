@@ -28,8 +28,8 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 import settings
 
 
-# The query should return a table with a single column, 'blobs'
-# basically <instance_uuid>.dcm
+# The query should return a table with a single column, 'blob_name'
+# basically <series_uuid>/<instance_uuid>.dcm
 def get_urls(args, query):
     client = bigquery.Client()
     query_job = client.query(query)  # Make an API request.
@@ -87,7 +87,7 @@ def worker(input, args, dones):
 # version: Version to work on)
 # src_bucket: Bucket from which to copy)
 # dst_bucket: Bucket to which to copy)
-# batch: Batch sizw to workers)
+# batch: Batch size to workers)
 # processes: Number of processes to run)
 
 def copy_all_blobs(args, query):
