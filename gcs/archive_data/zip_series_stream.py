@@ -18,6 +18,8 @@
 # a specified GCS bucket. Unworkable because stream_zip doesn't actually stream when not compressing.
 
 import argparse
+import json
+
 import pandas
 import logging
 from utilities.logging_config import successlogger, progresslogger, errlogger, warninglogger
@@ -26,15 +28,17 @@ import settings
 import sys
 from google.cloud import storage, bigquery, exceptions
 
+import zlib
 from stream_zip import stream_zip, NO_COMPRESSION_64, ZIP_64
+from stream_unzip import stream_unzip
 from datetime import datetime
 from stat import S_IFREG
 import time
 from pandas import Series
+import crc32c
+import base64
 import psutil
-
-
-
+import os
 
 
 # Get a list of the UUIDs of the series which have not been zipped and copied to GCS.
@@ -43,20 +47,17 @@ def get_undone_series(args: object) -> object:
     query = f"""
     WITH series_data AS (
     SELECT DISTINCT collection_id, replace(replace(source_doi,'/','_'),'.','_')  source_doi, se_rev_idc_version, se_uuid, i_size, i_uuid, i_source, 
-        if(i_source='tcia', tcia_access, idc_access) access,
-        if(i_source='tcia', 
---             if(pub_gcs_tcia_url is NULL, dev_tcia_url, pub_gcs_tcia_url),
---             if(pub_gcs_idc_url is NULL, dev_idc_url, pub_gcs_idc_url)
-            if(pub_gcs_tcia_url = 'public-datasets-idc', 'public-datasets-idc', dev_tcia_url),
-            if(pub_gcs_idc_url = 'public-datasets-idc', 'public-datasets-idc', dev_idc_url)
-            ) src_bucket
+        access,
+        dev_bucket src_bucket
     FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined`
+    WHERE se_redacted = False
     )
     SELECT collection_id, source_doi, access, se_rev_idc_version version, se_uuid, SUM(i_size) se_size, 
         COUNT(i_uuid) instances, src_bucket, 
-        if(src_bucket='public-datasets-idc', 'idc-arch-open', replace(src_bucket, 'dev', 'arch')) dst_bucket
+        REPLACE(src_bucket, 'dev', 'arch') dst_bucket
     FROM series_data
     GROUP BY collection_id, source_doi, access, version, se_uuid,  src_bucket
+    having src_bucket = '{args.src_bucket}'
     ORDER by collection_id, source_doi, version, se_uuid """
 
     done_series = open(successlogger.handlers[0].baseFilename).read().splitlines()
@@ -81,16 +82,50 @@ def get_instances_in_series(args: object, se_uuid: str) -> object:
     undone_instances = client.query(query).to_dataframe()
     return(undone_instances)
 
+def validate_zip(args, series, src_bucket, dst_bucket):
+    chunk_size = pow(2,26)
+    start_time = time.time()
+    blobs = {}
+    for blob in src_bucket.list_blobs(prefix=series.se_uuid):
+        blobs[blob.name] = blob.crc32c
+    def zipped_chunks():
+        with dst_bucket.blob(f'{series.se_uuid}.zip').open(mode="rb") as archive:
+            # yield from archive.read(chunk_size)
+            while True:
+                chunk = archive.read(chunk_size)
+                if not chunk:
+                    break
+                yield chunk
+
+    unzipped_blobs ={}
+    for file_name, file_size, unzipped_chunks in stream_unzip(zipped_chunks()):
+        # unzipped_chunks must be iterated to completion or UnfinishedIterationError will be raised
+        hash = crc32c.CRC32CHash()
+        for chunk in unzipped_chunks:
+            # print(f'p{args.pid}  Val: {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2}')
+            hash.update(chunk)
+        unzipped_blobs[file_name.decode()] = base64.b64encode(hash.digest()).decode()
+    try:
+        assert set(blobs.keys()) == set(unzipped_blobs.keys())
+        assert set(blobs.values()) == set(unzipped_blobs.values())
+        elapsed_time = time.time() - start_time
+        # progresslogger.info(
+        #     f'p{args.pid:03}:      Validated {round(elapsed_time, 2)}s')
+        return 0
+    except Exception as exc:
+        errlogger.error(f'Validation failure on {series.se_uuid}')
+        return 1
 
 
 def gen_zip_stream(se_uuid, src_bucket, dst_bucket):
     # directory = pathlib.Path(src_directory)
-    chunk_size = pow(2,25)
+    chunk_size = pow(2,26)
+    blobs = src_bucket.list_blobs(prefix=se_uuid)
+
     def local_files(blobs):
         now = datetime.now()
         def contents(blob):
             with blob.open('rb') as f:
-                # progresslogger.info(f'{name.parts[-2]}/{name.parts[-1]}')
                 while True:
                     chunk = f.read(chunk_size)
                     if not chunk:
@@ -104,45 +139,43 @@ def gen_zip_stream(se_uuid, src_bucket, dst_bucket):
             return_value(blob)
             for blob in blobs
         )
-    blobs = src_bucket.list_blobs(prefix=se_uuid)
 
+    get_compressobj = lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=0)
     with dst_bucket.blob(f'{se_uuid}.zip').open(mode="wb", chunk_size=chunk_size) as archive:
-        for chunk in stream_zip(local_files(blobs)):
+        for chunk in stream_zip(local_files(blobs), chunk_size=chunk_size, get_compressobj=get_compressobj):
+            # print(f'p{args.pid}  Zip: {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2}')
             archive.write(chunk)
 
 
-def zip_worker(zip_queue, args, freespace_condition, freespace_name):
-    freespace = shared_memory.ShareableList(name=freespace_name)
+def zip_worker(zip_queue, args):
+
     client = storage.Client()
     prev_src_bucket_name = ""
 
     for more_args in iter(zip_queue.get, 'STOP'):
         series_index, series, src_bucket_name, dst_bucket_name = more_args
         try:
-            # progresslogger.info(
-            #     f'zip{args.pid}:    Starting {series_index}:{series.source_doi}-v{series.version}/{series.se_uuid}')
             if src_bucket_name != prev_src_bucket_name:
                 src_bucket = client.bucket(src_bucket_name)
                 dst_bucket = client.bucket(dst_bucket_name)
                 prev_src_bucket_name = src_bucket_name
             start_time = time.time()
+            progresslogger.info(
+                f'p{args.pid:03}:    Start: {series_index}:{series.se_uuid}, {round(series.se_size / pow(2, 20), 2)}MB')
             # src_directory = f'{src_mount_point}/{series.se_uuid}/'
             # zip_name = f'{dst_mount_point}/{series.se_uuid}.zip'
             gen_zip_stream(series.se_uuid, src_bucket, dst_bucket)
-            with freespace_condition:
-                freespace[0] += series.se_size
-                freespace_now = freespace[0]
-                warninglogger.warning(f'p{args.pid:03}:    free {series_index}:se_size:{round(series.se_size/pow(2,30),2)}GiB, freespace:{round(freespace_now/pow(2,30),2)}GiB, actual:{round(psutil.virtual_memory().free/pow(2,30),2)}GiB')
-                freespace_condition.notify()
             elapsed_time = time.time() - start_time
+            start_time = time.time()
             rate = round(series.se_size / elapsed_time / 10 ** 6, 1)
-            progresslogger.info(f'p{args.pid:03}:    {series_index}:{series.se_uuid}, {rate}MB/s, {round(elapsed_time,2)}s, {round(freespace_now/pow(2,30),2)}GiB')
-            successlogger.info(series.se_uuid)
+            if validate_zip(args, series, src_bucket, dst_bucket) == 0:
+                progresslogger.info(
+                    f'p{args.pid:03}:    {series_index}:{series.se_uuid}, {round(series.se_size / pow(2, 20), 2)}MB, {rate}MB/s, zip:{round(elapsed_time, 2)}s , val:{round((time.time()-start_time), 2)}')
+                successlogger.info(series.se_uuid)
+
         except Exception as exc:
             errlogger.error(f'zip{args.pid:03}:    zip{args.pid}: {series.se_uuid}: {exc}')
-            with freespace_condition:
-                freespace[0] += series.se_size
-                freespace_condition.notify()
+
 
     return
 
@@ -157,24 +190,26 @@ def main(args):
     # Zip generation is performed by a pipeline of process
     # Create queues
     zip_queue = Queue(args.num_processes)
-    freespace_condition = Condition()
 
 
-    zip_processes = []
-    freespace = shared_memory.ShareableList([0])
-    for process in range(args.num_processes):
-        args.pid = process + 1
-        zip_processes.append(Process(target=zip_worker, args=(
-            zip_queue, args, freespace_condition, freespace.shm.name)))
-        zip_processes[-1].start()
 
-    # Determine the initial free memory space
-    with freespace_condition:
-        freespace[0] = int(psutil.virtual_memory().free/2)
-        initial_freespace = freespace[0]
     args.pid = 0
 
     try:
+        zip_processes = []
+        for process in range(args.num_processes):
+            args.pid = process + 1
+            zip_processes.append(Process(target=zip_worker, args=(
+                zip_queue, args)))
+            zip_processes[-1].start()
+
+        with open(f'{settings.LOG_DIR}/totals') as f:
+            totals = json.load(f)
+
+        total_gb = totals['gb']
+        total_series = totals['series']
+        total_instances = totals['instances']
+        total_elapsed_time = totals['elapsed_time']
         for collection_id in undones['collection_id'].unique():
             # if collection_id != 'ACRIN-NSCLC-FDG-PET':
             #     continue
@@ -185,8 +220,8 @@ def main(args):
                 doi_undones = collection_undones[collection_undones['source_doi']==source_doi]
                 public_access = doi_undones.iloc[0]['access'] == 'Public'
                 for version in doi_undones['version'].unique():
-
                     version_undones = doi_undones[doi_undones['version']==version]
+
                     src_bucket = version_undones.iloc[0]['src_bucket']
                     dst_bucket = version_undones.iloc[0]['dst_bucket']
                     init_index = all_series.index(version_undones.iloc[0].se_uuid)
@@ -197,22 +232,23 @@ def main(args):
                     doilogger.info(f'p0:     Processing {collection_id}/{source_doi}/v{version}, {s_size}GB, {s_count} series, {i_count}K instances, {init_index}:{final_index}')
                     start_time = time.time()
                     for _, series in version_undones.iterrows():
-                        # Wait until there is room on disk for the next series
-                        with freespace_condition:
-                            while freespace[0] < series.se_size:
-                                # warninglogger.warning(f'p0:    Waiting on freespace, freespace={freespace[0]/pow(2,30)}GiB, se_size:{series.se_size/pow(2,30)}GiB, actual: {psutil.virtual_memory().free/pow(2,30)}GiB')
-                                warninglogger.warning(f'p000:    Waiting on freespace: se_size={round(series.se_size/pow(2,30),2)}GiB, freespace={round(freespace_now/pow(2,30),2)}GiB, actual: {round(psutil.virtual_memory().free/pow(2,30),2)}GiB')
-                                freespace_condition.wait()
-                            freespace[0] -= series.se_size
-                            freespace_now = freespace[0]
-
-                        warninglogger.warning(f'p000:    Queued se_size={round(series.se_size/pow(2,30),2)}GiB, freespace={round(freespace_now/pow(2,30),2)}GiB, actual: {round(psutil.virtual_memory().free/pow(2,30),2)}GiB')
-
                         series_index = f'{init_index}:{all_series.index(series.se_uuid)}:{final_index}:{len(all_series)}'
                         zip_queue.put((series_index, series, src_bucket, dst_bucket))
-                    elapsed_time = time.time() - start_time
-                    doilogger.info(f'p0:     Completed {collection_id}/{source_doi}/v{version} in {elapsed_time}s, {pow(10,3)*s_size/elapsed_time}MB/s, {s_count/elapsed_time} series/s, {1000*i_count/elapsed_time} instances/s')
 
+                    elapsed_time = time.time() - start_time
+                    total_gb += s_size
+                    total_series += s_count
+                    total_instances += i_count
+                    total_elapsed_time += elapsed_time
+                    doilogger.info(f'p0:     Completed {collection_id}/{source_doi}/v{version} in {elapsed_time}s, {s_size} GB, {pow(10,3)*s_size/elapsed_time }MB/s, {s_count/elapsed_time} series/s, {1000*i_count/elapsed_time} instances/s')
+                    doilogger.info(f'p0:     Totals: {total_gb} GB, {total_series} series, {total_instances} K instances, {total_gb/total_elapsed_time} GB/s, {total_series/total_elapsed_time} series/s, {total_instances/total_elapsed_time}/K instances/s')
+                    doilogger.info('')
+                    totals['gb'] = total_gb
+                    totals['series'] = total_series
+                    totals['instances'] = total_instances
+                    totals['elapsed_time'] = total_elapsed_time
+                    with open(f'{settings.LOG_DIR}/totals', 'w') as f:
+                        json.dump(totals, f)
 
         # Stop the processes
         try:
@@ -223,23 +259,33 @@ def main(args):
                 process.join()
         except Exception as exc:
             pass
+
+
+
     finally:
         for process in zip_processes:
             if process.is_alive():
                 process.kill()
+        totals['gb'] = total_gb
+        totals['series'] = total_series
+        totals['instances'] = total_instances
+        totals['elapsed_time'] = total_elapsed_time
+        with open(f'{settings.LOG_DIR}/totals', 'w') as f:
+            json.dump(totals,f)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
-    parser.add_argument('--num_processes', default=1)
+    # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
+    parser.add_argument('--version', default=20, help='Version to work on')
+    parser.add_argument('--num_processes', default=64)
     parser.add_argument('--local_disk_dir', default='/mnt/disks/idc-etl/series_zips')
-    parser.add_argument('--src_bucket', default='idc-open-data', help='Source bucket containing instances')
+    parser.add_argument('--src_bucket', default='idc-dev-excluded', help='Source bucket containing instances')
     parser.add_argument('--dst_project', default='idc-archive', help='Project of the dst_bucket')
-    parser.add_argument('--src_mount_point', default='/mnt/disks/idc-etl/src_mount_point', help='Directory on which to mount the src bucket.\
-                The script will create this directory if necessary.')
-    parser.add_argument('--dst_mount_point', default='/mnt/disks/idc-etl/dst_mount_point', help='Directory on which to mount the dst bucket.\
-                 The script will create this directory if necessary.')
+    # parser.add_argument('--src_mount_point', default='/mnt/disks/idc-etl/src_mount_point', help='Directory on which to mount the src bucket.\
+    #             The script will create this directory if necessary.')
+    # parser.add_argument('--dst_mount_point', default='/mnt/disks/idc-etl/idc-arch-open', help='Directory on which to mount the dst bucket.\
+    #              The script will create this directory if necessary.')
     args = parser.parse_args()
 
     print("{}".format(args), file=sys.stdout)
@@ -257,6 +303,6 @@ if __name__ == '__main__':
     successformatter = logging.Formatter('%(message)s')
     doi_fh.setFormatter(successformatter)
 
-    start_time = time.time()
     main(args)
-    print("--- %s seconds ---" % (time.time() - start_time))
+
+

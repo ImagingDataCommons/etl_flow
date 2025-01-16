@@ -69,13 +69,28 @@ def likely_clinical(download):
 
 def get_raw_data():
     client = bigquery.Client()
-    all_collections = client.list_rows(client.get_table(f'{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections')).to_dataframe()
-    all_source_dois = all_collections['source_doi']
-    collections = [ c for c in get_all_tcia_metadata("collections") if c['collection_page_accessibility'] == "Public"]
-    idc_collections = [c for c in collections if c['collection_doi'].lower() in list(all_source_dois)]
-    downloads = get_all_tcia_metadata("downloads")
-    clinical_downloads = {download['id']:download for download in downloads if likely_clinical(download)}
-    for collection in idc_collections:
+    all_idc_collections = client.list_rows(client.get_table(f'{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections')).to_dataframe()
+    all_idc_source_dois = all_idc_collections['source_doi']
+    all_tcia_collections = {c['slug']:c for c in get_all_tcia_metadata("collections")}
+    public_tcia_collections = [ c for c in get_all_tcia_metadata("collections") if c['collection_page_accessibility'] == "Public"]
+
+    # Eliminate collections that we don't have. These are generally NIFTI, or pathology which we have not converted to DICOM
+    public_idc_collections = [c for c in public_tcia_collections if c['collection_doi'].lower() in list(all_idc_source_dois)]
+    downloads = {d['id']: d for d in get_all_tcia_metadata("downloads")}
+    clinical_downloads = {id: data for id, data in downloads.items() if likely_clinical(data)}
+
+    ars = {ar['slug']: ar for ar in get_all_tcia_metadata('analysis-results')}
+    try:
+        for ar, data in ars.items():
+            if type(data['result_downloads']) == list:
+               for id in data['result_downloads']:
+                    for did, download in clinical_downloads.items():
+                        if id == did:
+                            print(f"Analysis results:{ar}, result_download:{id}, Download:{download['slug']}")
+    except Exception as exc:
+        pass
+    # Associate 0 or more collections with each clinical download
+    for collection in public_idc_collections:
         for id in collection['collection_downloads']:
             if id in clinical_downloads:
                 clinical_downloads[id]['collection_id'] = collection['id']
@@ -83,17 +98,21 @@ def get_raw_data():
                 clinical_downloads[id]['wiki_id'] = collection['collection_browse_title']
 
 
-    # Find any clinical downloads for which there is not collection
-    for d_id, d_data in clinical_downloads.items():
-        if 'collection_slug' not in d_data:
-            print(f"No collection_slug for clinical_download {d_data['id']}:{d_data['slug']}")
-            try:
-                for c_id,v in enumerate(collections):
-                    if d_data['slug'].startswith(v['slug']):
-                # c_id = next(i for i,v in enumerate(collections) if d_data['slug'].startswith(v['slug']))
-                        print(f'\tParent collection {collections[c_id]["id"]}:{collections[c_id]["slug"]}:{collections[c_id]["collection_downloads"]}')
-            except:
-                print(f"No collection found for {d_data['slug']}")
+    # # Find any clinical downloads for which there is not a collection. These are mostly downloads of limited collections.
+    # # Where the download belongs to a public collection, the download has been replaced by a newer versions.
+    # for d_id, d_data in clinical_downloads.items():
+    #     if 'collection_slug' not in d_data:
+    #         print(f"No collection_slug for clinical_download {d_data['id']}:{d_data['slug']}")
+    #         try:
+    #             for c_id,v in enumerate(public_idc_collections):
+    #                 if d_data['slug'].startswith(v['slug']):
+    #             # c_id = next(i for i,v in enumerate(collections) if d_data['slug'].startswith(v['slug']))
+    #                     print(f'\tParent collection {public_idc_collections[c_id]["id"]}:{public_idc_collections[c_id]["slug"]}')
+    #                     for id in public_idc_collections[c_id]["collection_downloads"]:
+    #                         if id in clinical_downloads:
+    #                             print(f'\t\t{id}: {clinical_downloads[id]["slug"]}')
+    #         except:
+    #             print(f"No collection found for {d_data['slug']}")
 
 
     clinical_data = []

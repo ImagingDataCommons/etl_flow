@@ -682,6 +682,9 @@ if __name__ == "__main__":
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
     # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
     # s = get_all_tcia_metadata_stage(type="collections")
+    d = get_all_tcia_metadata(type="downloads")
+    c = {k['slug']: k for k in d if 'da-path' in k['slug']}
+    b = {k['slug']: k for k in d if k['download_type'] == 'Pathology Images'}
     d = get_all_tcia_metadata(type="collections")
     d = get_all_tcia_metadata(type="analysis-results")
     d = get_all_tcia_metadata(type="citations")
