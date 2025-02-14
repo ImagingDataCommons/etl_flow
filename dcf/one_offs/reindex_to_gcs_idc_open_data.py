@@ -56,7 +56,7 @@ def gen_instance_manifest(args):
         ts
       ON
         1=1
-      WHERE idc_version = {args.version} AND pub_gcs_bucket = 'idc-open-data'
+      WHERE idc_version = {args.version} AND pub_gcs_bucket = 'idc-open-data' AND i_rev_idc_version < 20
     )
     SELECT
       CONCAT('dg.4DFC/',i_uuid) GUID,
@@ -107,7 +107,7 @@ if __name__ == '__main__':
             help="GCS blob in which to save results")
     parser.add_argument('--temp_table_bqdataset', default='whc_dev', \
             help='BQ dataset of temporary table')
-    parser.add_argument('--temp_table', default=f'idc_v{settings.CURRENT_VERSION}_reindexing_manifest', \
+    parser.add_argument('--temp_table', default=f'idc_v{version}_reindexing_manifest', \
             help='Temporary table in which to write query results')
     args = parser.parse_args()
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')

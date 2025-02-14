@@ -28,12 +28,14 @@ from python_settings import settings
 
 
 clinical_data_schema = [
-    bigquery.SchemaField('idc_collection_id', 'STRING', mode='NULLABLE', description='IDC collection_id'),
+    bigquery.SchemaField('idc_collection_id', 'STRING', mode='NULLABLE', description='Associated IDC collection_id'),
     bigquery.SchemaField('download_id', 'STRING', mode='NULLABLE', description='Collection manager id of this download'),
     bigquery.SchemaField('download_slug', 'STRING', mode='NULLABLE', description='Collection manager slug of this download'),
-    bigquery.SchemaField('collection_id', 'STRING', mode='NULLABLE', description='Collection manager id of this collection'),
-    bigquery.SchemaField('collection_slug', 'STRING', mode='NULLABLE', description='Collection manager of this collection'),
-    bigquery.SchemaField('collection_wiki_id', 'STRING', mode='NULLABLE', description='Collection manager wiki of this collection'),
+    bigquery.SchemaField('parent_type', 'STRING', mode='NULLABLE', description='"collection" or "analysis_result"'),
+    bigquery.SchemaField('parent_id', 'STRING', mode='NULLABLE', description='Collection manager id of this parent object'),
+    bigquery.SchemaField('parent_slug', 'STRING', mode='NULLABLE', description='Collection manager of this parent object'),
+    bigquery.SchemaField('parent_doi', 'STRING', mode='NULLABLE', description='Collection manager doi of parent object'),
+    bigquery.SchemaField('parent_browse_title', 'STRING', mode='NULLABLE', description='Collection manager browse title of parent object'),
     bigquery.SchemaField('date_updated', 'DATE', mode='NULLABLE', description='?'),
     bigquery.SchemaField('download_title', 'STRING', mode='NULLABLE', description='Download title'),
     bigquery.SchemaField('file_type', 'STRING', mode='NULLABLE', description='File type'),
@@ -45,75 +47,68 @@ clinical_data_schema = [
 
 
 def likely_clinical(download):
-    ret = True
     try:
-        if not (download['download_type'] == 'Other' or
-                download['download_type'] == 'Clinical Data' or
-                'Clinical Data' in download['download_type'] or
-                'Other' in download['download_type']):
+        download_type = download['download_type']
+        if not (
+            (type(download_type) == str and download_type.lower() in ['other', 'clinical data', 'image annotations']) or
+            type(download_type) == list and (set(['clinical data', 'image annotations', 'other']) & set([d.lower() for d in download_type]))
+        ):
             return False
-    except:
+    except Exception as exc:
+        errlogger.error(f'Likely clinical error: {exc}')
         return False
     try:
         if (download['download_requirements']):
             return False
-    except:
+    except Exception as exc:
+        errlogger.error(f'Likely clinical error: {exc}')
         return False
     try:
-        if not (('XLSX' in download['file_type']) or ('XLS' in download['file_type']) or ('CSV' in download['file_type'])):
+        file_type = download['file_type']
+        if not (('XLSX' in file_type) or ('XLS' in file_type) or ('CSV' in file_type)):
             return False
-    except:
+    except Exception as exc:
+        errlogger.error(f'Likely clinical error: {exc}')
         return False
     return True
 
 
 def get_raw_data():
     client = bigquery.Client()
+    # Get collections and source_dois that we have in IDC
     all_idc_collections = client.list_rows(client.get_table(f'{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections')).to_dataframe()
     all_idc_source_dois = all_idc_collections['source_doi']
-    all_tcia_collections = {c['slug']:c for c in get_all_tcia_metadata("collections")}
-    public_tcia_collections = [ c for c in get_all_tcia_metadata("collections") if c['collection_page_accessibility'] == "Public"]
 
-    # Eliminate collections that we don't have. These are generally NIFTI, or pathology which we have not converted to DICOM
-    public_idc_collections = [c for c in public_tcia_collections if c['collection_doi'].lower() in list(all_idc_source_dois)]
+    # Get all TCIA collections which we also have
+    public_tcia_collections = [ c for c in get_all_tcia_metadata("collections") if \
+                                c['collection_page_accessibility'] == "Public" and \
+                                c['collection_doi'].lower() in list(all_idc_source_dois)]
+
+    # Get all TCIA analysis results which we also have
+    public_analysis_results = [ ar for ar in get_all_tcia_metadata('analysis-results') \
+                                if ar['result_page_accessibility'] == "Public" and \
+                                ar['result_doi'].lower() in list(all_idc_source_dois)]
+
+    # Get TCIA clinical downloads
     downloads = {d['id']: d for d in get_all_tcia_metadata("downloads")}
     clinical_downloads = {id: data for id, data in downloads.items() if likely_clinical(data)}
 
-    ars = {ar['slug']: ar for ar in get_all_tcia_metadata('analysis-results')}
-    try:
-        for ar, data in ars.items():
-            if type(data['result_downloads']) == list:
-               for id in data['result_downloads']:
-                    for did, download in clinical_downloads.items():
-                        if id == did:
-                            print(f"Analysis results:{ar}, result_download:{id}, Download:{download['slug']}")
-    except Exception as exc:
-        pass
-    # Associate 0 or more collections with each clinical download
-    for collection in public_idc_collections:
+    for collection in public_tcia_collections:
         for id in collection['collection_downloads']:
             if id in clinical_downloads:
                 clinical_downloads[id]['collection_id'] = collection['id']
                 clinical_downloads[id]['collection_slug'] = collection['slug']
-                clinical_downloads[id]['wiki_id'] = collection['collection_browse_title']
+                clinical_downloads[id]['collection_doi'] = collection['collection_doi']
+                clinical_downloads[id]['collection_browse_title'] = collection['collection_browse_title']
 
-
-    # # Find any clinical downloads for which there is not a collection. These are mostly downloads of limited collections.
-    # # Where the download belongs to a public collection, the download has been replaced by a newer versions.
-    # for d_id, d_data in clinical_downloads.items():
-    #     if 'collection_slug' not in d_data:
-    #         print(f"No collection_slug for clinical_download {d_data['id']}:{d_data['slug']}")
-    #         try:
-    #             for c_id,v in enumerate(public_idc_collections):
-    #                 if d_data['slug'].startswith(v['slug']):
-    #             # c_id = next(i for i,v in enumerate(collections) if d_data['slug'].startswith(v['slug']))
-    #                     print(f'\tParent collection {public_idc_collections[c_id]["id"]}:{public_idc_collections[c_id]["slug"]}')
-    #                     for id in public_idc_collections[c_id]["collection_downloads"]:
-    #                         if id in clinical_downloads:
-    #                             print(f'\t\t{id}: {clinical_downloads[id]["slug"]}')
-    #         except:
-    #             print(f"No collection found for {d_data['slug']}")
-
+    # Associate 0 or more analysis results with each clinical download
+    for result in public_analysis_results:
+        for id in result['result_downloads']:
+            if id in clinical_downloads:
+                clinical_downloads[id]['result_id'] = result['id']
+                clinical_downloads[id]['result_slug'] = result['slug']
+                clinical_downloads[id]['result_doi'] = result['result_doi']
+                clinical_downloads[id]['result_browse_title'] = result['result_browse_title']
 
     clinical_data = []
     for id, data in clinical_downloads.items():
@@ -122,23 +117,43 @@ def get_raw_data():
                 idc_collection_id = data["collection_slug"].replace('-','_'),
                 download_id = id,
                 download_slug = data['slug'],
-                collection_id = data["collection_id"],
-                collection_slug = data["collection_slug"],
-                collection_wiki_id=data['wiki_id'],
+                parent_type = 'collection',
+                parent_id = data["collection_id"],
+                parent_slug = data["collection_slug"],
+                parent_doi = data['collection_doi'],
+                parent_browse_title=data['collection_browse_title'],
                 date_updated = data["date_updated"],
                 download_title = str(data["download_title"]),
                 file_type = str(data["file_type"]),
                 download_size = str(data["download_size"]),
                 download_size_unit = data["download_size_unit"],
-                # download_url = data["download_url"] if data["download_url"].startswith('https') else \
-                #         f'https://www.cancerimagingarchive.net{data["download_url"]}'
-                # download_url=data["download_file"]["guid"] if data["download_file"]["guid"].startswith('https') else \
-                #     f'https://www.cancerimagingarchive.net{data["download_file"]["guid"]}'
                 download_url = data["download_url"] if data["download_url"].startswith('https') else \
                    get_url(f'https://cancerimagingarchive.net/api/wp/v2/media/{data["download_file"]["ID"]}').json()['source_url'],
                 download_type = str(data["download_type"])
             )
             clinical_data.append(download)
+        elif 'result_slug' in data:
+            for collection_id in list(all_idc_collections.loc[all_idc_collections['source_doi']==data['result_doi'].lower()]['collection_id']):
+                download = dict(
+                    idc_collection_id = collection_id,
+                    download_id = id,
+                    download_slug = data['slug'],
+                    parent_type = 'analysis_result',
+                    parent_id = data["result_id"],
+                    parent_slug = data["result_slug"],
+                    parent_doi = data["result_doi"],
+                    parent_browse_title=data['result_browse_title'],
+                    date_updated = data["date_updated"],
+                    download_title = str(data["download_title"]),
+                    file_type = str(data["file_type"]),
+                    download_size = str(data["download_size"]),
+                    download_size_unit = data["download_size_unit"],
+                    download_url = data["download_url"] if data["download_url"].startswith('https') else \
+                       get_url(f'https://cancerimagingarchive.net/api/wp/v2/media/{data["download_file"]["ID"]}').json()['source_url'],
+                    download_type = str(data["download_type"])
+                )
+                clinical_data.append(download)
+
 
     metadata_json = '\n'.join([json.dumps(row) for row in
                         sorted(clinical_data, key=lambda d: d['download_slug'])])
@@ -153,8 +168,7 @@ def get_raw_data():
         errlogger.error(f'Table creation failed: {exc}')
         exit
 
-
-    pass
+    return
 
 
 

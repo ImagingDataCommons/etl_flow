@@ -49,7 +49,8 @@ def delete_instances(args, client, bucket, blobs, n):
             with client.batch():
                 for blob in blobs:
                     bucket.blob(blob[0], generation=blob[1]).delete()
-            successlogger.info('p%s Delete %s blobs %s:%s ', args.id, args.bucket, n, n+len(blobs)-1)
+                    successlogger.info(blob[0])
+            progresslogger.info('p%s Delete %s blobs %s:%s ', args.id, args.bucket, n, n+len(blobs)-1)
             break
         except ServiceUnavailable:
             errlogger.error('p%s Delete %s blobs %s:%s failed', args.id, args.bucket, n, n+len(blobs)-1)

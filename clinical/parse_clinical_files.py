@@ -139,15 +139,16 @@ def analyzeDataFrame(cdic):
             iii = 1
 
 
+# Process "conventional" xls and csv files
 def processSrc(fpath, colName, srcInfo, coll):
     attrs = []
     filenm = fpath + colName + '/' + srcInfo['filenm']
-    sheetNo = (0 if not 'sheet' in srcInfo else srcInfo['sheet'])
+    sheet_number = (0 if not 'sheet' in srcInfo else srcInfo['sheet'])
     patientIdRow = (0 if not ('patientIdRow') in srcInfo else srcInfo['patientIdRow'])
     rows = ([0] if not 'headrows' in srcInfo else srcInfo['headrows'])
     skipRows = (None if not 'skipRows' in srcInfo else srcInfo['skipRows'])
     skipCols = (None if not 'skipCols' in srcInfo else srcInfo['skipCols'])
-    pivot = (False if not 'pivot' in srcInfo else srcInfo['pivot'])
+    pivot = (False if not 'pivot' in srcInfo else bool(srcInfo['pivot']))
     maxRow = (-1 if not 'maxRow' in srcInfo else srcInfo['maxRow'])
     filterRows = (None if not 'filterRows' in srcInfo else srcInfo['filterRows'])
     extension = path.splitext(filenm)[1]
@@ -160,11 +161,11 @@ def processSrc(fpath, colName, srcInfo, coll):
     if extension == '.csv':
         df = pd.read_csv(filenm, keep_default_na=False)
         # df = df.head(100)
-        sheetnm = ''
+        sheet_name = ''
     else:
         dfi = pd.read_excel(filenm, engine=engine, sheet_name=None, keep_default_na=False)
-        sheetnm = list(dfi.keys())[sheetNo]
-        df = dfi[sheetnm]
+        sheet_name = list(dfi.keys())[sheet_number]
+        df = dfi[sheet_name]
     if pivot:
         df = df.T
         rows = [rows[i] + 1 for i in range(len(rows))]
@@ -194,20 +195,22 @@ def processSrc(fpath, colName, srcInfo, coll):
             if (i < (len(rows) - 1)) or (not (str(colVal) == 'nan') and not ('Unnamed:' in str(colVal))):
                 attrs[j].append(colVal)
 
+    # Drop rows from df as specified by "skipRows" and/or "maxRow"
     drrows = [i - 1 for i in rows]
     if skipRows is not None:
         skipRows = [skipRows[i] - 1 for i in range(len(skipRows))]
         drrows = drrows + skipRows
-
     if maxRow > -1:
         drrows = drrows + [i for i in range(maxRow, len(list(df.index)))]
     if -1 in drrows:
         drrows.remove(-1)
     df.drop(df.index[drrows], inplace=True)
 
+    # Retain rows only from collection coll
     if filterRows is not None:
         df = df[(df[filterRows] == coll)]
 
+    # format headers: replace '-' with '_', etc.
     headers = []
     if 'specAttr' in srcInfo:
         format = srcInfo['specAttr']
@@ -222,32 +225,35 @@ def processSrc(fpath, colName, srcInfo, coll):
     for i in range(len(headers)):
         headerSet[headers[i]] = {"attrs": attrs[i], "colNo": i}
 
+
     if ("reindex" in srcInfo) and ("needed" in srcInfo["reindex"]) and srcInfo["reindex"]["needed"]:
-        uniques = srcInfo["reindex"]["uniques"]
-        df_new = pd.DataFrame()
-        # df_new.index=df.index
-        # df_new.columns=list(df.columns)
-        newInd = {}
-        pos = 0
-        for i in range(df.shape[0]):
-            curInd = df.index[i]
-            if not (curInd in newInd):
-                df_new = df_new.append(df.iloc[i])
-                newInd[curInd] = pos
-                pos = pos + 1
-            else:
-                for colInd in range(len(df.columns)):
-                    if not (colInd == patientIdRow) and not (colInd in uniques):
-                        curVal = df_new.iloc[newInd[curInd]][colInd]
-                        addVal = df.iloc[i][colInd]
-                        # df_new.loc[curInd, list(df.columns)[colInd]]=10
-                        df_new.loc[curInd, list(df.columns)[colInd]] = str(curVal) + ", " + str(addVal)
-        df = pd.concat([df_new])
+        breakpoint() # No instance of "reindex" in the clinical_notes.json files. Break if this is ever reached.
+        # uniques = srcInfo["reindex"]["uniques"]
+        # df_new = pd.DataFrame()
+        # # df_new.index=df.index
+        # # df_new.columns=list(df.columns)
+        # newInd = {}
+        # pos = 0
+        # for i in range(df.shape[0]):
+        #     curInd = df.index[i]
+        #     if not (curInd in newInd):
+        #         df_new = df_new.append(df.iloc[i])
+        #         newInd[curInd] = pos
+        #         pos = pos + 1
+        #     else:
+        #         for colInd in range(len(df.columns)):
+        #             if not (colInd == patientIdRow) and not (colInd in uniques):
+        #                 curVal = df_new.iloc[newInd[curInd]][colInd]
+        #                 addVal = df.iloc[i][colInd]
+        #                 # df_new.loc[curInd, list(df.columns)[colInd]]=10
+        #                 df_new.loc[curInd, list(df.columns)[colInd]] = str(curVal) + ", " + str(addVal)
+        # df = pd.concat([df_new])
+
     try:
         df[df.columns[patientIdRow]] = df[df.columns[patientIdRow]].astype('Int64')
     except:
         df[df.columns[patientIdRow]] = df[df.columns[patientIdRow]].astype('str')
-    return [headerSet, df, sheetnm]
+    return [headerSet, df, sheet_name]
 
 
 def specialHeaderFormat(val, format):
@@ -328,19 +334,23 @@ def mergeAcrossBatch(clinJson, coll, ptRowIds, attrSetInd, colsAdded, csrc, offs
     clinJson[coll]['mergeBatch'][attrSetInd + offset]['ptId'] = []
     clinJson[coll]['mergeBatch'][attrSetInd + offset]['ptId'].append([ptRowIds[0], ptRow])
 
+    if 'ar_file' in clinJson[coll][csrc][attrSetInd][0]:
+        clinJson[coll]['mergeBatch'][attrSetInd + offset]['ar_file'] = \
+            clinJson[coll][csrc][attrSetInd][0]['ar_file']
+
     clinJson[coll]['mergeBatch'][attrSetInd + offset]['headers'] = {}
 
     for header in clinJson[coll]['cols'][attrSetInd][0]['headers']:
         clinJson[coll]['mergeBatch'][attrSetInd + offset]['headers'][header] = [
             clinJson[coll]['cols'][attrSetInd][0]['headers'][header]]
         clinJson[coll]['mergeBatch'][attrSetInd + offset]['headers'][header][0]['filenm'] = \
-        clinJson[coll][csrc][attrSetInd][0]['filenm']
+            clinJson[coll][csrc][attrSetInd][0]['filenm']
         if 'sheet' in clinJson[coll][csrc][attrSetInd][0]:
             clinJson[coll]['mergeBatch'][attrSetInd + offset]['headers'][header][0]['sheet'] = \
             clinJson[coll][csrc][attrSetInd][0]['sheet']
-        if 'sheetnm' in clinJson[coll][csrc][attrSetInd][0]:
-            clinJson[coll]['mergeBatch'][attrSetInd + offset]['headers'][header][0]['sheetnm'] = \
-            clinJson[coll][csrc][attrSetInd][0]['sheetnm']
+        if 'sheet_name' in clinJson[coll][csrc][attrSetInd][0]:
+            clinJson[coll]['mergeBatch'][attrSetInd + offset]['headers'][header][0]['sheet_name'] = \
+            clinJson[coll][csrc][attrSetInd][0]['sheet_name']
         clinJson[coll]['mergeBatch'][attrSetInd + offset]['headers'][header][0]['batch'] = 0
 
     clinJson[coll]['mergeBatch'][attrSetInd + offset]['srcs'] = []
@@ -380,9 +390,9 @@ def mergeAcrossBatch(clinJson, coll, ptRowIds, attrSetInd, colsAdded, csrc, offs
             if 'sheet' in clinJson[coll][csrc][attrSetInd][batchSetInd]:
                 clinJson[coll]['mergeBatch'][attrSetInd + offset]['headers'][ckey][curInd]['sheet'] = \
                 clinJson[coll]['srcs'][attrSetInd][batchSetInd]['sheet']
-            if 'sheetnm' in clinJson[coll]['srcs'][attrSetInd][batchSetInd]:
-                clinJson[coll]['mergeBatch'][attrSetInd + offset]['headers'][ckey][curInd]['sheetnm'] = \
-                clinJson[coll]['srcs'][attrSetInd][batchSetInd]['sheetnm']
+            if 'sheet_name' in clinJson[coll]['srcs'][attrSetInd][batchSetInd]:
+                clinJson[coll]['mergeBatch'][attrSetInd + offset]['headers'][ckey][curInd]['sheet_name'] = \
+                clinJson[coll]['srcs'][attrSetInd][batchSetInd]['sheet_name']
             clinJson[coll]['mergeBatch'][attrSetInd + offset]['headers'][ckey][curInd]['batch'] = batchSetInd
 
         clinJson[coll]['mergeBatch'][attrSetInd + offset][csrc].append([])
@@ -450,7 +460,21 @@ def export_meta_to_json(clinJson, filenm_meta, filenm_summary, collecs):
                         suffix = DEFAULT_SUFFIX
                         table_description = DEFAULT_DESCRIPTION
                     collection_id = coll
-                    table_name = collection_id + '_' + suffix
+                    print(coll, k)
+                    if 'ar_file' in clinJson[coll]['mergeBatch'][k] and clinJson[coll]['mergeBatch'][k]['ar_file'] == 'yes':
+                        table_name = suffix
+                    else:
+                        table_name = collection_id + '_' + suffix
+
+                    # if 'srcs2' in clinJson[coll] and 'ar_file' in clinJson[coll]['srcs2'][k][0] and \
+                    #      clinJson[coll]['srcs2'][k][0]['ar_file'] == 'yes':
+                    #     table_name = suffix
+                    # elif 'srcs' in clinJson[coll] and isinstance(clinJson[coll]['srcs'], list) and \
+                    #         'ar_file' in clinJson[coll]['srcs'][k][0] and \
+                    #         clinJson[coll]['srcs'][k][0]['ar_file'] == 'yes':
+                    #     table_name = suffix
+                    # else:
+                    #     table_name = collection_id + '_' + suffix
                     full_table_name = DATASET_PATH + '.' + table_name
                     try:
                         post_process_src = './' + DESTINATION_FOLDER + '/' + clinJson[coll]['mergeBatch'][k]['outfile']
@@ -576,14 +600,14 @@ def export_meta_to_json(clinJson, filenm_meta, filenm_summary, collecs):
                         ndic['column_numbers'] = []
                         ndic['sheet_names'] = []
                         ndic['batch'] = []
-                        # sheetnms=[]
+                        # sheet_names=[]
                         for headerInfo in curDic['headers'][header]:
                             ndic['original_column_headers'].append(str(headerInfo['attrs']))
                             if not (header == SOURCE_BATCH_COL) and not (header == DICOM_COL):
                                 ndic['column_numbers'].append(headerInfo['colNo'])
                                 ndic['batch'].append(headerInfo['batch'])
-                                if 'sheetnm' in headerInfo:
-                                    ndic['sheet_names'].append(headerInfo['sheetnm'])
+                                if 'sheet_name' in headerInfo:
+                                    ndic['sheet_names'].append(headerInfo['sheet_name'])
                                 ndic['files'].append(headerInfo['filenm'])
                         metaArr.append(ndic)
     f = open(filenm_summary, 'w')
@@ -764,7 +788,7 @@ def parse_acrin_collection(clinJson, coll):
     pass
 
 
-def parse_conventional_collection(clinJson, coll, csrc, tbltypes):
+def parse_conventional_collection(clinJson, coll, csrc, table_types):
     colldir = coll.replace('/', '_').replace(':', '_')
     if ('uzip' in clinJson[coll]) and (csrc == 'srcs'):
         zpfile = ORIGINAL_SRCS_PATH + colldir + '/' + clinJson[coll]['uzip']
@@ -796,12 +820,13 @@ def parse_conventional_collection(clinJson, coll, csrc, tbltypes):
 
                 # print("strcInfo " + str(srcInfo))
                 if not ('type' in srcInfo) or not (srcInfo['type'] == 'json'):
-                    [headers, df, sheetnm] = processSrc(ORIGINAL_SRCS_PATH, colldir, srcInfo, coll)
+                    # Process xls or csv files
+                    [headers, df, sheet_name] = processSrc(ORIGINAL_SRCS_PATH, colldir, srcInfo, coll)
                     # df['source_batch'] = batchSetInd
                     df.insert(0, 'source_batch', batchSetInd)
                     headers['source_batch'] = {'attrs': ['NA'], 'colNo': -1}
                     # attrs.append([attr])
-                    srcInfo['sheetnm'] = sheetnm
+                    srcInfo['sheet_name'] = sheet_name
                     clinJson[coll]['cols'][attrSetInd + offset2][batchSetInd]['headers'] = headers
                     clinJson[coll]['cols'][attrSetInd + offset2][batchSetInd]['df'] = df
                 else:
@@ -821,10 +846,14 @@ def parse_conventional_collection(clinJson, coll, csrc, tbltypes):
                                      clinJson[coll]['mergeBatch'][attrSetInd + offset]['ptId'][0][0])
                 analyzeDataFrame(clinJson[coll]['mergeBatch'][attrSetInd + offset])
                 suffix = DEFAULT_SUFFIX
-                if tbltypes in clinJson[coll]:
-                    suffix = list(clinJson[coll][tbltypes][attrSetInd].keys())[0]
+                if table_types in clinJson[coll]:
+                    suffix = list(clinJson[coll][table_types][attrSetInd].keys())[0]
+                if 'ar_file' in clinJson[coll][csrc][attrSetInd][0] and\
+                        clinJson[coll][csrc][attrSetInd][0]['ar_file'] == 'yes':
+                    nm = suffix
+                else:
+                    nm = coll + '_' + suffix
 
-                nm = coll + '_' + suffix
                 clinJson[coll]['mergeBatch'][attrSetInd + offset]['outfile'] = nm + '.json'
                 if 'tcia_api' in clinJson[coll]:
                     if 'case_id' in srcInfo:
@@ -841,11 +870,12 @@ def parse_conventional_collection(clinJson, coll, csrc, tbltypes):
                                          clinJson[coll]['case_id'])
 
                 write_dataframe_to_json(DESTINATION_FOLDER, nm, clinJson[coll]['mergeBatch'][attrSetInd + offset]['df'])
+            else:
+                breakpoint() # Break if execution reaches this point
 
-
-def nlst_handler(filenm, sheetNo, data_dict):
+def nlst_handler(filenm, sheet_number, data_dict):
     wb = openpyxl.load_workbook(filename=filenm)
-    ws = wb.worksheets[sheetNo]
+    ws = wb.worksheets[sheet_number]
     mxRow = ws.max_row
     cellBnds = []
     for rng in ws.merged_cells.ranges:
@@ -913,9 +943,9 @@ def parse_dict(fpath, collec, ndic, indx, coll):
     data_dict = {}
     colldir = coll.replace('/', '_').replace(':', '_')
     filenm = fpath + colldir + '/' + ndic["filenm"]
-    sheetNo = 0
+    sheet_number = 0
     if "sheet" in ndic:
-        sheetNo = ndic["sheet"]
+        sheet_number = ndic["sheet"]
     skipRows = None
     if "skipRows" in ndic:
         skipRows = ndic["skipRows"]
@@ -936,7 +966,7 @@ def parse_dict(fpath, collec, ndic, indx, coll):
     dc = []
     if extension == '.csv':
         df = pd.read_csv(filenm, header=header, skiprows=skipRows, keep_default_na=False)
-        sheetnm = ''
+        sheet_name = ''
     elif extension == '.docx':
 
         dc = [docx2python(filenm).document[0][0][0]]
@@ -947,9 +977,9 @@ def parse_dict(fpath, collec, ndic, indx, coll):
     else:
         dfi = pd.read_excel(filenm, engine=engine, sheet_name=None, skiprows=skipRows, header=header,
                             keep_default_na=False)
-        if not isinstance(sheetNo, list):
-            sheetnm = list(dfi.keys())[sheetNo]
-            df = dfi[sheetnm]
+        if not isinstance(sheet_number, list):
+            sheet_name = list(dfi.keys())[sheet_number]
+            df = dfi[sheet_name]
         rr = 1
     if (ndic["form"] == "adrenal"):
         for index, row in df.iterrows():
@@ -1138,11 +1168,11 @@ def parse_dict(fpath, collec, ndic, indx, coll):
 
     elif (ndic["form"] == "nlst"):
         data_dict = {}
-        nlst_handler(filenm, sheetNo, data_dict)
+        nlst_handler(filenm, sheet_number, data_dict)
 
     elif (ndic["form"] == "nlst2"):
         data_dict = {}
-        for num in sheetNo:
+        for num in sheet_number:
             nlst_handler(filenm, num, data_dict)
 
     elif (ndic["form"] == "ea1141"):
@@ -1192,11 +1222,14 @@ def parse_dict(fpath, collec, ndic, indx, coll):
                 btch['headers'][nkey][0]['dictinfo']['values'] = data_dict[nkey]['opts']
 
 
-# get the files imported from some other source besides TCIA - mostly zenodo. The were added to an archive directory that is included in github
+# get the files imported from some non-TCIA sources - mostly zenodo.
+# For this purpose, files must be copied from the source to the clinical/archive directory and saved to github
 def add_from_archive():
+    if not Path(ORIGINAL_SRCS_PATH).exists():
+        mkdir(Path(ORIGINAL_SRCS_PATH))
     alist = listdir(ARCHIVE_FOLDER)
     for adir in alist:
-        if not (adir == '.DS_Store') and not (adir == 'bamf'):
+        if not (adir == '.DS_Store') and not (adir == 'bamf_aimi_annotations'):
             cdir = ARCHIVE_FOLDER + '/' + adir
             destdir = ORIGINAL_SRCS_PATH + adir
             srclist = listdir(cdir)
@@ -1211,7 +1244,7 @@ def add_from_archive():
                     ndest = destdir + '/' + src
                     shutil.unpack_archive(ndest, destdir)
 
-    bamfdir = ARCHIVE_FOLDER + 'bamf'
+    bamfdir = ARCHIVE_FOLDER + 'bamf_aimi_annotations'
     for bfile in settings.BAMF_SET:
         srcfile = bamfdir + '/' + bfile
         colecs = settings.BAMF_SET[bfile]
@@ -1228,12 +1261,11 @@ def add_from_archive():
 
 if __name__ == "__main__":
 
-    colls = []
-
+    colls = [] # Collections to parse. Parse all collections if empty.
+    dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
     add_from_archive()
     dirpath = Path(DESTINATION_FOLDER)
     clinJson = read_clin_file(NOTES_PATH + 'clinical_notes.json')
-    # clinJson = read_clin_file(NOTES_PATH + 'test_old.json')
     collec = list(clinJson.keys())
     collec.sort()
 
@@ -1257,6 +1289,9 @@ if __name__ == "__main__":
         coll = collec[collID]
         if colls and coll not in colls:
             continue
+        # if coll in dones:
+        #     progresslogger.info(f'{coll} previously processed')
+        #     continue
         progresslogger.info(f'Processing {coll}')
         if 'spec' in clinJson[coll]:
             if (clinJson[coll]['spec'] == 'ignore') or (clinJson[coll]['spec'] == 'error'):
@@ -1265,7 +1300,7 @@ if __name__ == "__main__":
                 parse_acrin_collection(clinJson, coll)
 
         elif ('srcs' in clinJson[coll]) and ('tcia' in clinJson[coll]) and (clinJson[coll]['tcia'] == "yes"):
-            print("about to parse " + coll)
+            print("parsing " + coll)
             parse_conventional_collection(clinJson, coll, 'srcs', 'tabletypes')
             if "dict" in clinJson[coll]:
                 for indx in range(len(clinJson[coll]["dict"])):
@@ -1274,8 +1309,14 @@ if __name__ == "__main__":
                         parse_dict(ORIGINAL_SRCS_PATH, clinJson[coll], ndic, indx, coll)
 
         if ('srcs2' in clinJson[coll]):
-            print("about to parse extra " + coll)
+            print("parsing extra " + coll)
             parse_conventional_collection(clinJson, coll, 'srcs2', 'tabletypes2')
+
+        # with open(DESTINATION_FOLDER + CURRENT_VERSION + '_clinJson.json', 'w') as f:
+        #         json.dump(clinJson, f)
+
+        successlogger.info(coll)
+
 
     clin_meta = DESTINATION_FOLDER + CURRENT_VERSION + '_column_metadata.json'
     clin_summary = DESTINATION_FOLDER + CURRENT_VERSION + '_table_metadata.json'

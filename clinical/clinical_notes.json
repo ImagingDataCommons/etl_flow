@@ -1,184 +1,2160 @@
 {
-
-"acrin_6698": {"notes": "one xlsx file with clinical data.", "alternate": ["Full Collection Ancillary Patient Information file (.xlsx)"], "srcs": [[{"filenm": "Full-Collection-Ancillary-Patient-Information-file.xlsx", "sheet": 0}]], "case_id": "acrin 6698", "dict": [{"filenm": "Full-Collection-Ancillary-Patient-Information-file.xlsx", "sheet": 1, "use": true, "form": "ispy2", "skipRows": [0]}], "tcia": "yes", "idc_id": "acrin_6698"},
-
-"acrin_contralateral_breast_mr": {"notes": "leads to a download of one zip file with several data files in csv format and a data dictionary in xlsx format. The data file names are a different format from all the other acrin collecitons. The file names include the id (6667) and the word 'reviewed'", "spec": "acrin", "tcia": "yes", "idc_id": "acrin_contralateral_breast_mr", "uzip":["ACRIN-6667-Contralateral-Breast-MRI-Clinical-Data-Anonymized.zip"], "udir":["ACRIN 6667 Contralateral Breast MRI Clinical Data Anonymized"], "dictfile": "./ACRIN 6667 Contralateral Breast MRI Clinical Data Anonymized/QIN_6667 Data Dictionary reviewed.xlsx", "case_id": "acrin format", "tcia_api":"ACRIN-Contralateral-Breast-MR"},
-
-"acrin_flt_breast": {"notes": "Leads to a download of one zip file with several csv files with clinical data and a data dictionary in an xlsx file", "spec": "acrin", "uzip": ["ACRIN-FLT-Breast-6688-Clinical-Data.zip"], "udir": ["ACRIN-FLT-Breast 6688 Clinical Data"], "dictfile": "QIN_6688 Data Dictionary.xls", "idc_webapp": "acrin_flt_breast", "case_id": "acrin flt format", "tcia_api": "ACRIN-FLT_Breast", "tcia": "yes", "idc_id": "acrin_flt_breast"},
-
-"acrin_nsclc_fdg_pet": {"notes": "Same as ACRIN-NSCLC-FDG-PET (ACRIN 6668), but in this case there are two zip files with a 75/25 random data set", "uzip": ["ACRIN-6668-NSCLC-FDG-PET-ACRIN-Data-TCIA-Anonymized-File-set-1.zip", "ACRIN-6668HB-NSCLC-FDG-PET-ACRIN-Data-TCIA-Anonymized-File-set-2.zip"], "udir": ["ACRIN 6668 NSCLC FDG PET - ACRIN Data TCIA Anonymized", "ACRIN 6668HB NSCLC FDG PET - ACRIN Data TCIA Anonymized"], "spec": "acrin", "case_id": "acrin format", "tcia_api": "ACRIN-NSCLC-FDG-PET", "tcia": "yes", "idc_id": "acrin_nsclc_fdg_pet", "srcs2":[[{"filenm":"lung-fdg-pet-ct-qa-results.csv", "case_id":"same","patientIdCol": "patientid", "filterRows":"Collection" }]], "tabletypes2":[{"bamf_lung_pet_ct_segmentation":"segmentation of Lungs and FDG-avid lesions in the lung from FDG PET/CT scans"}]},
-
-"adrenal_acc_ki67_seg": {"notes": "one xlsx file. 1st sheet with clinical data, the 2nd with a glossary", "srcs": [[{"filenm": "Adrenal-ACC-Ki67-Seg_SupportingData_20230522.xlsx", "sheet": 0}]], "dict": [{"filenm": "Adrenal-ACC-Ki67-Seg_SupportingData_20230522.xlsx", "sheet": 1, "use": true, "nohead": true, "form": "adrenal"}], "case_id": "same", "tcia": "yes", "idc_id": "adrenal_acc_ki67_seg"},
-
-"AHEP0731": {"notes": "clinical data href links to nctn/ncorp data portal"},
-
-"advanced_mri_breast_lesions":{"srcs":[[{"filenm": "Advanced-MRI-Breast-Lesions-DA-Clinical-Sep2024.xlsx", "sheet":0, "skipRows":[0], "headrows":[1], "skipCols":[2,18,31,44]}]], "case_id":"same", "dict":[{"use":"true", "filenm":"Advanced-MRI-Breast-Lesions-DA-Clinical-Sep2024.xlsx", "sheet":1, "form":"ambl"}], "tcia":"yes"},
-
-"anti_pd_1_lung":{"notes":"bamf_seg", "srcs":[[{"filenm":"lung-ct-qa-results.csv", "patientIdCol": "patientid", "filterRows":"Collection"}], [{"filenm":"lung-fdg-pet-ct-qa-results.csv","patientIdCol": "patientid", "filterRows":"Collection"}]],  "tabletypes": [{"bamf_lung_ct_segmentation": "segmentation of Lung and Nodules (3mm-30mm) from CT scans"}, {"bamf_lung_fdg_pet_ct_segmenation": "segmentation of Lungs and FDG-avid lesions in the lung from FDG PET/CT scans"}], "tcia":"yes", "case_id":"same"},
-
-
-"b_mode_and_ceus_liver": {"notes": "one file with one sheet with clinical data", "srcs": [[{"filenm": "B-mode-and-CEUS-Liver_ReferenceStandards_v2_20220218.xlsx", "sheet": 0}]], "case_id": "same", "tcia": "yes", "idc_id": "b_mode_and_ceus_liver"},
-
-"Brain-TR-GammaKnife": {"notes": "Limited Access. Not in IDC", "tcia": "no"},
-
-"breast_diagnosis": {"notes": "an xls file with one sheet with clinical data but is pivoted (organized in columns)", "srcs": [[{"filenm": "TCIA-Breast-clinical-data-public-7_16_11.xlsx", "sheet": 0, "headrows": [0, 1], "pivot": true}]], "case_id": "breast", "tcia": "yes", "idc_id": "breast_diagnosis"},
-
-"breast_mri_nact_pilot": {"notes": "one xls file with 3 sheets. One has clinical data, the others have supporting data", "srcs": [[{"filenm": "SharedClinicalAndRFS.xls", "sheet": 1, "patientIdRow": 1, "maxRow": 64, "skipCols": [37, 38]}]], "case_id": "switch dash", "tcia": "yes", "idc_id": "breast_mri_nact_pilot"},
-
-
-"c4kc_kits": {"notes": "one csv file with clinical data", "srcs": [[{"filenm": "C4KC-KiTS_Clinical-Data_Version-1.csv", "sheet": 0}]], "case_id": "same", "tcia": "yes", "idc_id": "c4kc_kits"},
-
-"cc_tumor_heterogeneity": {"notes": "one file with one sheet with clinical data", "srcs": [[{"filenm": "TCIA_CCTH_Patient-data_02.06.23.xlsx", "sheet": 0, "maxRow": 24, "skipRows": [1]}]], "case_id": "cc", "tcia": "yes", "idc_id": "cc_tumor_heterogeneity"},
-
-"cmmd": {"notes": "one file with one sheet with clinical data", "srcs": [[{"filenm": "CMMD_clinicaldata_revision.xlsx", "sheet": 0}]], "case_id": "same", "tcia": "yes", "idc_id": "cmmd"},
-
-"colorectal_liver_metastases": {"notes": "one xlsx file with clinical data and a data dictionary", "srcs": [[{"filenm": "Colorectal-Liver-Metastases-Clinical-data-April-2023.xlsx", "sheet": 0}]], "dict": [{"filenm": "Colorectal-Liver-Metastases-Clinical-data-April-2023.xlsx", "use": "true", "sheet": 1, "form": "colorectal"}], "case_id": "same", "tcia": "yes", "idc_id": "colorectal_liver_metastases"},
-
-"covid_19_ar": {"notes": "one xls file with two sheets. Both have clinical data  for two attribute sets", "tabletypes": [{"clinical": "clinical data"}, {"imaging": "imaging data"}], "srcs": [[{"filenm": "COVID-19-AR-Clinical-Correlates-July202020.xlsx", "sheet": 0, "headrows": [1]}], [{"filenm": "COVID-19-AR-Clinical-Correlates-July202020.xlsx", "sheet": 1, "headrows": [1]}]], "case_id": "same", "tcia": "yes", "idc_id": "covid_19_ar"},
-
-"covid_19_ny_sbu": {"srcs": [[{"filenm": "deidentified_overlap_tcia.csv.cleaned.csv_20210806.csv", "sheet": 0}]], "dict": [{"filenm": "deidentified_overlap_tcia.csv.cleaned.csv.template_20210806.csv", "form": "covid", "use": "true"}], "case_id": "same", "notes": "one csv file with clinical information, one data dictionary or template", "tcia": "yes", "idc_id": "covid_19_ny_sbu"},
-
-"cptac_aml": {"notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table", "spec": "CPTAC", "srcs": {"table": "isb-cgc-bq.CPTAC.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"cptac_brca": {"notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table", "spec": "CPTAC", "srcs": {"table": "isb-cgc-bq.CPTAC.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"cptac_ccrcc": {"notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table", "spec": "CPTAC", "srcs": {"table": "isb-cgc-bq.CPTAC.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"cptac_cm": {"notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table", "spec": "CPTAC", "srcs": {"table": "isb-cgc-bq.CPTAC.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"cptac_coad": {"notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table", "spec": "CPTAC", "srcs": {"table": "isb-cgc-bq.CPTAC.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"cptac_gbm": {"notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table", "spec": "CPTAC", "srcs": {"table": "isb-cgc-bq.CPTAC.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"cptac_hnscc": {"notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table", "spec": "CPTAC", "srcs": {"table": "isb-cgc-bq.CPTAC.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"cptac_lscc": {"notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table", "spec": "CPTAC", "srcs": {"table": "isb-cgc-bq.CPTAC.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"cptac_luad": {"notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table", "spec": "CPTAC", "srcs": {"table": "isb-cgc-bq.CPTAC.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"cptac_ov": {"notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table", "spec": "CPTAC", "srcs": {"table": "isb-cgc-bq.CPTAC.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"cptac_pda": {"notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table", "spec": "CPTAC", "srcs": {"table": "isb-cgc-bq.CPTAC.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"cptac_sar": {"notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table", "spec": "CPTAC", "srcs": {"table": "isb-cgc-bq.CPTAC.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"cptac_ucec": {"notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table. The CPTAC pages in the TCIA wiki were recently changed but the link for CPTAC-UCEC was not updated in the collections list page", "spec": "CPTAC", "srcs": {"table": "isb-cgc-bq.CPTAC.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"ctpred_sunitinib_pannet": {"notes": "one xlsx file with one sheet with clinical data", "srcs": [[{"filenm": "Clinical-Information-for-CTpred-Sunitinib-panNET.xlsx", "patientIdRow": 1}]], "case_id": "same", "tcia": "yes", "idc_id": "ctpred_sunitinib_pannet"},
-
-
-"duke_breast_cancer_mri": {"notes": "one xlsx file with 3 sheets. The first has clinical data, the third has a template", "srcs": [[{"filenm": "Clinical_and_Other_Features.xlsx", "sheet": 0, "headrows": [0, 1, 2], "specAttr": "duke", "skipCols": [67]}]], "dict": [{"filenm": "Clinical_and_Other_Features.xlsx", "sheet": 0, "use": true, "nohead": false, "form": "duke"}], "case_id": "same", "tcia": "yes", "idc_id": "duke_breast_cancer_mri"},
-
-
-"ea1141": {"notes": "several csv files with data dictionaries in pdfs that have been converterd to xlsx files", "uzip":"EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip","srcs": [[{"filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/ea1141_baseline_demog_derived_ birth-year-removed.csv", "patientIdCol": "subject_de", "archive": ["EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip"]}], [{"filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/ea1141_year0_screening_derived.csv", "patientIdCol": "subject_de", "archive": ["EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip"]}], [{"filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/ea1141_bcsc_risk_model.csv", "patientIdCol": "subject_de", "archive": ["EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip"]}], [{"filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/ea1141_year0_tomolesions_outcome.csv", "patientIdCol": "subject_de", "archive": ["EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip"]}], [{"filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/ea1141_year0_mrilesions_outcome.csv", "patientIdCol": "subject_de", "archive": ["EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip"]}], [{"filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/ea1141_6month_fup.csv", "patientIdCol": "subject_de", "archive": ["EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip"]}], [{"filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/ea1141_12month_fup.csv", "patientIdCol": "subject_de", "archive": ["EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip"]}]], "tabletypes": [{"demographics": "demographics"}, {"screening": "year 0 screening data"}, {"risk_model": "BCSC risk model"}, {"tomosynthesis": "lesions found in tomosynthesis screen"}, {"mri": "lesions found in MRI screen"}, {"status_6mo": "patient status at 6 months"}, {"status_12mo": "patient status at 12 months"}], "dict": [{"filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/Data Dictionaries/00_EA1141_Baseline-Demog_DataDictionary_NCI_TCIAModified.xlsx", "sheet": 0, "use": true, "nohead": true, "form": "ea1141"}, {"filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/Data Dictionaries/01_EA1141_Year0-Screening_DataDictionary_NCI.xlsx", "sheet": 0, "use": true, "nohead": true, "form": "ea1141"}, {"filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/Data Dictionaries/02_EA1141_BCSC-risk-model_DataDictionary_NCI.xlsx", "sheet": 0, "use": true, "nohead": true, "form": "ea1141"}, {"filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/Data Dictionaries/03_EA1141_Year0-PositiveScreen_Lesions_Tomo_DataDictionary_NCI.xlsx", "sheet": 0, "use": true, "nohead": true, "form": "ea1141"}, {"filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/Data Dictionaries/04_EA1141_Year0-PositiveScreen_Lesions_MRI_DataDictionary_NCI.xlsx", "sheet": 0, "use": true, "nohead": true, "form": "ea1141"}, {"filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/Data Dictionaries/05_EA1141_6month-FUP_DataDictionary_NCI.xlsx", "sheet": 0, "use": true, "nohead": true, "form": "ea1141"}, {"filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/Data Dictionaries/06_EA1141_12month-FUP_DataDictionary_NCI.xlsx", "sheet": 0, "use": true, "nohead": true, "form": "ea1141"}], "case_id": "ea1141", "tcia": "yes", "idc_id": "ea1141"},
-
-
-"hcc_tace_seg": {"notes": "one xlsx file with clinical data and a glossary", "srcs": [[{"filenm": "HCC-TACE-Seg_clinical_data-V2.xlsx", "sheet": 0}]], "dict": [{"filenm": "HCC-TACE-Seg_clinical_data-V2.xlsx", "sheet": 1, "use": true, "nohead": true, "form": "hcc_tace"}], "case_id": "same", "tcia": "yes", "idc_id": "hcc_tace_seg"},
-
-"HTAN-HMS": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "HTAN", "srcs": [{"table": "isb-cgc-bq.HTAN.clinical_tier1_demographics_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_diagnosis_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_exposure_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_familyhistory_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_followup_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_moleculartest_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_therapy_current", "patientIdCol": "HTAN_Participant_ID"}], "case_id": "same", "tabletypes": [{"demographics": "demographics", "diagnosis": "diagnosis", "exposure": "exposure", "familyhistory": "familyhistory", "followup": "followup", "moleculartest": "moleculartest", "therapy": "therapy"}]},
-
-"HTAN-OHSU": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "HTAN", "srcs": [{"table": "isb-cgc-bq.HTAN.clinical_tier1_demographics_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_diagnosis_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_exposure_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_familyhistory_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_followup_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_moleculartest_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_therapy_current", "patientIdCol": "HTAN_Participant_ID"}], "case_id": "same", "tabletypes": [{"demographics": "demographics", "diagnosis": "diagnosis", "exposure": "exposure", "familyhistory": "familyhistory", "followup": "followup", "moleculartest": "moleculartest", "therapy": "therapy"}]},
-
-"HTAN-WUSTL": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "HTAN", "srcs": [{"table": "isb-cgc-bq.HTAN.clinical_tier1_demographics_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_diagnosis_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_exposure_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_familyhistory_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_followup_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_moleculartest_current", "patientIdCol": "HTAN_Participant_ID"}, {"table": "isb-cgc-bq.HTAN.clinical_tier1_therapy_current", "patientIdCol": "HTAN_Participant_ID"}], "case_id": "same", "tabletypes": [{"demographics": "demographics", "diagnosis": "diagnosis", "exposure": "exposure", "familyhistory": "familyhistory", "followup": "followup", "moleculartest": "moleculartest", "therapy": "therapy"}]},
-
-
-"ispy1": {"notes": "xlsx file with 4 sheers. Two are  clinical data sheets, two others are data dictionaries. There are Excell formulas in the clinical data sheets that are not resolved by my parser", "tabletypes": [{"clinical": "clinical"}, {"outcome": "patient outcomes"}], "srcs": [[{"filenm": "I-SPY-1-All-Patient-Clinical-and-Outcome-Data.xlsx", "sheet": 1}], [{"filenm": "I-SPY-1-All-Patient-Clinical-and-Outcome-Data.xlsx", "sheet": 3}]], "dict": [["I-SPY-1-All-Patient-Clinical-and-Outcome-Data.xlsx", 0], ["I-SPY-1-All-Patient-Clinical-and-Outcome-Data.xlsx", 2]], "case_id": "ispy", "tcia": "yes", "idc_id": "ispy1"},
-
-"ispy2": {"notes": "one xlsx file with clinical data", "srcs": [[{"filenm": "ISPY2-Imaging-Cohort-1-Clinical-Data.xlsx", "sheet": 0}]], "case_id": "ispy2", "tcia": "yes", "idc_id": "ispy2"},
-
-
-"lidc_idri": {"notes": "", "alternate": ["Nodule Counts by Patient (XLS)", "Patient Diagnoses (XLS)"], "srcs": [[{"filenm": "tcia-diagnosis-data-2012-04-20.xls", "sheet": 0, "headerformatspec": "lidc"}]], "case_id": "same", "dict": [{"filenm": "tcia-diagnosis-data-2012-04-20.xls", "sheet": 0, "use": true, "form": "lidc"}], "tcia": "yes", "idc_id": "lidc_idri"},
-
-"lung_fused_ct_pathology": {"notes": "One xlsx file with one sheet with clear clinical data", "srcs": [[{"filenm": "Lung-Fused-CT-Pathology-spreadsheet.xlsx", "sheet": 0, "headrows": [1], "maxRow": 7}]], "case_id": "same", "tcia": "yes", "idc_id": "lung_fused_ct_pathology"},
-
-"lung_pet_ct_dx": {"notes": "One xlsx file with one sheet with clear clinical data", "srcs": [[{"filenm": "statistics-clinical-20201221.xlsx", "sheet": 0, "patientIdRow": 1}], [{"filenm":"lung-ct-qa-results.csv", "patientIdCol": "patientid", "filterRows":"Collection", "case_id":"same"}], [{"filenm":"lung-fdg-pet-ct-qa-results.csv","patientIdCol": "patientid", "filterRows":"Collection", "case_id":"same"}]], "case_id": "lung_pt", "tcia": "yes", "idc_id": "lung_pet_ct_dx", "tabletypes": [{"clinical":"clinical data"},{"bamf_lung_ct_segmentation": "segmentation of Lung and Nodules (3mm-30mm) from CT scans"}, {"bamf_lung_fdg_pet_ct_segmenation": "segmentation of Lungs and FDG-avid lesions in the lung from FDG PET/CT scans"}]},
-
-"mediastinal_lymph_node_seg": {"notes":  "One csv file with clinical data", "srcs": [[{"filenm": "Mediastinal-Lymph-Node-SEG-VER1-CLINICAL-1.csv", "sheet": 0}]], "case_id": "same", "tcia": "yes", "idc_id": "mediastinal_lymph_node_seg"},
-
-"midrc_ricord_1a": {"notes": "One xlsx file, one sheet with clear clinical data", "srcs": [[{"filenm": "MIDRC-RICORD-1a-Clinical-Data-Jan-13-2021.xlsx", "sheet": 0}]], "case_id": "add colec", "tcia_api":"MIDRC-RICORD-1A", "tcia": "yes", "idc_id": "midrc_ricord_1a"},
-
-"midrc_ricord_1b": {"notes": "One xlsx file, one sheet with clear clinical data", "srcs": [[{"filenm": "MIDRC-RICORD-1b-Clinical-Data-Feb-2021.xlsx", "sheet": 0}]], "case_id": "add colec", "tcia_api":"MIDRC-RICORD-1B", "tcia": "yes", "idc_id": "midrc_ricord_1b"},
-
-"midrc_ricord_1c": {"notes": "One xlsx file, one sheet with clear clinical data", "srcs": [[{"filenm": "MIDRC-RICORD-1c-Clinical-Data-Jan-13-2021-.xlsx", "sheet": 0}]], "case_id": "add colec", "tcia_api":"MIDRC-RICORD-1C","tcia": "yes", "idc_id": "midrc_ricord_1c"},
-
-
-"nlst": {"notes": "sourced from excell sheets provided by AF", "tabletypes": [{"canc": "cancer data"}, {"ctab": "CT abnormaliy"}, {"ctabc": "CT abnormality comparison"}, {"prsn": "presrceen"}, {"screen": "screen"}], "srcs": [[{"filenm": "./nlst_780/nlst_780_canc_idc_20210527.csv", "archive": ["NLST_dicts_xls.zip"]}], [{"filenm": "./nlst_780/nlst_780_ctab_idc_20210527.csv", "patientIdRow": 10, "archive": ["NLST_dicts_xls.zip"]}], [{"filenm": "./nlst_780/nlst_780_ctabc_idc_20210527.csv", "patientIdRow": 2, "archive": ["NLST_dicts_xls.zip"]}], [{"filenm": "./nlst_780/nlst_780_prsn_idc_20210527.csv", "patientIdRow": 31, "archive": ["NLST_dicts_xls.zip"]}], [{"filenm": "./nlst_780/nlst_780_screen_idc_20210527.csv", "patientIdRow": 0, "archive": ["NLST_dicts_xls.zip"]}]], "dict": [{"filenm": "./NLST_dicts_xls/dictionary_idc_canc_idc.xlsx", "use": true, "form": "nlst", "sheet": 2}, {"filenm": "./NLST_dicts_xls/dictionary_idc_ctab_idc.xlsx", "use": true, "form": "nlst", "sheet": 1}, {"filenm": "./NLST_dicts_xls/dictionary_idc_ctabc_idc.xlsx", "use": true, "form": "nlst", "sheet": 2}, {"filenm": "./NLST_dicts_xls/dictionary_idc_prsn_idc.xlsx", "use": true, "form": "nlst2", "sheet": [2, 3, 4, 5]}, {"filenm": "./NLST_dicts_xls/dictionary_idc_screen_idc.xlsx", "use": true, "form": "nlst", "sheet": 2}], "case_id": "same", "tcia": "yes", "idc_id": "nlst"},
-
-"nsclc_radiomics": {"notes": "One csv file with clinical data", "srcs": [[{"filenm": "NSCLC-Radiomics-Lung1.clinical-version3-Oct-2019.csv", "sheet": 0}]], "case_id": "same", "tcia": "yes", "idc_id": "nsclc_radiomics"},
-
-"nsclc_radiogenomics": {"notes": "One csv file with clinical data", "srcs": [[{"filenm": "NSCLCR01Radiogenomic_DATA_LABELS_2018-05-22_1500-shifted.csv", "sheet": 0}], [{"filenm":"lung-ct-qa-results.csv", "patientIdCol": "patientid", "filterRows":"Collection", "case_id":"same"}], [{"filenm":"lung-fdg-pet-ct-qa-results.csv","patientIdCol": "patientid", "filterRows":"Collection"}]], "case_id": "same", "tcia": "yes", "idc_id": "nsclc_radiogenomics", "tabletypes": [{"clinical":"clinical data"},{"bamf_lung_ct_segmentation": "segmentation of Lung and Nodules (3mm-30mm) from CT scans"}, {"bamf_lung_fdg_pet_ct_segmenation": "segmentation of Lungs and FDG-avid lesions in the lung from FDG PET/CT scans"}]},
-
-"nsclc_radiomics_genomics": {"notes": "One xls file with one sheet with clinical data", "srcs": [[{"filenm": "Lung3.metadata.xls", "sheet": 0}]], "case_id": "same", "tcia": "yes", "idc_id": "nsclc_radiomics_genomics"},
-
-"nsclc_radiomics_interobserver1": {"notes": "one csv file with clinical data", "srcs": [[{"filenm": "Interobserver1.clinical_updated_released_2019-June-17.csv"}]], "case_id": "same", "tcia": "yes", "idc_id": "nsclc_radiomics_interobserver1"},
-
-
-"prostatex": {"notes": "Not accessible via the collection api. Must hunt the wiki", "archive": ["ProstateX-TrainingLesionInformationv2.zip"], "srcs": [[{"filenm": "ProstateX-TrainingLesionInformationv2/ProstateX-Findings-Train.csv", "archive": ["ProstateX-TrainingLesionInformationv2.zip"], "patientIdRow": 0}, {"filenm": "ProstateX-TestLesionInformation/ProstateX-Findings-Test.csv", "patientIdRow": 0, "archive": ["ProstateX-TestLesionInformation.zip"]}], [{"filenm": "ProstateX-TrainingLesionInformationv2/ProstateX-Images-Train.csv", "archive": ["ProstateX-TrainingLesionInformationv2.zip"]}, {"filenm": "ProstateX-TestLesionInformation/ProstateX-Images-Test.csv", "archive": ["ProstateX-TestLesionInformation.zip"]}], [{"filenm": "ProstateX-TrainingLesionInformationv2/ProstateX-Images-KTrans-Train.csv", "archive": ["ProstateX-TrainingLesionInformationv2.zip"]}, {"filenm": "ProstateX-TestLesionInformation/ProstateX-Images-KTrans-Test.csv", "archive": ["ProstateX-TestLesionInformation.zip"]}], [{"filenm": "ProstateX-2-Findings-Train.csv", "archive": ["ProstateX2-DataInfo-Train.zip"], "patientIdRow": 0}, {"filenm": "ProstateX-2-Findings-Test.csv", "archive": ["ProstateX2-DataInfo-Test.zip"], "patientIdRow": 0}], [{"filenm": "ProstateX-2-Images-Train.csv", "archive": ["ProstateX2-DataInfo-Train.zip"], "patientIdRow": 0}, {"filenm": "ProstateX-2-Images-Test.csv", "archive": ["ProstateX2-DataInfo-Test.zip"], "patientIdRow": 0}], [{"filenm":"prostate-mr-qa-results.csv", "patientIdCol": "patientid", "filterRows":"Collection"}]], "dict": [{"filenm": "ProstateX-TrainingLesionInformationv2/ProstateX-DataInfo-Train.docx", "filenm2": "ProstateX-TestLesionInformation/ProstateX-DataInfo-Test.docx", "form": "PROSTATEx", "use": "true"}, {"filenm": "ProstateX-TrainingLesionInformationv2/ProstateX-DataInfo-Train.docx", "filenm2": "ProstateX-TestLesionInformation/ProstateX-DataInfo-Test.docx", "form": "PROSTATEx", "use": "true"}, {"filenm": "ProstateX-TrainingLesionInformationv2/ProstateX-DataInfo-Train.docx", "filenm2": "ProstateX-TestLesionInformation/ProstateX-DataInfo-Test.docx", "form": "PROSTATEx", "use": "true"}, {"filenm": "ProstateX2-DataInfo-Train.docx", "filenm2": "ProstateX2-DataInfo-Test.docx", "form": "PROSTATEx", "use": "true"}, {"filenm": "ProstateX2-DataInfo-Train.docx", "filenm2": "ProstateX2-DataInfo-Test.docx", "form": "PROSTATEx", "use": "true"}], "tabletypes": [{"findings": "findings for training and test sets for original challenge"}, {"images": "image data for training set for original challenge"}, {"ktrans": "ktrans image data for training set for original challenge"}, {"findings2": "findings for training and test sets for second challenge"}, {"images2": "image data for training set for second challenge"}, {"bamf_segmentations":"bamf segmentations from T2 MRI scans"}], "case_id": "same", "tcia": "yes", "idc_id": "prostatex"},
-
-
-"prostate_diagnosis": {"notes": "one xlsx file with clinical data.", "srcs": [[{"filenm": "ProstateDiagnosis_metadata-05-07-2012.xlsx", "sheet": 0, "pivot": true}]], "case_id": "same", "tcia": "yes", "idc_id": "prostate_diagnosis"},
-
-"qin_breast": {"notes": "one xls w treatments response", "alternate": ["QIN-Breast Treatment Response (XLS)"], "srcs": [[{"filenm": "QIN-Breast_TreatmentResponse2014-12-16.xlsx", "sheet": 0}], [{"filenm":"breast-fdg-pet-ct-qa-results.csv", "patientIdCol": "patientid"}]], "case_id": "same", "tcia": "yes", "idc_id": "qin_breast", "tabletypes": [{"clinical":"clinical data"},{"bamf_breast_segmentation": "segmentation of FDG-avid lesions in breast from FDG PET/CT scans QIN-Breast"}]},
-
-"qin_breast_dce_mri": {"notes": "only binary data response vs non-complete response", "spec": "QIN-Breast-DCE-MRI_Response.xlsx", "alternate": ["Pathological Response (XLS)"], "srcs": [[{"filenm": "QIN-Breast-DCE-MRI_Response.xlsx", "sheet": 0}]], "case_id": "same", "tcia": "yes", "idc_id": "qin_breast_dce_mri"},
-
-
-"remind": {"notes": "one xlsx file. 1st sheet has clinical data, the 2nd a data dictionary", "srcs": [[{"filenm": "ReMIND-Dataset-Clinical-Data-September-2023.xlsx", "sheet": 0}]], "dict": [{"filenm": "ReMIND-Dataset-Clinical-Data-September-2023.xlsx", "sheet": 1, "use": true, "header": "None", "form": "remind"}], "case_id": "remind", "tcia": "yes", "idc_id": "remind"},
-
-"rms_mutation_prediction": {"notes": "sourced from zenodo", "tcia_api": "rms", "idc_webapp": "rms_mutation_prediction", "srcs": [[{"filenm": "CCDI_Submission_Template_v1.0.1_DM_v2.2023-02-17.xlsx", "sheet": 3, "patientIdRow": 0, "skipCols": [0]}], [{"filenm": "CCDI_Submission_Template_v1.0.1_DM_v2.2023-02-17.xlsx", "sheet": 5, "patientIdRow": 0, "skipCols": [0, 1, 5]}], [{"filenm": "CCDI_Submission_Template_v1.0.1_DM_v2.2023-02-17.xlsx", "sheet": 7, "patientIdRow": 0, "skipCols": [0, 1]}]], "case_id": "same", "tabletypes": [{"diagnosis": "diagnosis"}, {"demographics": "demographics"}, {"sample": "sample"}], "tcia": "yes", "idc_id": "rms_mutation_prediction"},
-
-"rider_lung_pet_ct":{"notes":"bamf_seg", "srcs":[[{"filenm":"lung-ct-qa-results.csv", "patientIdCol": "patientid", "filterRows":"Collection"}], [{"filenm":"lung-fdg-pet-ct-qa-results.csv","patientIdCol": "patientid", "filterRows":"Collection"}]],  "tabletypes": [{"bamf_lung_ct_segmentation": "segmentation of Lung and Nodules (3mm-30mm) from CT scans"}, {"bamf_lung_fdg_pet_ct_segmenation": "segmentation of Lungs and FDG-avid lesions in the lung from FDG PET/CT scans"}], "tcia":"yes", "case_id":"same"},
-
-
-
-"soft_tissue_sarcoma": {"notes": "One xlsx file with two sheets with complimentary data", "tabletypes": [{"clinical": "clinical data"}, {"outcome": "patient outcomes"}], "srcs": [[{"filenm": "INFOclinical_STS.xlsx", "sheet": 0, "maxRow": 51}], [{"filenm": "INFOclinical_STS.xlsx", "sheet": 1}]], "case_id": "same", "tcia": "yes", "idc_id": "soft_tissue_sarcoma"},
-
-"spine_mets_ct_seg": {"notes": "one xlsx file. 1st sheet has clinical data, the 2nd a data dictionary", "srcs": [[{"filenm": "Spine-Mets-CT-SEG_Clinical.xlsx", "sheet": 1}]], "dict": [{"filenm": "Spine-Mets-CT-SEG_Clinical.xlsx", "sheet": 0, "use": true, "nohead":  true, "form": "spinal"}], "case_id": "spinal", "tcia": "yes", "idc_id": "spine_mets_ct_seg"},
-
-"spie_aapm_lung_ct_challenge": {"notes": "one file with clinical data", "alternate": ["Nodule Locations/Diagnoses - Test Set (XLS)"], "srcs": [[{"filenm": "TestSet_NoduleData_PublicRelease_wTruth.xlsx", "sheet": 0, "maxRow": 73}]], "case_id": "same", "tcia": "yes", "idc_id": "spie_aapm_lung_ct_challenge"},
-
-"tcga_blca": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"tcga_brca": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"tcga_cesc": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"tcga_coad": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"tcga_esca": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"tcga_gbm": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table.", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"tcga_hnsc": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table.", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"tcga_kich": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same" },
-
-"tcga_kirc": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "srcs2":[[{"filenm":"kidney-ct-qa-results.csv", "patientIdCol": "patientid"}]], "tabletypes2":[{"bamf_kidney_segmentation": "segmentation of Kidney, Tumor, and Cysts from contrast enhanced CT scans"}], "tcia":"yes", "idc_id":"tcga_kirc", "case_id":"same" },
-
-"tcga_kirp": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"tcga_lgg": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"tcga_lihc": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"},  "srcs2":[[{"filenm":"liver-ct-qa-results.csv", "patientIdCol": "patientid"}], [{"filenm":"liver-mr-qa-results.csv", "patientIdCol": "patientid"}]], "tabletypes2":[{"bamf_liver_ct_segmentation": "segmentation of liver CT scans"}, {"bamf_liver_mr_segmentation":"segmentation of liver T1 MRI scans"}]  , "tcia":"yes", "idc_id":"tcga_lihc", "case_id":"same"},
-
-"tcga_luad": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "srcs2":[[{"filenm":"lung-ct-qa-results.csv", "patientIdCol": "patientid", "filterRows":"Collection"}], [{"filenm":"lung-fdg-pet-ct-qa-results.csv", "patientIdCol": "patientid", "filterRows":"Collection"}]], "tabletypes2":[{"bamf_lung_ct_segmentation": "segmentation of Lung and Nodules (3mm-30mm) from CT scans"}, {"bamf_lung_mr_segmentation":"segmentation of Lungs and FDG-avid lesions in the lung from FDG PET/CT scans"}], "tcia":"yes", "idc_id":"tcga_luad", "case_id":"same"},
-
-"tcga_lusc": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"},  "srcs2":[[{"filenm":"lung-ct-qa-results.csv","patientIdCol": "patientid", "filterRows":"Collection"}], [{"filenm":"lung-fdg-pet-ct-qa-results.csv", "patientIdCol": "patientid", "filterRows":"Collection"}]], "tabletypes2":[{"lung_ct_segmentation": "segmentation of Lung and Nodules (3mm-30mm) from CT scans"}, {"lung_mr_segmentation":"segmentation of Lungs and FDG-avid lesions in the lung from FDG PET/CT scans"}], "tcia":"yes", "idc_id":"tcga_lusc", "case_id":"same"},
-
-"tcga_ov": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"tcga_prad": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"tcga_read": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"tcga_sarc": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"tcga_stad": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"tcga_thca": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"tcga_ucec": {"notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table", "spec": "TCGA", "srcs": {"table": "isb-cgc-bq.TCGA.clinical_gdc_current", "patientIdCol": "submitter_id"}, "case_id": "same"},
-
-"upenn_gbm": {"notes": "one csv file with clinical data", "srcs": [[{"filenm": "UPENN-GBM_clinical_info_v2.1.csv", "sheet": 0}]], "case_id": "upenn-gbm", "tcia": "yes", "tcia":"yes"}
-
+    "acrin_6698": {
+        "notes": "one xlsx file with clinical data.",
+        "alternate": [
+            "Full Collection Ancillary Patient Information file (.xlsx)"
+        ],
+        "srcs": [
+            [
+                {
+                    "filenm": "Full-Collection-Ancillary-Patient-Information-file.xlsx",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "case_id": "acrin 6698",
+        "dict": [
+            {
+                "filenm": "Full-Collection-Ancillary-Patient-Information-file.xlsx",
+                "sheet": 1,
+                "use": "true",
+                "form": "ispy2",
+                "skipRows": [
+                    0
+                ]
+            }
+        ],
+        "tcia": "yes",
+        "idc_id": "acrin_6698"
+    },
+    "acrin_contralateral_breast_mr": {
+        "notes": "leads to a download of one zip file with several data files in csv format and a data dictionary in xlsx format. The data file names are a different format from all the other acrin collecitons. The file names include the id (6667) and the word 'reviewed'",
+        "spec": "acrin",
+        "tcia": "yes",
+        "idc_id": "acrin_contralateral_breast_mr",
+        "uzip": [
+            "ACRIN-6667-Contralateral-Breast-MRI-Clinical-Data-Anonymized.zip"
+        ],
+        "udir": [
+            "ACRIN 6667 Contralateral Breast MRI Clinical Data Anonymized"
+        ],
+        "dictfile": "./ACRIN 6667 Contralateral Breast MRI Clinical Data Anonymized/QIN_6667 Data Dictionary reviewed.xlsx",
+        "case_id": "acrin format",
+        "tcia_api": "ACRIN-Contralateral-Breast-MR"
+    },
+    "acrin_flt_breast": {
+        "notes": "Leads to a download of one zip file with several csv files with clinical data and a data dictionary in an xlsx file",
+        "spec": "acrin",
+        "uzip": [
+            "ACRIN-FLT-Breast-6688-Clinical-Data.zip"
+        ],
+        "udir": [
+            "ACRIN-FLT-Breast 6688 Clinical Data"
+        ],
+        "dictfile": "QIN_6688 Data Dictionary.xls",
+        "idc_webapp": "acrin_flt_breast",
+        "case_id": "acrin flt format",
+        "tcia_api": "ACRIN-FLT_Breast",
+        "tcia": "yes",
+        "idc_id": "acrin_flt_breast"
+    },
+    "acrin_nsclc_fdg_pet": {
+        "notes": "Same as ACRIN-NSCLC-FDG-PET (ACRIN 6668), but in this case there are two zip files with a 75/25 random data set",
+        "uzip": [
+            "ACRIN-6668-NSCLC-FDG-PET-ACRIN-Data-TCIA-Anonymized-File-set-1.zip",
+            "ACRIN-6668HB-NSCLC-FDG-PET-ACRIN-Data-TCIA-Anonymized-File-set-2.zip"
+        ],
+        "udir": [
+            "ACRIN 6668 NSCLC FDG PET - ACRIN Data TCIA Anonymized",
+            "ACRIN 6668HB NSCLC FDG PET - ACRIN Data TCIA Anonymized"
+        ],
+        "spec": "acrin",
+        "case_id": "acrin format",
+        "tcia_api": "ACRIN-NSCLC-FDG-PET",
+        "tcia": "yes",
+        "idc_id": "acrin_nsclc_fdg_pet",
+        "srcs2": [
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results.csv",
+                    "case_id": "same",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes2": [
+            {
+                "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results": "bamf_aimi_annotations segmentations of Lungs and FDG-avid lesions in the lung from FDG PET/CT scans"
+            }
+        ]
+    },
+    "adrenal_acc_ki67_seg": {
+        "notes": "one xlsx file. 1st sheet with clinical data, the 2nd with a glossary",
+        "srcs": [
+            [
+                {
+                    "filenm": "Adrenal-ACC-Ki67-Seg_SupportingData_20230522.xlsx",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "dict": [
+            {
+                "filenm": "Adrenal-ACC-Ki67-Seg_SupportingData_20230522.xlsx",
+                "sheet": 1,
+                "use": "true",
+                "nohead": "true",
+                "form": "adrenal"
+            }
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "adrenal_acc_ki67_seg"
+    },
+    "AHEP0731": {
+        "notes": "clinical data href links to nctn/ncorp data portal"
+    },
+    "advanced_mri_breast_lesions": {
+        "srcs": [
+            [
+                {
+                    "filenm": "Advanced-MRI-Breast-Lesions-DA-Clinical-Sep2024.xlsx",
+                    "sheet": 0,
+                    "skipRows": [
+                        0
+                    ],
+                    "headrows": [
+                        1
+                    ],
+                    "skipCols": [
+                        2,
+                        18,
+                        31,
+                        44
+                    ]
+                }
+            ]
+        ],
+        "case_id": "same",
+        "dict": [
+            {
+                "use": "true",
+                "filenm": "Advanced-MRI-Breast-Lesions-DA-Clinical-Sep2024.xlsx",
+                "sheet": 1,
+                "form": "ambl"
+            }
+        ],
+        "tcia": "yes"
+    },
+    "anti_pd_1_lung": {
+        "notes": "bamf_seg",
+        "srcs": [
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_lung_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "bamf_aimi_annotations_lung_ct_qa_results": "bamf_aimi_annotations segmentations of Lung and Nodules (3mm-30mm) from CT scans"
+            },
+            {
+                "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results": "bamf_aimi_annotations segmentations of Lungs and FDG-avid lesions in the lung from FDG PET/CT scans"
+            }
+        ],
+        "tcia": "yes",
+        "case_id": "same"
+    },
+    "b_mode_and_ceus_liver": {
+        "notes": "one file with one sheet with clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "B-mode-and-CEUS-Liver_ReferenceStandards_v2_20220218.xlsx",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "b_mode_and_ceus_liver"
+    },
+    "Brain-TR-GammaKnife": {
+        "notes": "Limited Access. Not in IDC",
+        "tcia": "no"
+    },
+    "breast_diagnosis": {
+        "notes": "an xls file with one sheet with clinical data but is pivoted (organized in columns)",
+        "srcs": [
+            [
+                {
+                    "filenm": "TCIA-Breast-clinical-data-public-7_16_11.xlsx",
+                    "sheet": 0,
+                    "headrows": [
+                        0,
+                        1
+                    ],
+                    "pivot": "true"
+                }
+            ]
+        ],
+        "case_id": "breast",
+        "tcia": "yes",
+        "idc_id": "breast_diagnosis"
+    },
+    "breast_mri_nact_pilot": {
+        "notes": "one xls file with 3 sheets. One has clinical data, the others have supporting data",
+        "srcs": [
+            [
+                {
+                    "filenm": "SharedClinicalAndRFS.xls",
+                    "sheet": 1,
+                    "patientIdRow": 1,
+                    "maxRow": 64,
+                    "skipCols": [
+                        37,
+                        38
+                    ]
+                }
+            ]
+        ],
+        "case_id": "switch dash",
+        "tcia": "yes",
+        "idc_id": "breast_mri_nact_pilot"
+    },
+    "c4kc_kits": {
+        "notes": "one csv file with clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "C4KC-KiTS_Clinical-Data_Version-1.csv",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "c4kc_kits"
+    },
+    "cc_tumor_heterogeneity": {
+        "notes": "one file with one sheet with clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "TCIA_CCTH_Patient-data_02.06.23.xlsx",
+                    "sheet": 0,
+                    "maxRow": 24,
+                    "skipRows": [
+                        1
+                    ]
+                }
+            ]
+        ],
+        "case_id": "cc",
+        "tcia": "yes",
+        "idc_id": "cc_tumor_heterogeneity"
+    },
+    "cmmd": {
+        "notes": "one file with one sheet with clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "CMMD_clinicaldata_revision.xlsx",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "cmmd"
+    },
+    "colorectal_liver_metastases": {
+        "notes": "one xlsx file with clinical data and a data dictionary",
+        "srcs": [
+            [
+                {
+                    "filenm": "Colorectal-Liver-Metastases-Clinical-data-April-2023.xlsx",
+                    "sheet": 0
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_liver2_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "clinical": "clinical data"
+            },
+            {
+                "bamf_aimi_annotations_liver2_ct_qa_results": "bamf_aimi_annotations segmentations of Liver and Lesions from CT scans"
+            }
+        ],
+        "dict": [
+            {
+                "filenm": "Colorectal-Liver-Metastases-Clinical-data-April-2023.xlsx",
+                "use": "true",
+                "sheet": 1,
+                "form": "colorectal"
+            }
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "colorectal_liver_metastases"
+    },
+    "covid_19_ar": {
+        "notes": "one xls file with two sheets. Both have clinical data  for two attribute sets",
+        "tabletypes": [
+            {
+                "clinical": "clinical data"
+            },
+            {
+                "imaging": "imaging data"
+            }
+        ],
+        "srcs": [
+            [
+                {
+                    "filenm": "COVID-19-AR-Clinical-Correlates-July202020.xlsx",
+                    "sheet": 0,
+                    "headrows": [
+                        1
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "COVID-19-AR-Clinical-Correlates-July202020.xlsx",
+                    "sheet": 1,
+                    "headrows": [
+                        1
+                    ]
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "covid_19_ar"
+    },
+    "covid_19_ny_sbu": {
+        "srcs": [
+            [
+                {
+                    "filenm": "deidentified_overlap_tcia.csv.cleaned.csv_20210806.csv",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "dict": [
+            {
+                "filenm": "deidentified_overlap_tcia.csv.cleaned.csv.template_20210806.csv",
+                "form": "covid",
+                "use": "true"
+            }
+        ],
+        "case_id": "same",
+        "notes": "one csv file with clinical information, one data dictionary or template",
+        "tcia": "yes",
+        "idc_id": "covid_19_ny_sbu"
+    },
+    "cptac_aml": {
+        "notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "CPTAC",
+        "srcs": {
+            "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "cptac_brca": {
+        "notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "CPTAC",
+        "srcs": {
+            "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "cptac_ccrcc": {
+        "notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "CPTAC",
+        "srcs": {
+            "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "srcs2": [
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_kidney_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ],
+            [
+                {
+                    "filenm": "Metadata_Report_CPTAC-CCRCC_2023_07_14.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes2": [
+            {
+                "bamf_aimi_annotations_kidney_ct_qa_results": "bamf_aimi_annotations segmentations of Kidney, Tumor, and Cysts from contrast enhanced CT scans"
+            },
+            {
+                "cptac_ccrcc_tumor_annotations_metadata_report_cptac_ccrcc_2023_07_14": "CPTAC-CCRCC Annotation Metadata"
+            }
+        ],
+        "case_id": "same"
+    },
+    "cptac_cm": {
+        "notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "CPTAC",
+        "srcs": {
+            "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "cptac_coad": {
+        "notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "CPTAC",
+        "srcs": {
+            "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "cptac_gbm": {
+        "notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "CPTAC",
+        "srcs": {
+            "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "cptac_hnscc": {
+        "notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "CPTAC",
+        "srcs": {
+            "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "cptac_lscc": {
+        "notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "CPTAC",
+        "srcs": {
+            "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "cptac_luad": {
+        "notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "CPTAC",
+        "srcs": {
+            "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "cptac_ov": {
+        "notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "CPTAC",
+        "srcs": {
+            "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "cptac_pda": {
+        "notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "CPTAC",
+        "srcs": {
+            "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "srcs2": [
+            [
+                {
+                    "filenm": "Metadata_Report_CPTAC-PDA_2023_07_14.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes2": [
+            {
+                "cptac_pda_tumor_annotations_metadata_report_pda_ccrcc_2023_07_14": "CPTAC-PDA Annotation Metadata"
+            }
+        ],
+        "case_id": "same"
+    },
+    "cptac_sar": {
+        "notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "CPTAC",
+        "srcs": {
+            "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "cptac_ucec": {
+        "notes": "CPTAC collection clinical data to be sourced from ISB-CGC BQ table. The CPTAC pages in the TCIA wiki were recently changed but the link for CPTAC-UCEC was not updated in the collections list page",
+        "spec": "CPTAC",
+        "srcs": {
+            "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "srcs2": [
+            [
+                {
+                    "filenm": "Metadata_Report_CPTAC-UCEC_2023_07_14.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes2": [
+            {
+                "cptac_ucec_tumor_annotations_metadata_report_cptac_ucec_2023_07_14": "CPTAC-UCEC Annotation Metadata"
+            }
+        ],
+        "case_id": "same"
+    },
+    "ctpred_sunitinib_pannet": {
+        "notes": "one xlsx file with one sheet with clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "Clinical-Information-for-CTpred-Sunitinib-panNET.xlsx",
+                    "patientIdRow": 1
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "ctpred_sunitinib_pannet"
+    },
+    "duke_breast_cancer_mri": {
+        "notes": "one xlsx file with 3 sheets. The first has clinical data, the third has a template",
+        "srcs": [
+            [
+                {
+                    "filenm": "Clinical_and_Other_Features.xlsx",
+                    "sheet": 0,
+                    "headrows": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "specAttr": "duke",
+                    "skipCols": [
+                        67
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_breast_mr_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "clinical": "clinical data"
+            },
+            {
+                "bamf_aimi_annotations_breast_mr_qa_results": "bamf_aimi_annotations segmentationss of Breast, Fibroglandular tissue, structural tumor"
+            }
+        ],
+        "dict": [
+            {
+                "filenm": "Clinical_and_Other_Features.xlsx",
+                "sheet": 0,
+                "use": "true",
+                "nohead": "false",
+                "form": "duke"
+            }
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "duke_breast_cancer_mri"
+    },
+    "ea1141": {
+        "notes": "several csv files with data dictionaries in pdfs that have been converterd to xlsx files",
+        "uzip": "EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip",
+        "srcs": [
+            [
+                {
+                    "filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/ea1141_baseline_demog_derived_ birth-year-removed.csv",
+                    "patientIdCol": "subject_de",
+                    "archive": [
+                        "EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/ea1141_year0_screening_derived.csv",
+                    "patientIdCol": "subject_de",
+                    "archive": [
+                        "EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/ea1141_bcsc_risk_model.csv",
+                    "patientIdCol": "subject_de",
+                    "archive": [
+                        "EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/ea1141_year0_tomolesions_outcome.csv",
+                    "patientIdCol": "subject_de",
+                    "archive": [
+                        "EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/ea1141_year0_mrilesions_outcome.csv",
+                    "patientIdCol": "subject_de",
+                    "archive": [
+                        "EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/ea1141_6month_fup.csv",
+                    "patientIdCol": "subject_de",
+                    "archive": [
+                        "EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/ea1141_12month_fup.csv",
+                    "patientIdCol": "subject_de",
+                    "archive": [
+                        "EA1141-Reviewed-Clinical-Data-and-Data-Dictionaries.zip"
+                    ]
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "demographics": "demographics"
+            },
+            {
+                "screening": "year 0 screening data"
+            },
+            {
+                "risk_model": "BCSC risk model"
+            },
+            {
+                "tomosynthesis": "lesions found in tomosynthesis screen"
+            },
+            {
+                "mri": "lesions found in MRI screen"
+            },
+            {
+                "status_6mo": "patient status at 6 months"
+            },
+            {
+                "status_12mo": "patient status at 12 months"
+            }
+        ],
+        "dict": [
+            {
+                "filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/Data Dictionaries/00_EA1141_Baseline-Demog_DataDictionary_NCI_TCIAModified.xlsx",
+                "sheet": 0,
+                "use": "true",
+                "nohead": "true",
+                "form": "ea1141"
+            },
+            {
+                "filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/Data Dictionaries/01_EA1141_Year0-Screening_DataDictionary_NCI.xlsx",
+                "sheet": 0,
+                "use": "true",
+                "nohead": "true",
+                "form": "ea1141"
+            },
+            {
+                "filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/Data Dictionaries/02_EA1141_BCSC-risk-model_DataDictionary_NCI.xlsx",
+                "sheet": 0,
+                "use": "true",
+                "nohead": "true",
+                "form": "ea1141"
+            },
+            {
+                "filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/Data Dictionaries/03_EA1141_Year0-PositiveScreen_Lesions_Tomo_DataDictionary_NCI.xlsx",
+                "sheet": 0,
+                "use": "true",
+                "nohead": "true",
+                "form": "ea1141"
+            },
+            {
+                "filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/Data Dictionaries/04_EA1141_Year0-PositiveScreen_Lesions_MRI_DataDictionary_NCI.xlsx",
+                "sheet": 0,
+                "use": "true",
+                "nohead": "true",
+                "form": "ea1141"
+            },
+            {
+                "filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/Data Dictionaries/05_EA1141_6month-FUP_DataDictionary_NCI.xlsx",
+                "sheet": 0,
+                "use": "true",
+                "nohead": "true",
+                "form": "ea1141"
+            },
+            {
+                "filenm": "EA1141 Reviewed Clinical Data  and Data Dictionaries/Data Dictionaries/06_EA1141_12month-FUP_DataDictionary_NCI.xlsx",
+                "sheet": 0,
+                "use": "true",
+                "nohead": "true",
+                "form": "ea1141"
+            }
+        ],
+        "case_id": "ea1141",
+        "tcia": "yes",
+        "idc_id": "ea1141"
+    },
+    "hcc_tace_seg": {
+        "notes": "one xlsx file with clinical data and a glossary",
+        "srcs": [
+            [
+                {
+                    "filenm": "HCC-TACE-Seg_clinical_data-V2.xlsx",
+                    "sheet": 0
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_liver2_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "clinical": "clinical data"
+            },
+            {
+                "bamf_aimi_annotations_liver2_ct_qa_results": "bamf_aimi_annotations segmentations of Liver and Lesions from CT scans"
+            }
+        ],
+        "dict": [
+            {
+                "filenm": "HCC-TACE-Seg_clinical_data-V2.xlsx",
+                "sheet": 1,
+                "use": "true",
+                "nohead": "true",
+                "form": "hcc_tace"
+            }
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "hcc_tace_seg"
+    },
+    "HTAN-HMS": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "HTAN",
+        "srcs": [
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_demographics_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_diagnosis_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_exposure_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_familyhistory_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_followup_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_moleculartest_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_therapy_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            }
+        ],
+        "case_id": "same",
+        "tabletypes": [
+            {
+                "demographics": "demographics",
+                "diagnosis": "diagnosis",
+                "exposure": "exposure",
+                "familyhistory": "familyhistory",
+                "followup": "followup",
+                "moleculartest": "moleculartest",
+                "therapy": "therapy"
+            }
+        ]
+    },
+    "HTAN-OHSU": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "HTAN",
+        "srcs": [
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_demographics_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_diagnosis_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_exposure_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_familyhistory_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_followup_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_moleculartest_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_therapy_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            }
+        ],
+        "case_id": "same",
+        "tabletypes": [
+            {
+                "demographics": "demographics",
+                "diagnosis": "diagnosis",
+                "exposure": "exposure",
+                "familyhistory": "familyhistory",
+                "followup": "followup",
+                "moleculartest": "moleculartest",
+                "therapy": "therapy"
+            }
+        ]
+    },
+    "HTAN-WUSTL": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "HTAN",
+        "srcs": [
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_demographics_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_diagnosis_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_exposure_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_familyhistory_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_followup_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_moleculartest_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            },
+            {
+                "table": "isb-cgc-bq.HTAN.clinical_tier1_therapy_current",
+                "patientIdCol": "HTAN_Participant_ID"
+            }
+        ],
+        "case_id": "same",
+        "tabletypes": [
+            {
+                "demographics": "demographics",
+                "diagnosis": "diagnosis",
+                "exposure": "exposure",
+                "familyhistory": "familyhistory",
+                "followup": "followup",
+                "moleculartest": "moleculartest",
+                "therapy": "therapy"
+            }
+        ]
+    },
+    "ispy1": {
+        "notes": "xlsx file with 4 sheers. Two are  clinical data sheets, two others are data dictionaries. There are Excell formulas in the clinical data sheets that are not resolved by my parser",
+        "tabletypes": [
+            {
+                "clinical": "clinical"
+            },
+            {
+                "outcome": "patient outcomes"
+            }
+        ],
+        "srcs": [
+            [
+                {
+                    "filenm": "I-SPY-1-All-Patient-Clinical-and-Outcome-Data.xlsx",
+                    "sheet": 1
+                }
+            ],
+            [
+                {
+                    "filenm": "I-SPY-1-All-Patient-Clinical-and-Outcome-Data.xlsx",
+                    "sheet": 3
+                }
+            ]
+        ],
+        "dict": [
+            [
+                "I-SPY-1-All-Patient-Clinical-and-Outcome-Data.xlsx",
+                0
+            ],
+            [
+                "I-SPY-1-All-Patient-Clinical-and-Outcome-Data.xlsx",
+                2
+            ]
+        ],
+        "case_id": "ispy",
+        "tcia": "yes",
+        "idc_id": "ispy1"
+    },
+    "ispy2": {
+        "notes": "one xlsx file with clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "ISPY2-Imaging-Cohort-1-Clinical-Data.xlsx",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "case_id": "ispy2",
+        "tcia": "yes",
+        "idc_id": "ispy2"
+    },
+    "lidc_idri": {
+        "notes": "",
+        "alternate": [
+            "Nodule Counts by Patient (XLS)",
+            "Patient Diagnoses (XLS)"
+        ],
+        "srcs": [
+            [
+                {
+                    "filenm": "tcia-diagnosis-data-2012-04-20.xls",
+                    "sheet": 0,
+                    "headerformatspec": "lidc"
+                }
+            ],
+            [
+                {
+                    "filenm": "a_lidcMoistFinal2-remapping.xls",
+                    "sheet": 0,
+                    "patientIdCol": "tcia_patient_id",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "clinical": "clinical data"
+            },
+            {
+                "qin_lungct_seg_a_lidcMoistFinal2-remapping": "LIDC-IDRI Nodule Locations Documentation"
+            }
+        ],
+        "case_id": "same",
+        "dict": [
+            {
+                "filenm": "tcia-diagnosis-data-2012-04-20.xls",
+                "sheet": 0,
+                "use": "true",
+                "form": "lidc"
+            }
+        ],
+        "tcia": "yes",
+        "idc_id": "lidc_idri"
+    },
+    "lung_fused_ct_pathology": {
+        "notes": "One xlsx file with one sheet with clear clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "Lung-Fused-CT-Pathology-spreadsheet.xlsx",
+                    "sheet": 0,
+                    "headrows": [
+                        1
+                    ],
+                    "maxRow": 7
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "lung_fused_ct_pathology"
+    },
+    "lung_pet_ct_dx": {
+        "notes": "One xlsx file with one sheet with clear clinical data; two CSVs from an analysis result",
+        "srcs": [
+            [
+                {
+                    "filenm": "statistics-clinical-20201221.xlsx",
+                    "sheet": 0,
+                    "patientIdRow": 1
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_lung_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes",
+                    "case_id": "same"
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes",
+                    "case_id": "same"
+                }
+            ]
+        ],
+        "case_id": "lung_pt",
+        "tcia": "yes",
+        "idc_id": "lung_pet_ct_dx",
+        "tabletypes": [
+            {
+                "clinical": "clinical data"
+            },
+            {
+                "bamf_aimi_annotations_lung_ct_qa_results": "bamf_aimi_annotations segmentations of Lung and Nodules (3mm-30mm) from CT scans"
+            },
+            {
+                "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results": "bamf_aimi_annotations segmentations of Lungs and FDG-avid lesions in the lung from FDG PET/CT scans"
+            }
+        ]
+    },
+    "lung_phantom": {
+        "notes": "One CSV from an analysis result",
+        "srcs": [
+            [
+                {
+                    "filenm": "a_CU_12PhantomLocations.xlsx",
+                    "patientIdCol": "tcia_patient_id",
+                    "ar_file": "yes",
+                    "sheet": 1
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "qin_lungct_seg_a_CU_12PhantomLocations": "Lung Phantom Nodule Locations Documentation"
+            }
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "lung_phantom"
+    },
+    "mediastinal_lymph_node_seg": {
+        "notes": "One csv file with clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "Mediastinal-Lymph-Node-SEG-VER1-CLINICAL-1.csv",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "mediastinal_lymph_node_seg"
+    },
+    "midrc_ricord_1a": {
+        "notes": "One xlsx file, one sheet with clear clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "MIDRC-RICORD-1a-Clinical-Data-Jan-13-2021.xlsx",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "case_id": "add colec",
+        "tcia_api": "MIDRC-RICORD-1A",
+        "tcia": "yes",
+        "idc_id": "midrc_ricord_1a"
+    },
+    "midrc_ricord_1b": {
+        "notes": "One xlsx file, one sheet with clear clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "MIDRC-RICORD-1b-Clinical-Data-Feb-2021.xlsx",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "case_id": "add colec",
+        "tcia_api": "MIDRC-RICORD-1B",
+        "tcia": "yes",
+        "idc_id": "midrc_ricord_1b"
+    },
+    "midrc_ricord_1c": {
+        "notes": "One xlsx file, one sheet with clear clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "MIDRC-RICORD-1c-Clinical-Data-Jan-13-2021-.xlsx",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "case_id": "add colec",
+        "tcia_api": "MIDRC-RICORD-1C",
+        "tcia": "yes",
+        "idc_id": "midrc_ricord_1c"
+    },
+    "nlst": {
+        "notes": "sourced from excell sheets provided by AF",
+        "tabletypes": [
+            {
+                "canc": "cancer data"
+            },
+            {
+                "ctab": "CT abnormaliy"
+            },
+            {
+                "ctabc": "CT abnormality comparison"
+            },
+            {
+                "prsn": "presrceen"
+            },
+            {
+                "screen": "screen"
+            }
+        ],
+        "srcs": [
+            [
+                {
+                    "filenm": "./nlst_780/nlst_780_canc_idc_20210527.csv",
+                    "archive": [
+                        "NLST_dicts_xls.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "./nlst_780/nlst_780_ctab_idc_20210527.csv",
+                    "patientIdRow": 10,
+                    "archive": [
+                        "NLST_dicts_xls.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "./nlst_780/nlst_780_ctabc_idc_20210527.csv",
+                    "patientIdRow": 2,
+                    "archive": [
+                        "NLST_dicts_xls.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "./nlst_780/nlst_780_prsn_idc_20210527.csv",
+                    "patientIdRow": 31,
+                    "archive": [
+                        "NLST_dicts_xls.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "./nlst_780/nlst_780_screen_idc_20210527.csv",
+                    "patientIdRow": 0,
+                    "archive": [
+                        "NLST_dicts_xls.zip"
+                    ]
+                }
+            ]
+        ],
+        "dict": [
+            {
+                "filenm": "./NLST_dicts_xls/dictionary_idc_canc_idc.xlsx",
+                "use": "true",
+                "form": "nlst",
+                "sheet": 2
+            },
+            {
+                "filenm": "./NLST_dicts_xls/dictionary_idc_ctab_idc.xlsx",
+                "use": "true",
+                "form": "nlst",
+                "sheet": 1
+            },
+            {
+                "filenm": "./NLST_dicts_xls/dictionary_idc_ctabc_idc.xlsx",
+                "use": "true",
+                "form": "nlst",
+                "sheet": 2
+            },
+            {
+                "filenm": "./NLST_dicts_xls/dictionary_idc_prsn_idc.xlsx",
+                "use": "true",
+                "form": "nlst2",
+                "sheet": [
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            {
+                "filenm": "./NLST_dicts_xls/dictionary_idc_screen_idc.xlsx",
+                "use": "true",
+                "form": "nlst",
+                "sheet": 2
+            }
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "nlst"
+    },
+    "nsclc_radiomics": {
+        "notes": "One csv file with clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "NSCLC-Radiomics-Lung1.clinical-version3-Oct-2019.csv",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "nsclc_radiomics"
+    },
+    "nsclc_radiogenomics": {
+        "notes": "One csv file with clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "NSCLCR01Radiogenomic_DATA_LABELS_2018-05-22_1500-shifted.csv",
+                    "sheet": 0
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_lung_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes",
+                    "case_id": "same"
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "nsclc_radiogenomics",
+        "tabletypes": [
+            {
+                "clinical": "clinical data"
+            },
+            {
+                "bamf_aimi_annotations_lung_ct_qa_results": "bamf_aimi_annotations segmentations of Lung and Nodules (3mm-30mm) from CT scans"
+            },
+            {
+                "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results": "bamf_aimi_annotations segmentations of Lungs and FDG-avid lesions in the lung from FDG PET/CT scans"
+            }
+        ]
+    },
+    "nsclc_radiomics_genomics": {
+        "notes": "One xls file with one sheet with clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "Lung3.metadata.xls",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "nsclc_radiomics_genomics"
+    },
+    "nsclc_radiomics_interobserver1": {
+        "notes": "one csv file with clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "Interobserver1.clinical_updated_released_2019-June-17.csv"
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "nsclc_radiomics_interobserver1"
+    },
+    "prostatex": {
+        "notes": "Not accessible via the collection api. Must hunt the wiki",
+        "archive": [
+            "ProstateX-TrainingLesionInformationv2.zip"
+        ],
+        "srcs": [
+            [
+                {
+                    "filenm": "ProstateX-TrainingLesionInformationv2/ProstateX-Findings-Train.csv",
+                    "archive": [
+                        "ProstateX-TrainingLesionInformationv2.zip"
+                    ],
+                    "patientIdRow": 0
+                },
+                {
+                    "filenm": "ProstateX-TestLesionInformation/ProstateX-Findings-Test.csv",
+                    "patientIdRow": 0,
+                    "archive": [
+                        "ProstateX-TestLesionInformation.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "ProstateX-TrainingLesionInformationv2/ProstateX-Images-Train.csv",
+                    "archive": [
+                        "ProstateX-TrainingLesionInformationv2.zip"
+                    ]
+                },
+                {
+                    "filenm": "ProstateX-TestLesionInformation/ProstateX-Images-Test.csv",
+                    "archive": [
+                        "ProstateX-TestLesionInformation.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "ProstateX-TrainingLesionInformationv2/ProstateX-Images-KTrans-Train.csv",
+                    "archive": [
+                        "ProstateX-TrainingLesionInformationv2.zip"
+                    ]
+                },
+                {
+                    "filenm": "ProstateX-TestLesionInformation/ProstateX-Images-KTrans-Test.csv",
+                    "archive": [
+                        "ProstateX-TestLesionInformation.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "ProstateX-2-Findings-Train.csv",
+                    "archive": [
+                        "ProstateX2-DataInfo-Train.zip"
+                    ],
+                    "patientIdRow": 0
+                },
+                {
+                    "filenm": "ProstateX-2-Findings-Test.csv",
+                    "archive": [
+                        "ProstateX2-DataInfo-Test.zip"
+                    ],
+                    "patientIdRow": 0
+                }
+            ],
+            [
+                {
+                    "filenm": "ProstateX-2-Images-Train.csv",
+                    "archive": [
+                        "ProstateX2-DataInfo-Train.zip"
+                    ],
+                    "patientIdRow": 0
+                },
+                {
+                    "filenm": "ProstateX-2-Images-Test.csv",
+                    "archive": [
+                        "ProstateX2-DataInfo-Test.zip"
+                    ],
+                    "patientIdRow": 0
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_prostate_mr_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "dict": [
+            {
+                "filenm": "ProstateX-TrainingLesionInformationv2/ProstateX-DataInfo-Train.docx",
+                "filenm2": "ProstateX-TestLesionInformation/ProstateX-DataInfo-Test.docx",
+                "form": "PROSTATEx",
+                "use": "true"
+            },
+            {
+                "filenm": "ProstateX-TrainingLesionInformationv2/ProstateX-DataInfo-Train.docx",
+                "filenm2": "ProstateX-TestLesionInformation/ProstateX-DataInfo-Test.docx",
+                "form": "PROSTATEx",
+                "use": "true"
+            },
+            {
+                "filenm": "ProstateX-TrainingLesionInformationv2/ProstateX-DataInfo-Train.docx",
+                "filenm2": "ProstateX-TestLesionInformation/ProstateX-DataInfo-Test.docx",
+                "form": "PROSTATEx",
+                "use": "true"
+            },
+            {
+                "filenm": "ProstateX2-DataInfo-Train.docx",
+                "filenm2": "ProstateX2-DataInfo-Test.docx",
+                "form": "PROSTATEx",
+                "use": "true"
+            },
+            {
+                "filenm": "ProstateX2-DataInfo-Train.docx",
+                "filenm2": "ProstateX2-DataInfo-Test.docx",
+                "form": "PROSTATEx",
+                "use": "true"
+            }
+        ],
+        "tabletypes": [
+            {
+                "findings": "findings for training and test sets for original challenge"
+            },
+            {
+                "images": "image data for training set for original challenge"
+            },
+            {
+                "ktrans": "ktrans image data for training set for original challenge"
+            },
+            {
+                "findings2": "findings for training and test sets for second challenge"
+            },
+            {
+                "images2": "image data for training set for second challenge"
+            },
+            {
+                "bamf_aimi_annotations_prostate_mr_qa_results": "bamf segmentations from T2 MRI scans"
+            }
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "prostatex"
+    },
+    "prostate_diagnosis": {
+        "notes": "one xlsx file with clinical data.",
+        "srcs": [
+            [
+                {
+                    "filenm": "ProstateDiagnosis_metadata-05-07-2012.xlsx",
+                    "sheet": 0,
+                    "pivot": true
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "prostate_diagnosis"
+    },
+    "prostate_mri_us_biopsy": {
+        "srcs": [
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_prostate_mr_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "bamf_aimi_annotations_prostate_mr_qa_results": "bamf_aimi_annotations segmentations from T2 MRI scans"
+            }
+        ],
+        "tcia": "yes",
+        "case_id": "same",
+        "idc_id": "prostate_mr_us_biopsy"
+    },
+    "qin_breast": {
+        "notes": "one xls w treatments response",
+        "alternate": [
+            "QIN-Breast Treatment Response (XLS)"
+        ],
+        "srcs": [
+            [
+                {
+                    "filenm": "QIN-Breast_TreatmentResponse2014-12-16.xlsx",
+                    "sheet": 0
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_breast_fdg_pet_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "qin_breast",
+        "tabletypes": [
+            {
+                "clinical": "clinical data"
+            },
+            {
+                "bamf_aimi_annotations_breast_fdg_pet_ct_qa_results": "bamf_aimi_annotations segmentations of FDG-avid lesions from FDG PET/CT breast scans"
+            }
+        ]
+    },
+    "qin_breast_dce_mri": {
+        "notes": "only binary data response vs non-complete response",
+        "spec": "QIN-Breast-DCE-MRI_Response.xlsx",
+        "alternate": [
+            "Pathological Response (XLS)"
+        ],
+        "srcs": [
+            [
+                {
+                    "filenm": "QIN-Breast-DCE-MRI_Response.xlsx",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "qin_breast_dce_mri"
+    },
+    "qin_lung_ct": {
+        "notes": "bamf_seg",
+        "srcs": [
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_lung2_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ],
+            [
+                {
+                    "filenm": "a_moffitt-remapping.xls",
+                    "sheet": 0,
+                    "patientIdCol": "tcia_id",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "bamf_aimi_annotations_lung_ct_qa_results": "bamf_aimi_annotations segmentations of Lung and Nodules (3mm-30mm) from CT scans; improved model"
+            },
+            {
+                "qin_lungct_seg_a_moffitt-remapping": "QIN LUNG CT Nodule Locations Documentation"
+            }
+        ],
+        "tcia": "yes",
+        "case_id": "same",
+        "idc_id": "qin_lung_ct"
+    },
+    "remind": {
+        "notes": "one xlsx file. 1st sheet has clinical data, the 2nd a data dictionary",
+        "srcs": [
+            [
+                {
+                    "filenm": "ReMIND-Dataset-Clinical-Data-September-2023.xlsx",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "dict": [
+            {
+                "filenm": "ReMIND-Dataset-Clinical-Data-September-2023.xlsx",
+                "sheet": 1,
+                "use": "true",
+                "header": "None",
+                "form": "remind"
+            }
+        ],
+        "case_id": "remind",
+        "tcia": "yes",
+        "idc_id": "remind"
+    },
+    "rms_mutation_prediction": {
+        "notes": "sourced from zenodo",
+        "tcia_api": "rms",
+        "idc_webapp": "rms_mutation_prediction",
+        "srcs": [
+            [
+                {
+                    "filenm": "CCDI_Submission_Template_v1.0.1_DM_v2.2023-02-17.xlsx",
+                    "sheet": 3,
+                    "patientIdRow": 0,
+                    "skipCols": [
+                        0
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "CCDI_Submission_Template_v1.0.1_DM_v2.2023-02-17.xlsx",
+                    "sheet": 5,
+                    "patientIdRow": 0,
+                    "skipCols": [
+                        0,
+                        1,
+                        5
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "CCDI_Submission_Template_v1.0.1_DM_v2.2023-02-17.xlsx",
+                    "sheet": 7,
+                    "patientIdRow": 0,
+                    "skipCols": [
+                        0,
+                        1
+                    ]
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tabletypes": [
+            {
+                "diagnosis": "diagnosis"
+            },
+            {
+                "demographics": "demographics"
+            },
+            {
+                "sample": "sample"
+            }
+        ],
+        "tcia": "yes",
+        "idc_id": "rms_mutation_prediction"
+    },
+    "rider_lung_ct": {
+        "notes": "One CSV from an analysis result",
+        "srcs": [
+            [
+                {
+                    "filenm": "a_RIDER_locations_rev3.xls",
+                    "patientIdCol": "patient_id",
+                    "ar_file": "yes",
+                    "sheet": 1
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "qin_lungct_seg_a_RIDER_locations_rev3": "RIDER Lung CT Nodule Locations Documentation"
+            }
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "rider_lung_ct"
+    },
+    "rider_lung_pet_ct": {
+        "notes": "bamf_seg",
+        "srcs": [
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_lung_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "bamf_aimi_annotations_lung_ct_qa_results": "bamf_aimi_annotations segmentations of Lung and Nodules (3mm-30mm) from CT scans"
+            },
+            {
+                "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results": "bamf_aimi_annotations segmentations of Lungs and FDG-avid lesions in the lung from FDG PET/CT scans"
+            }
+        ],
+        "tcia": "yes",
+        "case_id": "same"
+    },
+    "soft_tissue_sarcoma": {
+        "notes": "One xlsx file with two sheets with complimentary data",
+        "tabletypes": [
+            {
+                "clinical": "clinical data"
+            },
+            {
+                "outcome": "patient outcomes"
+            }
+        ],
+        "srcs": [
+            [
+                {
+                    "filenm": "INFOclinical_STS.xlsx",
+                    "sheet": 0,
+                    "maxRow": 51
+                }
+            ],
+            [
+                {
+                    "filenm": "INFOclinical_STS.xlsx",
+                    "sheet": 1
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "soft_tissue_sarcoma"
+    },
+    "spine_mets_ct_seg": {
+        "notes": "one xlsx file. 1st sheet has clinical data, the 2nd a data dictionary",
+        "srcs": [
+            [
+                {
+                    "filenm": "Spine-Mets-CT-SEG_Clinical.xlsx",
+                    "sheet": 1
+                }
+            ]
+        ],
+        "dict": [
+            {
+                "filenm": "Spine-Mets-CT-SEG_Clinical.xlsx",
+                "sheet": 0,
+                "use": "true",
+                "nohead": "true",
+                "form": "spinal"
+            }
+        ],
+        "case_id": "spinal",
+        "tcia": "yes",
+        "idc_id": "spine_mets_ct_seg"
+    },
+    "spie_aapm_lung_ct_challenge": {
+        "notes": "one file with clinical data",
+        "alternate": [
+            "Nodule Locations/Diagnoses - Test Set (XLS)"
+        ],
+        "srcs": [
+            [
+                {
+                    "filenm": "TestSet_NoduleData_PublicRelease_wTruth.xlsx",
+                    "sheet": 0,
+                    "maxRow": 73
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_lung2_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "clinical": "clinical data"
+            },
+            {
+                "bamf_aimi_annotations_lung2_ct_qa_results": "bamf_aimi_annotations segmentations of Lung and Nodules (3mm-30mm) from CT scans; improved model"
+            }
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "spie_aapm_lung_ct_challenge"
+    },
+    "tcga_blca": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "tcga_brca": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "tcga_cesc": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "tcga_coad": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "tcga_esca": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "tcga_gbm": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table.",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "tcga_hnsc": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table.",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "tcga_kich": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "srcs2": [
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_kidney_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes2": [
+            {
+                "bamf_aimi_annotations_kidney_ct_qa_results": "bamf_aimi_annotations segmentations of Kidney, Tumor, and Cysts from contrast enhanced CT scans"
+            }
+        ],
+        "case_id": "same"
+    },
+    "tcga_kirc": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "srcs2": [
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_kidney_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes2": [
+            {
+                "bamf_aimi_annotations_kidney_ct_qa_results": "bamf_aimi_annotations segmentations of Kidney, Tumor, and Cysts from contrast enhanced CT scans"
+            }
+        ],
+        "tcia": "yes",
+        "idc_id": "tcga_kirc",
+        "case_id": "same"
+    },
+    "tcga_kirp": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "srcs2": [
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_kidney_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes2": [
+            {
+                "bamf_aimi_annotations_kidney_ct_qa_results": "bamf_aimi_annotations segmentations of Kidney, Tumor, and Cysts from contrast enhanced CT scans"
+            }
+        ],
+        "case_id": "same"
+    },
+    "tcga_lgg": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "tcga_lihc": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "srcs2": [
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_liver_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_liver_mr_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes2": [
+            {
+                "bamf_aimi_annotations_liver_ct_qa_results": "bamf_aimi_annotations segmentations of liver CT scans"
+            },
+            {
+                "bamf_aimi_annotations_liver_mr_qa_results": "bamf_aimi_annotations segmentations of liver T1 MRI scans"
+            }
+        ],
+        "tcia": "yes",
+        "idc_id": "tcga_lihc",
+        "case_id": "same"
+    },
+    "tcga_luad": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "srcs2": [
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_lung_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes2": [
+            {
+                "bamf_aimi_annotations_lung_ct_qa_results": "bamf_aimi_annotations segmentations of Lung and Nodules (3mm-30mm) from CT scans"
+            },
+            {
+                "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results": "bamf_aimi_annotations segmentations of Lungs and FDG-avid lesions in the lung from FDG PET/CT scans"
+            }
+        ],
+        "tcia": "yes",
+        "idc_id": "tcga_luad",
+        "case_id": "same"
+    },
+    "tcga_lusc": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "srcs2": [
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_lung_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes2": [
+            {
+                "bamf_aimi_annotations_lung_ct_qa_results": "bamf_aimi_annotations segmentations of Lung and Nodules (3mm-30mm) from CT scans"
+            },
+            {
+                "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results": "bamf_aimi_annotations segmentations of Lungs and FDG-avid lesions in the lung from FDG PET/CT scans"
+            }
+        ],
+        "tcia": "yes",
+        "idc_id": "tcga_lusc",
+        "case_id": "same"
+    },
+    "tcga_ov": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "tcga_prad": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "tcga_read": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "tcga_sarc": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "tcga_stad": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "tcga_thca": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "tcga_ucec": {
+        "notes": "TCGA collection clinical data to be sourced from ISB-CGC BQ table",
+        "spec": "TCGA",
+        "srcs": {
+            "table": "isb-cgc-bq.TCGA.clinical_gdc_current",
+            "patientIdCol": "submitter_id"
+        },
+        "case_id": "same"
+    },
+    "upenn_gbm": {
+        "notes": "one csv file with clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "UPENN-GBM_clinical_info_v2.1.csv",
+                    "sheet": 0
+                }
+            ],
+            [
+                {
+                    "filenm": "bamf_aimi_annotations_brain_mr_qa_results.csv",
+                    "patientIdCol": "patientid",
+                    "ar_file": "yes"
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "clinical": "clinical data"
+            },
+            {
+                "bamf_aimi_annotations_brain_mr_qa_results": "bamf_aimi_annotations segmentationss of brain tumor regions: necrosis, edema, enhancing"
+            }
+        ],
+        "case_id": "upenn-gbm",
+        "tcia": "yes"
+    }
 }

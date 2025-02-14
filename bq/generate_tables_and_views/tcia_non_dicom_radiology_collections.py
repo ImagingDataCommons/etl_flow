@@ -14,14 +14,24 @@
 # limitations under the License.
 #
 
-import os
+# Identify all TCIA radiology downloads which are not DICOM encoded.
+# Results are written to a BQ table
 
+import sys
 import json
-from subprocess import run, PIPE
-from time import sleep
+import argparse
 import requests
-import logging
 from google.cloud import bigquery
+from python_settings import settings
+from utilities.bq_helpers import load_BQ_from_json
+from utilities.logging_config import errlogger
+
+
+schema = [
+    bigquery.SchemaField('download_slug', 'STRING', mode='NULLABLE', description='TCIA collection manager slug of this download'),
+    bigquery.SchemaField('tcia_parent_collection', 'STRING', mode='NULLABLE', description='ID of parent tcia collection'),
+    bigquery.SchemaField('file_type', 'STRING', mode='NULLABLE', description='Comma separated list of file types')
+]
 
 
 def query_collection_manager(type, query_param=''):
@@ -55,11 +65,12 @@ def main():
     client = bigquery.Client()
 
     downloads = query_collection_manager(type="downloads")
-    pathology_downloads = {k['slug']: k for k in downloads if 'da-path' in k['slug']}
+    radiology_downloads = {k['slug']: k for k in downloads if k['download_type'] == 'Radiology Images'}
+    non_dicom_radiology_downloads = {k:v for k,v in radiology_downloads.items() if v['file_type'] != ['DICOM']}
     collections = query_collection_manager(type="collections")
 
-    # Find the collection that owns each pathology download
-    for p, pdata in pathology_downloads.items():
+    # Find the collection that owns each radiology download
+    for p, pdata in non_dicom_radiology_downloads.items():
         for c in collections:
             if pdata['id'] in c['collection_downloads']:
                 pdata['parent_id'] = c['id']
@@ -72,44 +83,37 @@ def main():
             pdata['parent_slug'] = ""
             pdata['parent'] = ""
 
-    # Get all IDC collections
-    query = f"""
-    SELECT DISTINCT collection_id
-    FROM `bigquery-public-data.idc_current.dicom_all`
-    """
-    idc_collection_ids = [row['collection_id'] for row in client.query(query).result()]
+    metadata = []
+    for p in sorted(non_dicom_radiology_downloads):
+        if non_dicom_radiology_downloads[p]["parent_slug"]:
+            metadata.append({
+                'download_slug': p,
+                'tcia_parent_collection': non_dicom_radiology_downloads[p]["parent_slug"],
+                'file_type': ', '.join(non_dicom_radiology_downloads[p]["file_type"])
+            })
 
-    # Add the corresponding IDC collection if it exists
-    for p, pdata in pathology_downloads.items():
-        if pdata['parent_slug'].replace('-', '_') in idc_collection_ids:
-            pdata['idc_collection'] = pdata['parent_slug'].replace('-', '_')
-        else:
-            pdata['idc_collection'] = ""
-
-    # Get all IDC collections that have pathology data
-    query = f"""
-    SELECT DISTINCT collection_id
-    FROM `bigquery-public-data.idc_current.dicom_all`
-    WHERE Modality='SM'
-    """
-    idc_pathology_collection_ids = [row['collection_id'] for row in client.query(query).result()]
-
-    # Add the corresponding IDC collection if it exists
-    for p, pdata in pathology_downloads.items():
-        pdata['pathology'] = pdata['parent_slug'].replace('-', '_') in idc_pathology_collection_ids
-
-    with open('./path_downloads.csv', "w") as f:
-        cnt = f.write(f'download slug,TCIA parent collection,IDC collection,Have pathology\n')
-        for p in sorted(pathology_downloads):
-            cnt = f.write(f'{p},{pathology_downloads[p]["parent_slug"]},{pathology_downloads[p]["idc_collection"]},{pathology_downloads[p]["pathology"]}\n')
+    metadata_json = '\n'.join([json.dumps(row) for row in
+                        sorted(metadata, key=lambda d: d['download_slug'])])
+    try:
+        BQ_client = bigquery.Client(project=settings.DEV_PROJECT)
+        load_BQ_from_json(BQ_client,
+                    settings.DEV_PROJECT,
+                    settings.BQ_DEV_INT_DATASET , args.bqtable_name, metadata_json,
+                                schema, write_disposition='WRITE_TRUNCATE')
         pass
-
-
+    except Exception as exc:
+        errlogger.error(f'Table creation failed: {exc}')
+        exit
 
     return
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--bqtable_name', default='tcia_non_dicom_radiology_downloads', help='BQ table name')
+
+    args = parser.parse_args()
+    print("{}".format(args), file=sys.stdout)
     main()
 
 
