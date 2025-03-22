@@ -13,12 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+import settings
 # Adds/replaces data to the idc_collection/_patient/_study/_series/_instance DB tables
 # from a specified bucket.
 #
-# For this purpose, the bucket containing the instance blobs is gcsfuse mounted, and
-# pydicom is then used to extract needed metadata.
+# One or more (manifest_url, manifest_type) pairs are specified in args,
+#  the manifest_url is relative to the GCS folder specified by args.subdir.
+#  if a pair is like ("", manifest_type), then a manifest is generated from the bucket contents and applied
+#  according to the manifest_type.
+# Note: In the event that a ("", 'partial_deletion') pair is specified, the script will remove all instances
+# found in the args.subdir folder.
+##
+# In the last case, how do we know whether the revision is 'complete' or 'partial'?
 #
 # The script walks the directory hierarchy from a specified subdirectory of the
 # gcsfuse mount point
@@ -30,7 +36,8 @@ import pandas as pd
 from preingestion.validation_code.validate_analysis_result import validate_analysis_result
 from preingestion.validation_code.validate_original_collection import validate_original_collection
 from preingestion.preingestion_code.gen_hashes_sql import gen_hashes
-from ingestion.utilities.utils import md5_hasher
+from preingestion.preingestion_code.gen_manifest_from_dicom_metadata import build_manifest
+from preingestion.preingestion_code.remove_source_doi_elements import remove_collections
 
 import time
 
@@ -140,10 +147,11 @@ def build_series(args, bucket, study, series_data, source_doi, versioned_source_
     series.license_url = args.license['license_url']
     series.license_long_name = args.license['license_long_name']
     series.license_short_name = args.license['license_short_name']
-    series.third_party = args.third_party
+    series.analysis_result = args.analysis_result
     series.source_doi = source_doi.lower()
     series.source_url = f'https://doi.org/{source_doi.lower()}'
     series.versioned_source_doi = versioned_source_doi.lower()
+    series.ingestion_script = settings.BASE_NAME
     # At this point, each row in series data corresponds to an instance of the series
     for _,instance_data in series_data.iterrows():
         try:
@@ -244,16 +252,14 @@ def worker(input, output, args, collection_id, source_doi, versioned_source_doi)
                 errlogger.error("p%s, Failed to process patient: %s", args.pid, patient_data.iloc[0]["patientID"])
                 sess.rollback()
 
-def build_collections(args, sess, sep=',', source_dois=None, versioned_source_dois=None):
+def build_collections(args, sess, manifest_data, sep=','):
     client = storage.Client()
 
     dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
-    # Read the manifest into a data frame
-    data = pd.read_csv(args.manifest, sep=sep, header=0)
+
     # Rename columns in case they are misnamed:
-    data = data.rename( columns = {
+    manifest_data = manifest_data.rename( columns = {
         "Filename": "ingestion_url",
-        "Clinical Trial Protocol ID": "collection_id",
         "Patient ID": "patientID",
         "Study Instance UID": "StudyInstanceUID",
         "Series Instance UID": "SeriesInstanceUID",
@@ -261,19 +267,23 @@ def build_collections(args, sess, sep=',', source_dois=None, versioned_source_do
         }
     )
     # Remove whitespace
-    data = data.applymap(lambda x: x.strip())
+    manifest_data = manifest_data.applymap(lambda x: x.strip())
 
     done_data = pd.DataFrame(dones, columns=['SOPInstanceUID'])
-    undone_data = pd.merge(data, done_data, how="left", on=['SOPInstanceUID'], indicator=True )
+    if 'collection_id' in args and args.collection_id:
+        all_collection_ids = [args.collection_id]
+    else:
+        all_collection_ids = sorted(manifest_data['collection_id'].unique())
+    undone_data = pd.merge(manifest_data, done_data, how="left", on=['SOPInstanceUID'], indicator=True)
     undone_data = undone_data[undone_data['_merge'] == 'left_only']
 
     if 'collection_id' in args and args.collection_id:
-        collection_ids =[args.collection_id]
-    elif 'collection_ids' in args and args.collection_ids:
-        collection_ids = args.collection_ids
+        collection_ids = [args.collection_id]
+        # Add/replace the collection_id column
+        undone_data['collection_id'] = args.collection_id
     else:
-        breakpoint()
         collection_ids = sorted(undone_data['collection_id'].unique())
+    # collection_ids = sorted(undone_data['collection_id'].unique())
     for collection_id in collection_ids:
         # Create the collection if it is not yet in the DB
         collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
@@ -289,16 +299,17 @@ def build_collections(args, sess, sep=',', source_dois=None, versioned_source_do
             progresslogger.info(f'Collection {collection_id} exists')
 
 
-        if 'collection_id' in args and args.collection_id:
-            # If there is a single collection then all patients are in that collection
-            # A df of data for just this collection
-            collection_data = undone_data
-        else:
-            # A df of data for just this collection
-            collection_data = undone_data[undone_data['collection_id'] == collection_id]
-        all_patient_ids = sorted(data["patientID"].unique())
+        # if 'collection_id' in args and args.collection_id:
+        #     # If there is a single collection then all patients are in that collection
+        #     # A df of data for just this collection
+        #     collection_data = undone_data
+        # else:
+        #     # A df of data for just this collection
+        #     collection_data = undone_data[undone_data['collection_id'] == collection_id]
+        collection_data = undone_data[undone_data['collection_id'] == collection_id]
+        all_patient_ids = sorted(manifest_data["patientID"].unique())
         # All patients in the collection
-        patient_ids = sorted(collection_data['patientID'].unique())
+        patient_in_collection_ids = sorted(collection_data['patientID'].unique())
 
         processes = []
         # Create queues
@@ -307,16 +318,17 @@ def build_collections(args, sess, sep=',', source_dois=None, versioned_source_do
         # List of patients enqueued
         enqueued_patients = []
         # Start worker processes
-        for process in range(min(args.processes, len(patient_ids))):
+        for process in range(min(args.processes, len(patient_in_collection_ids))):
             args.pid = process+1
             processes.append(
                 Process(target=worker, args=(task_queue, done_queue, args, collection_id,
-                        source_dois[collection_id] if source_dois is not None else args.source_doi,
-                        versioned_source_dois[collection_id] if versioned_source_dois is not None else args.versioned_source_doi)))
+                        args.source_doi, args.versioned_source_doi)))
+                        # source_dois[collection_id] if source_dois is not None else args.source_doi,
+                        # versioned_source_dois[collection_id] if versioned_source_dois is not None else args.versioned_source_doi)))
             processes[-1].start()
 
         args.pid = 0
-        for patient_id in patient_ids:
+        for patient_id in patient_in_collection_ids:
             # Data for this patient
             patient_data = collection_data[collection_data['patientID'] == patient_id]
             patient_index = f'{all_patient_ids.index(patient_id) + 1} of {len(all_patient_ids)}'
@@ -352,28 +364,70 @@ def build_collections(args, sess, sep=',', source_dois=None, versioned_source_do
         hashes = [patient.hash for patient in collection.patients]
         collection.hash= get_merkle_hash(hashes)
 
-    return
+    return all_collection_ids
 
+def perform_partial_deletion(sess, args, manifest_url, sep):
+    pass
 
-def prebuild_from_manifest(args, sep=',', source_dois=None, versioned_source_dois=None):
+def perform_partial_revision(sess, args, manifest_url, sep):
+    # Read the manifest into a data frame
+    if manifest_url:
+        try:
+            if args.subdir:
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/{manifest_url}", sep=sep, header=0)
+            else:
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{manifest_url}", sep=sep, header=0)
+        except Exception as exc:
+            errlogger.error(f'Failed to read manifest: {exc}')
+            exit(-1)
+    else:
+        try:
+            # If no manifest is provided, first see if we've already genetated one
+            if args.subdir:
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_partial_revision.csv", sep=sep,
+                                            header=0)
+            else:
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/generated_partial_revision.csv", sep=sep, header=0)
+
+        except Exception as exc:
+            manifest_data = build_manifest(args)
+            # Save the manifest to the bucket in case we need to rerun
+            if args.subdir:
+                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_partial_revision.csv", sep=sep, index=False)
+            else:
+                manifest_data.to_csv(f"gs://{args.src_bucket}/generated_partial_revision.csv", sep=sep, index=False)
+    all_collection_ids = build_collections(args, sess, manifest_data, sep)
+
+    return all_collection_ids
+
+def perform_full_revision(sess, args, manifest_url, sep):
     client = storage.Client()
-    src_bucket = storage.Bucket(client, args.src_bucket)
+    remove_collections(client, args, sess)
+    all_collection_ids = perform_partial_revision(sess, args, manifest_url, sep)
+    return all_collection_ids
 
-    # with Session(sql_engine) as sess:
+
+def prebuild_from_manifests(args, sep=','):
     with sa_session(echo=False) as sess:
-        build_collections(args, sess, sep=sep, source_dois=source_dois, versioned_source_dois=versioned_source_dois)
+        for manifest_url, manifest_type in args.manifests:
+            if manifest_type == 'partial_deletion':
+                all_collection_ids = perform_partial_deletion(sess, args, manifest_url, sep)
+                pass
+            elif manifest_type == 'partial_revision':
+                all_collection_ids = perform_partial_revision(sess, args, manifest_url, sep)
+            elif manifest_type == 'full_revision':
+                all_collection_ids = perform_full_revision(sess, args, manifest_url, sep)
+            else:
+                errlogger.error(f'Unknown manifest type {manifest_type}')
+                exit(-1)
         sess.commit()
 
     if args.validate:
-        if 'collection_id' in args and args.collection_id:
-            collection_ids = [args.collection_id]
-        elif 'collection_ids' in args and args.collection_ids:
-            collection_ids = args.collection_ids
-        if args.third_party:
+        if args.analysis_result:
             if validate_analysis_result(args) == -1:
                 exit -1
         else:
-            if validate_original_collection(args, collection_ids) == -1:
+            if validate_original_collection(args, all_collection_ids) == -1:
                 exit -1
 
     if args.gen_hashes:

@@ -29,7 +29,7 @@ import argparse
 import pathlib
 import subprocess
 
-from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, Collection, Patient
+from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, Collection, Patient, Study
 from utilities.logging_config import successlogger, errlogger, progresslogger
 from base64 import b64decode
 from preingestion.validation_code.validate_analysis_result import validate_analysis_result
@@ -64,8 +64,9 @@ def build_manifest(args):
             for page in iterator.pages:
                 if page.num_items:
                     for blob in page:
-                        if not blob.name.endswith(('DICOMDIR', '.txt', '.csv', '/')) and args.filter in blob.name:
-                            with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
+                        if not blob.name.endswith(('DICOMDIR', '.txt', '.csv', '/')) and args.inclusion_filter in blob.name:
+                            with src_bucket.blob(blob.name).open('rb') as f:
+                            # with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
                                 try:
                                     r = dcmread(f, specific_tags=['PatientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID'], stop_before_pixels=True)
                                     patient_id = r.PatientID
@@ -75,14 +76,24 @@ def build_manifest(args):
                                     if collection_map:
                                         collection_id = collection_map[patient_id]
                                     elif not args.collection_id:
-                                        # If a collection_id is not provided, search the many-to-many Collection-Patient
-                                        # hierarchy for patient patient_id and get its collection_id
-                                        # This assumes that all pathology patients also are radiology patents which is not
-                                        # necessarily the case.
+                                        # # If a collection_id is not provided, search the many-to-many Collection-Patient
+                                        # # hierarchy for patient patient_id and get its collection_id
+                                        # # This assumes that all pathology patients also are radiology patents which is not
+                                        # # necessarily the case.
+                                        # collection_id = sess.query(Collection.collection_id).distinct().join(
+                                        #     Collection.patients). \
+                                        #     filter(Patient.submitter_case_id == patient_id).one()[0]
+                                        # collection_ids = collection_ids | {collection_id}
+
+                                        # If a collection_id is not provided, search the many-to-many Collection-Patient-Study
+                                        # hierarchy for study and get its collection_id
+                                        # We cannot use the Collection-Patient hierarchy because the patient_id is not unique
+                                        #
                                         collection_id = sess.query(Collection.collection_id).distinct().join(
-                                            Collection.patients). \
-                                            filter(Patient.submitter_case_id == patient_id).one()[0]
+                                            Collection.patients).join(Patient.studies). \
+                                            filter(Study.study_instance_uid == study_id).one()[0]
                                         collection_ids = collection_ids | {collection_id}
+
                                     else:
                                         collection_id = args.collection_id
                                 except Exception as exc:

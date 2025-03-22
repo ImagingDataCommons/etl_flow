@@ -988,22 +988,11 @@
                     "sheet": 0,
                     "headerformatspec": "lidc"
                 }
-            ],
-            [
-                {
-                    "filenm": "a_lidcMoistFinal2-remapping.xls",
-                    "sheet": 0,
-                    "patientIdCol": "tcia_patient_id",
-                    "ar_file": "yes"
-                }
             ]
         ],
         "tabletypes": [
             {
                 "clinical": "clinical data"
-            },
-            {
-                "qin_lungct_seg_a_lidcMoistFinal2-remapping": "LIDC-IDRI Nodule Locations Documentation"
             }
         ],
         "case_id": "same",
@@ -1077,27 +1066,6 @@
                 "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results": "bamf_aimi_annotations segmentations of Lungs and FDG-avid lesions in the lung from FDG PET/CT scans"
             }
         ]
-    },
-    "lung_phantom": {
-        "notes": "One CSV from an analysis result",
-        "srcs": [
-            [
-                {
-                    "filenm": "a_CU_12PhantomLocations.xlsx",
-                    "patientIdCol": "tcia_patient_id",
-                    "ar_file": "yes",
-                    "sheet": 1
-                }
-            ]
-        ],
-        "tabletypes": [
-            {
-                "qin_lungct_seg_a_CU_12PhantomLocations": "Lung Phantom Nodule Locations Documentation"
-            }
-        ],
-        "case_id": "same",
-        "tcia": "yes",
-        "idc_id": "lung_phantom"
     },
     "mediastinal_lymph_node_seg": {
         "notes": "One csv file with clinical data",
@@ -1584,22 +1552,11 @@
                     "patientIdCol": "patientid",
                     "ar_file": "yes"
                 }
-            ],
-            [
-                {
-                    "filenm": "a_moffitt-remapping.xls",
-                    "sheet": 0,
-                    "patientIdCol": "tcia_id",
-                    "ar_file": "yes"
-                }
             ]
         ],
         "tabletypes": [
             {
                 "bamf_aimi_annotations_lung_ct_qa_results": "bamf_aimi_annotations segmentations of Lung and Nodules (3mm-30mm) from CT scans; improved model"
-            },
-            {
-                "qin_lungct_seg_a_moffitt-remapping": "QIN LUNG CT Nodule Locations Documentation"
             }
         ],
         "tcia": "yes",
@@ -1682,27 +1639,6 @@
         ],
         "tcia": "yes",
         "idc_id": "rms_mutation_prediction"
-    },
-    "rider_lung_ct": {
-        "notes": "One CSV from an analysis result",
-        "srcs": [
-            [
-                {
-                    "filenm": "a_RIDER_locations_rev3.xls",
-                    "patientIdCol": "patient_id",
-                    "ar_file": "yes",
-                    "sheet": 1
-                }
-            ]
-        ],
-        "tabletypes": [
-            {
-                "qin_lungct_seg_a_RIDER_locations_rev3": "RIDER Lung CT Nodule Locations Documentation"
-            }
-        ],
-        "case_id": "same",
-        "tcia": "yes",
-        "idc_id": "rider_lung_ct"
     },
     "rider_lung_pet_ct": {
         "notes": "bamf_seg",

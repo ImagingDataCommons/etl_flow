@@ -48,8 +48,8 @@ def ingest(args):
         access = shared_memory.ShareableList(get_access_token())
         args.access = access
 
-        args.skipped_tcia_collections = list_skips(sess, 'tcia', args.skipped_tcia_collections)
-        args.skipped_idc_collections = list_skips(sess, 'idc', args.skipped_idc_collections)
+        args.skipped_tcia_collections = list_skips(sess, args.skipped_tcia_collections)
+        # args.skipped_idc_collections = list_skips(sess, 'idc', args.skipped_idc_collections)
 
         # Ccreate a table of collections for which tcia or idc ingestion or both, are to be skipped.
         # Populate with tcia skips
@@ -123,7 +123,7 @@ if __name__ == '__main__':
                         help='List of additional idc collections to be skipped')
     parser.add_argument('--prestaging_idc_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_idc_', help='Copy idc instances here before forwarding to --staging_bucket')
 
-    parser.add_argument('--stop_after_collection_summary', type=bool, default=False, \
+    parser.add_argument('--stop_after_collection_summary', type=bool, default=True, \
                         help='Stop after printing a summary of collection dispositions')
 
     args = parser.parse_args()

@@ -135,6 +135,7 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
                    zip(idc_hashes[:-1], src_hashes, skipped)]
         # If any source is revised, then the object is revised.
         if any(revised):
+            breakpoint()  # Should min_timestamp be updated here?
             rev_study = clone_study(study, str(uuid4()))
             # rev_study.revised = True
             rev_study.done = False

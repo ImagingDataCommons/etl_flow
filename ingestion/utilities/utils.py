@@ -27,7 +27,7 @@ from sqlalchemy import and_
 
 from python_settings import settings
 
-from idc.models import All_Collections
+from idc.models import All_Joined, DOI_To_Access
 
 from utilities.logging_config import successlogger, progresslogger, errlogger
 # successlogger = logging.getLogger('root.success')
@@ -65,7 +65,10 @@ def get_merkle_hash(hashes):
         hashes.sort()
         for hash in hashes:
             md5.update(hash.encode())
-        return md5.hexdigest()
+        hash = md5.hexdigest()
+        if len(hash) != 32:
+            breakpoint()
+        return hash
     else:
         ""
 
@@ -235,13 +238,10 @@ def accum_sources(parent, children):
 
 # Generate a list of skipped collections. We always skip collections that don't have 'Public' access.
 # The list is specific to a source.
-def list_skips(sess, source, skipped_collections):
+def list_skips(sess, skipped_collections):
     skips = [collection for collection in skipped_collections]
-    if source == 'tcia':
-        collections = sess.query(All_Collections.tcia_api_collection_id).filter(and_(All_Collections.tcia_access != 'Public', All_Collections.tcia_access != None)).all()
-    else:
-        collections = sess.query(All_Collections.tcia_api_collection_id).filter(and_(All_Collections.idc_access != 'Public', All_Collections.idc_access != None)).all()
+    collections = sess.query(DOI_To_Access.collection_id).distinct().filter(DOI_To_Access.access != "Public").all()
     for collection in collections:
-        skips.append(collection.tcia_api_collection_id)
+        skips.append(collection.collection_id)
     skips.sort()
     return skips

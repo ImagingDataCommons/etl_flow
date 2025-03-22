@@ -71,7 +71,7 @@ def compare_tables(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bqtable_name', default='tcia_pathology_metadata', help='BQ table name')
+    parser.add_argument('--bqtable_name', default='tcia_pathology_conversion_status', help='BQ table name')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

@@ -110,6 +110,7 @@ def get_url(url, headers=""):  # , headers):
 def get_citation(source_doi, source_url):
     if source_doi:
         if 'zenodo' in source_doi:
+            breakpoint()
             params = {'access_token': settings.ZENODO_ACCESS_TOKEN}
         else:
             params = {}

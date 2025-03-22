@@ -25,9 +25,11 @@
 
 import sys
 import argparse
+import pathlib
+import subprocess
 
 from python_settings import settings
-from preingestion.preingestion_code.populate_idc_metadata_tables_from_manifest import prebuild_from_manifest
+from preingestion.preingestion_code.populate_idc_metadata_tables_from_manifest import prebuild_from_manifests
 from google.cloud import storage
 
 if __name__ == '__main__':
@@ -35,27 +37,28 @@ if __name__ == '__main__':
     parser.add_argument('--processes', default=1)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--tmp_directory', default='/mnt/disks/idc-etl/tmp')
-    parser.add_argument('--src_bucket', default='ccdi_mci_pathology', help='Source bucket containing instances')
-    parser.add_argument('--subdir', default='idc-conversion-outputs-mci_round2', help="Subdirectory of mount_point at which to start walking directory")
-    # parser.add_argument('--manifest', default='gs://gtex_pathology/v1/identifiers.txt', help='gcs URL of a manifest')
-    parser.add_argument('--manifest', default='gs://ccdi_mci_pathology/idc-conversion-outputs-mci_round2/identifiers.txt', help='gcs URL of a manifest')
+    parser.add_argument('--src_bucket', default='rms_ai_segmentations_correct_2024_12_05', help='Source bucket containing instances')
+    parser.add_argument('--subdir', default='', help="Subdirectory of mount_point at which to start walking directory")
+    parser.add_argument('--source_doi', default='10.5281/zenodo.10462857', help='Unversioned DOI of this collection')
+    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.10462857', \
+                        help='Info page URL')
+    parser.add_argument('--versioned_source_doi', default='10.5281/zenodo.14941043', help='Versioned DOI of this collection')
+    parser.add_argument('--manifests', default=[
+        ('', 'partial_revision'),
+        ],
+        help="""List of manifests. Each is a pair of (manifest URL, manifest type) where manifest type is one of 
+        "full_revision", "partial_revision", or "partial_deletion".""")
+    parser.add_argument('--collection_id', default='', help='collection_id of the collection if a collection, or collection analyzed')
     parser.add_argument('--license', default = {"license_url": 'https://creativecommons.org/licenses/by/4.0/',\
             "license_long_name": "Creative Commons Attribution 4.0 International License", \
             "license_short_name": "CC BY 4.0"}, help="(Sub-)Collection license")
-    parser.add_argument('--third_party', type=bool, default=False, help='True if an analysis result')
+    parser.add_argument('--analysis_result', type=bool, default=True, help='True if an analysis result')
     parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
-    parser.add_argument('--exclusion_filter', default='Ineligible', help='Ignore blob name during valadation if in blob name')
     parser.add_argument('--inclusion_filter', default='', help='Only include blobs having args.inclusion_filter in the blob name during validation')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()
 
-    source_dois = {'CCDI-MCI': '10.5281/zenodo.11099086'}
-    versioned_source_dois = {'CCDI-MCI': '10.5281/zenodo.14009669'}
-    args.collection_id = 'CCDI-MCI'
-
-    prebuild_from_manifest(args, sep='\t', source_dois=source_dois, versioned_source_dois=versioned_source_dois)
-
-
+    prebuild_from_manifests(args, sep='\t')

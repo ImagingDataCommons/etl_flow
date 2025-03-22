@@ -25,6 +25,8 @@ google-cloud-storage
 google-crc32c
 google-resumable-media
 googleapis-common-protos
+gspread
+oauth2client
 pandas
 psycopg2
 pyarrow

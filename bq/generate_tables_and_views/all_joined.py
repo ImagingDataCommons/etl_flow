@@ -40,7 +40,7 @@ def create_all_flattened(client):
     c.min_timestamp AS c_min_timestamp,
     c.max_timestamp AS c_max_timestamp,
     c.hashes AS c_hashes,
-    c.sources AS c_sources,
+    c.sour  ces AS c_sources,
     c.init_idc_version AS c_init_idc_version,
     c.rev_idc_version AS c_rev_idc_version,
     c.final_idc_version AS c_final_idc_version,
@@ -134,7 +134,7 @@ with basics as (
   if(not dtc.access is NULL, dtc.access, 'Public') Access,
   if(ms.metadata_sunset is NULL, 0, CAST(ms.metadata_sunset AS INT64)) metadata_sunset
 FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_flattened` af
-LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.doi_to_class` dtc
+LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.doi_to_access` dtc
 ON af.source_doi = dtc.source_doi
 LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.metadata_sunset` ms
 ON af.source_doi = ms.source_doi

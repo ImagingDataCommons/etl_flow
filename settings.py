@@ -106,6 +106,7 @@ TCIA_CLIENT_SECRET= os.environ.get('TCIA_CLIENT_SECRET')
 
 
 if os.getenv("CI",''):
+    breakpoint()
     LOGGING_BASE = f'{os.getenv("LOG_DIR")}/v{CURRENT_VERSION}'
 else:
     if MITIGATION_VERSION != 0:

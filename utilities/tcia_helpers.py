@@ -682,6 +682,12 @@ if __name__ == "__main__":
     # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
     # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
     # s = get_all_tcia_metadata_stage(type="collections")
+    # c = get_collection_values_and_counts()
+
+    citations = get_all_tcia_metadata(type="citations", query_param="fields=Content")
+    collections = get_all_tcia_metadata(type="collections")
+
+    h = get_hash({'Collection': 'Spine-Mets-CT-SEG'})
     d = get_all_tcia_metadata(type="downloads")
     c = {k['slug']: k for k in d if 'da-path' in k['slug']}
     b = {k['slug']: k for k in d if k['download_type'] == 'Pathology Images'}
@@ -692,7 +698,6 @@ if __name__ == "__main__":
     # d = get_collection_metadata("ACRIN-Contralateral-Breast-MR")
     # d = get_collection_descriptions_and_licenses()
     # i = get_collection_id_from_doi('10.7937/k9/tcia.2016.eln8ygle')
-    # c=get_collection_values_and_counts()
     # i=get_license_info()
     # m=get_TCIA_series_metadata('1.2.246.352.71.2.494841863751.4253207.20190214211543')
     # d=get_collection_descriptions_and_licenses(collection='CT-vs-PET-Ventilation-Imaging')

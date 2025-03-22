@@ -111,58 +111,46 @@ def get_original_collections_metadata_idc_source(client, args):
         if row['idc_only'] == 'True':
             idc_only_metadata[row['collection_name']] = dict(
                 collection_name = row['collection_name'],
-                # collection_id = row['collection_name'].lower().replace('-','_').replace(' ','_'),
                 collection_id = row['collection_id'],
                 CancerTypes = row['CancerType'],
                 TumorLocations = row['Location'],
-                Subjects = 0,
+                # Subjects = 0,
                 Species = row['Species'],
                 Sources = [
                     dict(
                     Access = "Public",
                     source_doi = row['source_doi'].lower() if row['source_doi'] else "",
                     source_url = row['source_url'].lower() if row['source_url'] else "",
-                    ImageTypes = "",
-                    License = "",
-                    Citation = ""
+                    # ImageTypes = "",
+                    # License = "",
+                    # Citation = ""
                     )
                 ],
                 SupportingData = row['SupportingData'],
                 Status = row['Status'],
                 Updated = row['Updated'] if row['Updated'] != 'NA' else None,
-                # Location = row['Location'],
-                # DOI = row['source_doi'],
-                # URL = row['source_url'],
-                # CancerType = row['CancerType'],
-                # Location =  row['Location']
             )
         else:
             idc_tcia_metadata[row['collection_name']] = dict(
-                collection_name=row['collection_name'],
-                # collection_id=row['collection_name'].lower().replace('-', '_').replace(' ', '_'),
+                collection_name = row['collection_name'],
                 collection_id = row['collection_id'],
-                CancerTypes=row['CancerType'],
-                TumorLocations=row['Location'],
-                Subjects=0,
+                CancerTypes = "",
+                TumorLocations = "",
+                # Subjects=0,
                 Species=row['Species'],
                 Sources=[
                     dict(
                         Access="Public",
                         source_doi=row['source_doi'].lower() if row['source_doi'] else "",
                         source_url=row['source_url'].lower() if row['source_url'] else "",
-                        ImageTypes="",
-                        License="",
-                        Citation=""
+                        # ImageTypes="",
+                        # License="",
+                        # Citation=""
                     )
                 ],
                 SupportingData=row['SupportingData'],
                 Status=row['Status'],
                 Updated=row['Updated'] if row['Updated'] != 'NA' else None,
-                # Location = row['Location'],
-                # DOI=row['source_doi'],
-                # URL=row['source_url'],
-                # CancerType=row['CancerType'],
-                # Location=row['Location']
             )
 
     return (idc_only_metadata, idc_tcia_metadata)

@@ -46,7 +46,7 @@ if __name__ == '__main__':
     parser.add_argument('--third_party', type=bool, default=True, help='True if an analysis result')
     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
     parser.add_argument("--subset_of_db_expected_in_bucket", default=True)
-    parser.add_argument("--filter", default="seg", help='Only include blobs having args.filter in the blob name during validation')
+    parser.add_argument("--inclusion_filter", default="seg", help='Only include blobs having args.inclusion_filter in the blob name during validation')
     parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
 
     args = parser.parse_args()

@@ -52,6 +52,7 @@ if __name__ == '__main__':
     args.client=storage.Client()
 
     versioned_source_dois = {'CMB-AML': '10.5281/zenodo.13993760',
+                   'CMB-AML': '10.5281/zenodo.13993760',
                    'CMB-BRCA': '10.5281/zenodo.13993762',
                    'CMB-CRC': '10.5281/zenodo.13993770',
                    'CMB-GEC': '10.5281/zenodo.13993774',

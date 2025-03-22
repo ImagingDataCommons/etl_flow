@@ -55,7 +55,7 @@ if __name__ == '__main__':
             help="Subdirectory of mount_point at which to start walking directory")
     parser.add_argument('--collection_id', default='', help='collection_name of the collection or ID of analysis result to which instances belong.')
     parser.add_argument('--manifest', default='./pan_cancer_nuclei_seg_polygon_2d_binary_tiled_full_2024_05_09.csv', help='Manifest file name')
-    parser.add_argument('--filter', default='seg', help='Include blobs with filter in blob name')
+    parser.add_argument('--inclusion_filter', default='seg', help='Include blobs with filter in blob name')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()

@@ -136,6 +136,7 @@ def expand_version(sess, args, all_sources, version):
         # have been reliable.
         # if src_hashes[all_sources.]
         if any(revised):
+            # breakpoint()  # Should timestamps be updated here?
             rev_collection = clone_collection(collection, uuid=str(uuid4()))
 
             # Here is where we update the collecton ID in case it has changed

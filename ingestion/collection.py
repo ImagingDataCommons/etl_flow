@@ -167,6 +167,7 @@ def expand_collection(sess, args, all_sources, collection):
                 zip(idc_hashes[:-1], src_hashes, skipped)]
         # If any source is revised, then the object is revised.
         if any(revised):
+            breakpoint()  # Should min_timestamp be updated here?
             # rootlogger.debug('p%s **Revising patient %s', args.pid, patient.submitter_case_id)
             # Mark when we started work on this patient
             # assert settings.CURRENT_VERSION == patients[patient.submitter_case_id]['rev_idc_version']

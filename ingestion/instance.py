@@ -138,6 +138,12 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
             os.rename(file_name, blob_name)
 
             instance.hash = md5_hasher(blob_name)
+            if len(instance.hash) != 32:
+                breakpoint()
+                errlogger.error("       p%s: Hash failed for %s/%s/%s/%s/%s", args.pid,
+                    collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid, SOPInstanceUID)
+                # Return without marking all instances done. This will be prevent the series from being done.
+                return
             instance.size = Path(blob_name).stat().st_size
             instance.timestamp = datetime.utcnow()
 
