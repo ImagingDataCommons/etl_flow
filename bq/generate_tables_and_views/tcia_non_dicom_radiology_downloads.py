@@ -35,7 +35,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 schema = [
     bigquery.SchemaField('download_slug', 'STRING', mode='NULLABLE', description='TCIA collection manager slug of this download'),
     bigquery.SchemaField('tcia_parent_collection', 'STRING', mode='NULLABLE', description='ID of parent tcia collection'),
-    bigquery.SchemaField('file_type', 'STRING', mode='NULLABLE', description='Comma separated list of file types')
+    bigquery.SchemaField('file_type', 'STRING', mode='NULLABLE', description='Comma separated list of file types'),
+    bigquery.SchemaField('license_short_name', 'STRING', mode='NULLABLE', description='License short name')
 ]
 
 
@@ -114,7 +115,10 @@ def main():
     client = bigquery.Client()
 
     downloads = query_collection_manager(type="downloads")
-    radiology_downloads = {k['slug']: k for k in downloads if k['download_type'] == 'Radiology Images'}
+    radiology_downloads = {k['slug']: k for k in downloads if \
+                           isinstance(k['download_type'], str) and k['download_type'] == 'Radiology Images' or \
+                           isinstance(k['download_type'], list) and 'Radiology Images' in k['download_type']}
+
     non_dicom_radiology_downloads = {k:v for k,v in radiology_downloads.items() if v['file_type'] != ['DICOM']}
     collections = query_collection_manager(type="collections")
 
@@ -138,7 +142,8 @@ def main():
             metadata.append({
                 'download_slug': p,
                 'tcia_parent_collection': non_dicom_radiology_downloads[p]["parent_slug"],
-                'file_type': ', '.join(non_dicom_radiology_downloads[p]["file_type"])
+                'file_type': ', '.join(non_dicom_radiology_downloads[p]["file_type"]),
+                'license_short_name': non_dicom_radiology_downloads[p]["data_license"]
             })
 
     export_to_sheets(args, metadata)
