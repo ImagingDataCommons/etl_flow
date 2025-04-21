@@ -22,6 +22,7 @@ May saturate a small VM, depending on the number of processes.
 import argparse
 import os
 import logging
+import random
 # from logging import INFO
 # proglogger = logging.getLogger('root.prog')
 # successlogger = logging.getLogger('root.success')
@@ -44,32 +45,36 @@ assert settings.configured
 
 def delete_instances(args, client, bucket, blobs, n):
     TRIES = 3
-    for i in range(TRIES):
-        try:
-            with client.batch():
-                for blob in blobs:
-                    bucket.blob(blob[0], generation=blob[1]).delete()
-                    successlogger.info(blob[0])
-            progresslogger.info('p%s Delete %s blobs %s:%s ', args.id, args.bucket, n, n+len(blobs)-1)
-            break
-        except ServiceUnavailable:
-            errlogger.error('p%s Delete %s blobs %s:%s failed', args.id, args.bucket, n, n+len(blobs)-1)
-        except Exception as exc:
-            errlogger.error('p%s Exception %s %s:%s', args.id, exc, n, n+len(blobs)-1)
-        except NotFound:
-            errlogger.error('p%s Delete %s blobs %s:%s failed, not found', args.id, args.bucket, n, n+len(blobs)-1)
-            break
+    with client.batch():
+        for blob in blobs:
+            for i in range(TRIES):
+                try:
+                    bucket.blob(blob).delete()
+                    successlogger.info(blob)
+                    break
+                except ServiceUnavailable:
+                    errlogger.error('p%s Delete %s blobs %s:%s failed; Service unavailable', args.id, args.bucket, n, n+len(blobs)-1)
+                    time.sleep(1)
+                except Exception as exc:
+                    errlogger.error('p%s Exception %s %s:%s', args.id, exc, n, n+len(blobs)-1)
+                    time.sleep(1)
+                except NotFound:
+                    errlogger.error('p%s Delete %s blobs %s:%s failed, not found', args.id, args.bucket, n, n+len(blobs)-1)
+                    break
+    progresslogger.info('p%s Delete %s blobs %s:%s ', args.id, args.bucket, n, n + len(blobs) - 1)
 
 
 def worker(input, args):
     client = storage.Client()
     bucket = storage.Bucket(client, args.bucket)
     for blobs, n in iter(input.get, 'STOP'):
-        delete_instances(args, client, bucket, blobs, n)
-
+        try:
+            delete_instances(args, client, bucket, blobs, n)
+        except Exception as exc:
+            errlogger.error('p%s Exception %s %s:%s', args.id, exc, n, n+len(blobs)-1)
+            time.sleep(1)
 
 def del_all_instances(args):
-    bucket = args.bucket
     client = storage.Client()
     bucket = storage.Bucket(client, args.bucket)
 
@@ -94,12 +99,29 @@ def del_all_instances(args):
     n = 0
     page_token = ""
     # iterator = client.list_blobs(bucket, page_token=page_token, max_results=args.batch)
-    iterator = client.list_blobs(bucket, versions=True, page_token=page_token, page_size=args.batch)
+    # iterator = client.list_blobs(bucket, versions=True, page_token=page_token, page_size=args.batch)
+    iterator = client.list_blobs(bucket, page_size=args.batch)
+    pages = 0
+    all_blobs = []
     for page in iterator.pages:
-        blobs = [[blob.name, blob.generation] for blob in page]
-        if len(blobs) == 0:
-            break
+        # blobs = [[blob.name, blob.generation] for blob in page]
+        blobs = [blob.name for blob in page]
+        all_blobs.extend(blobs)
+        pages += 1
+        if pages == num_processes:
+            random.shuffle(all_blobs)
+            while all_blobs:
+                blobs = all_blobs[:args.batch]
+                all_blobs = all_blobs[args.batch:]
+                task_queue.put((blobs, n))
+                n += len(blobs)
+            pages = 0
+    while all_blobs:
+        blobs = all_blobs[:args.batch]
+        all_blobs = all_blobs[args.batch:]
         task_queue.put((blobs, n))
+        n += len(blobs)
+
         # print(f'Queued {n}:{n+len(blobs)-1}')
         # task_queue.put((page, n))
 

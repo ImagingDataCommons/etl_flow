@@ -419,16 +419,16 @@ def prebuild_from_manifests(args, sep=','):
                 all_collection_ids = perform_full_revision(sess, args, manifest_url, sep)
             else:
                 errlogger.error(f'Unknown manifest type {manifest_type}')
-                exit(-1)
+                exit(1)
         sess.commit()
 
     if args.validate:
         if args.analysis_result:
             if validate_analysis_result(args) == -1:
-                exit -1
+                exit(1)
         else:
             if validate_original_collection(args, all_collection_ids) == -1:
-                exit -1
+                exit(1)
 
     if args.gen_hashes:
         gen_hashes()

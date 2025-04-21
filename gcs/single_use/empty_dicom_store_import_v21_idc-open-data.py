@@ -15,7 +15,7 @@
 #
 
 """
-Script to empty the PDP staging buckets.
+Script to empty idc-open-idc bucket.
 """
 
 import argparse
@@ -25,12 +25,11 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--processes', default=1, help="Number of concurrent processes")
+    parser.add_argument('--processes', default=64   , help="Number of concurrent processes")
     parser.add_argument('--batch', default=1000, help='Size of batch assigned to each process')
-    parser.add_argument('--project', default='idc-pdp-staging')
 
     args = parser.parse_args()
 
-    for bucket in ['idc-open-data-staging', 'idc-open-cr-staging', 'idc-open-idc1-staging']:
+    for bucket in ['dicom_store_import_v21_idc-open-data']:
         args.bucket = bucket
-        del_all_instances(args)
+        del_all_instances  (args)

@@ -40,7 +40,7 @@ def create_all_flattened(client):
     c.min_timestamp AS c_min_timestamp,
     c.max_timestamp AS c_max_timestamp,
     c.hashes AS c_hashes,
-    c.sour  ces AS c_sources,
+    c.sources AS c_sources,
     c.init_idc_version AS c_init_idc_version,
     c.rev_idc_version AS c_rev_idc_version,
     c.final_idc_version AS c_final_idc_version,
@@ -76,7 +76,7 @@ def create_all_flattened(client):
     se.source_url,
     se.versioned_source_doi,
     CONCAT('https://doi.org/', se.versioned_source_doi) versioned_source_url,
-    se.third_party,
+    se.analysis_result,
     se.hashes AS se_hashes,
     se.sources AS se_sources,
     se.init_idc_version AS se_init_idc_version,
@@ -130,7 +130,7 @@ with basics as (
   af.source_doi, 
   af.source_url, 
   i_source source,
-  if(not dtc.class is null, dtc.class, 'Open') Class,
+  if(not dtc.type is null, dtc.type, 'Open') Type,
   if(not dtc.access is NULL, dtc.access, 'Public') Access,
   if(ms.metadata_sunset is NULL, 0, CAST(ms.metadata_sunset AS INT64)) metadata_sunset
 FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_flattened` af
@@ -141,9 +141,9 @@ ON af.source_doi = ms.source_doi
 )
 SELECT 
   *,
-  if(class='Open', 'idc-arch-open', if(class='Cr', 'idc-arch-cr', if(Class='Defaced', 'idc-arch-defaced', if(Class='Redacted','idc-arch-redacted','idc-arch-excluded')))) dev_bucket,
-  if(class='Open', 'idc-open-data', if(class='Cr', 'idc-open-cr', if(Class='Defaced', 'idc-open-idc1', NULL))) pub_gcs_bucket,
-  if(class='Open', 'idc-open-data', if(class='Cr', 'idc-open-data-cr', if(Class='Defaced', 'idc-open-data-two', NULL))) pub_aws_bucket,
+  if(Type='Open', 'idc-arch-open', if(Type='Cr', 'idc-arch-cr', if(Type='Defaced', 'idc-arch-defaced', if(Type='Redacted','idc-arch-redacted','idc-arch-excluded')))) dev_bucket,
+  if(Type='Open', 'idc-open-data', if(Type='Cr', 'idc-open-cr', if(Type='Defaced', 'idc-open-idc1', NULL))) pub_gcs_bucket,
+  if(Type='Open', 'idc-open-data', if(Type='Cr', 'idc-open-data-cr', if(Type='Defaced', 'idc-open-data-two', NULL))) pub_aws_bucket,
 FROM basics
 -- ORDER by collection_id, source_doi, dev_bucket, pub_gcs_bucket, pub_aws_bucket
 ORDER by collection_id, source_doi, pub_gcs_bucket, pub_aws_bucket
@@ -161,7 +161,7 @@ def create_all_joined(client):
     view = bigquery.Table(view_id)
     view.view_query = f"""
 -- SELECT af.*, ac.source, ac.Class, ac.Access, ac.metadata_sunset, ac.dev_bucket, ac.pub_gcs_bucket, ac.pub_aws_bucket
-SELECT af.*, ac.source, ac.Class, ac.Access, ac.metadata_sunset, ac.pub_gcs_bucket, ac.pub_aws_bucket
+SELECT af.*, ac.source, ac.Type, ac.Access, ac.metadata_sunset, ac.pub_gcs_bucket, ac.pub_aws_bucket
 FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_flattened` af
 JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac
 ON af.source_doi = ac.source_doi 
@@ -268,7 +268,7 @@ def create_idc_all_joined(client):
      source_url,
      versioned_source_doi,
      CONCAT('https://doi.org/', versioned_source_doi) versioned_source_url,
-     third_party, 
+     analysis_result, 
      license_long_name,
      license_short_name, 
      license_url,

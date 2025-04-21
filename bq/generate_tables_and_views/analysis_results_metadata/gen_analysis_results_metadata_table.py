@@ -109,14 +109,17 @@ def get_url(url, headers=""):  # , headers):
 
 def get_citation(source_doi, source_url):
     if source_doi:
-        if 'zenodo' in source_doi:
-            breakpoint()
-            params = {'access_token': settings.ZENODO_ACCESS_TOKEN}
-        else:
-            params = {}
+        # if 'zenodo' in source_doi:
+        #     breakpoint()
+        #     params = {'access_token': settings.ZENODO_ACCESS_TOKEN}
+        # else:
+        #     params = {}
+        # header = {"Accept": "text/x-bibliography; style=apa"}
+        # # citation = get_url(source_url, header).text
+        # citation = requests.get(source_url, headers=header, params=params).text
         header = {"Accept": "text/x-bibliography; style=apa"}
         # citation = get_url(source_url, header).text
-        citation = requests.get(source_url, headers=header, params=params).text
+        citation = requests.get(source_url, headers=header).text
     else:
         citation =source_url
 
@@ -169,10 +172,10 @@ def build_metadata(args, BQ_client):
             for key, value in license['license'].items():
                 analysis_data[key] = value
             analysis_data['Description'] = descriptions[analysis_data['ID']]
-            analysis_data['AnalysisArtifactsonTCIA'] = analysis_data['AnalysisArtifacts']
-            analysis_data['DOI'] = analysis_data['source_doi']
-            analysis_data['CancerType'] = analysis_data['CancerTypes']
-            analysis_data['Location'] = analysis_data['TumorLocations']
+            # analysis_data['AnalysisArtifactsonTCIA'] = analysis_data['AnalysisArtifacts']
+            # analysis_data['DOI'] = analysis_data['source_doi']
+            # analysis_data['CancerType'] = analysis_data['CancerTypes']
+            # analysis_data['Location'] = analysis_data['TumorLocations']
             analysis_data['Citation'] = get_citation(analysis_data['source_doi'], analysis_data['source_url'])
             rows.append(json.dumps(analysis_data))
     metadata = '\n'.join(rows)

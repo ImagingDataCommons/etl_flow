@@ -55,20 +55,20 @@ def likely_clinical(download):
         ):
             return False
     except Exception as exc:
-        errlogger.error(f'Likely clinical error: {exc}')
+        errlogger.error(f'Download {download["slug"]}, likely clinical error: {exc}')
         return False
     try:
         if (download['download_requirements']):
             return False
     except Exception as exc:
-        errlogger.error(f'Likely clinical error: {exc}')
+        errlogger.error(f'Download {download["slug"]}, likely clinical error: {exc}')
         return False
     try:
         file_type = download['file_type']
         if not (('XLSX' in file_type) or ('XLS' in file_type) or ('CSV' in file_type)):
             return False
     except Exception as exc:
-        errlogger.error(f'Likely clinical error: {exc}')
+        errlogger.error(f'Download {download["slug"]}, likely clinical error: {exc}')
         return False
     return True
 
@@ -77,18 +77,20 @@ def get_raw_data():
     client = bigquery.Client()
     # Get collections and source_dois that we have in IDC
     all_idc_collections = client.list_rows(client.get_table(f'{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections')).to_dataframe()
-    all_idc_source_dois = all_idc_collections['source_doi']
-
+    all_idc_source_dois = all_idc_collections[['source_doi', 'Access']].copy()
     # Get all TCIA collections which we also have
-    public_tcia_collections = [ c for c in get_all_tcia_metadata("collections") if \
-                                c['collection_page_accessibility'] == "Public" and \
-                                c['collection_doi'].lower() in list(all_idc_source_dois)]
+    all_tcia_metadata = get_all_tcia_metadata("collections")
+    public_tcia_collections = [ c for c in all_tcia_metadata if \
+                                c['collection_doi'].lower() in list(all_idc_source_dois['source_doi']) and \
+                                all_idc_source_dois[all_idc_source_dois["source_doi"] == (c['collection_doi'].lower())].iloc[0]['Access'] == "Public"
+                                ]
 
     # Get all TCIA analysis results which we also have
-    public_analysis_results = [ ar for ar in get_all_tcia_metadata('analysis-results') \
-                                if ar['result_page_accessibility'] == "Public" and \
-                                ar['result_doi'].lower() in list(all_idc_source_dois)]
-
+    all_tcia_metadata = get_all_tcia_metadata('analysis-results')
+    public_analysis_results = [c for c in all_tcia_metadata if \
+                               c['result_doi'].lower() in list(all_idc_source_dois['source_doi']) and \
+                               all_idc_source_dois[all_idc_source_dois["source_doi"] == (c['result_doi'].lower())].iloc[0]['Access'] == "Public"
+                               ]
     # Get TCIA clinical downloads
     downloads = {d['id']: d for d in get_all_tcia_metadata("downloads")}
     clinical_downloads = {id: data for id, data in downloads.items() if likely_clinical(data)}
@@ -101,7 +103,7 @@ def get_raw_data():
                 clinical_downloads[id]['collection_doi'] = collection['collection_doi']
                 clinical_downloads[id]['collection_browse_title'] = collection['collection_browse_title']
 
-    # Associate 0 or more analysis results with each clinical download
+    # Associate 0 or 1 analysis result with each clinical download
     for result in public_analysis_results:
         for id in result['result_downloads']:
             if id in clinical_downloads:

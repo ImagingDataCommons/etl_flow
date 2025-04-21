@@ -26,6 +26,12 @@
 # Because we may need to rerun this script more than once, we do not
 # empty the staging bucket when we begin.
 
+## Note: This script should typically be run with processes=512 and batch=100.
+## This requires a 16 core machine also will need to up the number of allowed
+## open files, e.g.:
+## ulimit -n 4000
+
+
 import sys
 import argparse
 from googleapiclient import discovery
@@ -238,7 +244,8 @@ def populate_import_buckets(args):
     for page in client.list_rows(destination, page_size=args.batch).pages:
         uuids = [{'blob_id':row.blob_id, 'bucket':row.bucket} \
             for row in page]
-        task_queue.put((uuids,n))
+        if uuids:
+            task_queue.put((uuids,n))
         n += args.batch
 
     # Tell child processes to stop
@@ -253,28 +260,28 @@ def populate_import_buckets(args):
 
 def populate_buckets(args):
     for suffix in [
-        # 'idc-open-idc1',
-        # 'idc-open-cr',
+        'idc-open-idc1',
+        'idc-open-cr',
         'idc-open-data'
     ]:
         args.pub_gcs_bucket = suffix
         args.import_bucket_name = f'dicom_store_import_v{args.version}_{suffix}'
+        ### Note: At this time buckets must be created from the console
         # create_import_bucket(args)
         populate_import_buckets(args)
 
 if __name__ == '__main__':
-    # version = settings.CURRENT_VERSION
-    version = 20
+    version = settings.CURRENT_VERSION
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=version)
     parser.add_argument('--client', default=storage.Client())
     parser.add_argument('--collections', default=(), help='Collections to include. If empty, include all collections')
     parser.add_argument('--bucket_project', default='nci-idc-bigquery-data', help='Project in which to build buckets')
-    parser.add_argument('--processes', default=512)
-    parser.add_argument('--batch', default=100)
+    parser.add_argument('--processes', default=256)
+    parser.add_argument('--batch', default=1000)
     parser.add_argument('--dones_table_id', default='idc-dev-etl.whc_dev.step1_dones', help='BQ table from which to import dones')
     parser.add_argument('--log_dir', default=settings.LOG_DIR)
-    parser.add_argument('--merged', default=True, help='True if premerge buckets have been merged')
+    parser.add_argument('--merged', default=False, help='True if premerge buckets have been merged')
     args = parser.parse_args()
     args.id = 0 # Default process ID
     progresslogger.info(f"{args}")

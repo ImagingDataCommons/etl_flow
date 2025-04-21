@@ -127,6 +127,9 @@ def export_metadata(args):
     except NotFound:
         dst_dataset = create_BQ_dataset(client, args.bq_dataset, args.dataset_description)
 
+    if args.delete_existing_table:
+        client.delete_table(f'{args.bq_project}.{args.bq_dataset}.dicom_metadata', not_found_ok=True)
+
     try:
         start = time.time()
         response=export_dicom_metadata(args)
@@ -148,6 +151,7 @@ if __name__ == '__main__':
     parser.add_argument('--gch_region', default=settings.GCH_REGION)
     parser.add_argument('--gch_dataset', default=settings.GCH_DATASET)
     parser.add_argument('--gch_dicomstore', default=settings.GCH_DICOMSTORE)
+    parser.add_argument('--delete_existing_table', default=True,help='Delete existing table before export if True')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     export_metadata(args)

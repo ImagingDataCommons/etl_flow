@@ -110,7 +110,7 @@ def ingest(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--num_processes', type=int, default=0, help="Number of concurrent processes")
+    parser.add_argument('--num_processes', type=int, default=8, help="Number of concurrent processes")
 
     parser.add_argument('--skipped_tcia_collections', nargs='*', \
             default=['NLST', 'APOLLO-5-ESCA', 'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-PAAD', 'APOLLO-5-THYM', \
@@ -123,7 +123,7 @@ if __name__ == '__main__':
                         help='List of additional idc collections to be skipped')
     parser.add_argument('--prestaging_idc_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_idc_', help='Copy idc instances here before forwarding to --staging_bucket')
 
-    parser.add_argument('--stop_after_collection_summary', type=bool, default=True, \
+    parser.add_argument('--stop_after_collection_summary', type=bool, default=False, \
                         help='Stop after printing a summary of collection dispositions')
 
     args = parser.parse_args()

@@ -187,7 +187,7 @@ def upload_series(client, args, table, order_by):
       license_long_name,
       license_url,
       license_short_name,
-      third_party,
+      analysis_result,
       redacted
       
     FROM
@@ -199,7 +199,7 @@ def upload_series(client, args, table, order_by):
             (sources).tcia AS tcia_src, (sources).idc AS idc_src, 
             (revised).tcia AS tcia_rev, (revised).idc AS idc_rev,
             source_url, excluded, license_long_name, license_url,
-            license_short_name, third_party, redacted, versioned_source_doi
+            license_short_name, analysis_result, redacted, versioned_source_doi
         FROM {table}''')
     ORDER BY {order_by}
     """

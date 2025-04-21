@@ -148,6 +148,10 @@ if __name__ == '__main__':
     parser.add_argument('--period', default=60, help="seconds to sleep between checking operation status")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-    args.staging_bucket = f'dicom_store_import_staging_v{settings.CURRENT_VERSION}'
 
-    import_buckets(args)
+    for suffix in [
+        'idc-open-idc1',
+        'idc-open-crl',
+        'idc-open-data']:
+        args.staging_bucket = f'dicom_store_import_v{settings.CURRENT_VERSION}_{suffix}'
+        import_buckets(args)

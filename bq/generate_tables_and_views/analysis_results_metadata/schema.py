@@ -52,11 +52,11 @@ analysis_results_metadata_schema = [
                          description='Analysis result description'),
     bigquery.SchemaField('Citation', 'STRING', mode='NULLABLE',
                          description='Citation to be used for this source'),
-    bigquery.SchemaField('AnalysisArtifactsonTCIA', 'STRING', mode='REQUIRED',
-                         description='DEPRECATED: Duplicate of AnalysisArtifacts'),
-    bigquery.SchemaField('DOI', 'STRING', mode='REQUIRED',
-                         description='DEPRECATED: Duplicate of source_doi'),
-    bigquery.SchemaField('CancerType', 'STRING', mode='REQUIRED', description='DEPRECATED: Duplicate of CancerTypes'),
-    bigquery.SchemaField('Location', 'STRING', mode='REQUIRED', description='DEPRECATED: Duplicate of PrimarySiteLocations'),
+    # bigquery.SchemaField('AnalysisArtifactsonTCIA', 'STRING', mode='REQUIRED',
+    #                      description='DEPRECATED: Duplicate of AnalysisArtifacts'),
+    # bigquery.SchemaField('DOI', 'STRING', mode='REQUIRED',
+    #                      description='DEPRECATED: Duplicate of source_doi'),
+    # bigquery.SchemaField('CancerType', 'STRING', mode='REQUIRED', description='DEPRECATED: Duplicate of CancerTypes'),
+    # bigquery.SchemaField('Location', 'STRING', mode='REQUIRED', description='DEPRECATED: Duplicate of PrimarySiteLocations'),
 
 ]

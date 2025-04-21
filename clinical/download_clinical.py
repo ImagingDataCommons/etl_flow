@@ -18,6 +18,7 @@ if __name__=="__main__":
   shutil.rmtree(download_dir, ignore_errors=True)
   mkdir(download_dir)
 
+
   client = bigquery.Client(project='idc-dev-etl')
   client = bigquery.Client()
 

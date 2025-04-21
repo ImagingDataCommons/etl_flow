@@ -14,31 +14,27 @@
 # limitations under the License.
 #
 
-# Hierarchically removes all data associated with a source_doi from the idc_xxx hierarchy
+# Hierarchically removes all data associated with a versioned_source_doi from the idc_xxx hierarchy
 # Does not update the hashes
 
-import os
-import io
 import sys
 import argparse
-import csv
-from idc.models import Base, IDC_Collection, IDC_Patient, IDC_Study, IDC_Series
-from ingestion.utilities.utils import get_merkle_hash, list_skips
-from utilities.logging_config import successlogger, errlogger, progresslogger
+from utilities.sqlalchemy_helpers import sa_session
 from python_settings import settings
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine, update
-from google.cloud import storage
 
 
 def remove_instances(args, sess):
     query = f"""
 DELETE FROM idc_instance 
 USING idc_series
-WHERE series_instance_uid = idc_series.series_instance_uid
-AND idc_series.source_doi = '{args.source_doi}'
+WHERE idc_instance.series_instance_uid = idc_series.series_instance_uid
+AND idc_series.versioned_source_doi = '{args.versioned_source_doi}'
     """
-    result = sess.execute(query).fetchall()
+    try:
+        result = sess.execute(query)
+    except Exception as e:
+        print(f"Error removing instances: {e}")
+        raise
     return
 
 
@@ -51,7 +47,7 @@ WHERE NOT EXISTS (
     SELECT FROM idc_instance
     WHERE idc_series.series_instance_uid = idc_instance.series_instance_uid
     )"""
-    result = sess.execute(query).fetchall()
+    result = sess.execute(query)
     return
 
 def remove_studies(args, sess):
@@ -64,7 +60,7 @@ WHERE NOT EXISTS (
     WHERE idc_study.study_instance_uid = idc_series.study_instance_uid
     )
     """
-    result = sess.execute(query).fetchall()
+    result = sess.execute(query)
     return
 
 
@@ -78,12 +74,11 @@ WHERE NOT EXISTS (
     WHERE idc_patient.submitter_case_id = idc_study.submitter_case_id
     )
     """
-    result = sess.execute(query).fetchall()
+    result = sess.execute(query)
     return
 
 
 def remove_collections(args, sess):
-    breakpoint()
     remove_patients(args, sess)
 
     query = f"""
@@ -93,7 +88,18 @@ WHERE NOT EXISTS (
     WHERE idc_collection.collection_id = idc_patient.collection_id
     )
     """
-    result = sess.execute(query).fetchall()
+    result = sess.execute(query)
     return
 
-    
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--versioned_source_doi', default='10.5281/zenodo.14041167', \
+                        help='Versioned DOI of objects to be removed')
+    args = parser.parse_args()
+    print("{}".format(args), file=sys.stdout)
+
+ 
+    with sa_session(echo=False) as sess:
+        remove_collections(args, sess)
+        sess.commit()

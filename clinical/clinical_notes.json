@@ -378,6 +378,19 @@
             "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
             "patientIdCol": "submitter_id"
         },
+        "srcs2": [
+            [
+                {
+                    "filenm": "CPTAC-AML-Additional-Data-Elements_04142025.xlsx",
+                    "patientIdCol": "case_id"
+                }
+            ]
+        ],
+        "tabletypes2": [
+            {
+                "demographic_classification": "cptac_aml classification, follow-up and demographic data"
+            }
+        ],
         "case_id": "same"
     },
     "cptac_brca": {
@@ -403,21 +416,11 @@
                     "patientIdCol": "patientid",
                     "ar_file": "yes"
                 }
-            ],
-            [
-                {
-                    "filenm": "Metadata_Report_CPTAC-CCRCC_2023_07_14.csv",
-                    "patientIdCol": "patientid",
-                    "ar_file": "yes"
-                }
             ]
         ],
         "tabletypes2": [
             {
                 "bamf_aimi_annotations_kidney_ct_qa_results": "bamf_aimi_annotations segmentations of Kidney, Tumor, and Cysts from contrast enhanced CT scans"
-            },
-            {
-                "cptac_ccrcc_tumor_annotations_metadata_report_cptac_ccrcc_2023_07_14": "CPTAC-CCRCC Annotation Metadata"
             }
         ],
         "case_id": "same"
@@ -492,20 +495,6 @@
             "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
             "patientIdCol": "submitter_id"
         },
-        "srcs2": [
-            [
-                {
-                    "filenm": "Metadata_Report_CPTAC-PDA_2023_07_14.csv",
-                    "patientIdCol": "patientid",
-                    "ar_file": "yes"
-                }
-            ]
-        ],
-        "tabletypes2": [
-            {
-                "cptac_pda_tumor_annotations_metadata_report_pda_ccrcc_2023_07_14": "CPTAC-PDA Annotation Metadata"
-            }
-        ],
         "case_id": "same"
     },
     "cptac_sar": {
@@ -524,20 +513,6 @@
             "table": "isb-cgc-bq.CPTAC.clinical_gdc_current",
             "patientIdCol": "submitter_id"
         },
-        "srcs2": [
-            [
-                {
-                    "filenm": "Metadata_Report_CPTAC-UCEC_2023_07_14.csv",
-                    "patientIdCol": "patientid",
-                    "ar_file": "yes"
-                }
-            ]
-        ],
-        "tabletypes2": [
-            {
-                "cptac_ucec_tumor_annotations_metadata_report_cptac_ucec_2023_07_14": "CPTAC-UCEC Annotation Metadata"
-            }
-        ],
         "case_id": "same"
     },
     "ctpred_sunitinib_pannet": {
@@ -2092,5 +2067,19 @@
         ],
         "case_id": "upenn-gbm",
         "tcia": "yes"
+    },
+    "varepop_apollo": {
+        "notes": "one xlsx file with clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "VAREPOP-APOLLO-DA-OTHER.csv",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "case_id": "same",
+        "tcia": "yes"
     }
 }
+

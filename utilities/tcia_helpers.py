@@ -687,10 +687,6 @@ if __name__ == "__main__":
     citations = get_all_tcia_metadata(type="citations", query_param="fields=Content")
     collections = get_all_tcia_metadata(type="collections")
 
-    h = get_hash({'Collection': 'Spine-Mets-CT-SEG'})
-    d = get_all_tcia_metadata(type="downloads")
-    c = {k['slug']: k for k in d if 'da-path' in k['slug']}
-    b = {k['slug']: k for k in d if k['download_type'] == 'Pathology Images'}
     d = get_all_tcia_metadata(type="collections")
     d = get_all_tcia_metadata(type="analysis-results")
     d = get_all_tcia_metadata(type="citations")

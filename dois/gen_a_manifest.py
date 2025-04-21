@@ -69,7 +69,7 @@ f'''# To download the files in this manifest,
     bucket = gcs_client.bucket(args.manifest_bucket)
 
     # blob = bucket.blob(f"{source_doi.replace('/','_').replace('.','_')}/{versioned_source_doi.replace('/','_').replace('.','_')}/{file_name}")
-    blob = bucket.blob(f"{filename_prefix}/v{args.version}/{file_name}")
+    blob = bucket.blob(f"v{args.version}/{filename_prefix}/{file_name}")
     blob.upload_from_string(manifest)
 
     return
@@ -106,7 +106,7 @@ f'''# To obtain GCS and AWS URLs of the instances in this manifest,
     bucket = gcs_client.bucket(args.manifest_bucket)
 
     # blob = bucket.blob(f"{source_doi.replace('/','_').replace('.','_')}/{versioned_source_doi.replace('/','_').replace('.','_')}/{file_name}")
-    blob = bucket.blob(f"{filename_prefix}/v{args.version}/{file_name}")
+    blob = bucket.blob(f"v{args.version}/{filename_prefix}/{file_name}")
     blob.upload_from_string(manifest)
 
     return

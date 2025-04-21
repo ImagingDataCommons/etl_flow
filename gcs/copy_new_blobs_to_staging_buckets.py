@@ -60,10 +60,10 @@ def copy_some_blobs(args, client, urls, n, dones):
             dev_blob = dev_bucket.blob(blob_name)
             pub_bucket_name = blob['pub_url'].split('/')[2]
 
-            # We don't copy directly to the public-datasets-idc bucket.
-            # We copy to a staging bucket and Google copies to the public bucket
+            # We don't copy directly to the public buckets.
+            # We copy to a staging bucket and from there to public GCS and AWS
             if 'idc-open-data' in pub_bucket_name:
-                pub_bucket_name = 'public-datasets-idc-staging'
+                pub_bucket_name = 'idc-open-data-staging'
             elif 'idc-open-cr' in pub_bucket_name:
                 pub_bucket_name = 'idc-open-cr-staging'
             elif 'idc-open-idc1' in pub_bucket_name:
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
     parser.add_argument('--batch', default=1000)
-    parser.add_argument('--processes', default=8 )
+    parser.add_argument('--processes', default=32)
     args = parser.parse_args()
     args.id = 0 # Default process ID
 

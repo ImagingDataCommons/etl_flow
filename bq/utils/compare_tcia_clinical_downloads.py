@@ -66,9 +66,9 @@ def compare_tables(args):
 
     successlogger.info("\nAdded files:")
     if len(added_files)>0:
-        successlogger.info("idc_collection_id    download_id   download_slug_name   date_updated    download_title")
+        successlogger.info("idc_collection_id    download_id   download_slug_name   parent_type  date_updated    download_title")
         for i, _file in added_files.iterrows():
-            successlogger.info(f"{_file['idc_collection_id_new']} : {_file['download_id']} : {_file['download_slug_new']} : {_file['date_updated_new']} : {_file['download_title_new']}")
+            successlogger.info(f"{_file['idc_collection_id_new']} : {_file['download_id']} : {_file['download_slug_new']} : {_file['parent_type']} : {_file['date_updated_new']} : {_file['download_title_new']}")
 
     old_df['hash'] = old_df.apply(hash_df_row, axis=1)
     new_df['hash'] = new_df.apply(hash_df_row, axis=1)
@@ -76,26 +76,41 @@ def compare_tables(args):
     successlogger.info("\nChanged files")
     line = ""
     for key, value in old_df.iloc[0].items():
-        line += key + '\t'
+        if not key in new_df.iloc[0]:
+            line += BOLD + key + '\t' +UNBOLD
+        else:
+            line += key + '\t'
+    for key, value in new_df.iloc[0].items():
+        if  not key in new_df.iloc[0]:
+            line += BOLD + key + '\t' + UNBOLD
+
+
     successlogger.info(line)
         # successlogger.info(f'{key}\t', end="")
     successlogger.info("")
     for download_id in same_file_ids:
         if new_df[new_df['download_id'] == download_id]['hash'].iloc[0] != old_df[old_df['download_id'] == download_id]['hash'].iloc[0]:
-            successlogger.info(download_id)
             old_line = ""
             new_line = ""
             old_row = old_df[old_df['download_id'] == download_id].drop("hash", axis=1)
             new_row = new_df[new_df['download_id'] == download_id].drop("hash", axis=1)
 
-            for key, old_value in old_row.items():
-                new_value = new_row[key]
-                if str(old_value.iloc[0]) != str(new_value.iloc[0]):
-                    old_line += BOLD + str(old_value.iloc[0]) + ',\t' + UNBOLD
-                    new_line += BOLD + str(new_value.iloc[0]) + ',\t' + UNBOLD
+            for key, value in old_row.items():
+                if key in new_row:
+                    new_value = new_row[key]
+                    if str(value.iloc[0]) != str(new_value.iloc[0]):
+                        old_line += BOLD + str(value.iloc[0]) + ',\t' + UNBOLD
+                        new_line += BOLD + str(new_value.iloc[0]) + ',\t' + UNBOLD
+                    else:
+                        old_line += str(value.iloc[0]) + ',\t'
+                        new_line += str(new_value.iloc[0]) + ',\t'
                 else:
-                    old_line += str(old_value.iloc[0]) + ',\t'
-                    new_line += str(new_value.iloc[0]) + ',\t'
+                    old_line += BOLD + str(value.iloc[0]) + ',\t' + UNBOLD
+                    new_line += '\t'
+            for key, value in new_row.items():
+                if not key in old_row:
+                    new_value += BOLD + str(value.iloc[0]) + ',\t' + UNBOLD
+                    old_line += '\t'
             successlogger.info(old_line)
             successlogger.info(new_line)
             successlogger.info("")
@@ -104,6 +119,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--bqtable_name', default='tcia_clinical_and_related_metadata', help='BQ table name')
+    parser.add_argument('--results_file', default='tcia_clinical_and_related_metadata_comparison.txt', help='Comparison results file name')
 
     args = parser.parse_args()
     successlogger.info(f"{args}")

@@ -122,9 +122,9 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
                    zip(idc_hashes[:-1], src_hashes, skipped)]
         # If any source is revised, then the object is revised.
         if any(revised):
-            breakpoint()  # Should timestamps be updated here?
             progresslogger.debug('**Series %s needs revision', series.series_instance_uid)
             rev_series = clone_series(series, str(uuid4()))
+            rev_series.min_timestamp = datetime.utcnow()
             rev_series.rev_idc_version = settings.CURRENT_VERSION
             # rev_series.revised = True
             rev_series.done = False
