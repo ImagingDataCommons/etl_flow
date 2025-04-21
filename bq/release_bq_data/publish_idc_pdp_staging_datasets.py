@@ -30,7 +30,7 @@ if __name__ == '__main__':
     parser.add_argument('--trg_project', default="nci-idc-bigquery-data", help='Project to which tables are copied')
     # parser.add_argument('--pub_project', default="bigquery-public-data", help='Project where public datasets live')
     parser.add_argument('--pub_project', default="nci-idc-bigquery-data", help='Project where public datasets live')
-    parser.add_argument('--table_ids', default={'original_collections_metadata': 'TABLE'}, help="Copy all tables/views unless this is non-empty.")
+    parser.add_argument('--table_ids', default={}, help="Copy all tables/views unless this is non-empty.")
     parser.add_argument('--clinical_table_ids', default={}, help="Copy all tables/views unless this is non-empty")
     args = parser.parse_args()
 

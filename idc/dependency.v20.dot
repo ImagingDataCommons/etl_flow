@@ -23,7 +23,7 @@ digraph etl {
     "preingest.py" -> {"original_collections_metadata_idc_source.psql", "analysis_results_metadata_idc_source.psql"}
     "all_joined_public_and_current" -> "all_joined" -> "all_flattened"
     "all_collections" -> {"all_flattened", "all_dois"}
-    "all_dois" -> {"all_flattened", "doi_to_class"}
+    "all_dois" -> {"all_flattened", "doi_to_access"}
     "all_flattened" -> {"version.bq", "collection.bq", "patient.bq", "study.bq", "series.bq", "instance.bq"} -> "upload_psql_to_bq_vnext_dev.py"
     "upload_psql_to_bq_vnext_dev.py" -> {"version.psql", "collection.psql", "patient.psql", "study.psql", "series.psql", "instance.psql"} -> "ingest.py"
     "analysis_results_descriptions" -> "analysis_results_descriptions.py" -> "1C0ZLeHzx23UbWALtb5j6WfzjmFvRVjd5ieuTcOw7dfE"

@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2021, Institute for Systems Biology
+# Copyright 2015_2021, Institute for Systems Biology
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import sys
 from os.path import join, dirname, exists
 from dotenv import load_dotenv
 
-CURRENT_VERSION=20
-PREVIOUS_VERSION=19
+CURRENT_VERSION=21
+PREVIOUS_VERSION=20
 
 # IF MITIGATION_VERSION is not 0, logging will be to m<MITIGATION_VERSION) rather than v<CURRENT_VERSION>
 # For normal ETL purposes it should be 0
@@ -106,6 +106,7 @@ TCIA_CLIENT_SECRET= os.environ.get('TCIA_CLIENT_SECRET')
 
 
 if os.getenv("CI",''):
+    breakpoint()
     LOGGING_BASE = f'{os.getenv("LOG_DIR")}/v{CURRENT_VERSION}'
 else:
     if MITIGATION_VERSION != 0:
@@ -116,9 +117,22 @@ BASE_NAME = sys.argv[0].rsplit('/',1)[-1].rsplit('.',1)[0]
 
 LOG_DIR = f'{LOGGING_BASE}/{BASE_NAME}'
 
-BAMF_SET={"breast-fdg-pet-ct-qa-results.csv":["qin_breast"], "kidney-ct-qa-results.csv":["tcga_kirc"], "liver-ct-qa-results.csv":["tcga_lihc"],
-          "liver-mr-qa-results.csv":["tcga_lihc"], "lung-ct-qa-results.csv":["acrin_nsclc_fdg_pet", "anti_pd_1_lung", "lung_pet_ct_dx", "nsclc_radiogenomics", "rider_lung_pet_ct", "tcga_luad", "tcga_lusc"],
-          "lung-fdg-pet-ct-qa-results.csv":["acrin_nsclc_fdg_pet", "anti_pd_1_lung", "lung_pet_ct_dx", "nsclc_radiogenomics", "rider_lung_pet_ct", "tcga_luad", "tcga_lusc"], "prostate-mr-qa-results.csv":["prostatex"]}
+# BAMF_SET={"breast-fdg-pet-ct-qa-results.csv":["qin_breast"], "kidney-ct-qa-results.csv":["tcga_kirc"], "liver-ct-qa-results.csv":["tcga_lihc"],
+#           "liver-mr-qa-results.csv":["tcga_lihc"], "lung-ct-qa-results.csv":["acrin_nsclc_fdg_pet", "anti_pd_1_lung", "lung_pet_ct_dx", "nsclc_radiogenomics", "rider_lung_pet_ct", "tcga_luad", "tcga_lusc"],
+#           "lung-fdg-pet-ct-qa-results.csv":["acrin_nsclc_fdg_pet", "anti_pd_1_lung", "lung_pet_ct_dx", "nsclc_radiogenomics", "rider_lung_pet_ct", "tcga_luad", "tcga_lusc"], "prostate-mr-qa-results.csv":["prostatex"]}
+BAMF_SET={
+    "bamf_aimi_annotations_brain_mr_qa_results.csv":["upenn_gbm"],
+    "bamf_aimi_annotations_breast_fdg_pet_ct_qa_results.csv":["qin_breast"],
+    "bamf_aimi_annotations_breast_mr_qa_results.csv":["duke_breast_cancer_mri"],
+    "bamf_aimi_annotations_kidney_ct_qa_results.csv":["tcga_kirc", "tcga_kirp", "tcga_kich", "cptac_ccrcc"],
+    "bamf_aimi_annotations_liver_ct_qa_results.csv":["tcga_lihc"],
+    "bamf_aimi_annotations_liver2_ct_qa_results.csv":["hcc_tace_seg", "colorectal_liver_metastases"],
+    "bamf_aimi_annotations_liver_mr_qa_results.csv":["tcga_lihc"],
+    "bamf_aimi_annotations_lung_ct_qa_results.csv":["anti_pd_1_lung", "lung_pet_ct_dx", "nsclc_radiogenomics", "rider_lung_pet_ct", "tcga_luad", "tcga_lusc"],
+    "bamf_aimi_annotations_lung2_ct_qa_results.csv":["qin_lung_ct", "spie_aapm_lung_ct_challenge"],
+    "bamf_aimi_annotations_lung_fdg_pet_ct_qa_results.csv":["acrin_nsclc_fdg_pet", "anti_pd_1_lung", "lung_pet_ct_dx", "nsclc_radiogenomics", "rider_lung_pet_ct", "tcga_luad", "tcga_lusc"],
+    "bamf_aimi_annotations_prostate_mr_qa_results.csv":["prostatex", "prostate_mri_us_biopsy"]
+}
 
 ETL_LOGGING_RECORDS_BUCKET = os.environ.get('ETL_LOGGING_RECORDS_BUCKET', '')
 

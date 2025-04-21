@@ -59,11 +59,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--db', default=f'idc_v{settings.CURRENT_VERSION}', help='Database on which to operate')
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    # parser.add_argument('--version', default=14)
     parser.add_argument('--dev_dataset', default=settings.BQ_DEV_INT_DATASET)
-    # parser.add_argument('--dev_dataset', default='idc_v14_dev')
     parser.add_argument('--pub_dataset', default=settings.BQ_DEV_EXT_DATASET)
-    # parser.add_argument('--pub_dataset', default='idc_v14_pub')
     args = parser.parse_args()
 
     validate_UIDs_match(args)

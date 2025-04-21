@@ -157,7 +157,7 @@ def load_meta(project, dataset, filenm,cptacRows):
 def checkData():  
   dataset_id=DEFAULT_PROJECT+'.'+DATASET
   client = bigquery.Client(project=DEFAULT_PROJECT)
-  query = "select distinct idc_webapp_collection_id, PatientID from "+DICOM_META+" order by idc_webapp_collection_id"
+  query = "select distinct collection_id, PatientID from "+DICOM_META+" order by idc_webapp_collection_id"
   job = client.query(query)
   ids={}
   for row in job.result():
@@ -286,17 +286,16 @@ def load_all(project,dataset,version,last_dataset, last_version):
   client.delete_dataset(dataset_id, delete_contents=True, not_found_ok=True)
   ds = client.create_dataset(dataset_id)
 
-  htan = addTables(project,dataset,version, "HTAN", None, HTAN_TABLES, HTAN_SRCS, "HTAN_Participant_ID",False, last_dataset, last_version)
+  bqSrcMetaTbl = []
+  bqSrcMetaCol = []
 
+  # We get HTAN and CPTAC tables from ISB-CGC and TCGA IDC BQ
+  htan = addTables(project,dataset,version, "HTAN", None, HTAN_TABLES, HTAN_SRCS, "HTAN_Participant_ID",False, last_dataset, last_version)
   cptac = addTables(project, dataset, version, "CPTAC", None, ["clinical"], [CPTAC_SRC], "submitter_id", False, last_dataset, last_version)
   tcga = addTables(project, dataset, version, "TCGA", None, ["clinical"], [TCGA_SRC], "case_barcode", False, last_dataset, last_version)
 
   bqSrcMetaTbl = htan[0]+cptac[0]+tcga[0]
   bqSrcMetaCol = htan[1]+cptac[1]+tcga[1]
-  '''
-  bqSrcMetaTbl = []
-  bqSrcMetaCol = []
-  '''
 
   create_meta_summary(project, dataset)
   create_meta_table(project, dataset)

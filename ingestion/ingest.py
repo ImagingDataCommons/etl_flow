@@ -48,8 +48,8 @@ def ingest(args):
         access = shared_memory.ShareableList(get_access_token())
         args.access = access
 
-        args.skipped_tcia_collections = list_skips(sess, 'tcia', args.skipped_tcia_collections)
-        args.skipped_idc_collections = list_skips(sess, 'idc', args.skipped_idc_collections)
+        args.skipped_tcia_collections = list_skips(sess, args.skipped_tcia_collections)
+        # args.skipped_idc_collections = list_skips(sess, 'idc', args.skipped_idc_collections)
 
         # Ccreate a table of collections for which tcia or idc ingestion or both, are to be skipped.
         # Populate with tcia skips
@@ -110,7 +110,7 @@ def ingest(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--num_processes', type=int, default=0, help="Number of concurrent processes")
+    parser.add_argument('--num_processes', type=int, default=8, help="Number of concurrent processes")
 
     parser.add_argument('--skipped_tcia_collections', nargs='*', \
             default=['NLST', 'APOLLO-5-ESCA', 'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-PAAD', 'APOLLO-5-THYM', \

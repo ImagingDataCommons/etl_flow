@@ -137,6 +137,7 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
         if any(revised):
             rev_study = clone_study(study, str(uuid4()))
             # rev_study.revised = True
+            rev_study.min_timestamp = datetime.utcnow()
             rev_study.done = False
             rev_study.is_new = False
             rev_study.expanded = False

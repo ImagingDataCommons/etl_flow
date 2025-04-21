@@ -28,11 +28,11 @@ if __name__ == '__main__':
     parser.add_argument('--sheet_name', default = f'idc_v{settings.CURRENT_VERSION}', help='Sheet within spreadsheet to load')
     parser.add_argument('--project', default='idc-dev-etl', help='BQ project')
     parser.add_argument('--bq_dataset_id', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ datasey')
-    parser.add_argument('--table_id', default='doi_to_class', help='Table name to which to copy data')
+    parser.add_argument('--table_id', default='doi_to_access', help='Table name to which to copy data')
     parser.add_argument('--columns', default=[], help='Columns in df to keep. Keep all if list is empty')
 
     args = parser.parse_args()
     print('args: {}'.format(args))
 
     load_spreadsheet(args)
-    # export_table(args)
+    export_table(args)

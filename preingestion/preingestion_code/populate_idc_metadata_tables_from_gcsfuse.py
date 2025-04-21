@@ -23,7 +23,7 @@
 # The script walks the directory hierarchy from a specified subdirectory of the
 # gcsfuse mount point
 
-from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, Collection, Patient
+from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, Collection, Patient, Study
 from preingestion.preingestion_code.gen_hashes_sql import gen_hashes
 from utilities.logging_config import successlogger, errlogger, progresslogger
 from base64 import b64decode
@@ -71,7 +71,7 @@ def build_series(client, args, sess, study, series_id, instance_id, hash, size, 
     series.license_url = args.license['license_url']
     series.license_long_name = args.license['license_long_name']
     series.license_short_name = args.license['license_short_name']
-    series.third_party = args.third_party
+    series.analysis_result = args.analysis_result
     series.source_doi = args.source_doi.lower()
     series.source_url = args.source_url.lower()
     series.versioned_source_doi = args.versioned_source_doi.lower()
@@ -142,7 +142,8 @@ def prebuild_from_gcsfuse(args):
             if page.num_items:
                 for blob in page:
                     if not blob.name.endswith(('DICOMDIR', '.txt', '.csv', '/')):
-                        with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
+                        with src_bucket.blob(blob.name).open('rb') as f:
+                        # with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
                             try:
                                 r = dcmread(f, specific_tags=['PatientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID'], stop_before_pixels=True)
                                 patient_id = r.PatientID
@@ -152,14 +153,24 @@ def prebuild_from_gcsfuse(args):
                                 if collection_map:
                                     collection_id = collection_map[patient_id]
                                 elif not args.collection_id:
-                                    # If a collection_id is not provided, search the many-to-many Collection-Patient
-                                    # hierarchy for patient patient_id and get its collection_id
-                                    # This assumes that all pathology patients also are radiology patents which is not
-                                    # necessarily the case.
+                                    # # If a collection_id is not provided, search the many-to-many Collection-Patient
+                                    # # hierarchy for patient patient_id and get its collection_id
+                                    # # This assumes that all pathology patients also are radiology patents which is not
+                                    # # necessarily the case.
+                                    # collection_id = sess.query(Collection.collection_id).distinct().join(
+                                    #     Collection.patients). \
+                                    #     filter(Patient.submitter_case_id == patient_id).one()[0]
+                                    # collection_ids = collection_ids | {collection_id}
+
+                                    # If a collection_id is not provided, search the many-to-many Collection-Patient-Study
+                                    # hierarchy for study and get its collection_id
+                                    # We cannot use the Collection-Patient hierarchy because the patient_id is not unique
+                                    #
                                     collection_id = sess.query(Collection.collection_id).distinct().join(
-                                        Collection.patients). \
-                                        filter(Patient.submitter_case_id == patient_id).one()[0]
+                                        Collection.patients).join(Patient.studies). \
+                                        filter(Study.study_instance_uid == study_id).one()[0]
                                     collection_ids = collection_ids | {collection_id}
+
                                 else:
                                     collection_id = args.collection_id
                             except Exception as exc:
@@ -176,7 +187,7 @@ def prebuild_from_gcsfuse(args):
                 collection_ids = set(collection_map.values())
             else:
                 collection_ids = [args.collection_id]
-        if args.third_party:
+        if args.analysis_result:
             if validate_analysis_result(args) == -1:
                 exit -1
         else:

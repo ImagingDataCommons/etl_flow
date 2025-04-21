@@ -25,44 +25,41 @@
 
 import sys
 import argparse
-import pathlib
-import subprocess
 
 from python_settings import settings
-from preingestion.preingestion_code.populate_idc_metadata_tables_from_gcsfuse import prebuild_from_gcsfuse
+from preingestion.preingestion_code.populate_idc_metadata_tables_from_manifest import prebuild_from_manifests
 from google.cloud import storage
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--processes', default=1)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--src_bucket', default='rms_segs_2024_06_27', help='Source bucket containing instances')
-    parser.add_argument('--mount_point', default='/mnt/disks/idc-etl/preeingestion_gcsfuse_mount_point', help='Directory on which to mount the bucket.\
-                The script will create this directory if necessary.')
-    # parser.add_argument('--subdir', default='10%2E5281%2Fzenodo%2E13244892', help="Subdirectory of mount_point at which to start walking directory")
+    parser.add_argument('--tmp_directory', default='/mnt/disks/idc-etl/tmp')
+    parser.add_argument('--src_bucket', default='ccdi_mci_pathology_converted_round3_v1_20250219_dac', help='Source bucket containing instances')
     parser.add_argument('--subdir', default='', help="Subdirectory of mount_point at which to start walking directory")
-    parser.add_argument('--collection_id', default='', help='collection_name of the collection or ID of analysis result to which instances belong.')
-    parser.add_argument('--source_doi', default='10.5281/zenodo.10462857', help='Unversioned DOI of this collection')
-    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.10462857', \
-                        help='Info page URL')
-    parser.add_argument('--versioned_source_doi', default='10.5281/zenodo.14041167', help='Versioned DOI of this collection')
+    parser.add_argument('--source_doi', default='10.5281/zenodo.11099086', help='Collection DOI')
+    parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.11099086',\
+                            help='Info page URL')
+    parser.add_argument('--versioned_source_doi', default='10.5281/zenodo.14941050', help='Collection DOI')
+    parser.add_argument('--manifests', default=[
+        ('identifiers.txt', 'partial_revision'),
+        ],
+        help="""List of manifests. Each is a pair of (manifest URL, manifest type) where manifest type is one of 
+            "full_revision", "partial_revision", or "partial_deletion".""")
+    parser.add_argument('--collection_id', default='CCDI-MCI', help='collection_name of the collection or ID of analysis result to which instances belong.')
     parser.add_argument('--license', default = {"license_url": 'https://creativecommons.org/licenses/by/4.0/',\
             "license_long_name": "Creative Commons Attribution 4.0 International License", \
             "license_short_name": "CC BY 4.0"}, help="(Sub-)Collection license")
-    parser.add_argument('--third_party', type=bool, default=True, help='True if an analysis result')
+    parser.add_argument('--analysis_result', type=bool, default=False, help='True if an analysis result')
     parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
-    parser.add_argument('--filter', default='', help='Only include blobs having args.filter in the blob name during validation')
+    parser.add_argument('--exclusion_filter', default='Ineligible', help='Ignore blob name during valadation if value is in blob name')
+    parser.add_argument('--inclusion_filter', default='', help='Only include blobs having args.inclusion_filter in the blob name during validation')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()
 
-    try:
-        # gcsfuse mount the bucket
-        pathlib.Path(args.mount_point).mkdir( exist_ok=True)
-        subprocess.run(['gcsfuse', '--implicit-dirs', args.src_bucket, args.mount_point])
-        prebuild_from_gcsfuse(args)
-    finally:
-        # Always unmount
-        subprocess.run(['fusermount', '-u', args.mount_point])
+    prebuild_from_manifests(args, sep='\t')
+
 

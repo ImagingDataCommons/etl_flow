@@ -87,7 +87,7 @@ def gen_collection_hashes(sess):
     pass
 
 def gen_hashes():
-    with sa_session(echo=True) as sess:
+    with sa_session(echo=False) as sess:
         gen_series_hashes(sess)
         gen_study_hashes(sess)
         gen_patient_hashes(sess)

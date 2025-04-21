@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# The values in this table (other than the uuids) are potential mutable.
+# The values in this table (other than the uuids) are potentially mutable.
 # The table can be used, by, e.g. joining it with dicom_all to obtain
 # the current values of these columns for data in previous IDC versions.
 
@@ -46,7 +46,7 @@ def gen_blob_table(args):
       license_short_name,
       license_url
     FROM
-      `{args.src_project}.{args.src_bqdataset_name}.all_joined`
+      `{args.src_project}.{args.src_bqdataset_name}.all_joined_public`
     ORDER BY
       crdc_study_uuid,
       crdc_series_uuid,
@@ -61,7 +61,7 @@ def gen_blob_table(args):
     results = query_BQ(client, args.trg_bqdataset_name, args.bqtable_name, query, write_disposition='WRITE_TRUNCATE')
     populated_table = client.get_table(f"{args.dst_project}.{args.trg_bqdataset_name}.{args.bqtable_name}")
     populated_table.schema = mutable_metadata_schema
-    populated_table.description = "Current values of metadata that might change over time"
+    populated_table.description = "Current values of public instance metadata that might have changed over time"
     client.update_table(populated_table, fields=["schema", "description"])
     successlogger.info('Created mutable_metadata table')
 

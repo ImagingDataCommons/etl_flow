@@ -18,17 +18,19 @@ if __name__=="__main__":
   shutil.rmtree(download_dir, ignore_errors=True)
   mkdir(download_dir)
 
+
   client = bigquery.Client(project='idc-dev-etl')
   client = bigquery.Client()
 
   ref_tbl= settings.DEV_PROJECT+'.'+settings.BQ_DEV_INT_DATASET+'.collection_id_map'
   query = "select distinct idc_webapp_collection_id  from `" + ref_tbl + "` order by `idc_webapp_collection_id`"
   job = client.query(query)
+  # ref = {'cptac_ccrcc':1}
   ref = {}
 
-  for row in job.result():
-    ref[row['idc_webapp_collection_id']] = 1
-
+  if not ref:
+    for row in job.result():
+      ref[row['idc_webapp_collection_id']] = 1
 
   tbl=settings.DEV_PROJECT+'.'+settings.BQ_DEV_INT_DATASET+'.tcia_clinical_and_related_metadata'
 
@@ -55,7 +57,7 @@ if __name__=="__main__":
         f.write(resp.content)
       ndata.append(id+'\t'+filenm+'\t'+download_type+'\n')
 
-  fl =open(download_dir+"/summary.txt","w+")
+  fl = open(download_dir+"/summary.txt","w+")
   fl.writelines(ndata)
   fl.close()
 

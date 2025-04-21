@@ -41,7 +41,7 @@ def validate_analysis_result(args):
         for page in iterator.pages:
             if page.num_items:
                 for blob in page:
-                    if not blob.name.endswith(('DICOMDIR','.zip','.csv', '/')) and args.filter in blob.name:
+                    if not blob.name.endswith(('DICOMDIR','.zip','.csv', '/')) and args.inclusion_filter in blob.name:
                         expected_blobs |= {f'gs://{args.src_bucket}/{blob.name}'}
 
         # # Generate a set of the URLs of blobs in the DB
@@ -52,8 +52,11 @@ def validate_analysis_result(args):
         #     for instance in series.instances:
         #         found_blobs |= {instance.ingestion_url}
 
-        found_blobs = sess.query(IDC_Series, IDC_Instance.ingestion_url).join(IDC_Instance.seriess).filter(
-            IDC_Series.versioned_source_doi == args.versioned_source_doi).all()
+        found_blobs = sess.query(IDC_Series, IDC_Instance.ingestion_url).join(IDC_Instance.seriess). \
+            filter(IDC_Series.versioned_source_doi == args.versioned_source_doi). \
+            filter(IDC_Series.ingestion_script == settings.BASE_NAME). \
+            filter(IDC_Instance.idc_version == args.version). \
+            all()
         found_blobs = set([row['ingestion_url'] for row in found_blobs])
 
         if expected_blobs != found_blobs:

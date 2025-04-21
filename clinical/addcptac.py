@@ -189,9 +189,9 @@ def copy_table(dataset_id, table_name, lst, src_table_id, id_col, intIds):
   return(nrows)
   kk=1
 
-
+# Return a dictionary indexed by collection_ids of collections in program
+# with a list of patient IDs for each collection
 def get_ids(program,collection):
-  cptac=[]
   client = bigquery.Client(project=DEFAULT_PROJECT)
   query = "select distinct t1.collection_id, PatientID from "+IDC_COLLECTION_ID_SRC+" t1,"+IDC_PATIENT_ID_SRC+" t2 where "
   if (program is not None):
@@ -202,20 +202,18 @@ def get_ids(program,collection):
           "order by t1.collection_id, PatientID"
   progresslogger.info(query)
   job = client.query(query)
-  cptac=[]
-  cptacDic={}
-  cptacCol=set()
+  program_Dic={}
   for row in job.result():
     idc_webapp=row['collection_id']
     patientID = row['PatientID']
 
-    if not idc_webapp in cptacDic:
-      cptacDic[idc_webapp]=[]
-    cptacDic[idc_webapp].append(patientID)
-  for collec in cptacDic:
-    cptacDic[collec].sort()
+    if not idc_webapp in program_Dic:
+      program_Dic[idc_webapp]=[]
+    program_Dic[idc_webapp].append(patientID)
+  for collec in program_Dic:
+    program_Dic[collec].sort()
 
-  return cptacDic
+  return program_Dic
 
 def addTables(proj_id, dataset_id, version,program,collection,types,table_srcs, id_col,intIds,dataset_id_lst,version_lst):
   nrows=[]

@@ -57,6 +57,10 @@ def get_dois_tcia(collection, patient="", third_party="no", server=""):
                     breakpoint()
                     seriesUID = series["seriesUID"]
                     series_dois[seriesUID] = {"source_doi": "10.7937/K9/TCIA.2017.7hs46erv", "versioned_source_doi": ""}
+                elif collection == 'CPTAC-PDA':
+                    breakpoint()
+                    seriesUID = series["seriesUID"]
+                    series_dois[seriesUID] = {"source_doi": "10.7937/K9/TCIA.2018.SC20FO18", "versioned_source_doi": ""}
                 else:
                     breakpoint()
                     errlogger.error(

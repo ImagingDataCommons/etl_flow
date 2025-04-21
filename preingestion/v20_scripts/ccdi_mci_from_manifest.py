@@ -45,7 +45,8 @@ if __name__ == '__main__':
     parser.add_argument('--third_party', type=bool, default=False, help='True if an analysis result')
     parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
-    parser.add_argument('--ignore_if_in', default='Ineligible', help='Ignore blob name during valadation if in blob name')
+    parser.add_argument('--exclusion_filter', default='Ineligible', help='Ignore blob name during valadation if in blob name')
+    parser.add_argument('--inclusion_filter', default='', help='Only include blobs having args.inclusion_filter in the blob name during validation')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

@@ -15,12 +15,22 @@
 #
 
 #### This is the first step in populating a DICOM store ####
-# We populate a bucket with all the instances in a version.
+# We populate three buckets with all the instances in a version.
+# These buckets correspond to data in the GCS idc-open-data, idc-open-cr
+# and idc-open-idc1 buckets.
+# The bucket of idc-open-data instances can be used by Google to populate
+# their DICOM store
 # Note that, for yet unexplained reasons, the process can
 # fail to copy some instances to the target bucket. Therefore,
 # this process should be rerun until the bucket is fully populated.
 # Because we may need to rerun this script more than once, we do not
 # empty the staging bucket when we begin.
+
+## Note: This script should typically be run with processes=512 and batch=100.
+## This requires a 16 core machine also will need to up the number of allowed
+## open files, e.g.:
+## ulimit -n 4000
+
 
 import sys
 import argparse
@@ -57,11 +67,11 @@ def get_dataset_operation(
     return response
 
 
-def create_staging_bucket(args):
-    client = storage.Client(project='idc-dev-etl')
+def create_import_bucket(args):
+    client = storage.Client(project=args.bucket_project)
 
     # Try to create the destination bucket
-    new_bucket = client.bucket(args.staging_bucket)
+    new_bucket = client.bucket(args.import_bucket_name)
     new_bucket.iam_configuration.uniform_bucket_level_access_enabled = True
     new_bucket.versioning_enabled = False
     try:
@@ -72,7 +82,7 @@ def create_staging_bucket(args):
         pass
     except Exception as e:
         # Bucket creation failed somehow
-        errlogger.error("Error creating bucket %s: %s",args.staging_bucket, e)
+        errlogger.error("Error creating bucket %s: %s",args.import_bucket_name, e)
         return(-1)
 
 def build_dones_table(args):
@@ -105,7 +115,7 @@ def build_dones_table(args):
 def copy_some_instances(args, client, uids, n):
     try:
         done = 0
-        dst_bucket = client.bucket(args.staging_bucket)
+        dst_bucket = client.bucket(args.import_bucket_name)
         for row in uids:
             blob_id = row['blob_id']
             BUCKET_TRIES = 10
@@ -177,58 +187,9 @@ def worker(input, args):
     return
 
 
-def populate_staging_bucket(args):
+def populate_import_buckets(args):
     client = bigquery.Client()
     dones = build_dones_table(args)
-
-    # try:
-    #     # Get the previously copied blobs
-    #     # done_instances = set(open(f'{args.log_dir}/insert_success.log').read().splitlines())
-    #     dones = open(f'{successlogger.handlers[0].baseFilename}').read().splitlines()
-    # except:
-    #     dones = []
-
-    # query = f"""
-    # WITH alls AS (
-    #     SELECT
-    #       CONCAT(aj.se_uuid, '/', aj.i_uuid, '.dcm') blob_id,
-    #     # If this series is new/revised in this version and we
-    #     # have not merged new instances into dev buckets
-    #     if(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
-    #         # We use the premerge url prefix
-    #         CONCAT('idc_v', {settings.CURRENT_VERSION},
-    #             '_',
-    #             i_source,
-    #             '_',
-    #             REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_')
-    #             ),
-    #
-    #     #else
-    #         # This instance is not new so use the staging (dev) bucket prefix
-    #          if( i_source='tcia', ac.dev_tcia_url, ac.dev_idc_url)
-    #         ) bucket
-    #       FROM
-    #         `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
-    #       JOIN
-    #         `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac
-    #       ON
-    #         collection_id = ac.tcia_api_collection_id
-    #       WHERE
-    #         i_excluded is False
-    #       AND
-    #         ((i_source='tcia' AND ac.tcia_access='Public' AND (ac.tcia_metadata_sunset=0 OR ({args.version} <= ac.tcia_metadata_sunset)))
-    #         OR (i_source='idc' AND ac.idc_access='Public' AND (ac.idc_metadata_sunset=0 OR ({args.version} <= ac.idc_metadata_sunset))))
-    #       AND
-    #         idc_version = {args.version}
-    #       {f"AND collection_id IN {args.collections}" if args.collections else ""}
-    #       )
-    # SELECT alls.*
-    # FROM alls
-    # LEFT JOIN {args.dones_table_id} dones
-    # ON alls.blob_id = dones.blob_id
-    # WHERE dones.blob_id IS Null
-    # ORDER BY blob_id
-    # """
 
     query = f"""
     WITH alls AS (
@@ -236,9 +197,9 @@ def populate_staging_bucket(args):
           CONCAT(se_uuid, '/', i_uuid, '.dcm') blob_id,
         # If this series is new/revised in this version and we 
         # have not merged new instances into dev buckets
-        IF(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+        IF(se_rev_idc_version = {args.version} and not {args.merged},
             # We use the premerge url prefix
-            CONCAT('idc_v', {settings.CURRENT_VERSION}, 
+            CONCAT('idc_v', {args.version}, 
                 '_',
                 i_source,
                 '_',
@@ -247,11 +208,11 @@ def populate_staging_bucket(args):
 
         #else
             # This instance is not new so use the public GCS bucket
-            dev_bucket) bucket
+            pub_gcs_bucket) bucket
         FROM
-          `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current`
-      
-        {f"WHERE collection_id IN {args.collections}" if args.collections else ""}
+          `{settings.DEV_PROJECT}.idc_v{args.version}_dev.all_joined_public_and_current`
+        WHERE pub_gcs_bucket = '{args.pub_gcs_bucket}'
+        {f"AND collection_id IN {args.collections}" if args.collections else ""}
     )
     SELECT alls.*
     FROM alls
@@ -278,12 +239,13 @@ def populate_staging_bucket(args):
             Process(group=None, target=worker, args=(task_queue, args)))
         processes[-1].start()
 
-   # Populate the staging bucket
+    # Populate the staging bucket
     n = dones
     for page in client.list_rows(destination, page_size=args.batch).pages:
         uuids = [{'blob_id':row.blob_id, 'bucket':row.bucket} \
             for row in page]
-        task_queue.put((uuids,n))
+        if uuids:
+            task_queue.put((uuids,n))
         n += args.batch
 
     # Tell child processes to stop
@@ -296,23 +258,32 @@ def populate_staging_bucket(args):
         process.join()
 
 
-def populate_bucket(args):
-    create_staging_bucket(args)
-    populate_staging_bucket(args)
+def populate_buckets(args):
+    for suffix in [
+        'idc-open-idc1',
+        'idc-open-cr',
+        'idc-open-data'
+    ]:
+        args.pub_gcs_bucket = suffix
+        args.import_bucket_name = f'dicom_store_import_v{args.version}_{suffix}'
+        ### Note: At this time buckets must be created from the console
+        # create_import_bucket(args)
+        populate_import_buckets(args)
 
 if __name__ == '__main__':
+    version = settings.CURRENT_VERSION
     parser = argparse.ArgumentParser()
+    parser.add_argument('--version', default=version)
     parser.add_argument('--client', default=storage.Client())
     parser.add_argument('--collections', default=(), help='Collections to include. If empty, include all collections')
-    parser.add_argument('--processes', default=1)
+    parser.add_argument('--bucket_project', default='nci-idc-bigquery-data', help='Project in which to build buckets')
+    parser.add_argument('--processes', default=256)
     parser.add_argument('--batch', default=1000)
     parser.add_argument('--dones_table_id', default='idc-dev-etl.whc_dev.step1_dones', help='BQ table from which to import dones')
     parser.add_argument('--log_dir', default=settings.LOG_DIR)
-    parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--merged', default=False, help='True if premerge buckets have been merged')
     args = parser.parse_args()
     args.id = 0 # Default process ID
-    args.staging_bucket = f'dicom_store_import_staging_v{settings.CURRENT_VERSION}'
     progresslogger.info(f"{args}")
 
-    populate_bucket(args)
+    populate_buckets(args)

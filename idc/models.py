@@ -36,17 +36,6 @@ Base = declarative_base()
 # These tables define the ETL database. There is a separate DB for each IDC version.
 # Note that earlier IDC versions used a one-to-many schema.
 
-class Concept_And_Versioned_Dois(Base):
-    __tablename__ = 'concept_and_version_dois'
-    conceptdoi = Column(String, primary_key=True)
-    versioned_doi = Column(String, nullable=True)
-
-class Zenodo_Dois(Base):
-    __tablename__ = 'zenodo_dois'
-    collection_id = Column(String, primary_key=True)
-    record_id = Column(String, nullable=True)
-    doi = Column(String, nullable=True)
-
 # Flattened hierarchy. The underlying PSQL is a view.
 class All_Joined(Base):
     __tablename__ = 'all_joined'
@@ -524,7 +513,7 @@ class Series(Base):
     license_long_name = Column(String, comment="Long name of license.")
     license_url = Column(String, comment="License URL of this series.")
     license_short_name = Column(String, comment='Short name of license')
-    third_party = Column(Boolean, comment='True if this series is from a third party, else False')
+    analysis_result = Column(Boolean, comment='True if this series is from an analysis result, else False')
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
     versioned_source_doi = Column(String, comment='If present, a DOI to the wiki page of this version of this series')
 
@@ -609,12 +598,14 @@ class IDC_Series(Base):
     excluded = Column(Boolean, default=False, comment='True if this series should be excluded from ingestion')
     source_doi = Column(String, comment='Source DOI of this series\' wiki')
     source_url = Column(String, comment='Source URL of this series\' wiki')
-    third_party = Column(Boolean, default=False, comment='True if from a third party analysis result')
+    analysis_result = Column(Boolean, comment='True if this series is from an analysis result, else False')
     license_url = Column(String, comment='URL of license description')
     license_long_name = Column(String, comment='Long name of license')
     license_short_name = Column(String, comment='short name of license')
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
     versioned_source_doi = Column(String, comment='If present, a DOI to the wiki page of this version of this series')
+    ingestion_script = Column(String, comment='Script which added this instance')
+
 
     study = relationship("IDC_Study", back_populates="seriess")
     instances = relationship("IDC_Instance", back_populates="seriess", order_by="IDC_Instance.sop_instance_uid", cascade="all, delete")
@@ -728,5 +719,10 @@ class Program(Base):
     tcia_wiki_collection_id = Column(String, primary_key=True, comment='Results ID')
     program = Column(String, comment='Descriptive title')
 
-
+class DOI_To_Access(Base):
+    __tablename__ = 'doi_to_access'
+    source_doi = Column(String, primary_key=True, comment='Source DOI of collections or analysis result')
+    type = Column(String, comment='One of "Cr", "Defaced", "Excluded", "Redacted"')
+    access = Column(String, comment='One of "Public", "Excluded", "Limited" ')
+    collection_id = Column(String, comment='Collection ID used by IDC webapp')
 

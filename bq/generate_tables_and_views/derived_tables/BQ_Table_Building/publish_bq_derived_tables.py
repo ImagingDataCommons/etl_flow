@@ -147,7 +147,7 @@ def make_schema_list(field_list):
             field_list = make_schema_list(sf["fields"])
             if not "description" in sf:
                 sf["description"] = "TBD"
-            next_field = bigquery.SchemaField(name=["name"], field_type=sf["type"], mode=sf["mode"], \
+            next_field = bigquery.SchemaField(name=sf["name"], field_type=sf["type"], mode=sf["mode"], \
                                               description=sf["description"], fields=field_list)
         else:
             try:
