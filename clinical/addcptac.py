@@ -215,7 +215,7 @@ def get_ids(program,collection):
 
   return program_Dic
 
-def addTables(proj_id, dataset_id, version,program,collection,types,table_srcs, id_col,intIds,dataset_id_lst,version_lst):
+def addTables(proj_id, dataset_id, version,program,collection,types,table_srcs, id_col,intIds,dataset_id_lst,version_lst, table_rec_srcs=[]):
   nrows=[]
   colrows=[]
   # Get HTAN patient IDs
@@ -230,7 +230,10 @@ def addTables(proj_id, dataset_id, version,program,collection,types,table_srcs, 
       table_name = collec + "_" + tbltype
       numr = copy_table(dataset_id, table_name, collec_id_mp[collec],table_src, id_col, intIds)
       if numr > 0:
-        table_src_rec=table_src
+        if len(table_rec_srcs) >= i+1:
+          table_src_rec = table_rec_srcs[i]
+        else:
+          table_src_rec=table_src
         nrows.extend(create_table_meta_row(collec, table_name, dataset_id, version,table_src, table_src_rec,dataset_id_lst,version_lst,tbltype))
         colrows.extend(create_column_meta_rows(collec, table_name, dataset_id))
   return([nrows,colrows])

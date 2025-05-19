@@ -87,9 +87,9 @@ def dcf_manifest(args, filename_prefix, source_doi, versioned_source_doi, servic
 
     if subcollection_name:
         subcollection_id = subcollection_name
-        file_name = f"{filename_prefix}-{subcollection_id}-idc_v{args.version}-{service}.csv"
+        file_name = f"{filename_prefix}-{subcollection_id}-idc_v{args.version}-{service}.dcf"
     else:
-        file_name = f"{filename_prefix}-idc_v{args.version}-{service}.csv"
+        file_name = f"{filename_prefix}-idc_v{args.version}-{service}.dcf"
 
     header = \
 f'''# To obtain GCS and AWS URLs of the instances in this manifest, 

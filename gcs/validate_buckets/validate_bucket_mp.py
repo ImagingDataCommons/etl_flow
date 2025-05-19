@@ -36,7 +36,6 @@ def get_expected_series_in_bucket(args, max_version):
         SELECT distinct se_uuid 
         FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
         WHERE se_rev_idc_version <= {max_version}
-        AND Access = '{args.access}'
         AND {"dev_bucket" if args.dev_or_pub == "dev" else "pub_gcs_bucket"}="{args.bucket}"
         {"" if args.dev_or_pub == "dev" else "AND i_excluded=FALSE"} AND i_redacted=FALSE
         ORDER BY se_uuid
@@ -53,7 +52,6 @@ def get_expected_blobs_in_bucket(args, max_version):
         SELECT distinct concat(se_uuid,'/', i_uuid, '.dcm') as blob_name
         FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
         WHERE se_rev_idc_version <= {max_version}
-        AND Access = '{args.access}'
         AND {"dev_bucket" if args.dev_or_pub == "dev" else "pub_gcs_bucket"}="{args.bucket}"
         {"" if args.dev_or_pub == "dev" else "AND i_excluded=FALSE"} AND i_redacted=FALSE
         ORDER BY blob_name

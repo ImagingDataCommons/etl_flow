@@ -67,7 +67,7 @@ if __name__ == '__main__':
         # gcsfuse mount the bucket
 
         pathlib.Path(args.mount_point).mkdir(exist_ok=True)
-        subprocess.run(['gcsfuse', '--implicit-dirs', args.src_bucket, args.mount_point])
+        result = subprocess.run(['gcsfuse', '--implicit-dirs', args.src_bucket, args.mount_point])
         prebuild_from_gcsfuse(args)
     finally:
         # Always unmount

@@ -120,9 +120,9 @@ if __name__ == "__main__":
     clinical_tables_list = tables_dict['clinical_tables']
 
     for table in regular_tables_list:
-        export_data_from_bigquery(bucket_id, dataset_name, table)
+        export_data_from_bigquery(bucket_id, dataset_name, table, overwrite=True)
     for table in clinical_tables_list:
-        export_data_from_bigquery(bucket_id, clinical_dataset_name, table)
+        export_data_from_bigquery(bucket_id, clinical_dataset_name, table, overwrite=True)
 
     dataset_name = 'idc_current'
     clinical_dataset_name = f'{dataset_name}_clinical'
