@@ -3,7 +3,7 @@ import json
 from os import listdir
 from os.path import isfile,join,splitext
 import sys
-from clinical.addcptac import addTables, CPTAC_SRC,TCGA_SRC,HTAN_SRCS,HTAN_TABLES
+from clinical.addcptac import addTables, CPTAC_SRC,TCGA_SRC, TCGA_REC_SRC, HTAN_SRCS,HTAN_TABLES
 from python_settings import settings
 
 from utilities.logging_config import successlogger, progresslogger, errlogger, warninglogger
@@ -292,7 +292,7 @@ def load_all(project,dataset,version,last_dataset, last_version):
   # We get HTAN and CPTAC tables from ISB-CGC and TCGA IDC BQ
   htan = addTables(project,dataset,version, "HTAN", None, HTAN_TABLES, HTAN_SRCS, "HTAN_Participant_ID",False, last_dataset, last_version)
   cptac = addTables(project, dataset, version, "CPTAC", None, ["clinical"], [CPTAC_SRC], "submitter_id", False, last_dataset, last_version)
-  tcga = addTables(project, dataset, version, "TCGA", None, ["clinical"], [TCGA_SRC], "case_barcode", False, last_dataset, last_version)
+  tcga = addTables(project, dataset, version, "TCGA", None, ["clinical"], [TCGA_SRC], "case_barcode", False, last_dataset, last_version, [TCGA_REC_SRC])
 
   bqSrcMetaTbl = htan[0]+cptac[0]+tcga[0]
   bqSrcMetaCol = htan[1]+cptac[1]+tcga[1]

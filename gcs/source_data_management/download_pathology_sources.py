@@ -14,22 +14,15 @@
 # limitations under the License.
 #
 
-"""
-Script to empty idc-open-idc bucket.
-"""
-
 import argparse
-from gcs.empty_bucket_mp.empty_bucket_mp import del_all_instances
-from utilities.logging_config import successlogger, progresslogger, errlogger
+import json
+from document_and_download_unconverted_tcia_pathology import main
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--processes', default=1)
+parser.add_argument('--mode', default='download')
+args = parser.parse_args()
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--processes', default=64   , help="Number of concurrent processes")
-    parser.add_argument('--batch', default=1000, help='Size of batch assigned to each process')
+print(f'args: {json.dumps(args.__dict__, indent=2)}')
 
-    args = parser.parse_args()
-
-    for bucket in ['dicom_store_import_v21_idc-open-data']:
-        args.bucket = bucket
-        del_all_instances  (args)
+main(args)
