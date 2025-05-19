@@ -187,7 +187,7 @@ SELECT
   mWithSourceSeries.sourceSegmentedSeriesUID,
   mWithSegmentation.segmentationInstanceUID,
   dicom_metadata.SeriesInstanceUID AS segmentationSeriesUID,
-  mWithSegmentation.segmentationSegmentNumber,
+  mWithSegmentation.segmentationSegmentNumber[SAFE_OFFSET(0)] as segmentationSegmentNumber,
   mWithID.contentSequence
 FROM
   measurementGroups_withTrackingUID AS mWithUID
