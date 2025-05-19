@@ -186,6 +186,7 @@ SELECT
   mWithFindingSite.findingSite,
   mWithSourceSeries.sourceSegmentedSeriesUID,
   mWithSegmentation.segmentationInstanceUID,
+  dicom_metadata.SeriesInstanceUID AS segmentationSeriesUID,
   mWithSegmentation.segmentationSegmentNumber,
   mWithID.contentSequence
 FROM
@@ -217,5 +218,9 @@ ON
   mWithID.SOPInstanceUID = mWithSegmentation.SOPInstanceUID
   AND mWithID.measurementGroup_number = mWithSegmentation.measurementGroup_number
   ---
+JOIN
+  `{project}.{dataset}.dicom_metadata` AS dicom_metadata
+ON
+  mWithSegmentation.segmentationInstanceUID = dicom_metadata.SOPInstanceUID
 ORDER BY
   trackingUniqueIdentifier

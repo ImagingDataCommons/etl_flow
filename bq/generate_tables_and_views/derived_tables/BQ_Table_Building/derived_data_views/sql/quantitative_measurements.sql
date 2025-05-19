@@ -8,6 +8,7 @@ WITH
 	  SeriesDescription,
     measurementGroup_number,
     segmentationInstanceUID,
+    segmentationSeriesUID,
     segmentationSegmentNumber,
     sourceSegmentedSeriesUID,
     trackingIdentifier,
