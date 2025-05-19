@@ -46,7 +46,7 @@
       },
       {
         "description": "SegmentNumber of the segment within the segmentation object referenced by segmentationInstanceUID defining the region of interest corresponding to the measurement.",
-        "mode": "REPEATED",
+        "mode": "NULLABLE",
         "name": "segmentationSegmentNumber",
         "type": "INTEGER"
       },

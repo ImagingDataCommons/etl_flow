@@ -128,7 +128,7 @@
       },
       {
         "description": "TBD",
-        "mode": "REPEATED",
+        "mode": "NULLABLE",
         "name": "segmentationSegmentNumber",
         "type": "INTEGER"
       },
