@@ -45,6 +45,12 @@
         "type": "STRING"
       },
       {
+        "description": "SeriesInstanceUID of the segmentation object defining the region of interest corresponding to the measurement.",
+        "mode": "NULLABLE",
+        "name": "segmentationSeriesUID",
+        "type": "STRING"
+      },
+      {
         "description": "SegmentNumber of the segment within the segmentation object referenced by segmentationInstanceUID defining the region of interest corresponding to the measurement.",
         "mode": "REPEATED",
         "name": "segmentationSegmentNumber",
