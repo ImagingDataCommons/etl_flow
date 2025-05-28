@@ -15,8 +15,7 @@
 #
 
 # Goal of this script was to zip instances in a series for all series in some specified bucket, copying resulting zip to
-# a specified GCS bucket. Unworkable because stream_zip doesn't actually stream when not compressing.
-
+# a specified GCS bucket.
 import argparse
 import json
 

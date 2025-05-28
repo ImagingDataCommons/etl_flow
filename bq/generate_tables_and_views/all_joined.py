@@ -161,7 +161,7 @@ def create_all_joined(client):
     view = bigquery.Table(view_id)
     view.view_query = f"""
 -- SELECT af.*, ac.source, ac.Class, ac.Access, ac.metadata_sunset, ac.dev_bucket, ac.pub_gcs_bucket, ac.pub_aws_bucket
-SELECT af.*, ac.source, ac.Type, ac.Access, ac.metadata_sunset, ac.pub_gcs_bucket, ac.pub_aws_bucket
+SELECT af.*, ac.source, ac.Type, ac.Access, ac.metadata_sunset, ac.dev_bucket, ac.pub_gcs_bucket, ac.pub_aws_bucket
 FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_flattened` af
 JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac
 ON af.source_doi = ac.source_doi 

@@ -25,5 +25,6 @@ parser.add_argument('--mode', default='gen_manifest')
 args = parser.parse_args()
 print(f'args: {json.dumps(args.__dict__, indent=2)}')
 
+# main(args, download_slugs=['nlst-da-path'])
 main(args)
 

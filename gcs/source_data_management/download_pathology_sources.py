@@ -21,8 +21,11 @@ from document_and_download_unconverted_tcia_pathology import main
 parser = argparse.ArgumentParser()
 parser.add_argument('--processes', default=1)
 parser.add_argument('--mode', default='download')
+parser.add_argument("--dst_bucket_prefix", default="", help="dst_bucket ID prefix")
+parser.add_argument("--dst_bucket_suffix", default="_pathology_data", help="dst_bucket ID suffix")
+parser.add_argument("--dst_project", default='idc-source-data', help="Project in which to create bucket")
 args = parser.parse_args()
 
 print(f'args: {json.dumps(args.__dict__, indent=2)}')
-
+download_slugs = ['cptac-ccrcc-da-path-nonccrcc']
 main(args)
