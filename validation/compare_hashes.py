@@ -32,7 +32,6 @@ from google.cloud import bigquery
 import zipfile
 import io
 import pydicom
-from google.cloud import bigquery
 
 from idc.models import Base, Version, All_Collections
 from sqlalchemy.orm import Session
@@ -46,7 +45,11 @@ from sqlalchemy_utils import register_composites
 
 # Get a list of instance md5 hashes from NBIA
 def get_instance_hashes(series_instance_uid, collection_id, access_token):
-    zip_file = io.BytesIO(get_images_with_md5_hash(series_instance_uid, access_token).content)
+    if collection_id == 'NLST':
+        # zip_file = io.BytesIO(get_images_with_md5_hash_nlst(series_instance_uid, access_token).content)
+        breakpoint()
+    else:
+        zip_file = io.BytesIO(get_images_with_md5_hash(series_instance_uid, access_token).content)
     zipfile_obj = zipfile.ZipFile(zip_file)
     try:
         md5_hashes = [row.decode().split(',')  for row in zipfile_obj.open("md5hashes.csv").read().splitlines()[1:]]
@@ -118,8 +121,13 @@ def compare_series_hashes(access_token, refresh_token, cur, args, collection, pa
     tcia_series = sorted(tcia_series, key=lambda id: id['SeriesInstanceUID'])
     for series in [series for series in idc_series if series.series_instance_uid not in only_idc]:
         try:
-            result = get_hash({'SeriesInstanceUID': series.series_instance_uid},
-                access_token=access_token)
+            if collection.collection_id == 'NLST':
+                # result = get_hash_nlst({'SeriesInstanceUID': series.series_instance_uid},
+                #     access_token=access_token)
+                breakpoint()
+            else:
+                result = get_hash({'SeriesInstanceUID': series.series_instance_uid},
+                    access_token=access_token)
 
             if result.status_code == 504:
                 progresslogger.info('se:            %-32s IDC: %s, error: %s, reason: %s', study.study_instance_uid, series.series_instance_uid, result.status_code,
@@ -164,8 +172,12 @@ def compare_study_hashes(access_token, refresh_token, sess, args, collection, pa
 
     for study in [study for study in idc_studies if study.study_instance_uid not in only_idc]:
         try:
-            result = get_hash({'StudyInstanceUID': study.study_instance_uid},
-                    access_token=access_token)
+            if collection.collection_id == 'NLST':
+               result = get_hash_nlst({'StudyInstanceUID': study.study_instance_uid},
+                        access_token=access_token)
+            else:
+                result = get_hash({'StudyInstanceUID': study.study_instance_uid},
+                        access_token=access_token)
             if result.status_code == 504:
                 progresslogger.info('st:        %-32s IDC: %s, error: %s, reason: %s', patient.submitter_uid, study.study_instance_uid, result.status_code,
                                 result.reason)
@@ -219,8 +231,13 @@ def compare_patient_hashes(access_token, refresh_token, sess, args, collection):
         patient = next(patient for patient in idc_patients if patient.submitter_case_id == patient_id)
         access_token, refresh_token = get_access_token(auth_server=NBIA_AUTH_URL)
         try:
-            result = get_hash(
-            {'Collection': collection.collection_id, 'PatientID': patient.submitter_case_id}, access_token=access_token)
+            # progresslogger.info('{}    {:32}'.format(n, patient.submitter_case_id))
+            if collection.collection_id == 'NLST':
+                result = get_hash_nlst(
+                {'Collection': collection.collection_id, 'PatientID': patient.submitter_case_id}, access_token=access_token)
+            else:
+                result = get_hash(
+                {'Collection': collection.collection_id, 'PatientID': patient.submitter_case_id}, access_token=access_token)
             if result.status_code == 504:
                 progresslogger.info('p:    %-32s error: %s, reason: %s', patient.submitter_case_id, result.status_code,
                                 result.reason)
@@ -242,7 +259,6 @@ def compare_patient_hashes(access_token, refresh_token, sess, args, collection):
             progresslogger.info('p:%-32s error: %s, reason: %s', patient.submitter_case_id, result.status_code, result.reason)
 
 def compare_collection_hashes(sess, args):
-    bq_client = bigquery.Client(project='idc-dev-etl')
 
     query = f"""
         SELECT tcia_api_collection_id, collection_hash
@@ -257,20 +273,13 @@ def compare_collection_hashes(sess, args):
     # redacted_collections = [collection.tcia_api_collection_id for collection in
     #                         sess.query(All_Collections.tcia_api_collection_id).\
     #                         filter(All_Collections.dev_tcia_url=='idc-dev-redacted')]
-    # included_collections = [collection.tcia_api_collection_id for collection in
-    #                         sess.query(All_Collections.tcia_api_collection_id). \
-    #                             filter(All_Collections.dev_tcia_url.in_(('idc-dev-open', 'idc-dev-cr', 'idc-dev-defaced')))]
-
-    query = f"""
-    SELECT collection_name
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections`
-    WHERE Access = 'Public'
-    """
-    public_collections = [row.collection_name for row in bq_client.query(query).result()]
+    included_collections = [collection.tcia_api_collection_id for collection in
+                            sess.query(All_Collections.tcia_api_collection_id). \
+                                filter(All_Collections.dev_tcia_url.in_(('idc-dev-open', 'idc-dev-cr', 'idc-dev-defaced')))]
 
     if args.collections == []:
         collections = [collection for collection in all_collections if
-                   collection.collection_id in public_collections]
+                   collection.collection_id in included_collections]
     else:
         collections = [collection for collection in all_collections if
                    collection.collection_id in args.collections]
@@ -279,12 +288,18 @@ def compare_collection_hashes(sess, args):
     for collection in collections:
         collection_id = collection.collection_id
         if collection_id not in skips:
-            access_token, refresh_token = get_access_token(auth_server=NBIA_AUTH_URL)
+            if collection_id == 'NLST':
+                access_token, refresh_token = get_access_token(auth_server=NLST_AUTH_URL)
+            else:
+                access_token, refresh_token = get_access_token(auth_server=NBIA_AUTH_URL)
             try:
                 if collection_id == 'APOLLO':
                     result, access_token, refresh_token = get_hash({'Collection': 'APOLLO-5-LSCC'}, access_token=access_token, refresh_token=refresh_token)
                 else:
-                    result = get_hash({'Collection': collection_id}, access_token=access_token)
+                    if collection_id == 'NLST':
+                        result = get_hash_nlst({'Collection': collection_id}, access_token=access_token)
+                    else:
+                        result = get_hash({'Collection': collection_id}, access_token=access_token)
 
                 if result.status_code == 504:
                     progresslogger.info('c:%-32s IDC: %s, error: %s, reason: %s', collection_id, collection.hashes.tcia, result.status_code, result.reason)
@@ -345,7 +360,7 @@ if __name__ == '__main__':
     # err_fh.setFormatter(errformatter)
     #
     # version = settings.CURRENT_VERSION
-    version = 21
+    version = 20
     parser = argparse.ArgumentParser()
     # parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
     parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
@@ -357,7 +372,7 @@ if __name__ == '__main__':
     parser.add_argument('--only_mismatches', default=False, help='Only log mismatching hashes')
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
                         help='Levels at which to log')
-    parser.add_argument('--collections', default=['CPTAC-UCEC'], \
+    parser.add_argument('--collections', default=['Spine-Mets-CT-SEG'], \
                         help='List of collections to compare. If empty, compare all collections')
     parser.add_argument('--patients', default = [],
                         help='List of patients to compare. If empty, compare all patients')
@@ -365,7 +380,7 @@ if __name__ == '__main__':
                         help='List of studies to compare. If empty, compare all studies')
     parser.add_argument('--series', default = [],
                         help='List of series to compare. If empty, compare all series')
-    parser.add_argument('--skips', default=['NLST'])
+    parser.add_argument('--skips', default=[])
 
     args = parser.parse_args()
     args.version = version

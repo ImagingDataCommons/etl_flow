@@ -34,13 +34,12 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 schema = [
     bigquery.SchemaField('Download_slug', 'STRING', mode='NULLABLE', description='TCIA collection manager slug of this download'),
-    bigquery.SchemaField('TCIA_collection_id', 'STRING', mode='NULLABLE', description='collection manager collection_short_title'),
-    bigquery.SchemaField('Collection_manager_slug', 'STRING', mode='NULLABLE', description='collection manager slug'),
+    bigquery.SchemaField('TCIA_collection_id', 'STRING', mode='NULLABLE', description='ID of parent tcia collection'),
     bigquery.SchemaField('TCIA_collection_version', 'STRING', mode='NULLABLE', description='Version of parent tcia collection'),
     bigquery.SchemaField('Download_title', 'STRING', mode='NULLABLE', description='Title of download'),
     bigquery.SchemaField('Download_type', 'STRING', mode='NULLABLE', description='Type of download'),
     bigquery.SchemaField('File_types', 'STRING', mode='NULLABLE', description='File types in download'),
-    bigquery.SchemaField('Download_size_GB', 'FLOAT', mode='NULLABLE', description='Download size'),
+    bigquery.SchemaField('Download_size_GB', 'STRING', mode='NULLABLE', description='Download size'),
     bigquery.SchemaField('Aspera_URL', 'STRING', mode='NULLABLE', description='Aspera url of this download'),
     bigquery.SchemaField('Init_download_date', 'DATETIME', mode='NULLABLE', description='Datetime of initial download version'),
     bigquery.SchemaField('Modified_download_date', 'DATETIME', mode='NULLABLE', description='Datetime of current download version'),
@@ -194,7 +193,6 @@ def main():
         for c in collections:
             if pdata['id'] in c['collection_downloads']:
                 pdata['parent_id'] = c['id']
-                pdata['collection_name'] = c['collection_short_title']
                 pdata['parent_slug'] = c['slug']
                 pdata['parent'] = c
                 pdata['parent_version'] = c['version_number']
@@ -202,7 +200,6 @@ def main():
         if 'parent' not in pdata:
             print(f'Did not find parent of {pdata["slug"]}')
             pdata['parent_id'] = ""
-            pdata['collection_name'] = ""
             pdata['parent_slug'] = ""
             pdata['parent'] = ""
 
@@ -236,8 +233,7 @@ def main():
         if v["parent_slug"]:
             data = {
                 'Download_slug': p,
-                'TCIA_collection_id': v["collection_name"],
-                'Collection_manager_slug':v["parent_slug"],
+                'TCIA_collection_id':v["parent_slug"],
                 'TCIA_collection_version': v['parent_version'],
                 'Download_title':v["download_title"],
                 'Download_type': str(v["download_type"]).replace("'", '"'),

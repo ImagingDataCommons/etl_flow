@@ -62,7 +62,6 @@ def get_non_tcia_license_info(client, args):
 # We assume the same license applies to both radiology and pathology except
 # for redacted collections.
 def get_tcia_license_info(client, args):
-    breakpoint() # Get the license info for all TCIA collections from the collection manager
     licenses = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_collection_license_info().items()}
     return licenses
 

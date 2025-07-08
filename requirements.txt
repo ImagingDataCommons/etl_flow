@@ -26,7 +26,6 @@ google-crc32c
 google-resumable-media
 googleapis-common-protos
 gspread
-jsondiff
 oauth2client
 pandas
 psycopg2

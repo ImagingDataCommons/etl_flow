@@ -23,8 +23,8 @@ from google.cloud  import storage
 import settings
 from document_and_download_unconverted_tcia_pathology import bucket_collection_id, get_collection, get_aspera_package_urls
 from utilities.logging_config import successlogger, progresslogger, errlogger
-# from time import strftime, gmtime
-from datetime import datetime
+from time import strftime, gmtime
+
 def gen_manifest_of_idc_missing_pathology_source(slug, aspera_file_names_slashed,
                                                  conversion_source_names, ingested_urls, aspera_files):
     in_aspera_not_idc_source_data = []
@@ -32,7 +32,7 @@ def gen_manifest_of_idc_missing_pathology_source(slug, aspera_file_names_slashed
         if not next((name for name in conversion_source_names if name.replace('/', '_').replace('-', '_').find(file.replace('/', '_').replace('-', '_')) >= 0), False):
             in_aspera_not_idc_source_data.append(file)
     successlogger.info(f"**** {len(in_aspera_not_idc_source_data)} files in Aspera package but not in idc-source-data")
-    if in_aspera_not_idc_source_data and args.list_file_names:
+    if in_aspera_not_idc_source_data:
         for file in in_aspera_not_idc_source_data:
             successlogger.info(file)
 
@@ -45,9 +45,8 @@ def gen_manifest_of_idc_missing_pathology_source(slug, aspera_file_names_slashed
         if not next((name for name in ingested_urls if name.replace('/', '_').replace('-', '_').find(file.replace('/', '_').replace('-', '_')) >= 0), False):
             in_idc_source_data_not_ingested_urls.append(file)
     successlogger.info(f"**** {len(in_idc_source_data_not_ingested_urls)} files in idc-source-data but not in ingestion urls ****")
-    if args.list_file_names:
-        for file in in_idc_source_data_not_ingested_urls:
-            successlogger.info(file)
+    for file in in_idc_source_data_not_ingested_urls:
+        successlogger.info(file)
 
     in_ingested_urls_not_idc_source_data = []
     if slug not in ['cptac-ccrcc-da-path-nonccrcc', 'nlst-da-path-1', 'nlst-da-path-2']:
@@ -58,9 +57,8 @@ def gen_manifest_of_idc_missing_pathology_source(slug, aspera_file_names_slashed
                 in_ingested_urls_not_idc_source_data.append(file)
         successlogger.info(
             f"**** {len(in_ingested_urls_not_idc_source_data)} files in ingestion urls but not in idc-source-data ****")
-        if args.list_file_names:
-            for file in in_ingested_urls_not_idc_source_data:
-                successlogger.info(file)
+        for file in in_ingested_urls_not_idc_source_data:
+            successlogger.info(file)
     else:
         successlogger.info(
             f"**** 0 files in ingestion urls but not in idc-source-data ****")
@@ -100,7 +98,7 @@ def main(args, download_slugs=[]):
 
     aspera_package_urls = get_aspera_package_urls()
     for _, package in aspera_package_urls.iterrows():
-        if args.download_slugs == [] or package['Download_slug'] in args.download_slugs:
+        if args.download_slugs == '' or package['Download_slug'] in args.download_slugs:
             idc_collection_id = package['IDC_collection_id']
             bucket_tag = bucket_collection_id(idc_collection_id)
 
@@ -131,10 +129,8 @@ if __name__ == "__main__":
     parser.add_argument("--dst_project", default='idc-source-data', help="Project in which to create bucket")
     parser.add_argument("--google_drive_folder", default="", help="Google Drive folder ID")
     parser.add_argument("--save_result", default=True, help="Save result to a Drive file if True")
-    parser.add_argument("--list_file_names", default=False, help="List file names in manigfest if True")
-    parser.add_argument("--download_slugs", default = [], help="Slugs to process; all if empty")
-    # parser.add_argument("--manifest_file_name", default= f'manifest_{strftime("%Y%m%d_%H%M%S", gmtime())}.txt')
-    parser.add_argument("--manifest_file_name", default= f'manifest_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt')
+    parser.add_argument("--download_slugs", default = ["cmb-aml-da-path"], help="Slugs to process; all if empty")
+    parser.add_argument("--manifest_file_name", default= f'manifest_{strftime("%Y%m%d_%H%M%S", gmtime())}.txt')
     args = parser.parse_args()
     print(f'args: {json.dumps(args.__dict__, indent=2)}')
 
