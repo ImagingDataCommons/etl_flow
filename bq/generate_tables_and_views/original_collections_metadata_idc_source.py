@@ -14,12 +14,11 @@
 # limitations under the License.
 #
 
-# Generate the analysis_results_descriptions table in BQ and PSQL from a
+# Generate the original_collections_metadata_idc_source table in BQ and PSQL from a
 # spreadsheet in Google Drive
 import settings
 import argparse
 from utils.google_sheet_to_bq_table import load_spreadsheet
-from utils.bq_table_to_cloudsql import export_table
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

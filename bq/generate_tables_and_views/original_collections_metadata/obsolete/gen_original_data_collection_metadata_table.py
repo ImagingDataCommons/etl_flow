@@ -23,7 +23,7 @@ from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json
 from bq.generate_tables_and_views.original_collections_metadata.schema import data_collections_metadata_schema
 from bq.utils.gen_license_table import get_original_collection_licenses
-from utilities.tcia_helpers import get_collection_descriptions_and_licenses, get_collection_license_info
+from utilities.tcia_helpers import get_collection_descriptions, get_collection_license_info
 from utilities.tcia_scrapers import scrape_tcia_data_collections_page
 from utilities.logging_config import successlogger, errlogger, progresslogger
 from python_settings import settings
@@ -254,10 +254,10 @@ def get_non_tcia_descriptions(client, args):
     return descriptions
 
 
-def get_all_descriptions_legacy(client, args):
-    collection_descriptions = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_collection_descriptions_and_licenses().items()}
-    collection_descriptions |=get_non_tcia_descriptions(client, args)
-    return collection_descriptions
+# def get_all_descriptions_legacy(client, args):
+#     collection_descriptions = {collection.lower().replace(' ','_').replace('-','_'): value for collection, value in get_collection_descriptions_and_licenses().items()}
+#     collection_descriptions |=get_non_tcia_descriptions(client, args)
+#     return collection_descriptions
 
 
 def get_all_descriptions(client, args):

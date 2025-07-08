@@ -27,12 +27,12 @@ from google.cloud import bigquery, storage
 import settings
 from utilities.bq_helpers import load_BQ_from_json
 # from original_collections_metadata.gen_original_data_collection_metadata_table import get_collection_descriptions_and_licenses
-from utilities.tcia_helpers import get_collection_descriptions_and_licenses
+from utilities.tcia_helpers import get_collection_descriptions
 
 def gen_table():
     bq_client = bigquery.Client(project='idc-dev-etl')
 
-    collections = [[key, value['description']] for  key, value in get_collection_descriptions_and_licenses().items()]
+    collections = [[key, value['description']] for key, value in get_collection_descriptions().items()]
 
     # query = f"""
     # SELECT idc_webapp_collection_id, description

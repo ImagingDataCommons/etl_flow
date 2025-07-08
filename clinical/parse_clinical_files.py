@@ -929,7 +929,8 @@ def nlst_handler(filenm, sheet_number, data_dict):
 
             for row_ind in range(bnd[0], bnd[1] + 1):
                 if (ws.cell(row=row_ind, column=4).value is not None) and ('=' in ws.cell(row=row_ind, column=4).value):
-                    vals = ws.cell(row=row_ind, column=4).value.split('=')
+                    breakpoint() # Validate the following (added the ", 1")
+                    vals = ws.cell(row=row_ind, column=4).value.split('=', 1)
                     option_code = vals[0].strip('"').strip("'")
                     option_description = vals[1].strip('"').strip("'")
                     if not ('opts' in data_dict[column]):

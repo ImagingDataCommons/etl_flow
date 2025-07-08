@@ -121,6 +121,7 @@ def get_patient_urls_idc(sess, collection, patient):
 # Get a per-series list of licenses for a patient. This routine finds series in
 # data sourced from TCIA.
 def get_licenses_tcia(collection, patient, third_party="no", server=""):
+    breakpoint() # Get license types from collection manager
     license_types = get_license_info()
     series_licenses = {}
     try:

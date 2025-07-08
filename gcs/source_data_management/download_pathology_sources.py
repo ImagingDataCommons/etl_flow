@@ -29,7 +29,7 @@ import time
 from subprocess import run
 
 
-ASPERA_DOWNLOAD_FOLDER = '/mnt/disks/aspera'
+ASPERA_DOWNLOAD_FOLDER = '/mnt/disks/idc-etl/aspera'
 
 def download_a_file(args, aspera_url, file, dst_bucket, TCIA_collection_version, slug, tag):
     # Download the file to disk
@@ -56,10 +56,10 @@ def download_a_file(args, aspera_url, file, dst_bucket, TCIA_collection_version,
         progresslogger.info(f'p{args.id}: Starting GCS transfer of {file["path"]}')
         if tag:
             res = run(['gsutil', '-m', '-q', 'cp', f'{ASPERA_DOWNLOAD_FOLDER}/{file["basename"]}',
-                       f'gs://{dst_bucket.name}/{tag}/v{TCIA_collection_version}/{slug}/{file["basename"]}'])
+                       f'gs://{dst_bucket.name}/{tag}/v{TCIA_collection_version}/{slug}/{"/".join(file["path"].split("/")[2:])}'])
         else:
             res = run(['gsutil', '-m', '-q', 'cp', f'{ASPERA_DOWNLOAD_FOLDER}/{file["basename"]}',
-                       f'gs://{dst_bucket.name}/v{TCIA_collection_version}/{slug}/{file["basename"]}'])
+                       f'gs://{dst_bucket.name}/v{TCIA_collection_version}/{slug}/{"/".join(file["path"].split("/")[2:])}'])
         gcs_delta = time.time() - gcs_start
 
         file_size = os.path.getsize(f'{ASPERA_DOWNLOAD_FOLDER}/{file["basename"]}')
@@ -141,9 +141,9 @@ def main(args, download_slugs=[]):
 
     aspera_package_urls = get_aspera_package_urls()
     for _, package in aspera_package_urls.iterrows():
-        if args.download_slugs == [] or package['slug'] in args.download_slugs:
-            idc_collection_id = package['IDC_collection_id']
-            bucket_tag = bucket_collection_id(idc_collection_id)
+        if args.download_slugs == [] or package['Download_slug'] in args.download_slugs:
+            tcia_collection_id = package['TCIA_collection_id']
+            bucket_tag = bucket_collection_id(tcia_collection_id).lower().replace('-', '_').replace(' ', '_')
 
             manifest_params = get_collection(args, package)
             aspera_files = manifest_params["aspera_files"]
@@ -154,12 +154,12 @@ def main(args, download_slugs=[]):
             aspera_url = package['Aspera_URL']
             slug = package['Download_slug']
 
-            if IDC_collection_name in ['NLST', 'ICDC-Glioma']:
-                tag = ''
-            elif IDC_collection_name == 'CPTAC-CCRCC':
+            if IDC_collection_name == 'CPTAC-CCRCC':
                 tag = 'CCRCC'
+            elif bucket_tag in ['cmb', 'cptac']:
+                 tag = aspera_files[0]['path'].split('/')[1]
             else:
-                tag = aspera_files[0]['path'].split('/')[1]
+                tag = ""
             progresslogger.info(manifest_params["logger_string"])
             download_from_aspera(
                 args, aspera_files, dones, conversion_source_names,
@@ -179,8 +179,7 @@ if __name__ == "__main__":
     parser.add_argument("--dst_project", default='idc-source-data', help="Project in which to create bucket")
     parser.add_argument("--google_drive_folder", default="", help="Google Drive folder ID")
     parser.add_argument("--save_result", default=True, help="Save result to a Drive file if True")
-    parser.add_argument("--download_slugs", default = [], help="Slugs to process; all if empty")
-    parser.add_argument("--manifest_file_name", default= f'manifest_{strftime("%Y%m%d_%H%M%S", gmtime())}.txt')
+    parser.add_argument("--download_slugs", default = ['post-nat-brca-da-path'], help="Slugs to process; all if empty")
     args = parser.parse_args()
     print(f'args: {json.dumps(args.__dict__, indent=2)}')
 
