@@ -15,7 +15,7 @@
 #
 
 # Generate the original_collections_descriptions_end_user table in BQ, from a
-# spreadsheet in Google Drive. These descriptions have "normal' hyperlinks...
+# spreadsheet in Google Drive. These descriptions have "normal" hyperlinks...
 # no warning about leaving a .gov website.
 import settings
 import argparse

@@ -25,8 +25,8 @@ import logging
 from utilities.logging_config import errlogger
 
 logger = logging.getLogger(__name__)
-from utilities.tcia_helpers import get_internal_series_ids, series_drill_down, get_TCIA_series_metadata, \
-    get_license_info
+from utilities.tcia_helpers import get_internal_series_ids, series_drill_down, get_all_tcia_metadata
+from utilities.tcia_helpers_v4 import get_TCIA_series_metadata_per_patient
 from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series
 from python_settings import settings
 
@@ -68,12 +68,26 @@ def get_dois_tcia(collection, patient="", third_party="no", server=""):
                     return {}
     return series_dois
 
+# Get a per-series list of source URLs for a patient. This routine finds series in
+# data sourced from TCIA.
+def get_patient_dois_tcia(collection, patient="", third_party="no", server=""):
+    series_urls = {}
+    series_metadata = get_TCIA_series_metadata_per_patient(collection, patient)
+    for series in series_metadata:
+        series_urls[series['SeriesInstanceUID']] = {
+            # Drop the https://doi.org/ part of the URL
+            "source_doi": series["CollectionURI"].split('/',3)[-1].lower(),
+            # TCIA doesn' provide versioned DOIs, so we set it to an empty string
+            "versioned_source_doi": ""
+        }
 
-def get_patient_dois_tcia(collection, patient):
-    server = "NLST" if collection=="NLST" else ""
-    dois = get_dois_tcia(collection, patient, third_party="no", server=server)
-    dois = dois | get_dois_tcia(collection, patient, third_party="yes", server=server)
-    return dois
+    return series_urls
+
+# def get_patient_dois_tcia(collection, patient):
+#     server = "NLST" if collection=="NLST" else ""
+#     dois = get_dois_tcia(collection, patient, third_party="no", server=server)
+#     dois = dois | get_dois_tcia(collection, patient, third_party="yes", server=server)
+#     return dois
 
 
 # Get a per-series list of source DOIs for a patient. This routine finds series in
@@ -94,8 +108,8 @@ def get_patient_dois_idc(sess, collection, patient):
 
 # Get a per-series list of source URLs for a patient. This routine finds series in
 # data sourced from TCIA.
-def get_patient_urls_tcia(collection, patient):
-    urls= get_patient_dois_tcia(collection, patient)
+def get_patient_urls_tcia_v2(collection, patient):
+    urls= get_dois_tcia(collection, patient)
     for series_instance_uid, doi in urls.items():
         urls[series_instance_uid] =f'https://doi.org/{doi.lower}'
     return urls
@@ -118,72 +132,86 @@ def get_patient_urls_idc(sess, collection, patient):
         return {}
 
 
+# # Get a per-series list of licenses for a patient. This routine finds series in
+# # data sourced from TCIA.
+# def get_licenses_tcia(collection, patient, third_party="no", server=""):
+#     license_types = get_license_info()
+#     series_licenses = {}
+#     try:
+#         internal_ids = get_internal_series_ids(collection, patient, third_party, server=server)
+#     except Exception as exc:
+#         print(f'Exception in get_analysis_collection_dois_tcia {exc}')
+#         logger.error('Exception in get_analysis_collection_dois_tcia %s', exc)
+#         raise exc
+#     for subject in internal_ids["resultSet"]:
+#         seriesIDs = []
+#         for study in subject["studyIdentifiers"]:
+#             seriesIDs.extend(study["seriesIdentifiers"])
+#         study_metadata = series_drill_down(seriesIDs)
+#         for study in study_metadata:
+#             for series in study["seriesList"]:
+#                 uri = series["descriptionURI"]
+#                 # If it's a doi.org uri, keep just the DOI
+#                 if 'doi.org' in uri:
+#                     uri = uri.split('doi.org/')[1]
+#                 seriesUID = series["seriesUID"]
+#                 series_metadata = \
+#                     get_TCIA_series_metadata(seriesUID)
+#                 if "License URL" in series_metadata:
+#                     series_licenses[seriesUID] = {
+#                         "license_url": series_metadata["License URL"],
+#                         "license_long_name": series_metadata["License Name"],
+#                         "license_short_name": license_types[series_metadata["License Name"]]['shortName']
+#                     }
+#                 elif collection in ['CPTAC-PDA', 'Breast-MRI-NACT-Pilot']:
+#                     series_licenses[seriesUID] = {
+#                         "license_url": license_types['Creative Commons Attribution 3.0 Unported License']["licenseURL"],
+#                         "license_long_name": license_types['Creative Commons Attribution 3.0 Unported License']["longName"],
+#                         "license_short_name": license_types['Creative Commons Attribution 3.0 Unported License']["shortName"]
+#                     }
+#                 elif collection == 'Adrenal-ACC-Ki67-Seg':
+#                     series_licenses[seriesUID] = {
+#                         "license_url": license_types['Creative Commons Attribution 4.0 International License']['licenseURL'],
+#                         "license_long_name": license_types['Creative Commons Attribution 4.0 International License']['longName'],
+#                         "license_short_name": license_types['Creative Commons Attribution 4.0 International License']['shortName']
+#                     }
+#                 elif collection == 'CT-Phantom4Radiomics':
+#                     series_licenses[seriesUID] = {
+#                     "license_url": license_types['Creative Commons Attribution 4.0 International License'][
+#                         'licenseURL'],
+#                     "license_long_name": license_types['Creative Commons Attribution 4.0 International License'][
+#                         'longName'],
+#                     "license_short_name": license_types['Creative Commons Attribution 4.0 International License'][
+#                         'shortName']
+#                 }
+#                 elif collection == 'Spine-Mets-CT-SEG':
+#                     series_licenses[seriesUID] = {
+#                     "license_url": license_types['Creative Commons Attribution 4.0 International License'][
+#                         'licenseURL'],
+#                     "license_long_name": license_types['Creative Commons Attribution 4.0 International License'][
+#                         'longName'],
+#                     "license_short_name": license_types['Creative Commons Attribution 4.0 International License'][
+#                         'shortName']
+#                 }
+#                 else:
+#                     breakpoint()
+#                     errlogger.error(f'No license info for {collection}/{patient}')
+#     return series_licenses
+
 # Get a per-series list of licenses for a patient. This routine finds series in
 # data sourced from TCIA.
 def get_licenses_tcia(collection, patient, third_party="no", server=""):
-    license_types = get_license_info()
+    # license_types = get_license_info()
+    license_types = {l['license_url']: l['license_label'] for l in get_all_tcia_metadata(type="licenses")}
     series_licenses = {}
-    try:
-        internal_ids = get_internal_series_ids(collection, patient, third_party, server=server)
-    except Exception as exc:
-        print(f'Exception in get_analysis_collection_dois_tcia {exc}')
-        logger.error('Exception in get_analysis_collection_dois_tcia %s', exc)
-        raise exc
-    for subject in internal_ids["resultSet"]:
-        seriesIDs = []
-        for study in subject["studyIdentifiers"]:
-            seriesIDs.extend(study["seriesIdentifiers"])
-        study_metadata = series_drill_down(seriesIDs)
-        for study in study_metadata:
-            for series in study["seriesList"]:
-                uri = series["descriptionURI"]
-                # If it's a doi.org uri, keep just the DOI
-                if 'doi.org' in uri:
-                    uri = uri.split('doi.org/')[1]
-                seriesUID = series["seriesUID"]
-                series_metadata = \
-                    get_TCIA_series_metadata(seriesUID)
-                if "License URL" in series_metadata:
-                    series_licenses[seriesUID] = {
-                        "license_url": series_metadata["License URL"],
-                        "license_long_name": series_metadata["License Name"],
-                        "license_short_name": license_types[series_metadata["License Name"]]['shortName']
-                    }
-                elif collection in ['CPTAC-PDA', 'Breast-MRI-NACT-Pilot']:
-                    series_licenses[seriesUID] = {
-                        "license_url": license_types['Creative Commons Attribution 3.0 Unported License']["licenseURL"],
-                        "license_long_name": license_types['Creative Commons Attribution 3.0 Unported License']["longName"],
-                        "license_short_name": license_types['Creative Commons Attribution 3.0 Unported License']["shortName"]
-                    }
-                elif collection == 'Adrenal-ACC-Ki67-Seg':
-                    series_licenses[seriesUID] = {
-                        "license_url": license_types['Creative Commons Attribution 4.0 International License']['licenseURL'],
-                        "license_long_name": license_types['Creative Commons Attribution 4.0 International License']['longName'],
-                        "license_short_name": license_types['Creative Commons Attribution 4.0 International License']['shortName']
-                    }
-                elif collection == 'CT-Phantom4Radiomics':
-                    series_licenses[seriesUID] = {
-                    "license_url": license_types['Creative Commons Attribution 4.0 International License'][
-                        'licenseURL'],
-                    "license_long_name": license_types['Creative Commons Attribution 4.0 International License'][
-                        'longName'],
-                    "license_short_name": license_types['Creative Commons Attribution 4.0 International License'][
-                        'shortName']
-                }
-                elif collection == 'Spine-Mets-CT-SEG':
-                    series_licenses[seriesUID] = {
-                    "license_url": license_types['Creative Commons Attribution 4.0 International License'][
-                        'licenseURL'],
-                    "license_long_name": license_types['Creative Commons Attribution 4.0 International License'][
-                        'longName'],
-                    "license_short_name": license_types['Creative Commons Attribution 4.0 International License'][
-                        'shortName']
-                }
-                else:
-                    breakpoint()
-                    errlogger.error(f'No license info for {collection}/{patient}')
+    series_metadata = get_TCIA_series_metadata_per_patient(collection, patient)
+    for series in series_metadata:
+        series_licenses[series['SeriesInstanceUID']] = {
+            "license_url": series["LicenseURI"],
+            "license_long_name": series["LicenseName"],
+            "license_short_name": license_types[series["LicenseURI"].replace("http:","https:")]
+        }
     return series_licenses
-
 
 # Get a per-series list of licenses for a patient. This routine finds series in
 # data sourced from TCIA.
@@ -238,8 +266,10 @@ if __name__ == "__main__":
     with Session(sql_engine) as sess:
 
         # access_token = get_access_token()
-        result = get_patient_licenses_tcia('CPTAC-PDA', 'C3L-05049', third_party="no", server="")
-        result = get_dois_tcia('CC-Tumor-Heterogeneity')
+        result = get_licenses_tcia('CPTAC-PDA', 'C3L-05049')
+        # result = get_patient_licenses_tcia('CPTAC-PDA', 'C3L-05049', third_party="no", server="")
+        result = get_patient_dois_tcia('CPTAC-PDA', 'C3L-05049')
+        result = get_patient_dois_tcia('CPTAC-PDA')
         from utilities.tcia_helpers import get_collection_values_and_counts
         collections = get_collection_values_and_counts()
         pass

@@ -199,7 +199,7 @@ def expand_collection(sess, args, all_sources, collection):
             progresslogger.info('  p%s: Patient %s unchanged',  args.pid, patient.submitter_case_id)
 
     for patient in retired_objects:
-        # breakpoint()
+        breakpoint()
         retire_patient(args, patient)
         collection.patients.remove(patient)
         progresslogger.info('  p%s: Patient %s is retired', args.pid, patient.submitter_case_id)

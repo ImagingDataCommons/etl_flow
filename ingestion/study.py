@@ -154,8 +154,11 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
             progresslogger.debug('      p%s: Series %s unchanged',  args.pid, series.series_instance_uid)
 
     for series in retired_objects:
+        breakpoint()
         retire_series(args, series)
         study.seriess.remove(series)
+        progresslogger.info('  p%s: Series %s is retired', args.pid, series.series_instance_uid)
+
 
     study.expanded = True
     sess.commit()

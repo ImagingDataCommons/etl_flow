@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Backup GCS instances to be redacted to the mitigation project
+# Backup GCS instances to be redacted to a bucket in default project.
 import settings
 import argparse
 import json

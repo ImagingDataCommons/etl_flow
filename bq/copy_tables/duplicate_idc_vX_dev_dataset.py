@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Copy an idc_dev_etl.idc_vX_dev to another version
+# Copy an idc_dev_etl.idc_v<X-1>_dev to idc_dev_etl.idc_vX_dev where X is CURRENT_VERSION.
 import argparse
 import json
 import settings
