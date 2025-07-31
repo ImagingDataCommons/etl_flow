@@ -14,17 +14,18 @@
 # limitations under the License.
 #
 
-# Backup GCS instances to be redacted to a bucket in default project.
-import settings
-import argparse
-import json
 from google.cloud import bigquery, storage
 from utilities.logging_config import successlogger, progresslogger, errlogger
+import settings
+import argparse
+import boto3
+from botocore.exceptions import ClientError
 
 def get_redactions(args):
     client = bigquery.Client()
+
     query = f"""
-    SELECT DISTINCT collection_id, pub_gcs_bucket, CONCAT(se_uuid, '/', i_uuid, '.dcm') blob_name
+    SELECT DISTINCT dev_bucket, pub_aws_bucket, CONCAT(se_uuid, '/', i_uuid, '.dcm') as blob_name
     FROM `{settings.DEV_MITIGATION_PROJECT}.mitigation.redactions`
     """
 
@@ -36,28 +37,28 @@ def get_redactions(args):
 
     return results
 
-def backup_redactions(args):
-    client = storage.Client()
+
+def validate_redactions(args):
+    s3 = boto3.client('s3')
+    # Get list of previously deleted blobs
+    dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
     instances = get_redactions(args)
-
     for instance in instances:
-        src_bucket = client.bucket(instance['pub_gcs_bucket'])
-        src_blob = src_bucket.blob(f'{instance["blob_name"]}')
-        trg_bucket = client.bucket(args.trg_bucket)
-
-        blob_copy = src_bucket.copy_blob(
-            src_blob, trg_bucket
-        )
-        successlogger.info(instance['blob_name'] + ' copied to ' + args.trg_bucket)
-
-    pass
+        try:
+            s3.head_object(Bucket=instance['pub_aws_bucket'], Key=instance["blob_name"])
+            errlogger.error(f'{instance["pub_aws_bucket"]}/{instance["blob_name"]} still exists')
+        except ClientError as e:
+            if e.response['Error']['Code'] == '404':
+                successlogger.info(f'{instance["pub_aws_bucket"]}/{instance["blob_name"]}')
+            else:
+                # Handle other potential errors (e.g., permissions)
+                errlogger.error(f"An error occurred: {e}")
+                return False
 
 if __name__ == '__main__':
     # (sys.argv)
     parser = argparse.ArgumentParser()
-    parser.add_argument('--trg_bucket', default='redacted_instances', help='Bucket to which to backup redacted instances')
-
     args = parser.parse_args()
 
-    backup_redactions(args)
+    validate_redactions(args)
 

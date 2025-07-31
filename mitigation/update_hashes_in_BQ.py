@@ -14,8 +14,8 @@
 # limitations under the License.
 #
 
-# This script deletes redacted instances from specified BQ tables. 
-# The script depends on the existence of a BQ tables that enumerates the redacted instances.
+# This script updates the hashes in the auxiliary_metadata and dicom_all tables now that redacted
+# instances have been deleted from these tables.
 
 import settings
 import argparse
@@ -31,7 +31,7 @@ def gen_hash_table(args):
     WITH redacted AS (
       SELECT DISTINCT uuid as i_uuid, `hash` instance_hash
       FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.instance` i
-      WHERE redacted=TRUE
+      WHERE redacted=TRUE and mitigation = '{args.mitigation_id}'
     )
     SELECT DISTINCT
         v.version,
@@ -64,7 +64,7 @@ def gen_hash_table(args):
      JOIN redacted ON si.instance_uuid = redacted.i_uuid
      ORDER BY v.version, collection_id, submitter_case_id, study_instance_uid, series_instance_uid
     """
-    destination = f'{settings.DEV_PROJECT}.mitigation.hashes'
+    destination = f'{settings.DEV_MITIGATION_PROJECT}.mitigation.hashes'
     job_config = bigquery.QueryJobConfig(
         destination=destination,
         write_disposition='WRITE_TRUNCATE'
@@ -86,7 +86,7 @@ def update_hashes(args, table_ids):
         query = f"""
 UPDATE `{args.trg_project}.{args.trg_dataset}.{table}` t
 SET series_hash = hashes.series_hash 
-FROM `{args.trg_project}.mitigation.hashes` hashes
+FROM `{settings.DEV_MITIGATION_PROJECT}.mitigation.hashes` hashes
 WHERE hashes.version = {version}
 AND t.SeriesInstanceUID = hashes.series_instance_uid
 """
@@ -102,7 +102,7 @@ AND t.SeriesInstanceUID = hashes.series_instance_uid
         query = f"""
 UPDATE `{args.trg_project}.{args.trg_dataset}.{table}` t
 SET study_hash = hashes.study_hash 
-FROM `{args.trg_project}.mitigation.hashes` hashes
+FROM `{settings.DEV_MITIGATION_PROJECT}.mitigation.hashes` hashes
 WHERE hashes.version = {version}
 AND t.StudyInstanceUID = hashes.study_instance_uid
 """
@@ -118,7 +118,7 @@ AND t.StudyInstanceUID = hashes.study_instance_uid
         query = f"""
 UPDATE `{args.trg_project}.{args.trg_dataset}.{table}` t
 SET patient_hash = hashes.patient_hash 
-FROM `{args.trg_project}.mitigation.hashes` hashes
+FROM `{settings.DEV_MITIGATION_PROJECT}.mitigation.hashes` hashes
 WHERE hashes.version = {version}
 AND t.{'submitter_case_id' if table=='auxiliary_metadata' else 'PatientID'} = hashes.submitter_case_id
 """
@@ -134,7 +134,7 @@ AND t.{'submitter_case_id' if table=='auxiliary_metadata' else 'PatientID'} = ha
         query = f"""
 UPDATE `{args.trg_project}.{args.trg_dataset}.{table}` t
 SET collection_hash = hashes.collection_hash 
-FROM `{args.trg_project}.mitigations.{args.mitigation_id}_hashes` hashes
+FROM `{settings.DEV_MITIGATION_PROJECT}.mitigation.hashes` hashes
 WHERE hashes.version = {version}
 AND t.{args.collection_id} = hashes.collection_id
 """
@@ -153,8 +153,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--dev_project', default=settings.DEV_PROJECT, help="Project containing mitigation dataset")
-    parser.add_argument('--range', default = [1,18], help='Range of versions over which to clone')
-    parser.add_argument('--dry_run', default=False, help='Perform a BQ dry run')
+    parser.add_argument('--range', default = [2,18], help='Range of versions over which to clone')
+    parser.add_argument('--mitigation_id', default='m2', help='ID of this mitigation event')
+    parser.add_argument('--dry_run', default=False
+
+                        , help='Perform a BQ dry run')
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
@@ -173,13 +176,19 @@ if __name__ == '__main__':
                 table_ids = (
                     "auxiliary_metadata",
                 )
-                args.trg_dataset = f'idc_v{version}_pub'
+                if project == settings.DEV_PROJECT:
+                    args.trg_dataset = f'idc_v{version}_pub'
+                else:
+                    args.trg_dataset = f'idc_v{version}'
             elif version <=18:
                 table_ids = (
                     "auxiliary_metadata",
                     "dicom_all"
                 )
-                args.trg_dataset = f'idc_v{version}_pub'
+                if project == settings.DEV_PROJECT:
+                    args.trg_dataset = f'idc_v{version}_pub'
+                else:
+                    args.trg_dataset = f'idc_v{version}'
             else:
                 errlogger.error("Revise this script for newer versions")
 

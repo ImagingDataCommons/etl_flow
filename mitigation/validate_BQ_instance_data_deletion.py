@@ -101,9 +101,10 @@ if __name__ == '__main__':
     # (sys.argv)
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
-    parser.add_argument('--dev_project', default=settings.DEV_PROJECT, help="Project containing mitigation dataset")
+    parser.add_argument('--dev_project', default=settings.DEV_MITIGATION_PROJECT, help="Project containing mitigation dataset")
     parser.add_argument('--redactions_table', default='redactions', help='ID of this mitigation event')
-    parser.add_argument('--range', default = [1,settings.CURRENT_VERSION], help='Range of versions over which to clone')
+    # parser.add_argument('--range', default = [1,settings.CURRENT_VERSION], help='Range of versions over which to clone')
+    parser.add_argument('--range', default = [2,18], help='Range of versions over which to clone')
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')

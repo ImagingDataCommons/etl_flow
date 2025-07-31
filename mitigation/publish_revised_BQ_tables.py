@@ -21,7 +21,8 @@ import argparse
 import json
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from google.cloud import bigquery
-from bq.release_bq_data.publish_dataset import publish_dataset
+# from bq.release_bq_data.publish_dataset import publish_dataset
+from bq.copy_tables.copy_dataset import copy_dataset
 
 
 if __name__ == '__main__':
@@ -29,7 +30,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--dev_project', default=settings.DEV_PROJECT, help="Project containing mitigation dataset")
-    parser.add_argument('--range', default = [1,settings.CURRENT_VERSION], help='Range of versions over which to publish')
+    # parser.add_argument('--range', default = [1,settings.CURRENT_VERSION], help='Range of versions over which to publish')
+    parser.add_argument('--range', default = [2,18], help='Range of versions over which to publish')
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
@@ -141,6 +143,6 @@ if __name__ == '__main__':
         args.src_dataset = f'idc_v{version}'
         args.trg_dataset = f'idc_v{version}'
 
-        publish_dataset(args, table_ids, skipped_table_ids={}, copy_views=False)
+        copy_dataset(args, table_ids, skipped_table_ids={}, copy_views=False)
 
 

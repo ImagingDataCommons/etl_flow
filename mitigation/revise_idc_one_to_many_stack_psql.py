@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Mark instances, series, etc. as redacted in BQ tables that
+# Mark instances, series, etc. as redacted in PSQL tables that
 # document IDC sourced data. Hashes are revised as needed.
 # These tables have three forms:
 # v3-v6: A single wsi_metadata table
@@ -32,16 +32,25 @@ import settings
 def deprecate_instance(sess, idc_version, mitigation_id):
 
     # First mark redacted instances
+#     query = f"""
+# UPDATE idc_instance AS i
+# SET
+#     redacted = True,
+#     mitigation = '{mitigation_id}'
+# FROM {mitigation_id} AS d
+# WHERE i.sop_instance_uid=d.sop_instance_uid
+# AND d.i_rev_idc_version <= {idc_version}
+# AND ({idc_version} <= d.i_final_idc_version OR d.i_final_idc_version = 0 )
+# """
     query = f"""
-UPDATE idc_instance AS i
-SET
-    redacted = True,
-    mitigation = '{mitigation_id}'
-FROM {mitigation_id} AS d
-WHERE i.sop_instance_uid=d.sop_instance_uid 
-AND d.i_rev_idc_version <= {idc_version}  
-AND ({idc_version} <= d.i_final_idc_version OR d.i_final_idc_version = 0 )
-"""
+    UPDATE idc_instance AS i
+    SET
+        redacted = True,
+        mitigation = '{mitigation_id}'
+    FROM {mitigation_id} AS d
+    WHERE i.sop_instance_uid=d.sop_instance_uid 
+    """
+    breakpoint() # This path
     try:
         result = sess.execute(query)
     except Exception as exc:
@@ -91,6 +100,7 @@ WHERE {parent_alias}.{parent_id}=redactions.parent_id
 
 
 if __name__ == "__main__":
+    breakpoint() # This script has never been executed. SQL is suspect. What if redactions apply only to previous version?
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--mitigation_id', default='m1', help='ID of this mitigation event')

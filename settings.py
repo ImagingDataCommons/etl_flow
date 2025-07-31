@@ -30,7 +30,7 @@ SECURE_LOCAL_PATH = os.environ.get('SECURE_LOCAL_PATH', '')
 LOG_PATH = os.environ.get('LOG_PATH','/mnt/disks/idc-etl/logs')
 
 if not exists(join(dirname(__file__), SECURE_LOCAL_PATH, '.env')):
-    print("[ERROR] Couldn't open .env.idc-dev-etl file expected at {}!".format(
+    print("[ERROR] Couldn't open .env file expected at {}!".format(
         join(dirname(__file__), SECURE_LOCAL_PATH, '.env'))
     )
     print("[ERROR] Exiting settings.py load - check your Pycharm settings and secure_path.env file.")
@@ -144,3 +144,12 @@ ZENODO_ACCESS_TOKEN = os.environ.get('ZENODO_ACCESS_TOKEN', '')
 
 CREDENTIALS_PATH = os.environ.get("CREDENTIALS_PATH")
 
+AWS_ADMIN_ID = os.environ.get('AWS_ADMIN_ID', '')
+os.putenv('AWS_ACCESS_KEY_ID', AWS_ADMIN_ID)
+AWS_ADMIN_SECRET = os.environ.get('AWS_ADMIN_SECRET', '')
+os.putenv('AWS_SECRET_ACCESS_KEY', AWS_ADMIN_SECRET)
+
+AWS_ID = os.environ.get('AWS_ID', '')
+os.putenv('AWS_ACCESS_KEY_ID', AWS_ID)
+AWS_SECRET = os.environ.get('AWS_SECRET', '')
+os.putenv('AWS_SECRET_ACCESS_KEY', AWS_SECRET)

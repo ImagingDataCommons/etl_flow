@@ -15,7 +15,7 @@
 #
 
 
-# Generate a manifest of new instance version in some set of IDC versions
+# Generate a manifest of instances to be de-indexed by DCF
 
 import argparse
 import settings
@@ -38,7 +38,7 @@ def gen_deindex_manifest(args):
           CONCAT('gs://', pub_gcs_bucket,'/', se_uuid, '/', i_uuid, '.dcm', ', s3://', pub_aws_bucket, '/', se_uuid, '/', i_uuid, '.dcm')
         ) urls
       FROM
-        `idc-dev-etl.mitigation.redactions`    
+        `{settings.DEV_MITIGATION_PROJECT}.mitigation.redactions`    
     )
     SELECT
       CONCAT('dg.4DFC/',i_uuid) GUID,

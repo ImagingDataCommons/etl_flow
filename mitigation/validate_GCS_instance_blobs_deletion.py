@@ -16,6 +16,7 @@
 
 # Delete redacted blobs from both dev (idc-dev-etl) and public bucket
 import argparse
+import json
 import sys
 from google.cloud import storage, bigquery
 import settings
@@ -28,7 +29,7 @@ def get_redactions(version):
     client = bigquery.Client()
     query = f"""
     SELECT DISTINCT dev_bucket, pub_gcs_bucket, se_uuid, i_uuid
-    FROM `{settings.DEV_PROJECT}.mitigation.redactions`
+    FROM `{settings.DEV_MITIGATION_PROJECT}.mitigation.redactions`
     """
 
     try:
@@ -44,19 +45,25 @@ def validate_redactions(args):
     # Get list of previously deleted blobs
     dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
     instances = get_redactions(args)
+    if args.delete_entire_series:
+        set_of_series = set([json.dumps({"bucket_name": instance["dev_bucket"], "se_uuid": instance['se_uuid']}) for instance in instances])
+        series = [json.loads(series) for series in set_of_series]
+        for series in series:
+            if f'{series["bucket_name"]}/{series["se_uuid"]}.zip' not in dones:
+                # Delete the entire series from the archive bucket
+                bucket = client.bucket(series["bucket_name"])
+                if bucket.blob(f'{series["se_uuid"]}.zip').exists():
+                    errlogger.error(f'{series["bucket_name"]}/{series["se_uuid"]}.zip')
+                else:
+                    successlogger.info(f'{series["bucket_name"]}/{series["se_uuid"]}.zip')
+    else:
+        # We need to validate that instances have been archived zip files.
+        # Propose gcsfuse mounting a bucket and using the zipfile module to verify that a blob is no longer in the archive.
+        breakpoint()
+
+
     for instance in instances:
         blob_name = f'{instance["se_uuid"]}/{instance["i_uuid"]}.dcm'
-
-        # Delete the blob from the dev bucket
-        bucket_name = instance['dev_bucket']
-        bucket = client.bucket(bucket_name)
-        if f'{bucket_name}/{blob_name}' not in dones:
-            if bucket.blob(blob_name).exists():
-                errlogger.error(f'{bucket_name}/{blob_name}')
-            else:
-                successlogger.info(f'{bucket_name}/{blob_name}')
-
-        # Delete the blob from the public GCS bucket
         bucket_name = instance['pub_gcs_bucket']
         bucket = client.bucket(bucket_name)
         if f'{bucket_name}/{blob_name}' not in dones:
@@ -69,6 +76,7 @@ def validate_redactions(args):
 if __name__ == '__main__':
     # (sys.argv)
     parser = argparse.ArgumentParser()
+    parser.add_argument('--delete_entire_series', default="True", help='Delete entire series from the archive bucket if True')
     args = parser.parse_args()
 
     validate_redactions(args)
