@@ -25,7 +25,7 @@ def get_redactions(args):
     client = bigquery.Client()
     query = f"""
     SELECT DISTINCT collection_id, pub_gcs_bucket, CONCAT(se_uuid, '/', i_uuid, '.dcm') blob_name
-    FROM `{settings.DEV_MITIGATION_PROJECT}.mitigation.redactions`
+    FROM `{settings.DEV_MITIGATION_PROJECT}.m{settings.MITIGATION_VERSION}.redactions`
     """
 
     try:
@@ -45,9 +45,34 @@ def backup_redactions(args):
         src_blob = src_bucket.blob(f'{instance["blob_name"]}')
         trg_bucket = client.bucket(args.trg_bucket)
 
-        blob_copy = src_bucket.copy_blob(
-            src_blob, trg_bucket
-        )
+        dst_blob = trg_bucket.blob(instance["blob_name"])
+        rewrite_token = False
+        while True:
+            try:
+                rewrite_token, bytes_rewritten, total_bytes = dst_blob.rewrite(
+                    src_blob, token=rewrite_token
+                )
+                if not rewrite_token:
+                    successlogger.info(f'{instance["blob_name"]}')
+                    break
+            except AttributeError as exc:
+                errlogger.warning(
+                    f"p{args.id}: Trying to create bucket: {exc}; attempt {i}\n")
+                sleep(1)
+            except TooManyRequests as exc0:
+                errlogger.warning(
+                    f"p{args.id}: Blob: Too many requests: {repr(exc0)};  {exc0}")
+                sleep(1)
+            except ServiceUnavailable as exc0:
+                errlogger.warning(
+                    f"p{args.id}: Blob: Service unavailable: {repr(exc0)};  {exc0}")
+                sleep(1)
+            except NotFound as exc:
+                errlogger.error(
+                    f"p{args.id}: Blob: Source blob {row['bucket']}/{blob_id} not found")
+                break
+
+                break
         successlogger.info(instance['blob_name'] + ' copied to ' + args.trg_bucket)
 
     pass
@@ -55,7 +80,7 @@ def backup_redactions(args):
 if __name__ == '__main__':
     # (sys.argv)
     parser = argparse.ArgumentParser()
-    parser.add_argument('--trg_bucket', default='redacted_instances', help='Bucket to which to backup redacted instances')
+    parser.add_argument('--trg_bucket', default=f'm{settings.MITIGATION_VERSION}_redacted_instances', help='Bucket to which to backup redacted instances')
 
     args = parser.parse_args()
 

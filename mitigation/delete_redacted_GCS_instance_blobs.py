@@ -34,7 +34,7 @@ def get_redactions(version):
     client = bigquery.Client()
     query = f"""
     SELECT DISTINCT dev_bucket, pub_gcs_bucket, se_uuid, i_uuid
-    FROM `{settings.DEV_MITIGATION_PROJECT}.mitigation.redactions`
+    FROM `{settings.DEV_MITIGATION_PROJECT}.m{settings.MITIGATION_VERSION}.redactions`
     """
 
     try:
@@ -50,6 +50,8 @@ def delete_redactions(args):
     # Get list of previously deleted blobs
     dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
     instances = get_redactions(args)
+    legacy_bucket_name = 'public-datasets-idc'
+    legacy_bucket = client.bucket(legacy_bucket_name)
 
     # Delete the blob from the public GCS bucket
     for instance in instances:
@@ -60,6 +62,10 @@ def delete_redactions(args):
             if bucket.blob(blob_name).exists():
                 bucket.blob(blob_name).delete()
                 successlogger.info(f'{bucket_name}/{blob_name}')
+            if bucket_name == 'idc-open-data':
+                if legacy_bucket.blob(blob_name).exists():
+                    legacy_bucket.blob(blob_name).delete()
+                    successlogger.info(f'{legacy_bucket_name}/{blob_name}')
 
 
 if __name__ == '__main__':
