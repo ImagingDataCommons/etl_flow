@@ -35,7 +35,7 @@ def get_aspera_package_urls():
     query = f"""
     SELECT *
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.tcia_pathology_conversion_status` 
-    WHERE IDC_collection_id != ""
+--     WHERE IDC_collection_id != ""
     """
     aspera_packages = client.query(query).to_dataframe()
     aspera_packages.sort_values("IDC_collection_id", inplace=True)
@@ -125,13 +125,16 @@ def get_collection(args, package):
 
 
 def bucket_collection_id(collection_id):
-    bucket_collection_id = {
-        'cmb': 'cmb',
-        'cptac': 'cptac',
-        'nlst': 'nlst',
-        'icdc': 'icdc_glioma'
-    }[collection_id.split('_')[0]]
-    return bucket_collection_id
+    try:
+        bucket_collection_id = {
+            'cmb': 'cmb',
+            'cptac': 'cptac',
+            'nlst': 'nlst',
+            'icdc': 'icdc_glioma'
+        }[collection_id.split('_')[0]]
+        return bucket_collection_id
+    except KeyError:
+        return collection_id
 
 
 def main(args, download_slugs=[]):

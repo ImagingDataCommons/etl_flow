@@ -50,21 +50,6 @@ def delete_redactions(args):
     # Get list of previously deleted blobs
     dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
     instances = get_redactions(args)
-    if args.delete_entire_series:
-        set_of_series = set([json.dumps({"bucket_name": instance["dev_bucket"], "se_uuid": instance['se_uuid']}) for instance in instances])
-        series = [json.loads(series) for series in set_of_series]
-        for series in series:
-            if f'{series["bucket_name"]}/{series["se_uuid"]}.zip' not in dones:
-                # Delete the entire series from the archive bucket
-                bucket = client.bucket(series["bucket_name"])
-                if bucket.blob(f'{series["se_uuid"]}.zip').exists():
-                    blob = bucket.blob(f'{series["se_uuid"]}.zip')
-                    blob.delete()
-                    successlogger.info(f'{series["bucket_name"]}/{series["se_uuid"]}.zip')
-    else:
-        # We need to delete instances from a series
-        # If the target bucket is an archive bucket, we need to unzip a series zip, delete blobs, rezip and rearchive.
-        breakpoint()
 
     # Delete the blob from the public GCS bucket
     for instance in instances:

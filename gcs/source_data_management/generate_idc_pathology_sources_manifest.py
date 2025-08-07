@@ -96,9 +96,10 @@ def main(args, download_slugs=[]):
     idc_has = False
     gen_manifest = True
 
-    aspera_package_urls = get_aspera_package_urls()
+    aspera_package_urls = get_aspera_package_urls().sort_values('Download_slug')
     for _, package in aspera_package_urls.iterrows():
-        if args.download_slugs == '' or package['Download_slug'] in args.download_slugs:
+        if args.download_slugs == [] or package['Download_slug'] in args.download_slugs:
+            progresslogger.info(f"Processing package: {package['Download_slug']}")
             idc_collection_id = package['IDC_collection_id']
             bucket_tag = bucket_collection_id(idc_collection_id)
 
@@ -121,7 +122,7 @@ def main(args, download_slugs=[]):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--version", default=21)
+    parser.add_argument("--version", default=22)
     parser.add_argument('--processes', default=1)
     parser.add_argument('--mode', default='download')
     parser.add_argument("--dst_bucket_prefix", default="", help="dst_bucket ID prefix")
@@ -129,7 +130,7 @@ if __name__ == "__main__":
     parser.add_argument("--dst_project", default='idc-source-data', help="Project in which to create bucket")
     parser.add_argument("--google_drive_folder", default="", help="Google Drive folder ID")
     parser.add_argument("--save_result", default=True, help="Save result to a Drive file if True")
-    parser.add_argument("--download_slugs", default = ["cmb-aml-da-path"], help="Slugs to process; all if empty")
+    parser.add_argument("--download_slugs", default = ['dlbcl-morphology-da-path'], help="Slugs to process; all if empty")
     parser.add_argument("--manifest_file_name", default= f'manifest_{strftime("%Y%m%d_%H%M%S", gmtime())}.txt')
     args = parser.parse_args()
     print(f'args: {json.dumps(args.__dict__, indent=2)}')

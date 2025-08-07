@@ -39,7 +39,7 @@ schema = [
     bigquery.SchemaField('Download_title', 'STRING', mode='NULLABLE', description='Title of download'),
     bigquery.SchemaField('Download_type', 'STRING', mode='NULLABLE', description='Type of download'),
     bigquery.SchemaField('File_types', 'STRING', mode='NULLABLE', description='File types in download'),
-    bigquery.SchemaField('Download_size_GB', 'STRING', mode='NULLABLE', description='Download size'),
+    bigquery.SchemaField('Download_size_GB', 'FLOAT', mode='NULLABLE', description='Download size'),
     bigquery.SchemaField('Aspera_URL', 'STRING', mode='NULLABLE', description='Aspera url of this download'),
     bigquery.SchemaField('Init_download_date', 'DATETIME', mode='NULLABLE', description='Datetime of initial download version'),
     bigquery.SchemaField('Modified_download_date', 'DATETIME', mode='NULLABLE', description='Datetime of current download version'),
