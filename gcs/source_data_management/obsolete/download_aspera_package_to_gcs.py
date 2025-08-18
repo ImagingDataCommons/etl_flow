@@ -85,7 +85,7 @@ def scan_directory(queue, directory, bucket, collection_id, download_slug):
                         f.write(cmd)
         if blobs:
             real_path = os.path.realpath("commands.txt")
-            cmmd = ["s5cmd", "--endpoint-url", "https://storage.googleapis.com", "run", f"{real_path}"]
+            cmmd = [" s5cmd", "--endpoint-url", "https://storage.googleapis.com", "run", f"{real_path}"]
             result = run(cmmd, capture_output=True)
             if result.stderr:
                 errlogger.error(f's5cmd mv failed')

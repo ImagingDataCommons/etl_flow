@@ -24,7 +24,7 @@ PREVIOUS_VERSION=21
 
 # IF MITIGATION_VERSION is not 0, logging will be to m<MITIGATION_VERSION) rather than v<CURRENT_VERSION>
 # For normal ETL purposes it should be 0
-MITIGATION_VERSION=3
+MITIGATION_VERSION=0
 
 SECURE_LOCAL_PATH = os.environ.get('SECURE_LOCAL_PATH', '')
 LOG_PATH = os.environ.get('LOG_PATH','/mnt/disks/idc-etl/logs')
