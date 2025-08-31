@@ -111,7 +111,9 @@ def export_data_from_bigquery(bucket_id, dataset_name, table_name, overwrite=Fal
 if __name__ == "__main__":
     bucket_id = 'bq_export_idc'
 
-    dataset_name = settings.BQ_PDP_DATASET
+    breakpoint()
+    # dataset_name = settings.BQ_PDP_DATASET
+    dataset_name = 'idc_v21'
     clinical_dataset_name = f'{dataset_name}_clinical'
 
     # Get both clinical and non clinical table names with just dataset name

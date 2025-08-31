@@ -40,11 +40,9 @@ def get_aspera_package_data():
 
 def download_package_to_disk(aspera_url, package_target_folder):
     try:
-        # aspera_start = time()
         cmmd = ['ascli', '--format=json', f'--to-folder={package_target_folder}', 'faspex5', 'packages', 'receive',
                 f'--url={aspera_url}']
         res = run(cmmd)
-        # aspera_delta = time.time() - aspera_start
         if res.stderr:
             errlogger.error(f'Aspera download failed: {res.stderr}')
             return

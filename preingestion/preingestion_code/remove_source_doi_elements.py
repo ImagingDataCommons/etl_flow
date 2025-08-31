@@ -17,28 +17,20 @@
 # Hierarchically removes all data associated with a source_doi from the idc_xxx hierarchy
 # Does not update the hashes
 
-import os
-import io
-import sys
-import argparse
-import csv
-from idc.models import Base, IDC_Collection, IDC_Patient, IDC_Study, IDC_Series
-from ingestion.utilities.utils import get_merkle_hash, list_skips
-from utilities.logging_config import successlogger, errlogger, progresslogger
-from python_settings import settings
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine, update
-from google.cloud import storage
-
+from utilities.logging_config import successlogger, progresslogger, errlogger
 
 def remove_instances(args, sess):
     query = f"""
 DELETE FROM idc_instance 
 USING idc_series
-WHERE series_instance_uid = idc_series.series_instance_uid
+WHERE idc_instance.series_instance_uid = idc_series.series_instance_uid
 AND idc_series.source_doi = '{args.source_doi}'
-    """
+RETURNING *
+"""
     result = sess.execute(query).fetchall()
+    successlogger.info(f'{len(result)} instances')
+    for row in result:
+        progresslogger.info(row)
     return
 
 
@@ -50,8 +42,13 @@ DELETE FROM idc_series
 WHERE NOT EXISTS (
     SELECT FROM idc_instance
     WHERE idc_series.series_instance_uid = idc_instance.series_instance_uid
-    )"""
+    )
+RETURNING *
+"""
     result = sess.execute(query).fetchall()
+    successlogger.info(f'{len(result)} series')
+    for row in result:
+        progresslogger.info(row)
     return
 
 def remove_studies(args, sess):
@@ -63,8 +60,12 @@ WHERE NOT EXISTS (
     SELECT FROM idc_series
     WHERE idc_study.study_instance_uid = idc_series.study_instance_uid
     )
+RETURNING *
     """
     result = sess.execute(query).fetchall()
+    successlogger.info(f'{len(result)} studies')
+    for row in result:
+        progresslogger.info(row)
     return
 
 
@@ -77,13 +78,16 @@ WHERE NOT EXISTS (
     SELECT FROM idc_study
     WHERE idc_patient.submitter_case_id = idc_study.submitter_case_id
     )
+RETURNING *
     """
     result = sess.execute(query).fetchall()
+    successlogger.info(f'{len(result)} patients')
+    for row in result:
+        progresslogger.info(row)
     return
 
 
 def remove_collections(args, sess):
-    breakpoint()
     remove_patients(args, sess)
 
     query = f"""
@@ -92,8 +96,12 @@ WHERE NOT EXISTS (
     SELECT FROM idc_patient
     WHERE idc_collection.collection_id = idc_patient.collection_id
     )
+RETURNING *
     """
     result = sess.execute(query).fetchall()
+    successlogger.info(f'{len(result)} collections')
+    for row in result:
+        progresslogger.info(row)
     return
 
     
