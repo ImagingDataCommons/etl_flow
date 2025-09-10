@@ -152,7 +152,9 @@ def expand_collection(sess, args, all_sources, collection):
         collection.patients.append(new_patient)
         progresslogger.info('  p%s: Patient %s is new',  args.pid, new_patient.submitter_case_id)
 
-    for patient in existing_objects:
+    sorted_patients = sorted(existing_objects, key=lambda patient: patient.submitter_case_id)
+    n = 0
+    for patient in sorted_patients:
         idc_hashes = patient.hashes
         # Get the hash from each source that is not skipped
         # The hash of a source is "" if the source is skipped, or the source that does not have
@@ -179,8 +181,8 @@ def expand_collection(sess, args, all_sources, collection):
             rev_patient.sources = patients[patient.submitter_case_id]
             rev_patient.rev_idc_version = settings.CURRENT_VERSION
             collection.patients.append(rev_patient)
-            progresslogger.info('  p%s: Patient %s is revised',  args.pid, rev_patient.submitter_case_id)
-
+            progresslogger.info('  p%s: %s:Patient %s is revised',  args.pid, n, rev_patient.submitter_case_id)
+            n +=1
             # Mark the now previous version of this object as having been replaced
             # and drop it from the revised collection
             patient.final_idc_version = settings.PREVIOUS_VERSION

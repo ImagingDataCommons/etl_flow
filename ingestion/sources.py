@@ -21,7 +21,7 @@ from utilities.tcia_helpers import  get_hash, get_TCIA_studies_per_patient, get_
 from idc.models  import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, instance_source
 from sqlalchemy import select
 from ingestion.utilities.get_collection_dois_urls_licenses import get_patient_dois_idc, \
-    get_patient_urls_idc, get_patient_dois_tcia, get_patient_urls_tcia, get_patient_licenses_tcia, \
+    get_patient_urls_idc, get_patient_dois_tcia, get_patient_urls_tcia_v2, get_patient_licenses_tcia, \
     get_patient_licenses_idc
 from utilities.logging_config import successlogger, progresslogger, errlogger, rootlogger
 # rootlogger = logging.getLogger('root')
@@ -130,7 +130,8 @@ class TCIA(Source):
 
     # Get the (source) URLs of all series in a patient
     def get_patient_urls(self, collection, patient):
-        patient_urls = get_patient_urls_tcia(collection, patient)
+        breakpoint()
+        patient_urls = get_patient_urls_tcia_v2(collection, patient)
         return patient_urls
 
 

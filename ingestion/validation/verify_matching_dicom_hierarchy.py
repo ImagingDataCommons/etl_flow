@@ -40,18 +40,25 @@ def validate_UIDs_match(args):
     AND (aji.submitter_case_id!=dm.patientid
     OR aji.Study_Instance_UID!=dm.StudyInstanceUID
     OR aji.Series_Instance_UID!=dm.SeriesInstanceUID)
+    ORDER BY collection_id, bq_patientID, dm_patientID, 
+        bq_study, dm_study, bq_series, 
+        dm_series, instance
     """
     dups = [row for row in client.query(query)]
     if not dups:
         successlogger.info(f'DICOM UIDs match')
     else:
-        errlogger.error(f'{len(dups)} DICOM UIDs do not match')
-        errlogger.error(f'collection_id SOPInstanceUID  submitter_case_id   StudyInstanceUID    SeriesInstanceUID')
+        n = 1
         for row in dups:
-            patients_match = "Matching" if row.bq_patientID==row.dm_patientID else f'{row.bq_patientID}!={row.dm_patientID}'
-            studies_match = "Matching" if row.bq_study==row.dm_study else f'{row.bq_study}!={row.dm_study}'
-            series_match = "Matching" if row.bq_series==row.dm_series else f'{row.bq_series}!={row.dm_series}'
-            errlogger.error(f'{row.collection_id}   {row.instance}    {patients_match}    {studies_match} {series_match}')
+            errlogger.error(f'{n}\t{row.collection_id}, SOPInstanceUID:{row.instance}')
+            if row.bq_patientID != row.dm_patientID:
+                errlogger.error(f'\t\t PatientID mismatch: API: {row.bq_patientID} != DICOM metadata:{row.dm_patientID}')
+            if row.bq_study != row.dm_study:
+                errlogger.error(f'\t\t StudyInstanceUID mismatch: API: {row.bq_study} != DICOM metadata:{row.dm_study}')
+            if row.bq_series != row.dm_series:
+                errlogger.error(f'\t\t SeriesInstanceUID mismatch: API: {row.bq_series} != DICOM metadata:{row.dm_series}')
+            n+=1
+
         errlogger.error(f'NOTE: It is expected that 300 NLST instances have mismatching submitter_case_ids')
 
 

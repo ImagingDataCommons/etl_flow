@@ -19,7 +19,7 @@ Script to empty the PDP staging buckets.
 """
 
 import argparse
-from gcs.empty_bucket_mp.empty_bucket_mp import del_all_instances
+from gcs.utilities.empty_bucket_mp import del_all_instances
 from utilities.logging_config import successlogger, progresslogger, errlogger
 
 

@@ -81,42 +81,42 @@ def export_dicom_metadata(args):
             time.sleep(5*60)
 
 
-def get_job(args):
-    results = subprocess.run(['gcloud', 'auth', 'application-default', 'print-access-token'], stdout=PIPE, stderr=PIPE)
-    bearer = str(results.stdout, encoding='utf-8').strip()
-
-    headers = {
-        'Authorization': f'Bearer {bearer}'
-    }
-    url = f'https://healthcare.googleapis.com/v1/projects/{args.gch_dicomstore}/locations/{args.gch_region}/datasets/{args.gch_dataset}/operations'
-    results = requests.get(url, headers=headers)
-    # Get the operation ID so we can track progress
-    operation_id = results.json()['operations'][0]['name'].split('/')[-1]
-    progresslogger.info("Operation ID: {}".format(operation_id))
-
-    while True:
-        # Get an access token. This can be a long running job. Just get a new one every time.
-        results = subprocess.run(['gcloud', 'auth', 'application-default', 'print-access-token'], stdout=PIPE, stderr=PIPE)
-        bearer = str(results.stdout, encoding='utf-8').strip()
-
-        headers = {
-            'Authorization': f'Bearer {bearer}'
-        }
-        url = f'https://healthcare.googleapis.com/v1/projects/{args.gch_dicomstore}/locations/{args.gch_region}/datasets/{args.gch_dataset}/operations/{operation_id}'
-        results = requests.get(url, headers=headers)
-
-        details = results.json()
-
-        # The result is JSON that will include a "done" element with status when the op us complete
-        if 'done' in details and details['done']:
-            if 'error' in details:
-                errlogger.error('Done with errorcode: {}, message: {}'.format(details['error']['code'], details['error']['message']))
-            else:
-                progresslogger.info('Done')
-            break
-        else:
-            progresslogger.info(details)
-            time.sleep(5*60)
+# def get_job(args):
+#     results = subprocess.run(['gcloud', 'auth', 'application-default', 'print-access-token'], stdout=PIPE, stderr=PIPE)
+#     bearer = str(results.stdout, encoding='utf-8').strip()
+#
+#     headers = {
+#         'Authorization': f'Bearer {bearer}'
+#     }
+#     url = f'https://healthcare.googleapis.com/v1/projects/{args.gch_dicomstore}/locations/{args.gch_region}/datasets/{args.gch_dataset}/operations'
+#     results = requests.get(url, headers=headers)
+#     # Get the operation ID so we can track progress
+#     operation_id = results.json()['operations'][0]['name'].split('/')[-1]
+#     progresslogger.info("Operation ID: {}".format(operation_id))
+#
+#     while True:
+#         # Get an access token. This can be a long running job. Just get a new one every time.
+#         results = subprocess.run(['gcloud', 'auth', 'application-default', 'print-access-token'], stdout=PIPE, stderr=PIPE)
+#         bearer = str(results.stdout, encoding='utf-8').strip()
+#
+#         headers = {
+#             'Authorization': f'Bearer {bearer}'
+#         }
+#         url = f'https://healthcare.googleapis.com/v1/projects/{args.gch_dicomstore}/locations/{args.gch_region}/datasets/{args.gch_dataset}/operations/{operation_id}'
+#         results = requests.get(url, headers=headers)
+#
+#         details = results.json()
+#
+#         # The result is JSON that will include a "done" element with status when the op us complete
+#         if 'done' in details and details['done']:
+#             if 'error' in details:
+#                 errlogger.error('Done with errorcode: {}, message: {}'.format(details['error']['code'], details['error']['message']))
+#             else:
+#                 progresslogger.info('Done')
+#             break
+#         else:
+#             progresslogger.info(details)
+#             time.sleep(5*60)
 
 
 def export_metadata(args):

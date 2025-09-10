@@ -36,9 +36,9 @@ def gen_table(args):
     idc_programs = [row.values() for row in client.query(query)]
 
     # Get a list of the program of each TCIA sourced collection
-    tcia_programs = [(row['collection_short_title'].lower().replace('-','_').replace(' ','_'), row['program'][0]) for row in \
-        get_all_tcia_metadata(type="collections", query_param="&_fields=collection_short_title,program")]
-
+    tcia_programs = [(row['collection_short_title'].lower().replace('-', '_').replace(' ', '_'), row['program'][0]) for
+            row in get_all_tcia_metadata(type="collections", query_param="&_fields=collection_short_title,program") \
+                     if row['collection_short_title'] != 'TEST-PAGE']
 
     all_programs = idc_programs
     all_programs.extend(tcia_programs)

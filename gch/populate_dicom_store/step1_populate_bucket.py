@@ -266,8 +266,7 @@ def populate_buckets(args):
     ]:
         args.pub_gcs_bucket = suffix
         args.import_bucket_name = f'dicom_store_import_v{args.version}_{suffix}'
-        ### Note: At this time buckets must be created from the console
-        # create_import_bucket(args)
+        create_import_bucket(args)
         populate_import_buckets(args)
 
 if __name__ == '__main__':

@@ -1,0 +1,58 @@
+Col_num,ques_seq_no,field_name,ques_desc,data_type,resp_seq_no,resp_desc
+1,1,Abe1,was a biopsy performed?,List,1,No
+1,1,Abe1,was a biopsy performed?,List,2,Yes
+2,2,Abe2,date of biopsy,YYYY,,best4.
+3,2,Abe2d,Days from Base_dt to date of biopsy,#,,best8.
+4,3,Abe3,specify reason biopsy not done,List,1,Medical contraindication
+4,3,Abe3,specify reason biopsy not done,List,2,Technical difficulties
+4,3,Abe3,specify reason biopsy not done,List,3,Patient discomfort
+4,3,Abe3,specify reason biopsy not done,List,4,Patient refusal
+4,3,Abe3,specify reason biopsy not done,List,5,Lesion absent on subsequent imaging
+4,3,Abe3,specify reason biopsy not done,List,6,"Other, specify"
+5,4,Abe4,other reason biopsy not done,Char(80),,$F200.
+6,5,Abe5,total  number of lesions biopsied (nn),#,,BEST32.
+7,6,Abe6,data recorded represents lesion # (nn),#,,BEST32.
+8,7,Abe7,site of lesion biopsied,List,1,Right breast
+8,7,Abe7,site of lesion biopsied,List,2,Left breast
+9,8,Abe8,location of lesion,List,1,Nipple
+9,8,Abe8,location of lesion,List,2,Central portion
+9,8,Abe8,location of lesion,List,3,Upper inner quadrant
+9,8,Abe8,location of lesion,List,4,Lower inner quadrant
+9,8,Abe8,location of lesion,List,5,Upper outer quadrant
+9,8,Abe8,location of lesion,List,6,Lower outer quadrant
+9,8,Abe8,location of lesion,List,7,Axillary tail
+9,8,Abe8,location of lesion,List,8,"Breast, NOS"
+9,8,Abe8,location of lesion,List,9,Subareolar
+9,8,Abe8,location of lesion,List,10,"Other, specify"
+10,9,Abe9,specify other location,Char(80),,$F200.
+11,10,Abe10,which biopsy procedure was performed,List,1,Core needle biopsy
+11,10,Abe10,which biopsy procedure was performed,List,2,Excisional biopsy
+11,10,Abe10,which biopsy procedure was performed,List,3,Lumpectomy
+11,10,Abe10,which biopsy procedure was performed,List,4,Mastectomy
+11,10,Abe10,which biopsy procedure was performed,List,5,"Other, specify"
+12,11,Abe11,specify other type of biopsy,Char(80),,$F200.
+13,12,Abe12,type of guidance system used,List,1,None / clinical
+13,12,Abe12,type of guidance system used,List,2,Ultrasound
+13,12,Abe12,type of guidance system used,List,3,Stereotactic
+13,12,Abe12,type of guidance system used,List,4,MR guidance
+13,12,Abe12,type of guidance system used,List,5,"Other, specify"
+14,13,Abe13,other guidance system,Char(80),,$F200.
+15,14,Abe14,location of lesion epicenter:  x dimension (med-lat),#,,BEST32.
+16,15,Abe15,location of lesion epicenter:  y dimension (sup-inf),#,,BEST32.
+17,16,Abe16,location of lesion epicenter:  z dimension (ant-post),#,,BEST32.
+18,17,Abe17,method of mr tissue sampling,List,1,Core biopsy
+18,17,Abe17,method of mr tissue sampling,List,2,Wire localization and excision
+19,18,Abe18,initital needle pass location:  med-lat (x) (nnn) mm,#,,BEST32.
+20,19,Abe19,initital needle pass location:  sup-inf (y) (nnn) mm,#,,BEST32.
+21,20,Abe20,initital needle pass location:  ant-post(z) (nnn) mm,#,,BEST32.
+22,21,Abe21,biopsy with mr guidance / needle gauge,List,1,14
+22,21,Abe21,biopsy with mr guidance / needle gauge,List,2,"Other, specify"
+23,22,Abe22,specify other,Char(80),,$F200.
+24,23,Abe23,total number of needle passes (nn),#,,BEST32.
+25,24,Abe24,final wire position (mm):  medial-lateral (x) (nnn) mm,#,,BEST32.
+26,25,Abe25,final wire position:  superior-inferior (y) (nnn) mm,#,,BEST32.
+27,26,Abe26,final wire position:  anterior-posterior (z) (nnn) mm,#,,BEST32.
+28,29,Abe29,date form completed (mm/dd/yyyy),YYYY,,best4.
+29,29,Abe29d,Days from Base_dt to date form completed (mm/dd/yyyy),#,,best8.
+30,31,Abe31deid,De-identified Reader ID,Char(8),,$F8.
+31,32,Rec,Data Entry Date (Days from base date),#,,best8.

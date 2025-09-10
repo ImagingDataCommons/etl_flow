@@ -171,8 +171,6 @@ def get_url(url, headers=""):  # , headers):
 
 def get_citation(source_url):
 
-    breakpoint() # Vancouver format
-    # header = {"Accept": "text/x-bibliography; style=apa"}
     header = {"Accept": "text/x-bibliography; style=elsevier-vancouver-no-et-al"}
     citation = requests.get(source_url, headers=header).text
     if 'This DOI cannot be found in the DOI System' in citation:

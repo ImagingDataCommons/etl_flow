@@ -188,7 +188,7 @@ def copy_composite_blob_to_noncomposite_blob(args, src_blob, dst_blob):
     try:
         # Copy the blob to disk
         src = f'gs://{src_blob.bucket.name}/{src_blob.name}'
-        dst = f'/mnt/disks/idc-etl/tmp/{src_blob.name}'
+        dst = f'{args.copy_through_directory}/{src_blob.name}'
         result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
         if result.returncode :
             errlogger.error('p%s: \tcopy_disk_to_prestaging_bucket copy to file failed for %s', args.pid, src_blob.name)
@@ -198,7 +198,9 @@ def copy_composite_blob_to_noncomposite_blob(args, src_blob, dst_blob):
         result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
         if result.returncode :
             errlogger.error('p%s: \tcopy_disk_to_prestaging_bucket copy to gcs failed for %s', args.pid, dst_blob.name)
-            raise RuntimeError('p%s: opy_disk_to_prestaging_bucket copy to gcs failed for %s', args.pid, dst_blob.name)
+            raise RuntimeError('p%s: \tcopy_disk_to_prestaging_bucket copy to gcs failed for %s', args.pid, dst_blob.name)
+        result = run(["rm", src], check=True)
+
     except Exception as exc:
         errlogger.error("\tp%s: Copy to prestage bucket failed for series %s", args.pid, series.series_instance_uid)
         raise RuntimeError("p%s: Copy to prestage bucketfailed for series %s", args.pid, series.series_instance_uid) from exc
@@ -219,13 +221,23 @@ def copy_gcs_to_gcs(args, client, dst_bucket_name, series, instance, ingestion_u
         progresslogger.debug('******p%s: Rewrite bytes_rewritten %s, total_bytes %s', args.pid, bytes_rewritten, total_bytes)
         token, bytes_rewritten, total_bytes = dst_blob.rewrite(src_blob, token=token)
     dst_blob.reload()
+    src_blob.reload()
     if not dst_blob.md5_hash:
-        # This is like a composite object. Copy it so that the resulting object is noncomposite
-
-        copy_composite_blob_to_noncomposite_blob(args, src_blob, dst_blob)
-        dst_blob = dst_bucket.blob(f'{series.uuid}/{instance.uuid}.dcm')
-        dst_blob.reload()
-    return dst_blob.size, b64decode(dst_blob.md5_hash).hex()
+    #     # This is like a composite object. Copy it so that the resulting object is noncomposite
+    #
+    #     copy_composite_blob_to_noncomposite_blob(args, src_blob, dst_blob)
+    #     dst_blob = dst_bucket.blob(f'{series.uuid}/{instance.uuid}.dcm')
+    #     dst_blob.reload()
+        # This is a composite object and doesn't have an md5
+        # Verify that crc32s match
+        if src_blob.crc32c != dst_blob.crc32c:
+            return 0
+        else:
+            return dst_blob.size
+    if b64decode(src_blob.md5_hash).hex() == b64decode(dst_blob.md5_hash).hex():
+        return dst_blob.size
+    else:
+        return 0
 
 
 # The sources of a parent (that is not a series) is the source-wise OR of its children

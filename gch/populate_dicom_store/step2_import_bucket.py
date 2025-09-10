@@ -132,7 +132,9 @@ def import_buckets(args):
 
     try:
         progresslogger.info('\nImporting %s', args.staging_bucket)
-        content_uri = '{}/*/*'.format(args.staging_bucket)
+        breakpoint()
+        # content_uri = '{}/*/*'.format(args.staging_bucket)
+        content_uri = '{}/*'.format(args.staging_bucket)
         response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
                         settings.GCH_DICOMSTORE, content_uri)
         progresslogger.info('Response: %s', response)
@@ -150,8 +152,12 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
 
     for suffix in [
-        'idc-open-idc1',
-        'idc-open-crl',
-        'idc-open-data']:
-        args.staging_bucket = f'dicom_store_import_v{settings.CURRENT_VERSION}_{suffix}'
+        # 'idc-open-data',
+        # 'idc-open-idc1',
+        # 'idc-open-cr'
+        'import_failure_blobs_whc'
+        ]:
+        breakpoint()
+        # args.staging_bucket = f'dicom_store_import_v{settings.CURRENT_VERSION}_{suffix}'
+        args.staging_bucket = suffix
         import_buckets(args)

@@ -1,0 +1,132 @@
+column_name,column_type,is_chart_abstracted,column_counts,description
+to_patient_id,string,,,TCIA patient identifier
+covid19_statuses,string,,{'positive': 1479},COVID-19 status as determined through either positive PCR test or outside documentation reviewed by clinician
+last.status,string,,"{'deceased': 194, 'discharged': 1285}",For the selected visit the status of the patient
+age.splits,string,,"{'(59,74]': 376, '(74,90]': 297, '[18,59]': 806}",Age intervals (in years) at time of admission; truncated for patients over 90 years of age
+gender_concept_name,string,,"{'FEMALE': 635, 'MALE': 810}",Documented gender in the EHR (Electronic Health Record); gender is dropped in select cases for de-identification purposes
+visit_start_datetime,string,,,Date shifted start of selected visit
+visit_concept_name,string,,"{'Emergency Room Visit': 376, 'Inpatient Visit': 1100, 'Outpatient Visit': 3}",For the selected visit the type of the visit; note patients can be admitted for observation (multiple days) in emergency department
+is_icu,string,,"{False: 1201, True: 278}",Patient admitted to the ICU based on documented room charges
+was_ventilated,string,,"{'No': 1254, 'Yes': 225}",The patient had invasive ventilation
+invasive_vent_days,numeric,,,Number of documented days of invasive ventilation support
+length_of_stay,int64,,,Number of calendar days in the facility
+Acute.Hepatic.Injury..during.hospitalization.,string,,"{'No': 1166, 'Yes': 48}",ALT or AST was at least 15 times above the test's upper limit
+Acute.Kidney.Injury..during.hospitalization.,string,,"{'No': 1206, 'Yes': 273}",Had an increase in serum creatinine of 0.3 mg/dL within 48 hours
+Urine.protein,string,,"{'Abnormal': 387, 'Normal': 211}",Protein in urine
+kidney_replacement_therapy,string,,{'Yes': 73},Did the patient have documented renal replacement therapy
+kidney_transplant,string,,{'Yes': 23},Did the patient have a kidney transplant
+htn_v,string,TRUE,"{'No': 642, 'Yes': 525}","Documented ICD-10 code for HTN (Hypertension), taking anti-hypertensive medications and/or documented SBP>140/90"
+dm_v,string,TRUE,"{'No': 880, 'Yes': 289}","Documented ICD-10 code for diabetes type 1 or 2, taking insulin or other oral medications for diabetes"
+cad_v,string,TRUE,"{'No': 994, 'Yes': 171}","Documented ICD-10 code for CAD (Coronary Artery Disease), history of stent placement, existing cath report documenting disease"
+hf_ef_v,string,TRUE,"{'HFpEF': 46, 'HFrEF': 30, 'No': 1080}","For HFrEF, documented ICD-10 code for HFrEF or echocardiogram documenting reduced ejection fraction (reduced EF is <40%, 40% or higher is preserved EF). For HFpEF, documented ICD-10 code for HFpEF or echocardiogram documenting diastolic dysfunction."
+ckd_v,string,TRUE,"{'No': 1079, 'Yes': 87}","Documented ICD-10 code for CKD (Chronic Kidney Disease), reduced GFR on lab work."
+malignancies_v,string,TRUE,"{'No': 1048, 'Yes': 106}","Documented ICD-10 code for malignancies, receiving treatment for active malignancy"
+copd_v,string,TRUE,"{'No': 1096, 'Yes': 69}","Documented ICD-10 code for COPD (Chronic obstructive pulmonary disease), PFTs documenting obstructive defect along with positive smoking history"
+other_lung_disease_v,string,TRUE,"{'No': 992, 'Yes': 172}","Documented ICD-10 code for other lung diseases including asthma, ILD, pulmonary hypertension, chronic PE, lung resection"
+acei_v,string,TRUE,"{'No': 1010, 'Yes': 147}",Admission medication reconciliation documenting use of ACE Inhibitor as a home medication
+arb_v,string,TRUE,"{'No': 995, 'Yes': 164}",Admission medication reconciliation documenting use of ARB (Angiotensin receptor blockers) as a home medication
+antibiotics_use_v,string,TRUE,"{'No': 858, 'Yes': 276}",Patient on an antibiotic prior to presentation
+nsaid_use_v,string,TRUE,"{'No': 1017, 'Yes': 92}",Admission medication reconciliation documenting use of NSAID (Non-steroidal anti-inflammatory drug) as a home medication
+days_prior_sx,numeric,TRUE,,The number of days prior to presentation that symptoms began
+smoking_status_v,string,TRUE,"{'Current': 38, 'Former': 263, 'Never': 805}","Marks patient's smoking status as either current, former, never smoker, or unknown. This refers only to cigarettes and cigars. E-cigarettes and marijuana do not count."
+cough_v,string,TRUE,"{'No': 209, 'Yes': 897}",Reported cough
+dyspnea_admission_v,string,TRUE,"{'No': 313, 'Yes': 807}",Shortness of breath on admission
+nausea_v,string,TRUE,"{'No': 788, 'Yes': 286}",Reported nausea
+vomiting_v,string,TRUE,"{'No': 923, 'Yes': 159}",Reported vomiting
+diarrhea_v,string,TRUE,"{'No': 726, 'Yes': 365}",Reported diarrhea
+abdominal_pain_v,string,TRUE,"{'No': 962, 'Yes': 114}",Abdominal pain symptom
+fever_v,string,TRUE,"{'No': 238, 'Yes': 885}",Yes or no. Only refers to subjective or objective fever at home. Fever in ED does not count.
+BMI.over30,boolean,,"{False: 609, True: 417}",Body mass index over 30
+BMI.over35,boolean,,"{False: 834, True: 192}",Body mass index over 35
+temperature.over38,boolean,,"{False: 1091, True: 348}",Temperature at time of admission over 38 degrees centigrade
+pulseOx.under90,boolean,,"{False: 1256, True: 216}",Measured blood oxygen level below 90% using a pulse oximeter
+Respiration.over24,boolean,,"{False: 1178, True: 293}",Respiration rate over 24 breaths per minute
+HeartRate.over100,boolean,,"{False: 831, True: 640}",Heart rate over 100 beats per minute
+Lymphocytes.under1k,boolean,,"{False: 487, True: 557}",Serum lymphocytes
+Aspartate.over40,boolean,,"{False: 618, True: 585}",Serum AST measuring liver function
+Alanine.over60,boolean,,"{False: 968, True: 235}",Serum ALT measuring liver function
+A1C.over6.5,boolean,,"{False: 225, True: 234}",Serum hemoglobin A1C over 6.5
+A1C.under6.5,boolean,,"{False: 234, True: 225}",
+A1C.6.6to7.9,boolean,,"{False: 348, True: 111}",
+A1C.8to9.9,boolean,,"{False: 395, True: 64}",
+A1C.over10,boolean,,"{False: 400, True: 59}",
+Sodium.above145,boolean,,"{False: 1211, True: 50}",Serum sodium
+Sodium.between135and145,boolean,,"{False: 441, True: 820}",
+Sodium.below135,boolean,,"{False: 870, True: 391}",
+Potassium.above5.2,boolean,,"{False: 1152, True: 49}",Serum potassium
+Potassium.between3.5and5.2,boolean,,"{False: 147, True: 1054}",
+Potassium.below3.5,boolean,,"{False: 1103, True: 98}",
+Chloride.above107,boolean,,"{False: 1214, True: 47}",Serum chloride
+Chloride.between96and107,boolean,,"{False: 435, True: 826}",
+Chloride.below96,boolean,,"{False: 873, True: 388}",
+Bicarbonate.above31,boolean,,"{False: 1240, True: 20}",Serum bicarbonate
+Bicarbonate.between21and31,boolean,,"{False: 232, True: 1028}",
+Bicarbonate.below21,boolean,,"{False: 1048, True: 212}",
+Blood_Urea_Nitrogen.above20,boolean,,"{False: 845, True: 416}",Serum BUN measured for kidney function
+Blood_Urea_Nitrogen.between5and20,boolean,,"{False: 433, True: 828}",
+Blood_Urea_Nitrogen.below5,boolean,,"{False: 1244, True: 17}",
+Creatinine.above1.2,boolean,,"{False: 920, True: 341}",Serum creatinine measured for kidney function
+Creatinine.between0.5and1.2,boolean,,"{False: 375, True: 886}",
+Creatinine.below0.5,boolean,,"{False: 1227, True: 34}",
+eGFR.above60,boolean,,"{False: 340, True: 902}",Serum estimated glomerular filtration rate
+eGFR.between30and60,boolean,,"{False: 1003, True: 239}",
+eGFR.below30,boolean,,"{False: 1141, True: 101}",
+blood_pH.above7.45,boolean,,"{False: 183, True: 60}",
+blood_pH.between7.35and7.45,boolean,,"{False: 126, True: 117}",
+blood_pH.below7.35,boolean,,"{False: 177, True: 66}",
+Troponin.above0.01,boolean,,"{False: 821, True: 222}",Serum indicator of damage to heart tissue
+D_dimer.above3000,boolean,,"{False: 961, True: 63}",Serum D-dimer
+D_dimer.between500and3000,boolean,,"{False: 739, True: 285}",
+D_dimer.below500,boolean,,"{False: 348, True: 676}",
+ESR.above30,boolean,,"{False: 187, True: 455}",Serum erythrocyte sedimentation rate
+Microscopic_hematuria.above2,boolean,,"{False: 379, True: 209}",Blood in urine
+SBP.below120,boolean,,"{False: 958, True: 515}",Systolic blood pressure
+SBP.between120and139,boolean,,"{False: 938, True: 535}",
+SBP.above139,boolean,,"{False: 1050, True: 423}",
+MAP.below65,boolean,,"{False: 1241, True: 25}",Mean arterial pressure
+MAP.between65and90,boolean,,"{False: 685, True: 581}",
+MAP.above90,boolean,,"{False: 606, True: 660}",
+procalcitonin.below0.25,boolean,,"{False: 380, True: 735}",Serum procalcitonin
+procalcitonin.between0.25and0.5,boolean,,"{False: 937, True: 178}",
+procalcitonin.above0.5,boolean,,"{False: 913, True: 202}",
+ferritin.above1k,boolean,,"{False: 613, True: 343}",Serum ferritin
+Proteinuria.above80,boolean,,"{False: 149, True: 81}",
+8331-1_Oral temperature,numeric,,,Oral temperature in degrees C
+59408-5_Oxygen saturation in Arterial blood by Pulse oximetry,numeric,,,
+9279-1_Respiratory rate,numeric,,,
+76282-3_Heart rate.beat-to-beat by EKG,numeric,,,
+8480-6_Systolic blood pressure,numeric,,,
+76536-2_Mean blood pressure by Noninvasive,numeric,,,
+33256-9_Leukocytes [#/volume] corrected for nucleated erythrocytes in Blood by Automated count,numeric,,,
+751-8_Neutrophils [#/volume] in Blood by Automated count,numeric,,,
+731-0_Lymphocytes [#/volume] in Blood by Automated count,numeric,,,
+2951-2_Sodium [Moles/volume] in Serum or Plasma,numeric,,,
+1920-8_Aspartate aminotransferase [Enzymatic activity/volume] in Serum or Plasma,numeric,,,
+1744-2_Alanine aminotransferase [Enzymatic activity/volume] in Serum or Plasma by No addition of P-5'-P,numeric,,,
+2157-6_Creatine kinase [Enzymatic activity/volume] in Serum or Plasma,numeric,,,
+2524-7_Lactate [Moles/volume] in Serum or Plasma,numeric,,,
+6598-7_Troponin T.cardiac [Mass/volume] in Serum or Plasma,numeric,,,
+33762-6_Natriuretic peptide.B prohormone N-Terminal [Mass/volume] in Serum or Plasma,numeric,,,
+75241-0_Procalcitonin [Mass/volume] in Serum or Plasma by Immunoassay,numeric,,,
+48058-2_Fibrin D-dimer DDU [Mass/volume] in Platelet poor plasma by Immunoassay,numeric,,,
+2276-4_Ferritin [Mass/volume] in Serum or Plasma,numeric,,,
+1988-5_C reactive protein [Mass/volume] in Serum or Plasma,numeric,,,
+4548-4_Hemoglobin A1c/Hemoglobin.total in Blood,numeric,,,
+39156-5_Body mass index (BMI) [Ratio],numeric,,,
+2951-2_Sodium [Moles/volume] in Serum or Plasma.1,numeric,,,
+2823-3_Potassium [Moles/volume] in Serum or Plasma,numeric,,,
+2075-0_Chloride [Moles/volume] in Serum or Plasma,numeric,,,
+1963-8_Bicarbonate [Moles/volume] in Serum or Plasma,numeric,,,
+3094-0_Urea nitrogen [Mass/volume] in Serum or Plasma,numeric,,,
+2160-0_Creatinine [Mass/volume] in Serum or Plasma,numeric,,,
+"62238-1_Glomerular filtration rate/1.73 sq M.predicted [Volume Rate/Area] in Serum, Plasma or Blood by Creatinine-based formula (CKD-EPI)",numeric,,,
+33254-4_pH of Arterial blood adjusted to patient's actual temperature,numeric,,,
+30341-2_Erythrocyte sedimentation rate,numeric,,,
+2345-7_Glucose [Mass/volume] in Serum or Plasma,numeric,,,
+13457-7_Cholesterol in LDL [Mass/volume] in Serum or Plasma by calculation,numeric,,,
+13458-5_Cholesterol in VLDL [Mass/volume] in Serum or Plasma by calculation,numeric,,,
+2571-8_Triglyceride [Mass/volume] in Serum or Plasma,numeric,,,
+2085-9_Cholesterol in HDL [Mass/volume] in Serum or Plasma,numeric,,,
+therapeutic.exnox.Boolean,boolean,,"{False: 1020, True: 355}",Patient had enoxaparin administered
+therapeutic.heparin.Boolean,boolean,,"{False: 1190, True: 185}",Patient had heparin administered at a therapeutic dose
+Other.anticoagulation.therapy,string,,"{'apixaban': 89, 'argatroban': 11, 'dabigatran': 1, 'multiple': 9, 'not documented': 1223, 'rivaroxaban': 20, 'wafarin': 22}",Patient had other anticoagulation therapy as listed

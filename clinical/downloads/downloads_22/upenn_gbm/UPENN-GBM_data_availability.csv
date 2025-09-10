@@ -1,0 +1,672 @@
+ID,Structural imaging,DTI imaging,DSC imaging,Automatic Tumor Segmentation,Corrected Tumor Segmentation,Gender,Age,Overall Survival,IDH1,MGMT,KPS,Extent of Resection,Associated Baseline Scan,Associated Recurrence Scan,PsP_TP score,CaPTk Radiomic Features
+UPENN-GBM-00001_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00002_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00003_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00004_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00005_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00006_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00007_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00008_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00009_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00010_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00011_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00012_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00013_11,available,available,not available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00014_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00015_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00016_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00017_11,available,available,not available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00018_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00019_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00020_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00021_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00022_11,available,available,available,available,not available,available,available,available,available,available,not available,not available,-,not available,not available,available
+UPENN-GBM-00023_11,available,available,available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00024_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00025_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00026_11,available,available,not available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00027_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00028_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00029_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00030_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00031_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00032_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00033_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00034_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00035_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00036_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00037_11,available,available,not available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00038_11,available,available,available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00039_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00040_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00041_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00042_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00043_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00044_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00045_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00046_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00047_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00048_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00049_11,available,available,not available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00050_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00051_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00052_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00053_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00054_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00055_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00056_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00057_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00058_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00059_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00060_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00061_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00062_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00063_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00064_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00065_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00066_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00067_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00068_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00069_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00070_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00071_11,available,available,available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00072_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00073_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00074_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00075_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00076_11,available,available,available,available,available,available,available,available,not available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00077_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00078_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00079_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00080_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00081_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00082_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00083_11,available,available,available,available,available,available,available,available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00084_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00085_11,available,available,available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00086_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00087_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00088_11,available,available,available,available,available,available,available,available,available,available,available,available,-,available,not available,available
+UPENN-GBM-00089_11,available,available,available,available,not available,available,available,available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00090_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00091_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00092_11,available,available,available,available,available,available,available,not available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00093_11,available,available,not available,available,available,available,available,available,available,available,available,available,-,available,not available,available
+UPENN-GBM-00094_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00095_11,available,available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00096_11,available,available,not available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00097_11,available,available,available,available,available,available,available,not available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00098_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00099_11,available,available,not available,available,not available,available,available,available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00100_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00101_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00102_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00103_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00104_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00105_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00106_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00107_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00108_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00109_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00110_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00111_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00112_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00113_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00114_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00115_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00116_11,available,available,available,available,available,available,available,not available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00117_11,available,available,not available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00118_11,available,available,not available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00119_11,available,available,available,available,available,available,available,available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00120_11,available,available,available,available,available,available,available,not available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00121_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00122_11,available,available,available,available,available,available,available,available,available,available,available,available,-,available,not available,available
+UPENN-GBM-00123_11,available,available,available,available,not available,available,available,not available,available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00124_11,available,available,not available,available,available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00125_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00126_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00127_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00128_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,available,not available,available
+UPENN-GBM-00129_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,available,not available,available
+UPENN-GBM-00130_11,available,not available,not available,available,not available,available,available,available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00131_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00132_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00133_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,available,not available,available
+UPENN-GBM-00134_11,available,available,available,available,available,available,available,available,available,available,available,available,-,available,not available,available
+UPENN-GBM-00135_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00136_11,available,available,not available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00137_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00138_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00139_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00140_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,available,not available,available
+UPENN-GBM-00141_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,available,not available,available
+UPENN-GBM-00142_11,available,available,not available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00143_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00144_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00145_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,available,not available,available
+UPENN-GBM-00146_11,available,available,available,available,available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00147_11,available,available,not available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00148_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,available,not available,available
+UPENN-GBM-00149_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00150_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,available,not available,available
+UPENN-GBM-00151_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00152_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00153_11,available,available,available,available,available,available,available,not available,not available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00154_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00155_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00156_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00157_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00158_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00159_11,available,not available,not available,available,not available,available,available,available,not available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00160_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00161_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00162_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00163_11,available,available,available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00164_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00165_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00166_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00167_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00168_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00169_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00170_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00171_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00172_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00173_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00174_11,available,available,available,available,available,available,available,available,not available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00175_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00176_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00177_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00178_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00179_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00180_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00181_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00182_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00183_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00184_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00185_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00186_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00187_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00188_11,available,available,available,available,not available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00189_11,available,not available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00190_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00191_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00192_11,available,available,available,available,available,available,available,available,not available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00193_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00194_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00195_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00196_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00197_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,available,not available,available
+UPENN-GBM-00198_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00199_11,available,available,not available,available,not available,available,available,available,not available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00200_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00201_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00202_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00203_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00204_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00205_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00206_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00207_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00208_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00209_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00210_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00211_11,available,available,not available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00212_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00213_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00214_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00215_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00216_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00217_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00218_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00219_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00220_11,available,available,not available,available,not available,available,available,available,not available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00221_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00222_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00223_11,available,available,available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00224_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00225_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00226_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00227_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00228_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00229_11,available,available,available,available,not available,available,available,not available,available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00230_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00231_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00232_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00233_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00234_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00235_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00236_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00237_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00238_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00239_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00240_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00241_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00242_11,available,available,available,available,not available,available,available,available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00243_11,available,available,available,available,not available,available,available,available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00244_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00245_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00246_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00247_11,available,available,not available,available,not available,available,available,available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00248_11,available,available,available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00249_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00250_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00251_11,available,available,available,available,available,available,available,available,available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00252_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00253_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00254_11,available,available,available,available,available,available,available,available,available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00255_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00256_11,available,available,available,available,available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00257_11,available,available,not available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00258_11,available,available,available,available,not available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00259_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00260_11,available,available,not available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00261_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00262_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00263_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00264_11,available,available,available,available,available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00265_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00266_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00267_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,available,not available,available
+UPENN-GBM-00268_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00269_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00270_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00271_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00272_11,available,available,not available,available,available,available,available,available,not available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00273_11,available,not available,not available,available,not available,available,available,available,not available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00274_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00275_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00276_11,available,available,available,available,not available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00277_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00278_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00279_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00280_11,available,not available,not available,available,not available,available,available,available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00281_11,available,not available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00282_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00283_11,available,not available,not available,available,available,available,available,not available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00284_11,available,available,available,available,available,available,available,available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00285_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00286_11,available,available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00287_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00288_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00289_11,available,available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00290_11,available,available,available,available,available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00291_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00292_11,available,not available,not available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00293_11,available,available,not available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00294_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00295_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00296_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00297_11,available,not available,not available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00298_11,available,not available,not available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00299_11,available,not available,not available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00300_11,available,available,available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00301_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,available,not available,available
+UPENN-GBM-00302_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,available,not available,available
+UPENN-GBM-00303_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00304_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00305_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00306_11,available,available,not available,available,not available,available,available,available,available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00307_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00308_11,available,available,available,available,not available,available,available,available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00309_11,available,not available,not available,available,not available,available,available,available,not available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00310_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00311_11,available,available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00312_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,available,not available,available
+UPENN-GBM-00313_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00314_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00315_11,available,available,available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00316_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00317_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00318_11,available,not available,not available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00319_11,available,not available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00320_11,available,not available,available,available,not available,available,available,available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00321_11,available,available,not available,available,not available,available,available,available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00322_11,available,not available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00323_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00324_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00325_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00326_11,available,not available,not available,available,not available,available,available,available,not available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00327_11,available,not available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00328_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00329_11,available,available,not available,available,not available,available,available,available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00330_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00331_11,available,not available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00332_11,available,available,available,available,not available,available,available,available,available,not available,available,available,-,available,not available,available
+UPENN-GBM-00333_11,available,not available,not available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00334_11,available,available,available,available,not available,available,available,available,available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00335_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00336_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00337_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00338_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00339_11,available,not available,not available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00340_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00341_11,available,not available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00342_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00343_11,available,not available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00344_11,available,available,not available,available,available,available,available,available,available,available,not available,available,-,available,not available,available
+UPENN-GBM-00345_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00346_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00347_11,available,not available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00348_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00349_11,available,available,available,available,not available,available,available,available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00350_11,available,available,available,available,not available,available,available,available,available,available,available,not available,-,not available,not available,available
+UPENN-GBM-00351_11,available,available,available,available,available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00352_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,available,not available,available
+UPENN-GBM-00353_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00354_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,available,not available,available
+UPENN-GBM-00355_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,available,not available,available
+UPENN-GBM-00356_11,available,available,available,available,available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00357_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00358_11,available,available,available,available,available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00359_11,available,available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00360_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00361_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00362_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00363_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00364_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00365_11,available,available,available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00366_11,available,available,available,available,available,available,available,not available,available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00367_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00368_11,available,available,available,available,available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00369_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00370_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00371_11,available,available,not available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00372_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00373_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00374_11,available,available,available,available,not available,available,available,available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00375_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00376_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00377_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00378_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00379_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00380_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00381_11,available,available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00382_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00383_11,available,available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00384_11,available,available,available,available,available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00385_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00386_11,available,available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00387_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00388_11,available,available,available,available,available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00389_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00390_11,available,available,not available,available,available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00391_11,available,available,available,available,available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00392_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00393_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00394_11,available,available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00395_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00396_11,available,available,available,available,available,available,available,not available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00397_11,available,available,available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00398_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00399_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00400_11,available,available,not available,available,not available,available,available,available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00401_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00402_11,available,not available,not available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00403_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00404_11,available,available,available,available,available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00405_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00406_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00407_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00408_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00409_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00410_11,available,available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00411_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00412_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00413_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00414_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00415_11,available,available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00416_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00417_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00418_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00419_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00420_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00421_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00422_11,available,available,not available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00423_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00424_11,available,available,not available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00425_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00426_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00427_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00428_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00429_11,available,available,available,available,available,available,available,not available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00430_11,available,available,not available,available,available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00431_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00432_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00433_11,available,available,available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00434_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00435_11,available,available,available,available,not available,available,available,available,available,available,not available,not available,-,not available,not available,available
+UPENN-GBM-00436_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00437_11,available,available,available,available,available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00438_11,available,available,not available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00439_11,available,available,available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00440_11,available,available,not available,available,available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00441_11,available,not available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00442_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00443_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00444_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00445_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00446_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00447_11,available,available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00448_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00449_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00450_11,available,available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00451_11,available,available,available,available,not available,available,available,not available,available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00452_11,available,not available,not available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00453_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00454_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00455_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00456_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00457_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00458_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00459_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00460_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00461_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00462_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00463_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00464_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00465_11,available,available,available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00466_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00467_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00468_11,available,available,available,available,not available,available,available,available,available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00469_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00470_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00471_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00472_11,available,available,available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00473_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00474_11,available,available,not available,available,available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00475_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00476_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00477_11,available,available,available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00478_11,available,not available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00479_11,available,not available,not available,available,not available,available,available,available,available,available,not available,not available,-,not available,not available,available
+UPENN-GBM-00480_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00481_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00482_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00483_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00484_11,available,not available,not available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00485_11,available,not available,not available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00486_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00487_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00488_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00489_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00490_11,available,available,available,available,not available,available,available,available,available,available,not available,not available,-,not available,not available,available
+UPENN-GBM-00491_11,available,available,available,available,not available,available,available,available,available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00492_11,available,available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00493_11,available,available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00494_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00495_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00496_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00497_11,available,not available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00498_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00499_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00500_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00501_11,available,not available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00502_11,available,available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00503_11,available,not available,not available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00504_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00505_11,available,available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00506_11,available,not available,not available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00507_11,available,not available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00508_11,available,available,available,available,not available,available,available,available,available,available,not available,not available,-,not available,not available,available
+UPENN-GBM-00509_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00510_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00511_11,available,not available,not available,available,not available,available,available,not available,available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00512_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00513_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00514_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00515_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00516_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00517_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00518_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00519_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00520_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00521_11,available,not available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00522_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00523_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00524_11,available,available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00525_11,available,available,not available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00526_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00527_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00528_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00529_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00530_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00531_11,available,not available,not available,available,not available,available,available,available,available,available,not available,not available,-,not available,not available,available
+UPENN-GBM-00532_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00533_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00534_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00535_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00536_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00537_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00538_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00539_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00540_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00541_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00542_11,available,available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00543_11,available,available,not available,available,not available,available,available,available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00544_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00545_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00546_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00547_11,available,not available,not available,available,not available,available,available,available,available,available,not available,not available,-,not available,not available,available
+UPENN-GBM-00548_11,available,not available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00549_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00550_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00551_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00552_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00553_11,available,not available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00554_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00555_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00556_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00557_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00558_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00559_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00560_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00561_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00562_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00563_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00564_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00565_11,available,available,available,available,not available,available,available,not available,available,available,not available,not available,-,not available,not available,available
+UPENN-GBM-00566_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00567_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00568_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00569_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00570_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00571_11,available,not available,not available,available,not available,available,available,available,not available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00572_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00573_11,available,not available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00574_11,available,available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00575_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00576_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00577_11,available,available,available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00578_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00579_11,available,not available,not available,available,not available,available,available,not available,available,available,not available,not available,-,not available,not available,available
+UPENN-GBM-00580_11,available,not available,not available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00581_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00582_11,available,available,available,available,not available,available,available,not available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00583_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00584_11,available,available,not available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00585_11,available,available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00586_11,available,not available,not available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00587_11,available,available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00588_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00589_11,available,available,not available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00590_11,available,available,available,available,not available,available,available,available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00591_11,available,available,not available,available,not available,available,available,available,available,available,not available,not available,-,not available,not available,available
+UPENN-GBM-00592_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00593_11,available,available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00594_11,available,available,available,available,not available,available,available,not available,available,available,available,available,-,not available,not available,available
+UPENN-GBM-00595_11,available,available,available,available,not available,available,available,not available,available,available,not available,not available,-,not available,not available,available
+UPENN-GBM-00596_11,available,available,available,available,not available,available,available,available,available,available,available,not available,-,not available,not available,available
+UPENN-GBM-00597_11,available,available,available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00598_11,available,not available,not available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00599_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00600_11,available,available,available,available,not available,available,available,not available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00601_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00602_11,available,available,available,available,not available,available,available,available,available,available,not available,not available,-,not available,not available,available
+UPENN-GBM-00603_11,available,available,not available,available,not available,available,available,not available,available,not available,available,available,-,not available,not available,available
+UPENN-GBM-00604_11,available,available,available,available,not available,available,available,available,available,available,available,not available,-,not available,not available,available
+UPENN-GBM-00605_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00606_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00607_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00608_11,available,available,available,available,not available,available,available,not available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00609_11,available,not available,not available,available,not available,available,available,available,available,available,not available,available,-,not available,not available,available
+UPENN-GBM-00610_11,available,available,not available,available,not available,available,available,not available,available,not available,not available,not available,-,not available,not available,available
+UPENN-GBM-00611_11,available,available,available,available,not available,available,available,available,available,not available,not available,available,-,not available,not available,available
+UPENN-GBM-00036_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00042_21,available,available,available,not available,not available,available,available,not available,not available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00045_21,available,available,available,not available,not available,available,available,not available,not available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00051_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00052_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00055_21,available,available,available,not available,not available,available,available,not available,not available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00084_21,available,available,available,not available,not available,available,available,not available,not available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00086_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00088_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00093_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00122_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00128_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00129_21,available,available,available,not available,not available,available,available,not available,not available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00130_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00133_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00134_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00140_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00141_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00145_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00148_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00150_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00160_21,available,available,available,not available,not available,available,available,not available,not available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00183_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00197_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00219_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00267_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00280_21,available,available,available,not available,not available,available,available,not available,not available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00285_21,available,available,available,not available,not available,available,available,not available,not available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00295_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00301_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00302_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00307_21,available,available,available,not available,not available,available,available,not available,not available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00312_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00314_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00320_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00332_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00344_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00352_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00353_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00354_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,available,-,available,not available
+UPENN-GBM-00355_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,available,-,available,not available
+UPENN-GBM-00612_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,not available,-,available,not available
+UPENN-GBM-00613_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,not available,-,available,not available
+UPENN-GBM-00614_21,available,available,available,not available,not available,available,available,not available,not available,not available,not available,not available,not available,-,available,not available
+UPENN-GBM-00615_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,not available,-,available,not available
+UPENN-GBM-00616_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,not available,-,available,not available
+UPENN-GBM-00617_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,not available,-,available,not available
+UPENN-GBM-00618_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,not available,-,available,not available
+UPENN-GBM-00619_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,not available,-,available,not available
+UPENN-GBM-00620_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,not available,-,available,not available
+UPENN-GBM-00621_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,not available,-,available,not available
+UPENN-GBM-00622_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,not available,-,available,not available
+UPENN-GBM-00623_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,not available,-,available,not available
+UPENN-GBM-00624_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,not available,-,available,not available
+UPENN-GBM-00625_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,not available,-,available,not available
+UPENN-GBM-00626_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,not available,-,available,not available
+UPENN-GBM-00627_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,not available,-,available,not available
+UPENN-GBM-00628_21,available,available,available,not available,not available,available,available,not available,available,not available,not available,not available,not available,-,available,not available
+UPENN-GBM-00629_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,not available,-,available,not available
+UPENN-GBM-00630_21,available,available,available,not available,not available,available,available,not available,available,available,not available,not available,not available,-,available,not available

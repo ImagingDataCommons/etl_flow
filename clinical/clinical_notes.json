@@ -190,6 +190,28 @@
         "tcia": "yes",
         "idc_id": "b_mode_and_ceus_liver"
     },
+    "bonemarrowwsi_pediatricleukemia": {
+        "notes": "one csv file an a data dictionary",
+        "srcs": [
+            [
+                {
+                    "filenm": "images_v1_lab_values.xlsx",
+                    "sheet": 0
+                }
+            ]
+        ],
+        "dict": [
+            {
+                "filenm": "images_v1_lab_values.xlsx",
+                "sheet": 1,
+                "use": true,
+                "nohead": false,
+                "form": "bmdeep"
+            }
+        ],
+        "case_id": "same",
+        "tcia": "yes"
+    },
     "Brain-TR-GammaKnife": {
         "notes": "Limited Access. Not in IDC",
         "tcia": "no"
@@ -246,6 +268,97 @@
         "case_id": "same",
         "tcia": "yes",
         "idc_id": "c4kc_kits"
+    },
+    "cbis_ddsm": {
+        "notes": "Four csv files with clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "calc_case_description_test_set.csv",
+                    "patientIdCol": "patient_id"
+                }
+            ],
+            [
+                {
+                    "filenm": "calc_case_description_train_set.csv",
+                    "patientIdCol": "patient_id"
+                }
+            ],
+            [
+                {
+                    "filenm": "mass_case_description_test_set.csv",
+                    "patientIdCol": "patient_id"
+                }
+            ],
+            [
+                {
+                    "filenm": "mass_case_description_train_set.csv",
+                    "patientIdCol": "patient_id"
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "calc_case_description_test_set": "calc case description testing set"
+            },
+            {
+                "calc_case_description_train_set": "calc case description training set"
+            },
+            {
+                "mass_case_description_test_set": "mass case description testing set"
+            },
+            {
+                "mass_case_description_train_set": "mass case description training set"
+            }
+        ],
+        "case_id": "same",
+        "tcia": "yes"
+    },
+    "cc_radiomics_phantom_3": {
+        "notes": "one xlsx file with four sheets describe machine settings",
+        "srcs": [
+            [
+                {
+                    "filenm": "TCIA_CCR_Parameters_Anonymized.xlsx",
+                    "sheet": 0
+                }
+            ],
+            [
+                {
+                    "filenm": "TCIA_CCR_Parameters_Anonymized.xlsx",
+                    "sheet": 1
+                }
+            ],
+            [
+                {
+                    "filenm": "TCIA_CCR_Parameters_Anonymized.xlsx",
+                    "sheet": 2
+                }
+            ],
+            [
+                {
+                    "filenm": "TCIA_CCR_Parameters_Anonymized.xlsx",
+                    "sheet": 3
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "manufacturer": "Manufacturer and model per patient"
+            },
+            {
+                "control_settings": "Control settings pre patient"
+            },
+            {
+                "chest_settings": "Chest settings pre patient"
+            },
+            {
+                "head_settings": "Head settings pre patient"
+            }
+
+        ],
+        "case_id": "same",
+        "tcia": "yes"
     },
     "cc_tumor_heterogeneity": {
         "notes": "one file with one sheet with clinical data",
@@ -2073,7 +2186,7 @@
         "srcs": [
             [
                 {
-                    "filenm": "VAREPOP-APOLLO-DA-OTHER.csv",
+                    "filenm": "VAREPOP-APOLLO-DA-OTHER_073125_2.csv",
                     "sheet": 0
                 }
             ]

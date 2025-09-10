@@ -159,7 +159,8 @@ def processSrc(fpath, colName, srcInfo, coll):
         engine = 'pyxlsb'
     df = []
     if extension == '.csv':
-        df = pd.read_csv(filenm, keep_default_na=False)
+        csv_sep = srcInfo['csv_sep'] if 'csv_sep' in srcInfo else ','
+        df = pd.read_csv(filenm, sep=csv_sep, keep_default_na=False)
         # df = df.head(100)
         sheet_name = ''
     else:
@@ -949,6 +950,9 @@ def parse_dict(fpath, collec, ndic, indx, coll):
     skipRows = None
     if "skipRows" in ndic:
         skipRows = ndic["skipRows"]
+    nRows = None
+    if "nRows" in ndic:
+        nRows = ndic['nRows'] + 1
     header = 0
     if "header" in ndic:
         if ndic["header"] == "None":
@@ -975,8 +979,13 @@ def parse_dict(fpath, collec, ndic, indx, coll):
             dc.append(docx2python(filenm2).document[0][0][0])
 
     else:
-        dfi = pd.read_excel(filenm, engine=engine, sheet_name=None, skiprows=skipRows, header=header,
-                            keep_default_na=False)
+        if nRows:
+            dfi = pd.read_excel(filenm, engine=engine, sheet_name=None, skiprows=skipRows, nrows=nRows, header=header,
+                                keep_default_na=False)
+        else:
+            dfi = pd.read_excel(filenm, engine=engine, sheet_name=None, skiprows=skipRows, header=header,
+                                keep_default_na=False)
+
         if not isinstance(sheet_number, list):
             sheet_name = list(dfi.keys())[sheet_number]
             df = dfi[sheet_name]
@@ -1209,6 +1218,14 @@ def parse_dict(fpath, collec, ndic, indx, coll):
             column = formatForBQ([[row[0]]], True)[0]
             data_dict[column] = {}
             data_dict[column]['label'] = row[1]
+    elif (ndic["form"] == "bmdeep"):
+        try:
+            for index, row in df.iterrows():
+                column = formatForBQ([[str(row[0])]], True)[0]
+                data_dict[column] = {}
+                data_dict[column]['label'] = row[1]
+        except Exception as exc:
+            pass
 
     btch = collec['mergeBatch'][indx]
 
@@ -1224,6 +1241,8 @@ def parse_dict(fpath, collec, ndic, indx, coll):
 
 # get the files imported from some non-TCIA sources - mostly zenodo.
 # For this purpose, files must be copied from the source to the clinical/archive directory and saved to github
+# If execution of this script is remote, then the remote PyCharm directory should be downloaded to the local repo
+# for the purpose of pushing to github.
 def add_from_archive():
     if not Path(ORIGINAL_SRCS_PATH).exists():
         mkdir(Path(ORIGINAL_SRCS_PATH))
@@ -1262,6 +1281,7 @@ def add_from_archive():
 if __name__ == "__main__":
 
     colls = [] # Collections to parse. Parse all collections if empty.
+    # colls = [] # Collections to parse. Parse all collections if empty.
     dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
     add_from_archive()
     dirpath = Path(DESTINATION_FOLDER)

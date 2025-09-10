@@ -76,7 +76,7 @@ def get_patient_dois_tcia(collection, patient="", third_party="no", server=""):
     for series in series_metadata:
         series_urls[series['SeriesInstanceUID']] = {
             # Drop the https://doi.org/ part of the URL
-            "source_doi": series["CollectionURI"].split('/',3)[-1].lower(),
+            "source_doi": series['DataDescriptionURI'].split('/',3)[-1].lower(),
             # TCIA doesn' provide versioned DOIs, so we set it to an empty string
             "versioned_source_doi": ""
         }

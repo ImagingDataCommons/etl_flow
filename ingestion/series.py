@@ -135,7 +135,7 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
             # series.instances.append(instance)
 
     for instance in retired_objects:
-        breakpoint()
+        # breakpoint()
         instance.final_idc_version = settings.PREVIOUS_VERSION
         series.instances.remove(instance)
         progresslogger.info('  p%s: Instance %s is retired', args.pid, instance.sop_instance_uid)

@@ -1,0 +1,35 @@
+Col_num,ques_seq_no,field_name,ques_desc,data_type,resp_seq_no,resp_desc
+1,1,Iae1,date of most recent mammogram,YYYY,,best4.
+2,1,Iae1d,Days from Base_dt to date of most recent mammogram,#,,best8.
+3,2,Iae2,"in addition to standard mammography views, were other views obtained?",List,1,No
+3,2,Iae2,"in addition to standard mammography views, were other views obtained?",List,2,Yes
+3,2,Iae2,"in addition to standard mammography views, were other views obtained?",List,99,Unknown
+4,3,Iae3,if date unknown,List,99,Unknown
+5,4,Iae4,date of mammogram prior to most recent,YYYY,,best4.
+6,4,Iae4d,Days from Base_dt to date of mammogram prior to most recent,#,,best8.
+7,5,Iae5,density of breast parenchyma,List,1,Mostly fat: < 10% dense
+7,5,Iae5,density of breast parenchyma,List,2,Scattered fibroductal densities: 11-50 % dense
+7,5,Iae5,density of breast parenchyma,List,3,Heterogeneously dense: 51-90 % dense
+7,5,Iae5,density of breast parenchyma,List,4,Extremely dense: > 90% dense
+8,6,Iae6,overall mammographic impressions,List,0,"Incomplete, need additional evaluation"
+8,6,Iae6,overall mammographic impressions,List,1,Negative (no finding)
+8,6,Iae6,overall mammographic impressions,List,2,2-Benign
+8,6,Iae6,overall mammographic impressions,List,3,3-Probably Benign
+8,6,Iae6,overall mammographic impressions,List,4,Suspicious abnormality
+8,6,Iae6,overall mammographic impressions,List,5,Highly suggestive of malignancy
+9,7,Iae7,"ultrasound, breast",List,1,No
+9,7,Iae7,"ultrasound, breast",List,2,Yes
+9,7,Iae7,"ultrasound, breast",List,99,Unknown
+10,8,Iae8,upper outer,List,1,No
+10,8,Iae8,upper outer,List,2,Yes
+11,9,Iae9,lower outer,List,1,No
+11,9,Iae9,lower outer,List,2,Yes
+12,10,Iae10,upper inner,List,1,No
+12,10,Iae10,upper inner,List,2,Yes
+13,11,Iae11,lower inner,List,1,No
+13,11,Iae11,lower inner,List,2,Yes
+14,12,Iae12,retroareolar,List,1,No
+14,12,Iae12,retroareolar,List,2,Yes
+15,15,Iae15,date form completed (mm/dd/yyyy),YYYY,,best4.
+16,15,Iae15d,Days from Base_dt to date form completed (mm/dd/yyyy),#,,best8.
+17,17,Rec,Data Entry Date (Days from base date),#,,best8.

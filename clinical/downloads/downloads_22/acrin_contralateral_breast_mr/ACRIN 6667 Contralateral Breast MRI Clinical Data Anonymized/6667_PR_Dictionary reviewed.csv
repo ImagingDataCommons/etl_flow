@@ -1,0 +1,36 @@
+Col_num,ques_seq_no,field_name,ques_desc,data_type,resp_seq_no,resp_desc
+1,1,Pre1,PROTOCOL EVENT BEING REPORTED,List,1,Duplicate case registration
+1,1,Pre1,PROTOCOL EVENT BEING REPORTED,List,2,Participant withdrew study consent
+1,1,Pre1,PROTOCOL EVENT BEING REPORTED,List,3,MRI not performed per protocol specified time point
+1,1,Pre1,PROTOCOL EVENT BEING REPORTED,List,4,MRI interpretation done by radiologist other than specified on site PSA
+1,1,Pre1,PROTOCOL EVENT BEING REPORTED,List,5,Recommended US not done
+1,1,Pre1,PROTOCOL EVENT BEING REPORTED,List,6,Recommended MRI not done
+1,1,Pre1,PROTOCOL EVENT BEING REPORTED,List,7,Recommended Mammography not done
+1,1,Pre1,PROTOCOL EVENT BEING REPORTED,List,9,"Initial MR images lost, unable to archive"
+1,1,Pre1,PROTOCOL EVENT BEING REPORTED,List,10,MR technical parameters outside protocol specifications (6667 QC)
+1,1,Pre1,PROTOCOL EVENT BEING REPORTED,List,11,MR guided biopsy performed by personnel other than Radiologist specified on site PSA
+1,1,Pre1,PROTOCOL EVENT BEING REPORTED,List,12,"Other, specify"
+2,2,Pre2,DATE OF STUDY THAT RECOMMENDED US,YYYY,,best4.
+3,2,Pre2d,Days from Base_dt to DATE OF STUDY THAT RECOMMENDED US,#,,best8.
+4,3,Pre3,DATE OF STUDY THAT RECOMMENDED MRI,YYYY,,best4.
+5,3,Pre3d,Days from Base_dt to DATE OF STUDY THAT RECOMMENDED MRI,#,,best8.
+6,4,Pre4,DATE OF STUDY THAT RECOMMENDED MAMMOGRAPHY,YYYY,,best4.
+7,4,Pre4d,Days from Base_dt to DATE OF STUDY THAT RECOMMENDED MAMMOGRAPHY,#,,best8.
+8,5,Pre5,SPECIFY OTHER,Char(80),,$F200.
+9,7,Pre7,DEVIATIONS,List,1,Incorrect scanning parameters utilized
+9,7,Pre7,DEVIATIONS,List,2,Incorrect slice thickness utilized
+9,7,Pre7,DEVIATIONS,List,3,Incorrect matrix utilized
+9,7,Pre7,DEVIATIONS,List,4,Incorrect FOV utilized
+9,7,Pre7,DEVIATIONS,List,5,Incorrect utilization of TR
+9,7,Pre7,DEVIATIONS,List,6,Incorrect utilization of TE
+9,7,Pre7,DEVIATIONS,List,7,Incorrect timing of study breast
+9,7,Pre7,DEVIATIONS,List,8,Scan quality insufficient
+9,7,Pre7,DEVIATIONS,List,9,No contrast agent visible
+10,8,Pre8,INCORRECT SCANNING PARAMETERS,List,1,Only one post-contrast enhanced scan acquired
+10,8,Pre8,INCORRECT SCANNING PARAMETERS,List,2,No post-contrast scans submitted
+11,11,Pre11,DATE FORM COMPLETED (MM/DD/YYYY),YYYY,,best4.
+12,11,Pre11d,Days from Base_dt to DATE FORM COMPLETED (MM/DD/YYYY),#,,best8.
+13,13,Pre13,HQ CODE,List,1,Variation discovered upon HQ data review
+13,13,Pre13,HQ CODE,List,2,Variation discovered upon HQ image review
+13,13,Pre13,HQ CODE,List,3,Variation discovered upon audit
+14,14,Rec,Data Entry Date (Days from base date),#,,best8.
