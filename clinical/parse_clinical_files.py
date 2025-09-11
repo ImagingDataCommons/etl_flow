@@ -1283,7 +1283,10 @@ if __name__ == "__main__":
     colls = [] # Collections to parse. Parse all collections if empty.
     # colls = [] # Collections to parse. Parse all collections if empty.
     dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
+
+    # Copy files from the ./clinical/archive directory to ./clinical/downloads/download_xx
     add_from_archive()
+
     dirpath = Path(DESTINATION_FOLDER)
     clinJson = read_clin_file(NOTES_PATH + 'clinical_notes.json')
     collec = list(clinJson.keys())
