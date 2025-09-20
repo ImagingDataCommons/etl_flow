@@ -112,8 +112,8 @@ if __name__ == "__main__":
     bucket_id = 'bq_export_idc'
 
     breakpoint()
-    # dataset_name = settings.BQ_PDP_DATASET
-    dataset_name = 'idc_v21'
+    dataset_name = settings.BQ_PDP_DATASET
+    # dataset_name = f'idc_v{settings.CURRENT_VERSION}'
     clinical_dataset_name = f'{dataset_name}_clinical'
 
     # Get both clinical and non clinical table names with just dataset name
