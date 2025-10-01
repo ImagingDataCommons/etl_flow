@@ -45,23 +45,31 @@ assert settings.configured
 
 def delete_instances(args, client, bucket, blobs, n):
     TRIES = 3
-    with client.batch():
-        for blob in blobs:
-            for i in range(TRIES):
-                try:
-                    bucket.blob(blob).delete()
-                    successlogger.info(blob)
-                    break
-                except ServiceUnavailable:
-                    errlogger.error('p%s Delete %s blobs %s:%s failed; Service unavailable', args.id, args.bucket, n, n+len(blobs)-1)
-                    time.sleep(1)
-                except Exception as exc:
-                    errlogger.error('p%s Exception %s %s:%s', args.id, exc, n, n+len(blobs)-1)
-                    time.sleep(1)
-                except NotFound:
-                    errlogger.error('p%s Delete %s blobs %s:%s failed, not found', args.id, args.bucket, n, n+len(blobs)-1)
-                    break
-    progresslogger.info('p%s Delete %s blobs %s:%s ', args.id, args.bucket, n, n + len(blobs) - 1)
+    for batch_tries in range(TRIES):
+        try:
+            with client.batch():
+                for blob in blobs:
+                    for i in range(TRIES):
+                        try:
+                            bucket.blob(blob).delete()
+                            successlogger.info(blob)
+                            break
+                        except ServiceUnavailable:
+                            errlogger.error('p%s Delete %s blobs %s:%s failed; Service unavailable', args.id, args.bucket, n, n+len(blobs)-1)
+                            time.sleep(1)
+                        except NotFound:
+                            errlogger.error('p%s Delete %s blobs %s:%s failed, not found', args.id, args.bucket, n, n+len(blobs)-1)
+                            break
+                        except Exception as exc:
+                            errlogger.error('p%s Exception %s %s:%s', args.id, exc, n, n+len(blobs)-1)
+                            time.sleep(1)
+            progresslogger.info('p%s Deleted %s blobs %s:%s ', args.id, args.bucket, n,
+                                n + len(blobs) - 1)
+            break
+        except Exception as exc:
+            errlogger.error('p%s Batch level exception %s %s:%s', args.id, exc, n, n + len(blobs) - 1)
+            time.sleep(1)
+
 
 
 def worker(input, args):
@@ -71,7 +79,7 @@ def worker(input, args):
         try:
             delete_instances(args, client, bucket, blobs, n)
         except Exception as exc:
-            errlogger.error('p%s Exception %s %s:%s', args.id, exc, n, n+len(blobs)-1)
+            errlogger.exception('p%s Exception %s %s:%s', args.id, exc, n, n+len(blobs)-1)
             time.sleep(1)
 
 def del_all_instances(args):

@@ -43,21 +43,7 @@ import os
 # Get a list of the UUIDs of the series which have not been zipped and copied to GCS.
 def get_undone_series(args: object) -> object:
     client = bigquery.Client()
-    # query = f"""
-    # WITH series_data AS (
-    # SELECT DISTINCT collection_id, replace(replace(source_doi,'/','_'),'.','_')  source_doi, se_rev_idc_version, se_uuid, i_size, i_uuid, i_source,
-    #     access,
-    #     dev_bucket src_bucket
-    # FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined`
-    # WHERE se_redacted = False
-    # )
-    # SELECT collection_id, source_doi, access, se_rev_idc_version version, se_uuid, SUM(i_size) se_size,
-    #     COUNT(i_uuid) instances, src_bucket,
-    #     REPLACE(src_bucket, 'dev', 'arch') dst_bucket
-    # FROM series_data
-    # GROUP BY collection_id, source_doi, access, version, se_uuid,  src_bucket
-    # having src_bucket = '{args.src_bucket}'
-    # ORDER by collection_id, source_doi, version, se_uuid """
+
     query = f"""
     SELECT DISTINCT ajpac.collection_id, se_rev_idc_version, se_uuid, i_size, i_uuid, i_source, 
         ajpac.access, ajpac.Type, am.gcs_bucket src_bucket, CONCAT('idc-arch-', LOWER(ajpac.Type)) dst_bucket
@@ -168,10 +154,6 @@ def zip_worker(zip_queue, args):
                 dst_bucket = client.bucket(dst_bucket_name)
                 prev_src_bucket_name = src_bucket_name
             start_time = time.time()
-            # progresslogger.info(
-            #     f'p{args.pid:03}:    Start: {series_index}:{se_uuid}, {round(se_size / pow(2, 20), 2)}MB')
-            # src_directory = f'{src_mount_point}/{series.se_uuid}/'
-            # zip_name = f'{dst_mount_point}/{series.se_uuid}.zip'
             gen_zip_stream(se_uuid, src_bucket, dst_bucket)
             elapsed_time = time.time() - start_time
             start_time = time.time()
@@ -223,56 +205,6 @@ def main(args):
             total_instances = 0
             total_elapsed_time = 0
 
-        # We work on a collection at a time
-        # for collection_id in undones['collection_id'].unique():
-            # if collection_id != 'ACRIN-NSCLC-FDG-PET':
-            #     continue
-
-            # Get the series still to be done in the collection
-            # collection_undones = undones[undones['collection_id'] == collection_id]
-
-            # Within a collection, we work on a source_doi at a time
-            # for source_doi in collection_undones['source_doi'].unique():
-                # if source_doi.find('zenodo') == -1:
-                #     continue
-                # Get the series still to be done in the source_doi
-                # doi_undones = collection_undones[collection_undones['source_doi']==source_doi]
-                # public_access = doi_undones.iloc[0]['access'] == 'Public'
-
-                # # Within a source_doi, we work on a version at a time:
-                # for version in doi_undones['version'].unique():
-                #     version_undones = doi_undones[doi_undones['version']==version]
-                #
-                #
-                #     src_bucket = version_undones.iloc[0]['src_bucket']
-                #     dst_bucket = version_undones.iloc[0]['dst_bucket']
-                #     init_index = all_series.index(version_undones.iloc[0].se_uuid)
-                #     final_index = all_series.index(version_undones.iloc[len(version_undones)-1].se_uuid)
-                #     bucket_size = round(version_undones['series_size'].sum()/pow(10,9),1)
-                #     series_count = len(version_undones)
-                #     instance_count = round(version_undones['instances'].sum()/pow(10,3),1)
-                #     doilogger.info(f'p0:     Processing {collection_id}/{source_doi}/v{version}, {bucket_size}GB, {series_count} series, {instance_count}K instances, {init_index}:{final_index}')
-                #     start_time = time.time()
-                #     for _, series in version_undones.iterrows():
-                #         series_index = f'{init_index}:{all_series.index(series.se_uuid)}:{final_index}:{len(all_series)}'
-                #         zip_queue.put((series_index, series, src_bucket, dst_bucket))
-                #
-                #     elapsed_time = time.time() - start_time
-                #     total_gb += bucket_size
-                #     total_series += series_count
-                #     total_instances += instance_count
-                #     total_elapsed_time += elapsed_time
-                #     doilogger.info(f'p0:     Completed {collection_id}/{source_doi}/v{version} in {elapsed_time}s, {bucket_size} GB, {pow(10,3)*bucket_size/elapsed_time }MB/s, {series_count/elapsed_time} series/s, {1000*instance_count/elapsed_time} instances/s')
-                #     doilogger.info(f'p0:     Totals: {total_gb} GB, {total_series} series, {total_instances} K instances, {total_gb/total_elapsed_time} GB/s, {total_series/total_elapsed_time} series/s, {total_instances/total_elapsed_time}/K instances/s')
-                #     doilogger.info('')
-                #     totals['gb'] = total_gb
-                #     totals['series'] = total_series
-                #     totals['instances'] = total_instances
-                #     totals['elapsed_time'] = total_elapsed_time
-                #     with open(f'{settings.LOG_DIR}/totals', 'w') as f:
-                #         json.dump(totals, f)
-                #
-                #
         for src_bucket in undones['src_bucket'].unique():
             src_bucket_undones = undones[undones['src_bucket'] == src_bucket]
 
@@ -332,14 +264,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
-    parser.add_argument('--num_processes', default=1)
-    parser.add_argument('--local_disk_dir', default='/mnt/disks/idc-etl/series_zips')
-    parser.add_argument('--src_bucket', default='idc-dev-excluded', help='Source bucket containing instances')
+    parser.add_argument('--num_processes', default=24)
+    # parser.add_argument('--local_disk_dir', default='/mnt/disks/idc-etl/series_zips')
     parser.add_argument('--dst_project', default='idc-archive', help='Project of the dst_bucket')
-    # parser.add_argument('--src_mount_point', default='/mnt/disks/idc-etl/src_mount_point', help='Directory on which to mount the src bucket.\
-    #             The script will create this directory if necessary.')
-    # parser.add_argument('--dst_mount_point', default='/mnt/disks/idc-etl/idc-arch-open', help='Directory on which to mount the dst bucket.\
-    #              The script will create this directory if necessary.')
     args = parser.parse_args()
 
     print("{}".format(args), file=sys.stdout)
@@ -348,10 +275,6 @@ if __name__ == '__main__':
     doilogger.setLevel(logging.INFO)
     for hdlr in doilogger.handlers[:]:
         doilogger.removeHandler(hdlr)
-    # #The series log file is usually truncated (the mode='w' does that.)
-    # if not hasattr(builtins, "APPEND_seriesLOGGER") or builtins.APPEND_seriesLOGGER==False:
-    #     success_fh = logging.FileHandler('{}/series.log'.format(settings.LOG_DIR), mode='w')
-    # else:
     doi_fh = logging.FileHandler('{}/doi.log'.format(settings.LOG_DIR))
     doilogger.addHandler(doi_fh)
     successformatter = logging.Formatter('%(message)s')
