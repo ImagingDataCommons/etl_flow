@@ -1,0 +1,26 @@
+Col_num,ques_seq_no,field_name,ques_desc,data_type,resp_seq_no,resp_desc
+1,1,Qae1,WAS IMAGING PERFORMED ACCORDING TO PROTOCOL SPECIFICATIONS?,List,1,No
+1,1,Qae1,WAS IMAGING PERFORMED ACCORDING TO PROTOCOL SPECIFICATIONS?,List,2,Yes
+2,2,Qae2,SPECIFY REASON NOT PER PROTOCOL,Char(80),,$F200.
+3,3,Qae3,ALL BREAST PARENCHYMA INCLUDED,List,1,No
+3,3,Qae3,ALL BREAST PARENCHYMA INCLUDED,List,2,Yes
+4,4,Qae4,GADOLINIUM UPTAKE,List,1,No
+4,4,Qae4,GADOLINIUM UPTAKE,List,2,Yes
+5,5,Qae5,QUALITY OF IMAGE,List,1,Excellent
+5,5,Qae5,QUALITY OF IMAGE,List,2,Good
+5,5,Qae5,QUALITY OF IMAGE,List,3,Average
+5,5,Qae5,QUALITY OF IMAGE,List,4,"Below average, acceptable"
+5,5,Qae5,QUALITY OF IMAGE,List,5,Unacceptable
+6,6,Qae6,REASON UNACCEPTABLE,List,1,Poor signal to noise ratio
+6,6,Qae6,REASON UNACCEPTABLE,List,2,Artifacts
+6,6,Qae6,REASON UNACCEPTABLE,List,3,Noisy
+6,6,Qae6,REASON UNACCEPTABLE,List,4,"Other, specify"
+7,7,Qae7,SPECIFY OTHER REASON,Char(80),,$F200.
+8,8,Qae8,SITE CONTACTED,List,1,No
+8,8,Qae8,SITE CONTACTED,List,2,Yes
+9,9,Qae9,DATE OF SITE CONTACT,YYYY,,best4.
+10,9,Qae9d,Days from Base_dt to DATE OF SITE CONTACT,#,,best8.
+11,11,Qae11deid,De-identified Reader ID,Char(8),,$F8.
+12,14,Qae14,DATE FORM COMPLETED (MM/DD/YYYY),YYYY,,best4.
+13,14,Qae14d,Days from Base_dt to DATE FORM COMPLETED (MM/DD/YYYY),#,,best8.
+14,16,Rec,Data Entry Date (Days from base date),#,,best8.

@@ -1,0 +1,763 @@
+Patient ID,Segmentation Label,Slice File,Full Descriptive Path
+Breast_MRI_002,Fatty tissue of breast,1-125.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_002/01-01-1990-NA-MRI BREAST BILATERAL W  WO-51972/600.000000-ax 3d dyn-25442/1-125.dcm
+Breast_MRI_002,Fatty tissue of breast,1-030.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_002/01-01-1990-NA-MRI BREAST BILATERAL W  WO-51972/600.000000-ax 3d dyn-25442/1-030.dcm
+Breast_MRI_002,Fatty tissue of breast,1-073.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_002/01-01-1990-NA-MRI BREAST BILATERAL W  WO-51972/600.000000-ax 3d dyn-25442/1-073.dcm
+Breast_MRI_002,Mammary Fibroglandular Tissue,1-116.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_002/01-01-1990-NA-MRI BREAST BILATERAL W  WO-51972/600.000000-ax 3d dyn-25442/1-116.dcm
+Breast_MRI_002,Mammary Fibroglandular Tissue,1-073.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_002/01-01-1990-NA-MRI BREAST BILATERAL W  WO-51972/600.000000-ax 3d dyn-25442/1-073.dcm
+Breast_MRI_002,Mammary Fibroglandular Tissue,1-066.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_002/01-01-1990-NA-MRI BREAST BILATERAL W  WO-51972/600.000000-ax 3d dyn-25442/1-066.dcm
+Breast_MRI_008,Fatty tissue of breast,1-127.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_008/01-01-1990-NA-MRI BREAST BILATERAL WWO-56538/2.000000-ax dyn pre-64921/1-127.dcm
+Breast_MRI_008,Fatty tissue of breast,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_008/01-01-1990-NA-MRI BREAST BILATERAL WWO-56538/2.000000-ax dyn pre-64921/1-100.dcm
+Breast_MRI_008,Fatty tissue of breast,1-016.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_008/01-01-1990-NA-MRI BREAST BILATERAL WWO-56538/2.000000-ax dyn pre-64921/1-016.dcm
+Breast_MRI_008,Mammary Fibroglandular Tissue,1-085.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_008/01-01-1990-NA-MRI BREAST BILATERAL WWO-56538/2.000000-ax dyn pre-64921/1-085.dcm
+Breast_MRI_008,Mammary Fibroglandular Tissue,1-121.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_008/01-01-1990-NA-MRI BREAST BILATERAL WWO-56538/2.000000-ax dyn pre-64921/1-121.dcm
+Breast_MRI_008,Mammary Fibroglandular Tissue,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_008/01-01-1990-NA-MRI BREAST BILATERAL WWO-56538/2.000000-ax dyn pre-64921/1-100.dcm
+Breast_MRI_014,Mammary Fibroglandular Tissue,1-107.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_014/01-01-1990-NA-BREASTROUTINE DYNAMIC-16086/5.000000-ax dyn pre-82670/1-107.dcm
+Breast_MRI_014,Mammary Fibroglandular Tissue,1-064.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_014/01-01-1990-NA-BREASTROUTINE DYNAMIC-16086/5.000000-ax dyn pre-82670/1-064.dcm
+Breast_MRI_014,Mammary Fibroglandular Tissue,1-147.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_014/01-01-1990-NA-BREASTROUTINE DYNAMIC-16086/5.000000-ax dyn pre-82670/1-147.dcm
+Breast_MRI_014,Fatty tissue of breast,1-036.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_014/01-01-1990-NA-BREASTROUTINE DYNAMIC-16086/5.000000-ax dyn pre-82670/1-036.dcm
+Breast_MRI_014,Fatty tissue of breast,1-139.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_014/01-01-1990-NA-BREASTROUTINE DYNAMIC-16086/5.000000-ax dyn pre-82670/1-139.dcm
+Breast_MRI_014,Fatty tissue of breast,1-084.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_014/01-01-1990-NA-BREASTROUTINE DYNAMIC-16086/5.000000-ax dyn pre-82670/1-084.dcm
+Breast_MRI_018,Fatty tissue of breast,1-050.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_018/01-01-1990-NA-BREASTROUTINE DYNAMIC-32826/6.000000-ax dyn pre-74410/1-050.dcm
+Breast_MRI_018,Fatty tissue of breast,1-150.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_018/01-01-1990-NA-BREASTROUTINE DYNAMIC-32826/6.000000-ax dyn pre-74410/1-150.dcm
+Breast_MRI_018,Fatty tissue of breast,1-102.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_018/01-01-1990-NA-BREASTROUTINE DYNAMIC-32826/6.000000-ax dyn pre-74410/1-102.dcm
+Breast_MRI_018,Mammary Fibroglandular Tissue,1-161.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_018/01-01-1990-NA-BREASTROUTINE DYNAMIC-32826/6.000000-ax dyn pre-74410/1-161.dcm
+Breast_MRI_018,Mammary Fibroglandular Tissue,1-150.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_018/01-01-1990-NA-BREASTROUTINE DYNAMIC-32826/6.000000-ax dyn pre-74410/1-150.dcm
+Breast_MRI_018,Mammary Fibroglandular Tissue,1-128.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_018/01-01-1990-NA-BREASTROUTINE DYNAMIC-32826/6.000000-ax dyn pre-74410/1-128.dcm
+Breast_MRI_020,Mammary Fibroglandular Tissue,1-096.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_020/01-01-1990-NA-MRI BREAST BILATERAL WWO-60613/500.000000-ax 3d dyn-20070/1-096.dcm
+Breast_MRI_020,Mammary Fibroglandular Tissue,1-130.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_020/01-01-1990-NA-MRI BREAST BILATERAL WWO-60613/500.000000-ax 3d dyn-20070/1-130.dcm
+Breast_MRI_020,Mammary Fibroglandular Tissue,1-151.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_020/01-01-1990-NA-MRI BREAST BILATERAL WWO-60613/500.000000-ax 3d dyn-20070/1-151.dcm
+Breast_MRI_020,Fatty tissue of breast,1-096.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_020/01-01-1990-NA-MRI BREAST BILATERAL WWO-60613/500.000000-ax 3d dyn-20070/1-096.dcm
+Breast_MRI_020,Fatty tissue of breast,1-130.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_020/01-01-1990-NA-MRI BREAST BILATERAL WWO-60613/500.000000-ax 3d dyn-20070/1-130.dcm
+Breast_MRI_020,Fatty tissue of breast,1-001.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_020/01-01-1990-NA-MRI BREAST BILATERAL WWO-60613/500.000000-ax 3d dyn-20070/1-001.dcm
+Breast_MRI_026,Mammary Fibroglandular Tissue,1-126.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_026/01-01-1990-NA-BREASTROUTINE-02973/6.000000-ax dyn pre-57921/1-126.dcm
+Breast_MRI_026,Mammary Fibroglandular Tissue,1-174.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_026/01-01-1990-NA-BREASTROUTINE-02973/6.000000-ax dyn pre-57921/1-174.dcm
+Breast_MRI_026,Mammary Fibroglandular Tissue,1-098.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_026/01-01-1990-NA-BREASTROUTINE-02973/6.000000-ax dyn pre-57921/1-098.dcm
+Breast_MRI_026,Fatty tissue of breast,1-107.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_026/01-01-1990-NA-BREASTROUTINE-02973/6.000000-ax dyn pre-57921/1-107.dcm
+Breast_MRI_026,Fatty tissue of breast,1-055.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_026/01-01-1990-NA-BREASTROUTINE-02973/6.000000-ax dyn pre-57921/1-055.dcm
+Breast_MRI_026,Fatty tissue of breast,1-172.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_026/01-01-1990-NA-BREASTROUTINE-02973/6.000000-ax dyn pre-57921/1-172.dcm
+Breast_MRI_047,Mammary Fibroglandular Tissue,1-133.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_047/01-01-1990-NA-MRI BREAST BILATERAL WWO-25878/500.000000-ax 3d dyn-46655/1-133.dcm
+Breast_MRI_047,Mammary Fibroglandular Tissue,1-084.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_047/01-01-1990-NA-MRI BREAST BILATERAL WWO-25878/500.000000-ax 3d dyn-46655/1-084.dcm
+Breast_MRI_047,Mammary Fibroglandular Tissue,1-099.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_047/01-01-1990-NA-MRI BREAST BILATERAL WWO-25878/500.000000-ax 3d dyn-46655/1-099.dcm
+Breast_MRI_047,Fatty tissue of breast,1-154.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_047/01-01-1990-NA-MRI BREAST BILATERAL WWO-25878/500.000000-ax 3d dyn-46655/1-154.dcm
+Breast_MRI_047,Fatty tissue of breast,1-084.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_047/01-01-1990-NA-MRI BREAST BILATERAL WWO-25878/500.000000-ax 3d dyn-46655/1-084.dcm
+Breast_MRI_047,Fatty tissue of breast,1-029.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_047/01-01-1990-NA-MRI BREAST BILATERAL WWO-25878/500.000000-ax 3d dyn-46655/1-029.dcm
+Breast_MRI_048,Mammary Fibroglandular Tissue,1-142.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_048/01-01-1990-NA-BREASTROUTINE DYNAMICS-77405/4.000000-ax dyn pre-05242/1-142.dcm
+Breast_MRI_048,Mammary Fibroglandular Tissue,1-110.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_048/01-01-1990-NA-BREASTROUTINE DYNAMICS-77405/4.000000-ax dyn pre-05242/1-110.dcm
+Breast_MRI_048,Mammary Fibroglandular Tissue,1-095.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_048/01-01-1990-NA-BREASTROUTINE DYNAMICS-77405/4.000000-ax dyn pre-05242/1-095.dcm
+Breast_MRI_048,Fatty tissue of breast,1-122.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_048/01-01-1990-NA-BREASTROUTINE DYNAMICS-77405/4.000000-ax dyn pre-05242/1-122.dcm
+Breast_MRI_048,Fatty tissue of breast,1-036.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_048/01-01-1990-NA-BREASTROUTINE DYNAMICS-77405/4.000000-ax dyn pre-05242/1-036.dcm
+Breast_MRI_048,Fatty tissue of breast,1-095.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_048/01-01-1990-NA-BREASTROUTINE DYNAMICS-77405/4.000000-ax dyn pre-05242/1-095.dcm
+Breast_MRI_053,Fatty tissue of breast,1-017.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_053/01-01-1990-NA-MRI BREAST BILATERAL WWO-57340/500.000000-ax 3d dyn-16045/1-017.dcm
+Breast_MRI_053,Fatty tissue of breast,1-120.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_053/01-01-1990-NA-MRI BREAST BILATERAL WWO-57340/500.000000-ax 3d dyn-16045/1-120.dcm
+Breast_MRI_053,Fatty tissue of breast,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_053/01-01-1990-NA-MRI BREAST BILATERAL WWO-57340/500.000000-ax 3d dyn-16045/1-100.dcm
+Breast_MRI_053,Mammary Fibroglandular Tissue,1-036.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_053/01-01-1990-NA-MRI BREAST BILATERAL WWO-57340/500.000000-ax 3d dyn-16045/1-036.dcm
+Breast_MRI_053,Mammary Fibroglandular Tissue,1-120.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_053/01-01-1990-NA-MRI BREAST BILATERAL WWO-57340/500.000000-ax 3d dyn-16045/1-120.dcm
+Breast_MRI_053,Mammary Fibroglandular Tissue,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_053/01-01-1990-NA-MRI BREAST BILATERAL WWO-57340/500.000000-ax 3d dyn-16045/1-100.dcm
+Breast_MRI_057,Mammary Fibroglandular Tissue,1-047.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_057/01-01-1990-NA-BREASTROUTINE DYNAMIC-90347/15.000000-ax dyn pre-37755/1-047.dcm
+Breast_MRI_057,Mammary Fibroglandular Tissue,1-042.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_057/01-01-1990-NA-BREASTROUTINE DYNAMIC-90347/15.000000-ax dyn pre-37755/1-042.dcm
+Breast_MRI_057,Mammary Fibroglandular Tissue,1-092.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_057/01-01-1990-NA-BREASTROUTINE DYNAMIC-90347/15.000000-ax dyn pre-37755/1-092.dcm
+Breast_MRI_057,Fatty tissue of breast,1-087.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_057/01-01-1990-NA-BREASTROUTINE DYNAMIC-90347/15.000000-ax dyn pre-37755/1-087.dcm
+Breast_MRI_057,Fatty tissue of breast,1-047.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_057/01-01-1990-NA-BREASTROUTINE DYNAMIC-90347/15.000000-ax dyn pre-37755/1-047.dcm
+Breast_MRI_057,Fatty tissue of breast,1-021.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_057/01-01-1990-NA-BREASTROUTINE DYNAMIC-90347/15.000000-ax dyn pre-37755/1-021.dcm
+Breast_MRI_059,Fatty tissue of breast,1-037.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_059/01-01-1990-NA-MRI BREAST BILATERAL WWO-32446/500.000000-ax 3d dyn-40958/1-037.dcm
+Breast_MRI_059,Fatty tissue of breast,1-094.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_059/01-01-1990-NA-MRI BREAST BILATERAL WWO-32446/500.000000-ax 3d dyn-40958/1-094.dcm
+Breast_MRI_059,Mammary Fibroglandular Tissue,1-159.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_059/01-01-1990-NA-MRI BREAST BILATERAL WWO-32446/500.000000-ax 3d dyn-40958/1-159.dcm
+Breast_MRI_059,Mammary Fibroglandular Tissue,1-064.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_059/01-01-1990-NA-MRI BREAST BILATERAL WWO-32446/500.000000-ax 3d dyn-40958/1-064.dcm
+Breast_MRI_059,Mammary Fibroglandular Tissue,1-084.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_059/01-01-1990-NA-MRI BREAST BILATERAL WWO-32446/500.000000-ax 3d dyn-40958/1-084.dcm
+Breast_MRI_059,Fatty tissue of breast,1-172.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-172.dcm
+Breast_MRI_061,Fatty tissue of breast,1-139.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_061/01-01-1990-NA-MRI BREAST BILATERAL W  WO-56402/600.000000-ax dynamic-64740/1-139.dcm
+Breast_MRI_061,Fatty tissue of breast,1-077.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_061/01-01-1990-NA-MRI BREAST BILATERAL W  WO-56402/600.000000-ax dynamic-64740/1-077.dcm
+Breast_MRI_061,Fatty tissue of breast,1-012.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_061/01-01-1990-NA-MRI BREAST BILATERAL W  WO-56402/600.000000-ax dynamic-64740/1-012.dcm
+Breast_MRI_061,Mammary Fibroglandular Tissue,1-052.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_061/01-01-1990-NA-MRI BREAST BILATERAL W  WO-56402/600.000000-ax dynamic-64740/1-052.dcm
+Breast_MRI_061,Mammary Fibroglandular Tissue,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_061/01-01-1990-NA-MRI BREAST BILATERAL W  WO-56402/600.000000-ax dynamic-64740/1-090.dcm
+Breast_MRI_061,Mammary Fibroglandular Tissue,1-164.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-164.dcm
+Breast_MRI_064,Mammary Fibroglandular Tissue,1-098.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_064/01-01-1990-NA-MRI BREAST BILATERAL WWO-74041/5.000000-ax 3d dyn pre-81801/1-098.dcm
+Breast_MRI_064,Mammary Fibroglandular Tissue,1-064.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_064/01-01-1990-NA-MRI BREAST BILATERAL WWO-74041/5.000000-ax 3d dyn pre-81801/1-064.dcm
+Breast_MRI_064,Mammary Fibroglandular Tissue,1-023.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_064/01-01-1990-NA-MRI BREAST BILATERAL WWO-74041/5.000000-ax 3d dyn pre-81801/1-023.dcm
+Breast_MRI_064,Fatty tissue of breast,1-089.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_064/01-01-1990-NA-MRI BREAST BILATERAL WWO-74041/5.000000-ax 3d dyn pre-81801/1-089.dcm
+Breast_MRI_064,Fatty tissue of breast,1-128.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_064/01-01-1990-NA-MRI BREAST BILATERAL WWO-74041/5.000000-ax 3d dyn pre-81801/1-128.dcm
+Breast_MRI_064,Fatty tissue of breast,1-040.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_064/01-01-1990-NA-MRI BREAST BILATERAL WWO-74041/5.000000-ax 3d dyn pre-81801/1-040.dcm
+Breast_MRI_091,Mammary Fibroglandular Tissue,1-089.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_091/01-01-1990-NA-MRI BREAST BILATERAL WWO-35745/3.000000-ax dyn pre-87802/1-089.dcm
+Breast_MRI_091,Mammary Fibroglandular Tissue,1-119.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_091/01-01-1990-NA-MRI BREAST BILATERAL WWO-35745/3.000000-ax dyn pre-87802/1-119.dcm
+Breast_MRI_091,Fatty tissue of breast,1-017.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_091/01-01-1990-NA-MRI BREAST BILATERAL WWO-35745/3.000000-ax dyn pre-87802/1-017.dcm
+Breast_MRI_091,Fatty tissue of breast,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_091/01-01-1990-NA-MRI BREAST BILATERAL WWO-35745/3.000000-ax dyn pre-87802/1-090.dcm
+Breast_MRI_091,Fatty tissue of breast,1-137.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_091/01-01-1990-NA-MRI BREAST BILATERAL WWO-35745/3.000000-ax dyn pre-87802/1-137.dcm
+Breast_MRI_091,Mammary Fibroglandular Tissue,1-146.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-146.dcm
+Breast_MRI_092,Mammary Fibroglandular Tissue,1-056.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_092/01-01-1990-NA-MRI BREAST BILATERAL WWO-76323/4.000000-ax dyn pre-17277/1-056.dcm
+Breast_MRI_092,Mammary Fibroglandular Tissue,1-085.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_092/01-01-1990-NA-MRI BREAST BILATERAL WWO-76323/4.000000-ax dyn pre-17277/1-085.dcm
+Breast_MRI_092,Mammary Fibroglandular Tissue,1-127.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_092/01-01-1990-NA-MRI BREAST BILATERAL WWO-76323/4.000000-ax dyn pre-17277/1-127.dcm
+Breast_MRI_092,Fatty tissue of breast,1-140.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_092/01-01-1990-NA-MRI BREAST BILATERAL WWO-76323/4.000000-ax dyn pre-17277/1-140.dcm
+Breast_MRI_092,Fatty tissue of breast,1-039.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_092/01-01-1990-NA-MRI BREAST BILATERAL WWO-76323/4.000000-ax dyn pre-17277/1-039.dcm
+Breast_MRI_092,Fatty tissue of breast,1-096.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_092/01-01-1990-NA-MRI BREAST BILATERAL WWO-76323/4.000000-ax dyn pre-17277/1-096.dcm
+Breast_MRI_102,Mammary Fibroglandular Tissue,1-028.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_102/01-01-1990-NA-MRI BREAST BILATERAL WWO-14980/3.000000-ax 3d dyn pre-06624/1-028.dcm
+Breast_MRI_102,Mammary Fibroglandular Tissue,1-048.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_102/01-01-1990-NA-MRI BREAST BILATERAL WWO-14980/3.000000-ax 3d dyn pre-06624/1-048.dcm
+Breast_MRI_102,Mammary Fibroglandular Tissue,1-072.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_102/01-01-1990-NA-MRI BREAST BILATERAL WWO-14980/3.000000-ax 3d dyn pre-06624/1-072.dcm
+Breast_MRI_102,Fatty tissue of breast,1-134.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_102/01-01-1990-NA-MRI BREAST BILATERAL WWO-14980/3.000000-ax 3d dyn pre-06624/1-134.dcm
+Breast_MRI_102,Fatty tissue of breast,1-048.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_102/01-01-1990-NA-MRI BREAST BILATERAL WWO-14980/3.000000-ax 3d dyn pre-06624/1-048.dcm
+Breast_MRI_102,Fatty tissue of breast,1-072.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_102/01-01-1990-NA-MRI BREAST BILATERAL WWO-14980/3.000000-ax 3d dyn pre-06624/1-072.dcm
+Breast_MRI_117,Mammary Fibroglandular Tissue,1-091.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_117/01-01-1990-NA-MRI BREAST BILATERAL WWO-69228/500.000000-ax 3d dyn-34014/1-091.dcm
+Breast_MRI_117,Mammary Fibroglandular Tissue,1-108.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_117/01-01-1990-NA-MRI BREAST BILATERAL WWO-69228/500.000000-ax 3d dyn-34014/1-108.dcm
+Breast_MRI_117,Mammary Fibroglandular Tissue,1-147.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_117/01-01-1990-NA-MRI BREAST BILATERAL WWO-69228/500.000000-ax 3d dyn-34014/1-147.dcm
+Breast_MRI_117,Fatty tissue of breast,1-108.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_117/01-01-1990-NA-MRI BREAST BILATERAL WWO-69228/500.000000-ax 3d dyn-34014/1-108.dcm
+Breast_MRI_117,Fatty tissue of breast,1-164.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_117/01-01-1990-NA-MRI BREAST BILATERAL WWO-69228/500.000000-ax 3d dyn-34014/1-164.dcm
+Breast_MRI_117,Fatty tissue of breast,1-035.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_117/01-01-1990-NA-MRI BREAST BILATERAL WWO-69228/500.000000-ax 3d dyn-34014/1-035.dcm
+Breast_MRI_137,Mammary Fibroglandular Tissue,1-111.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_137/01-01-1990-NA-MRI BREAST BILATERAL WWO-94212/6.000000-ax dyn pre-97405/1-111.dcm
+Breast_MRI_137,Mammary Fibroglandular Tissue,1-073.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_137/01-01-1990-NA-MRI BREAST BILATERAL WWO-94212/6.000000-ax dyn pre-97405/1-073.dcm
+Breast_MRI_137,Mammary Fibroglandular Tissue,1-055.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_137/01-01-1990-NA-MRI BREAST BILATERAL WWO-94212/6.000000-ax dyn pre-97405/1-055.dcm
+Breast_MRI_137,Fatty tissue of breast,1-031.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_137/01-01-1990-NA-MRI BREAST BILATERAL WWO-94212/6.000000-ax dyn pre-97405/1-031.dcm
+Breast_MRI_137,Fatty tissue of breast,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_137/01-01-1990-NA-MRI BREAST BILATERAL WWO-94212/6.000000-ax dyn pre-97405/1-100.dcm
+Breast_MRI_137,Fatty tissue of breast,1-073.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_137/01-01-1990-NA-MRI BREAST BILATERAL WWO-94212/6.000000-ax dyn pre-97405/1-073.dcm
+Breast_MRI_145,Mammary Fibroglandular Tissue,1-160.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_145/01-01-1990-NA-MRI BREAST BILATERAL-42373/500.000000-ax dynamic-19479/1-160.dcm
+Breast_MRI_145,Mammary Fibroglandular Tissue,1-075.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_145/01-01-1990-NA-MRI BREAST BILATERAL-42373/500.000000-ax dynamic-19479/1-075.dcm
+Breast_MRI_145,Mammary Fibroglandular Tissue,1-101.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_145/01-01-1990-NA-MRI BREAST BILATERAL-42373/500.000000-ax dynamic-19479/1-101.dcm
+Breast_MRI_145,Fatty tissue of breast,1-006.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_145/01-01-1990-NA-MRI BREAST BILATERAL-42373/500.000000-ax dynamic-19479/1-006.dcm
+Breast_MRI_145,Fatty tissue of breast,1-075.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_145/01-01-1990-NA-MRI BREAST BILATERAL-42373/500.000000-ax dynamic-19479/1-075.dcm
+Breast_MRI_145,Fatty tissue of breast,1-161.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_145/01-01-1990-NA-MRI BREAST BILATERAL-42373/500.000000-ax dynamic-19479/1-161.dcm
+Breast_MRI_153,Mammary Fibroglandular Tissue,1-094.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_153/01-01-1990-NA-MRI BREAST BILATERAL WWO-78209/2.000000-ax dyn pre-75557/1-094.dcm
+Breast_MRI_153,Mammary Fibroglandular Tissue,1-104.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_153/01-01-1990-NA-MRI BREAST BILATERAL WWO-78209/2.000000-ax dyn pre-75557/1-104.dcm
+Breast_MRI_153,Fatty tissue of breast,1-023.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_153/01-01-1990-NA-MRI BREAST BILATERAL WWO-78209/2.000000-ax dyn pre-75557/1-023.dcm
+Breast_MRI_153,Fatty tissue of breast,1-142.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_153/01-01-1990-NA-MRI BREAST BILATERAL WWO-78209/2.000000-ax dyn pre-75557/1-142.dcm
+Breast_MRI_153,Fatty tissue of breast,1-104.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_153/01-01-1990-NA-MRI BREAST BILATERAL WWO-78209/2.000000-ax dyn pre-75557/1-104.dcm
+Breast_MRI_153,Mammary Fibroglandular Tissue,1-024.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-024.dcm
+Breast_MRI_154,Mammary Fibroglandular Tissue,1-042.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_154/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-94099/400.000000-Ax Vibrant MultiPhase-23166/1-042.dcm
+Breast_MRI_154,Mammary Fibroglandular Tissue,1-115.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_154/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-94099/400.000000-Ax Vibrant MultiPhase-23166/1-115.dcm
+Breast_MRI_154,Mammary Fibroglandular Tissue,1-103.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_154/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-94099/400.000000-Ax Vibrant MultiPhase-23166/1-103.dcm
+Breast_MRI_154,Fatty tissue of breast,1-103.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_154/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-94099/400.000000-Ax Vibrant MultiPhase-23166/1-103.dcm
+Breast_MRI_154,Fatty tissue of breast,1-033.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_154/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-94099/400.000000-Ax Vibrant MultiPhase-23166/1-033.dcm
+Breast_MRI_154,Fatty tissue of breast,1-152.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_154/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-94099/400.000000-Ax Vibrant MultiPhase-23166/1-152.dcm
+Breast_MRI_162,Mammary Fibroglandular Tissue,1-116.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_162/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-34391/400.000000-Ax Vibrant MultiPhase-70866/1-116.dcm
+Breast_MRI_162,Mammary Fibroglandular Tissue,1-092.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_162/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-34391/400.000000-Ax Vibrant MultiPhase-70866/1-092.dcm
+Breast_MRI_162,Mammary Fibroglandular Tissue,1-157.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_162/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-34391/400.000000-Ax Vibrant MultiPhase-70866/1-157.dcm
+Breast_MRI_162,Fatty tissue of breast,1-116.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_162/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-34391/400.000000-Ax Vibrant MultiPhase-70866/1-116.dcm
+Breast_MRI_162,Fatty tissue of breast,1-058.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_162/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-34391/400.000000-Ax Vibrant MultiPhase-70866/1-058.dcm
+Breast_MRI_162,Fatty tissue of breast,1-186.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_162/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-34391/400.000000-Ax Vibrant MultiPhase-70866/1-186.dcm
+Breast_MRI_180,Mammary Fibroglandular Tissue,1-075.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_180/01-01-1990-NA-MRI BREAST BILATERAL WWO-75626/11.000000-ax dyn pre-01687/1-075.dcm
+Breast_MRI_180,Mammary Fibroglandular Tissue,1-055.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_180/01-01-1990-NA-MRI BREAST BILATERAL WWO-75626/11.000000-ax dyn pre-01687/1-055.dcm
+Breast_MRI_180,Mammary Fibroglandular Tissue,1-021.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_180/01-01-1990-NA-MRI BREAST BILATERAL WWO-75626/11.000000-ax dyn pre-01687/1-021.dcm
+Breast_MRI_180,Fatty tissue of breast,1-055.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_180/01-01-1990-NA-MRI BREAST BILATERAL WWO-75626/11.000000-ax dyn pre-01687/1-055.dcm
+Breast_MRI_180,Fatty tissue of breast,1-115.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_180/01-01-1990-NA-MRI BREAST BILATERAL WWO-75626/11.000000-ax dyn pre-01687/1-115.dcm
+Breast_MRI_180,Fatty tissue of breast,1-003.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-003.dcm
+Breast_MRI_185,Mammary Fibroglandular Tissue,1-072.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_185/01-01-1990-NA-MRI BREAST BILATERAL W  WO-03412/600.000000-ax dynamic-14139/1-072.dcm
+Breast_MRI_185,Mammary Fibroglandular Tissue,1-091.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_185/01-01-1990-NA-MRI BREAST BILATERAL W  WO-03412/600.000000-ax dynamic-14139/1-091.dcm
+Breast_MRI_185,Mammary Fibroglandular Tissue,1-147.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_185/01-01-1990-NA-MRI BREAST BILATERAL W  WO-03412/600.000000-ax dynamic-14139/1-147.dcm
+Breast_MRI_185,Fatty tissue of breast,1-007.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_185/01-01-1990-NA-MRI BREAST BILATERAL W  WO-03412/600.000000-ax dynamic-14139/1-007.dcm
+Breast_MRI_185,Fatty tissue of breast,1-170.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_185/01-01-1990-NA-MRI BREAST BILATERAL W  WO-03412/600.000000-ax dynamic-14139/1-170.dcm
+Breast_MRI_185,Fatty tissue of breast,1-070.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_185/01-01-1990-NA-MRI BREAST BILATERAL W  WO-03412/600.000000-ax dynamic-14139/1-070.dcm
+Breast_MRI_187,Mammary Fibroglandular Tissue,1-139.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_187/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98357/600.000000-ax dynamic-97734/1-139.dcm
+Breast_MRI_187,Mammary Fibroglandular Tissue,1-104.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_187/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98357/600.000000-ax dynamic-97734/1-104.dcm
+Breast_MRI_187,Mammary Fibroglandular Tissue,1-081.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_187/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98357/600.000000-ax dynamic-97734/1-081.dcm
+Breast_MRI_187,Fatty tissue of breast,1-078.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_187/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98357/600.000000-ax dynamic-97734/1-078.dcm
+Breast_MRI_187,Fatty tissue of breast,1-012.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_187/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98357/600.000000-ax dynamic-97734/1-012.dcm
+Breast_MRI_187,Fatty tissue of breast,1-134.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_187/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98357/600.000000-ax dynamic-97734/1-134.dcm
+Breast_MRI_196,Mammary Fibroglandular Tissue,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_196/01-01-1990-NA-BREASTROUTINE DYNAMIC-68455/6.000000-ax dyn pre-48031/1-090.dcm
+Breast_MRI_196,Mammary Fibroglandular Tissue,1-136.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_196/01-01-1990-NA-BREASTROUTINE DYNAMIC-68455/6.000000-ax dyn pre-48031/1-136.dcm
+Breast_MRI_196,Mammary Fibroglandular Tissue,1-107.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_196/01-01-1990-NA-BREASTROUTINE DYNAMIC-68455/6.000000-ax dyn pre-48031/1-107.dcm
+Breast_MRI_196,Fatty tissue of breast,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_196/01-01-1990-NA-BREASTROUTINE DYNAMIC-68455/6.000000-ax dyn pre-48031/1-090.dcm
+Breast_MRI_196,Fatty tissue of breast,1-035.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_196/01-01-1990-NA-BREASTROUTINE DYNAMIC-68455/6.000000-ax dyn pre-48031/1-035.dcm
+Breast_MRI_196,Fatty tissue of breast,1-143.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_196/01-01-1990-NA-BREASTROUTINE DYNAMIC-68455/6.000000-ax dyn pre-48031/1-143.dcm
+Breast_MRI_197,Mammary Fibroglandular Tissue,1-084.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_197/01-01-1990-NA-BREASTROUTINE DYNAMICS-39404/5.000000-ax dyn pre-50854/1-084.dcm
+Breast_MRI_197,Mammary Fibroglandular Tissue,1-061.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_197/01-01-1990-NA-BREASTROUTINE DYNAMICS-39404/5.000000-ax dyn pre-50854/1-061.dcm
+Breast_MRI_197,Mammary Fibroglandular Tissue,1-132.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_197/01-01-1990-NA-BREASTROUTINE DYNAMICS-39404/5.000000-ax dyn pre-50854/1-132.dcm
+Breast_MRI_197,Fatty tissue of breast,1-095.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_197/01-01-1990-NA-BREASTROUTINE DYNAMICS-39404/5.000000-ax dyn pre-50854/1-095.dcm
+Breast_MRI_197,Fatty tissue of breast,1-121.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_197/01-01-1990-NA-BREASTROUTINE DYNAMICS-39404/5.000000-ax dyn pre-50854/1-121.dcm
+Breast_MRI_197,Fatty tissue of breast,1-032.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_197/01-01-1990-NA-BREASTROUTINE DYNAMICS-39404/5.000000-ax dyn pre-50854/1-032.dcm
+Breast_MRI_208,Mammary Fibroglandular Tissue,1-045.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_208/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-68194/400.000000-Ax Vibrant MultiPhase-19972/1-045.dcm
+Breast_MRI_208,Mammary Fibroglandular Tissue,1-095.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_208/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-68194/400.000000-Ax Vibrant MultiPhase-19972/1-095.dcm
+Breast_MRI_208,Mammary Fibroglandular Tissue,1-133.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_208/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-68194/400.000000-Ax Vibrant MultiPhase-19972/1-133.dcm
+Breast_MRI_208,Fatty tissue of breast,1-079.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_208/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-68194/400.000000-Ax Vibrant MultiPhase-19972/1-079.dcm
+Breast_MRI_208,Fatty tissue of breast,1-044.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_208/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-68194/400.000000-Ax Vibrant MultiPhase-19972/1-044.dcm
+Breast_MRI_208,Fatty tissue of breast,1-163.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_208/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-68194/400.000000-Ax Vibrant MultiPhase-19972/1-163.dcm
+Breast_MRI_221,Fatty tissue of breast,1-179.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_221/01-01-1990-NA-BREASTROUTINE-75169/6.000000-ax dyn pre-51529/1-179.dcm
+Breast_MRI_221,Fatty tissue of breast,1-126.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_221/01-01-1990-NA-BREASTROUTINE-75169/6.000000-ax dyn pre-51529/1-126.dcm
+Breast_MRI_221,Fatty tissue of breast,1-032.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_221/01-01-1990-NA-BREASTROUTINE-75169/6.000000-ax dyn pre-51529/1-032.dcm
+Breast_MRI_221,Mammary Fibroglandular Tissue,1-126.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_221/01-01-1990-NA-BREASTROUTINE-75169/6.000000-ax dyn pre-51529/1-126.dcm
+Breast_MRI_221,Mammary Fibroglandular Tissue,1-106.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_221/01-01-1990-NA-BREASTROUTINE-75169/6.000000-ax dyn pre-51529/1-106.dcm
+Breast_MRI_221,Mammary Fibroglandular Tissue,1-051.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-051.dcm
+Breast_MRI_222,Mammary Fibroglandular Tissue,1-111.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_222/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-52832/400.000000-Ax Vibrant MultiPhase-20941/1-111.dcm
+Breast_MRI_222,Mammary Fibroglandular Tissue,1-121.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_222/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-52832/400.000000-Ax Vibrant MultiPhase-20941/1-121.dcm
+Breast_MRI_222,Mammary Fibroglandular Tissue,1-150.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_222/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-52832/400.000000-Ax Vibrant MultiPhase-20941/1-150.dcm
+Breast_MRI_222,Fatty tissue of breast,1-102.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_222/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-52832/400.000000-Ax Vibrant MultiPhase-20941/1-102.dcm
+Breast_MRI_222,Fatty tissue of breast,1-025.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_222/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-52832/400.000000-Ax Vibrant MultiPhase-20941/1-025.dcm
+Breast_MRI_222,Fatty tissue of breast,1-147.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_222/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-52832/400.000000-Ax Vibrant MultiPhase-20941/1-147.dcm
+Breast_MRI_227,Mammary Fibroglandular Tissue,1-086.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_227/01-01-1990-NA-BREASTROUTINE DYNAMIC-99512/6.000000-ax dyn pre-05777/1-086.dcm
+Breast_MRI_227,Mammary Fibroglandular Tissue,1-098.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_227/01-01-1990-NA-BREASTROUTINE DYNAMIC-99512/6.000000-ax dyn pre-05777/1-098.dcm
+Breast_MRI_227,Mammary Fibroglandular Tissue,1-140.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_227/01-01-1990-NA-BREASTROUTINE DYNAMIC-99512/6.000000-ax dyn pre-05777/1-140.dcm
+Breast_MRI_227,Fatty tissue of breast,1-152.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_227/01-01-1990-NA-BREASTROUTINE DYNAMIC-99512/6.000000-ax dyn pre-05777/1-152.dcm
+Breast_MRI_227,Fatty tissue of breast,1-020.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_227/01-01-1990-NA-BREASTROUTINE DYNAMIC-99512/6.000000-ax dyn pre-05777/1-020.dcm
+Breast_MRI_227,Fatty tissue of breast,1-098.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_227/01-01-1990-NA-BREASTROUTINE DYNAMIC-99512/6.000000-ax dyn pre-05777/1-098.dcm
+Breast_MRI_231,Mammary Fibroglandular Tissue,1-119.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_231/01-01-1990-NA-BREASTROUTINE DYNAMIC-97278/4.000000-ax dyn pre-39701/1-119.dcm
+Breast_MRI_231,Mammary Fibroglandular Tissue,1-076.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_231/01-01-1990-NA-BREASTROUTINE DYNAMIC-97278/4.000000-ax dyn pre-39701/1-076.dcm
+Breast_MRI_231,Mammary Fibroglandular Tissue,1-140.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_231/01-01-1990-NA-BREASTROUTINE DYNAMIC-97278/4.000000-ax dyn pre-39701/1-140.dcm
+Breast_MRI_231,Fatty tissue of breast,1-101.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_231/01-01-1990-NA-BREASTROUTINE DYNAMIC-97278/4.000000-ax dyn pre-39701/1-101.dcm
+Breast_MRI_231,Fatty tissue of breast,1-040.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_231/01-01-1990-NA-BREASTROUTINE DYNAMIC-97278/4.000000-ax dyn pre-39701/1-040.dcm
+Breast_MRI_231,Fatty tissue of breast,1-152.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_231/01-01-1990-NA-BREASTROUTINE DYNAMIC-97278/4.000000-ax dyn pre-39701/1-152.dcm
+Breast_MRI_233,Mammary Fibroglandular Tissue,1-150.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_233/01-01-1990-NA-MRI BREAST BILATERAL WWO-60345/500.000000-ax 3d dyn-09530/1-150.dcm
+Breast_MRI_233,Mammary Fibroglandular Tissue,1-048.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_233/01-01-1990-NA-MRI BREAST BILATERAL WWO-60345/500.000000-ax 3d dyn-09530/1-048.dcm
+Breast_MRI_233,Mammary Fibroglandular Tissue,1-065.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_233/01-01-1990-NA-MRI BREAST BILATERAL WWO-60345/500.000000-ax 3d dyn-09530/1-065.dcm
+Breast_MRI_233,Fatty tissue of breast,1-152.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_233/01-01-1990-NA-MRI BREAST BILATERAL WWO-60345/500.000000-ax 3d dyn-09530/1-152.dcm
+Breast_MRI_233,Fatty tissue of breast,1-048.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_233/01-01-1990-NA-MRI BREAST BILATERAL WWO-60345/500.000000-ax 3d dyn-09530/1-048.dcm
+Breast_MRI_233,Fatty tissue of breast,1-065.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_233/01-01-1990-NA-MRI BREAST BILATERAL WWO-60345/500.000000-ax 3d dyn-09530/1-065.dcm
+Breast_MRI_243,Fatty tissue of breast,1-165.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_243/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-29907/400.000000-Ax Vibrant MultiPhase-13550/1-165.dcm
+Breast_MRI_243,Fatty tissue of breast,1-057.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_243/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-29907/400.000000-Ax Vibrant MultiPhase-13550/1-057.dcm
+Breast_MRI_243,Fatty tissue of breast,1-085.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_243/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-29907/400.000000-Ax Vibrant MultiPhase-13550/1-085.dcm
+Breast_MRI_243,Mammary Fibroglandular Tissue,1-113.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_243/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-29907/400.000000-Ax Vibrant MultiPhase-13550/1-113.dcm
+Breast_MRI_243,Mammary Fibroglandular Tissue,1-150.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_243/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-29907/400.000000-Ax Vibrant MultiPhase-13550/1-150.dcm
+Breast_MRI_243,Mammary Fibroglandular Tissue,1-085.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_243/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-29907/400.000000-Ax Vibrant MultiPhase-13550/1-085.dcm
+Breast_MRI_246,Mammary Fibroglandular Tissue,1-137.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_246/01-01-1990-NA-BREASTROUTINE DYNAMICS-47226/6.000000-ax dyn pre-66059/1-137.dcm
+Breast_MRI_246,Mammary Fibroglandular Tissue,1-120.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_246/01-01-1990-NA-BREASTROUTINE DYNAMICS-47226/6.000000-ax dyn pre-66059/1-120.dcm
+Breast_MRI_246,Mammary Fibroglandular Tissue,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_246/01-01-1990-NA-BREASTROUTINE DYNAMICS-47226/6.000000-ax dyn pre-66059/1-090.dcm
+Breast_MRI_246,Fatty tissue of breast,1-120.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_246/01-01-1990-NA-BREASTROUTINE DYNAMICS-47226/6.000000-ax dyn pre-66059/1-120.dcm
+Breast_MRI_246,Fatty tissue of breast,1-021.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_246/01-01-1990-NA-BREASTROUTINE DYNAMICS-47226/6.000000-ax dyn pre-66059/1-021.dcm
+Breast_MRI_246,Fatty tissue of breast,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_246/01-01-1990-NA-BREASTROUTINE DYNAMICS-47226/6.000000-ax dyn pre-66059/1-090.dcm
+Breast_MRI_251,Mammary Fibroglandular Tissue,1-110.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_251/01-01-1990-NA-MRI BREAST BILATERAL W  WO-37568/700.000000-ax 3d dyn-54270/1-110.dcm
+Breast_MRI_251,Mammary Fibroglandular Tissue,1-080.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_251/01-01-1990-NA-MRI BREAST BILATERAL W  WO-37568/700.000000-ax 3d dyn-54270/1-080.dcm
+Breast_MRI_251,Mammary Fibroglandular Tissue,1-151.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_251/01-01-1990-NA-MRI BREAST BILATERAL W  WO-37568/700.000000-ax 3d dyn-54270/1-151.dcm
+Breast_MRI_251,Fatty tissue of breast,1-080.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_251/01-01-1990-NA-MRI BREAST BILATERAL W  WO-37568/700.000000-ax 3d dyn-54270/1-080.dcm
+Breast_MRI_251,Fatty tissue of breast,1-159.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_251/01-01-1990-NA-MRI BREAST BILATERAL W  WO-37568/700.000000-ax 3d dyn-54270/1-159.dcm
+Breast_MRI_251,Fatty tissue of breast,1-017.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_251/01-01-1990-NA-MRI BREAST BILATERAL W  WO-37568/700.000000-ax 3d dyn-54270/1-017.dcm
+Breast_MRI_255,Mammary Fibroglandular Tissue,1-031.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_255/01-01-1990-NA-MRI BREAST BILATERAL W  WO-72376/700.000000-ax dynamic-53740/1-031.dcm
+Breast_MRI_255,Mammary Fibroglandular Tissue,1-091.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_255/01-01-1990-NA-MRI BREAST BILATERAL W  WO-72376/700.000000-ax dynamic-53740/1-091.dcm
+Breast_MRI_255,Mammary Fibroglandular Tissue,1-063.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_255/01-01-1990-NA-MRI BREAST BILATERAL W  WO-72376/700.000000-ax dynamic-53740/1-063.dcm
+Breast_MRI_255,Fatty tissue of breast,1-113.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_255/01-01-1990-NA-MRI BREAST BILATERAL W  WO-72376/700.000000-ax dynamic-53740/1-113.dcm
+Breast_MRI_255,Fatty tissue of breast,1-034.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_255/01-01-1990-NA-MRI BREAST BILATERAL W  WO-72376/700.000000-ax dynamic-53740/1-034.dcm
+Breast_MRI_255,Fatty tissue of breast,1-063.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_255/01-01-1990-NA-MRI BREAST BILATERAL W  WO-72376/700.000000-ax dynamic-53740/1-063.dcm
+Breast_MRI_257,Mammary Fibroglandular Tissue,1-171.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_257/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-84918/400.000000-Ax Vibrant MultiPhase-54008/1-171.dcm
+Breast_MRI_257,Mammary Fibroglandular Tissue,1-120.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_257/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-84918/400.000000-Ax Vibrant MultiPhase-54008/1-120.dcm
+Breast_MRI_257,Mammary Fibroglandular Tissue,1-110.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_257/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-84918/400.000000-Ax Vibrant MultiPhase-54008/1-110.dcm
+Breast_MRI_257,Fatty tissue of breast,1-041.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_257/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-84918/400.000000-Ax Vibrant MultiPhase-54008/1-041.dcm
+Breast_MRI_257,Fatty tissue of breast,1-110.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_257/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-84918/400.000000-Ax Vibrant MultiPhase-54008/1-110.dcm
+Breast_MRI_257,Fatty tissue of breast,1-180.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_257/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-84918/400.000000-Ax Vibrant MultiPhase-54008/1-180.dcm
+Breast_MRI_284,Mammary Fibroglandular Tissue,1-137.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_284/01-01-1990-NA-MRI BREAST BILATERAL W  WO-33140/500.000000-ax dynamic-97174/1-137.dcm
+Breast_MRI_284,Mammary Fibroglandular Tissue,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_284/01-01-1990-NA-MRI BREAST BILATERAL W  WO-33140/500.000000-ax dynamic-97174/1-090.dcm
+Breast_MRI_284,Mammary Fibroglandular Tissue,1-080.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_284/01-01-1990-NA-MRI BREAST BILATERAL W  WO-33140/500.000000-ax dynamic-97174/1-080.dcm
+Breast_MRI_284,Fatty tissue of breast,1-047.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_284/01-01-1990-NA-MRI BREAST BILATERAL W  WO-33140/500.000000-ax dynamic-97174/1-047.dcm
+Breast_MRI_284,Fatty tissue of breast,1-129.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_284/01-01-1990-NA-MRI BREAST BILATERAL W  WO-33140/500.000000-ax dynamic-97174/1-129.dcm
+Breast_MRI_284,Fatty tissue of breast,1-080.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_284/01-01-1990-NA-MRI BREAST BILATERAL W  WO-33140/500.000000-ax dynamic-97174/1-080.dcm
+Breast_MRI_286,Mammary Fibroglandular Tissue,1-150.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_286/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-81002/500.000000-ax dynamic-13490/1-150.dcm
+Breast_MRI_286,Mammary Fibroglandular Tissue,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_286/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-81002/500.000000-ax dynamic-13490/1-090.dcm
+Breast_MRI_286,Mammary Fibroglandular Tissue,1-054.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_286/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-81002/500.000000-ax dynamic-13490/1-054.dcm
+Breast_MRI_286,Fatty tissue of breast,1-150.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_286/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-81002/500.000000-ax dynamic-13490/1-150.dcm
+Breast_MRI_286,Fatty tissue of breast,1-103.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_286/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-81002/500.000000-ax dynamic-13490/1-103.dcm
+Breast_MRI_286,Fatty tissue of breast,1-054.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_286/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-81002/500.000000-ax dynamic-13490/1-054.dcm
+Breast_MRI_288,Mammary Fibroglandular Tissue,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_288/01-01-1990-NA-BREASTROUTINE-92416/4.000000-ax dyn pre-30069/1-090.dcm
+Breast_MRI_288,Mammary Fibroglandular Tissue,1-169.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_288/01-01-1990-NA-BREASTROUTINE-92416/4.000000-ax dyn pre-30069/1-169.dcm
+Breast_MRI_288,Mammary Fibroglandular Tissue,1-110.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_288/01-01-1990-NA-BREASTROUTINE-92416/4.000000-ax dyn pre-30069/1-110.dcm
+Breast_MRI_288,Fatty tissue of breast,1-094.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_288/01-01-1990-NA-BREASTROUTINE-92416/4.000000-ax dyn pre-30069/1-094.dcm
+Breast_MRI_288,Fatty tissue of breast,1-032.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_288/01-01-1990-NA-BREASTROUTINE-92416/4.000000-ax dyn pre-30069/1-032.dcm
+Breast_MRI_288,Fatty tissue of breast,1-188.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_288/01-01-1990-NA-BREASTROUTINE-92416/4.000000-ax dyn pre-30069/1-188.dcm
+Breast_MRI_295,Mammary Fibroglandular Tissue,1-075.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_295/01-01-1990-NA-MRI BREAST BILATERAL WWO-62667/600.000000-ax 3d dyn-31915/1-075.dcm
+Breast_MRI_295,Mammary Fibroglandular Tissue,1-080.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_295/01-01-1990-NA-MRI BREAST BILATERAL WWO-62667/600.000000-ax 3d dyn-31915/1-080.dcm
+Breast_MRI_295,Fatty tissue of breast,1-176.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_295/01-01-1990-NA-MRI BREAST BILATERAL WWO-62667/600.000000-ax 3d dyn-31915/1-176.dcm
+Breast_MRI_295,Fatty tissue of breast,1-039.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_295/01-01-1990-NA-MRI BREAST BILATERAL WWO-62667/600.000000-ax 3d dyn-31915/1-039.dcm
+Breast_MRI_295,Fatty tissue of breast,1-080.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_295/01-01-1990-NA-MRI BREAST BILATERAL WWO-62667/600.000000-ax 3d dyn-31915/1-080.dcm
+Breast_MRI_295,Mammary Fibroglandular Tissue,1-019.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-019.dcm
+Breast_MRI_311,Mammary Fibroglandular Tissue,1-115.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_311/01-01-1990-NA-MRI BREAST BILATERAL WWO-81198/600.000000-ax 3d dyn-53302/1-115.dcm
+Breast_MRI_311,Mammary Fibroglandular Tissue,1-128.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_311/01-01-1990-NA-MRI BREAST BILATERAL WWO-81198/600.000000-ax 3d dyn-53302/1-128.dcm
+Breast_MRI_311,Mammary Fibroglandular Tissue,1-035.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_311/01-01-1990-NA-MRI BREAST BILATERAL WWO-81198/600.000000-ax 3d dyn-53302/1-035.dcm
+Breast_MRI_311,Fatty tissue of breast,1-115.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_311/01-01-1990-NA-MRI BREAST BILATERAL WWO-81198/600.000000-ax 3d dyn-53302/1-115.dcm
+Breast_MRI_311,Fatty tissue of breast,1-128.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_311/01-01-1990-NA-MRI BREAST BILATERAL WWO-81198/600.000000-ax 3d dyn-53302/1-128.dcm
+Breast_MRI_311,Fatty tissue of breast,1-049.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_311/01-01-1990-NA-MRI BREAST BILATERAL WWO-81198/600.000000-ax 3d dyn-53302/1-049.dcm
+Breast_MRI_316,Fatty tissue of breast,1-160.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_316/01-01-1990-NA-BREASTROUTINE-81328/10.000000-ax dyn pre-11165/1-160.dcm
+Breast_MRI_316,Fatty tissue of breast,1-024.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_316/01-01-1990-NA-BREASTROUTINE-81328/10.000000-ax dyn pre-11165/1-024.dcm
+Breast_MRI_316,Fatty tissue of breast,1-079.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_316/01-01-1990-NA-BREASTROUTINE-81328/10.000000-ax dyn pre-11165/1-079.dcm
+Breast_MRI_316,Mammary Fibroglandular Tissue,1-160.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_316/01-01-1990-NA-BREASTROUTINE-81328/10.000000-ax dyn pre-11165/1-160.dcm
+Breast_MRI_316,Mammary Fibroglandular Tissue,1-092.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_316/01-01-1990-NA-BREASTROUTINE-81328/10.000000-ax dyn pre-11165/1-092.dcm
+Breast_MRI_316,Mammary Fibroglandular Tissue,1-140.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_316/01-01-1990-NA-BREASTROUTINE-81328/10.000000-ax dyn pre-11165/1-140.dcm
+Breast_MRI_318,Mammary Fibroglandular Tissue,1-130.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_318/01-01-1990-NA-MRI BREAST BILATERAL WWO-67001/500.000000-ax 3d dyn-12369/1-130.dcm
+Breast_MRI_318,Mammary Fibroglandular Tissue,1-154.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_318/01-01-1990-NA-MRI BREAST BILATERAL WWO-67001/500.000000-ax 3d dyn-12369/1-154.dcm
+Breast_MRI_318,Mammary Fibroglandular Tissue,1-144.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_318/01-01-1990-NA-MRI BREAST BILATERAL WWO-67001/500.000000-ax 3d dyn-12369/1-144.dcm
+Breast_MRI_318,Fatty tissue of breast,1-077.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_318/01-01-1990-NA-MRI BREAST BILATERAL WWO-67001/500.000000-ax 3d dyn-12369/1-077.dcm
+Breast_MRI_318,Fatty tissue of breast,1-028.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_318/01-01-1990-NA-MRI BREAST BILATERAL WWO-67001/500.000000-ax 3d dyn-12369/1-028.dcm
+Breast_MRI_318,Fatty tissue of breast,1-144.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_318/01-01-1990-NA-MRI BREAST BILATERAL WWO-67001/500.000000-ax 3d dyn-12369/1-144.dcm
+Breast_MRI_322,Fatty tissue of breast,1-40.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_322/01-01-1990-NA-MRI BREAST BILATERAL W  WO-70727/6.000000-ax 3d pre-97592/1-40.dcm
+Breast_MRI_322,Fatty tissue of breast,1-85.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_322/01-01-1990-NA-MRI BREAST BILATERAL W  WO-70727/6.000000-ax 3d pre-97592/1-85.dcm
+Breast_MRI_322,Fatty tissue of breast,1-16.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_322/01-01-1990-NA-MRI BREAST BILATERAL W  WO-70727/6.000000-ax 3d pre-97592/1-16.dcm
+Breast_MRI_322,Mammary Fibroglandular Tissue,1-57.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_322/01-01-1990-NA-MRI BREAST BILATERAL W  WO-70727/6.000000-ax 3d pre-97592/1-57.dcm
+Breast_MRI_322,Mammary Fibroglandular Tissue,1-51.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_322/01-01-1990-NA-MRI BREAST BILATERAL W  WO-70727/6.000000-ax 3d pre-97592/1-51.dcm
+Breast_MRI_322,Mammary Fibroglandular Tissue,1-90.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-90.dcm
+Breast_MRI_329,Mammary Fibroglandular Tissue,1-148.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_329/01-01-1990-NA-MRI BREAST BILATERAL W  WO-39478/700.000000-ax dynamic-64988/1-148.dcm
+Breast_MRI_329,Mammary Fibroglandular Tissue,1-111.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_329/01-01-1990-NA-MRI BREAST BILATERAL W  WO-39478/700.000000-ax dynamic-64988/1-111.dcm
+Breast_MRI_329,Mammary Fibroglandular Tissue,1-084.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_329/01-01-1990-NA-MRI BREAST BILATERAL W  WO-39478/700.000000-ax dynamic-64988/1-084.dcm
+Breast_MRI_329,Fatty tissue of breast,1-173.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_329/01-01-1990-NA-MRI BREAST BILATERAL W  WO-39478/700.000000-ax dynamic-64988/1-173.dcm
+Breast_MRI_329,Fatty tissue of breast,1-050.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_329/01-01-1990-NA-MRI BREAST BILATERAL W  WO-39478/700.000000-ax dynamic-64988/1-050.dcm
+Breast_MRI_329,Fatty tissue of breast,1-084.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_329/01-01-1990-NA-MRI BREAST BILATERAL W  WO-39478/700.000000-ax dynamic-64988/1-084.dcm
+Breast_MRI_340,Mammary Fibroglandular Tissue,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_340/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98708/800.000000-ax 3d dyn-78013/1-100.dcm
+Breast_MRI_340,Mammary Fibroglandular Tissue,1-044.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_340/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98708/800.000000-ax 3d dyn-78013/1-044.dcm
+Breast_MRI_340,Mammary Fibroglandular Tissue,1-121.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_340/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98708/800.000000-ax 3d dyn-78013/1-121.dcm
+Breast_MRI_340,Fatty tissue of breast,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_340/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98708/800.000000-ax 3d dyn-78013/1-100.dcm
+Breast_MRI_340,Fatty tissue of breast,1-019.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_340/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98708/800.000000-ax 3d dyn-78013/1-019.dcm
+Breast_MRI_340,Fatty tissue of breast,1-121.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_340/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98708/800.000000-ax 3d dyn-78013/1-121.dcm
+Breast_MRI_348,Mammary Fibroglandular Tissue,1-073.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_348/01-01-1990-NA-MRI BREAST BILATERAL W  WO-97047/600.000000-ax dynamic-97580/1-073.dcm
+Breast_MRI_348,Mammary Fibroglandular Tissue,1-083.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_348/01-01-1990-NA-MRI BREAST BILATERAL W  WO-97047/600.000000-ax dynamic-97580/1-083.dcm
+Breast_MRI_348,Fatty tissue of breast,1-140.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_348/01-01-1990-NA-MRI BREAST BILATERAL W  WO-97047/600.000000-ax dynamic-97580/1-140.dcm
+Breast_MRI_348,Fatty tissue of breast,1-054.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_348/01-01-1990-NA-MRI BREAST BILATERAL W  WO-97047/600.000000-ax dynamic-97580/1-054.dcm
+Breast_MRI_348,Fatty tissue of breast,1-083.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_348/01-01-1990-NA-MRI BREAST BILATERAL W  WO-97047/600.000000-ax dynamic-97580/1-083.dcm
+Breast_MRI_348,Mammary Fibroglandular Tissue,1-020.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-020.dcm
+Breast_MRI_350,Mammary Fibroglandular Tissue,1-098.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_350/01-01-1990-NA-MRI BREAST BILATERAL W  WO-13041/600.000000-ax dynamic-03142/1-098.dcm
+Breast_MRI_350,Mammary Fibroglandular Tissue,1-125.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_350/01-01-1990-NA-MRI BREAST BILATERAL W  WO-13041/600.000000-ax dynamic-03142/1-125.dcm
+Breast_MRI_350,Mammary Fibroglandular Tissue,1-043.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_350/01-01-1990-NA-MRI BREAST BILATERAL W  WO-13041/600.000000-ax dynamic-03142/1-043.dcm
+Breast_MRI_350,Fatty tissue of breast,1-145.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_350/01-01-1990-NA-MRI BREAST BILATERAL W  WO-13041/600.000000-ax dynamic-03142/1-145.dcm
+Breast_MRI_350,Fatty tissue of breast,1-027.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_350/01-01-1990-NA-MRI BREAST BILATERAL W  WO-13041/600.000000-ax dynamic-03142/1-027.dcm
+Breast_MRI_350,Fatty tissue of breast,1-092.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_350/01-01-1990-NA-MRI BREAST BILATERAL W  WO-13041/600.000000-ax dynamic-03142/1-092.dcm
+Breast_MRI_351,Fatty tissue of breast,1-095.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_351/01-01-1990-NA-BREAST ROUTINE-75983/4.000000-ax dyn pre-25863/1-095.dcm
+Breast_MRI_351,Fatty tissue of breast,1-140.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_351/01-01-1990-NA-BREAST ROUTINE-75983/4.000000-ax dyn pre-25863/1-140.dcm
+Breast_MRI_351,Fatty tissue of breast,1-035.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_351/01-01-1990-NA-BREAST ROUTINE-75983/4.000000-ax dyn pre-25863/1-035.dcm
+Breast_MRI_351,Mammary Fibroglandular Tissue,1-095.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_351/01-01-1990-NA-BREAST ROUTINE-75983/4.000000-ax dyn pre-25863/1-095.dcm
+Breast_MRI_351,Mammary Fibroglandular Tissue,1-156.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_351/01-01-1990-NA-BREAST ROUTINE-75983/4.000000-ax dyn pre-25863/1-156.dcm
+Breast_MRI_351,Mammary Fibroglandular Tissue,1-140.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_351/01-01-1990-NA-BREAST ROUTINE-75983/4.000000-ax dyn pre-25863/1-140.dcm
+Breast_MRI_352,Mammary Fibroglandular Tissue,1-049.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_352/01-01-1990-NA-MRI BREAST BILATERAL WWO-96750/500.000000-ax 3d dyn-31156/1-049.dcm
+Breast_MRI_352,Mammary Fibroglandular Tissue,1-013.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_352/01-01-1990-NA-MRI BREAST BILATERAL WWO-96750/500.000000-ax 3d dyn-31156/1-013.dcm
+Breast_MRI_352,Mammary Fibroglandular Tissue,1-064.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_352/01-01-1990-NA-MRI BREAST BILATERAL WWO-96750/500.000000-ax 3d dyn-31156/1-064.dcm
+Breast_MRI_352,Fatty tissue of breast,1-143.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_352/01-01-1990-NA-MRI BREAST BILATERAL WWO-96750/500.000000-ax 3d dyn-31156/1-143.dcm
+Breast_MRI_352,Fatty tissue of breast,1-034.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_352/01-01-1990-NA-MRI BREAST BILATERAL WWO-96750/500.000000-ax 3d dyn-31156/1-034.dcm
+Breast_MRI_352,Fatty tissue of breast,1-081.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_352/01-01-1990-NA-MRI BREAST BILATERAL WWO-96750/500.000000-ax 3d dyn-31156/1-081.dcm
+Breast_MRI_354,Fatty tissue of breast,1-101.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_354/01-01-1990-NA-MRI BREAST BILATERAL WWO-23251/500.000000-ax 3d dyn-12365/1-101.dcm
+Breast_MRI_354,Fatty tissue of breast,1-150.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_354/01-01-1990-NA-MRI BREAST BILATERAL WWO-23251/500.000000-ax 3d dyn-12365/1-150.dcm
+Breast_MRI_354,Fatty tissue of breast,1-022.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_354/01-01-1990-NA-MRI BREAST BILATERAL WWO-23251/500.000000-ax 3d dyn-12365/1-022.dcm
+Breast_MRI_354,Mammary Fibroglandular Tissue,1-162.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_354/01-01-1990-NA-MRI BREAST BILATERAL WWO-23251/500.000000-ax 3d dyn-12365/1-162.dcm
+Breast_MRI_354,Mammary Fibroglandular Tissue,1-081.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_354/01-01-1990-NA-MRI BREAST BILATERAL WWO-23251/500.000000-ax 3d dyn-12365/1-081.dcm
+Breast_MRI_354,Mammary Fibroglandular Tissue,1-150.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_354/01-01-1990-NA-MRI BREAST BILATERAL WWO-23251/500.000000-ax 3d dyn-12365/1-150.dcm
+Breast_MRI_355,Mammary Fibroglandular Tissue,1-052.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_355/01-01-1990-NA-MRI BREAST BILATERAL WWO-96798/500.000000-ax 3d dyn-59516/1-052.dcm
+Breast_MRI_355,Mammary Fibroglandular Tissue,1-104.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_355/01-01-1990-NA-MRI BREAST BILATERAL WWO-96798/500.000000-ax 3d dyn-59516/1-104.dcm
+Breast_MRI_355,Mammary Fibroglandular Tissue,1-114.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_355/01-01-1990-NA-MRI BREAST BILATERAL WWO-96798/500.000000-ax 3d dyn-59516/1-114.dcm
+Breast_MRI_355,Fatty tissue of breast,1-052.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_355/01-01-1990-NA-MRI BREAST BILATERAL WWO-96798/500.000000-ax 3d dyn-59516/1-052.dcm
+Breast_MRI_355,Fatty tissue of breast,1-104.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_355/01-01-1990-NA-MRI BREAST BILATERAL WWO-96798/500.000000-ax 3d dyn-59516/1-104.dcm
+Breast_MRI_355,Fatty tissue of breast,1-040.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_355/01-01-1990-NA-MRI BREAST BILATERAL WWO-96798/500.000000-ax 3d dyn-59516/1-040.dcm
+Breast_MRI_359,Mammary Fibroglandular Tissue,1-110.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_359/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-06316/500.000000-Ax Vibrant MultiPhase-90664/1-110.dcm
+Breast_MRI_359,Mammary Fibroglandular Tissue,1-047.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_359/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-06316/500.000000-Ax Vibrant MultiPhase-90664/1-047.dcm
+Breast_MRI_359,Mammary Fibroglandular Tissue,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_359/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-06316/500.000000-Ax Vibrant MultiPhase-90664/1-100.dcm
+Breast_MRI_359,Fatty tissue of breast,1-143.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_359/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-06316/500.000000-Ax Vibrant MultiPhase-90664/1-143.dcm
+Breast_MRI_359,Fatty tissue of breast,1-010.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_359/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-06316/500.000000-Ax Vibrant MultiPhase-90664/1-010.dcm
+Breast_MRI_359,Fatty tissue of breast,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_359/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-06316/500.000000-Ax Vibrant MultiPhase-90664/1-100.dcm
+Breast_MRI_375,Mammary Fibroglandular Tissue,1-070.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_375/01-01-1990-NA-BREASTROUTINE DYNAMICS-24848/4.000000-ax dyn pre-66897/1-070.dcm
+Breast_MRI_375,Mammary Fibroglandular Tissue,1-107.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_375/01-01-1990-NA-BREASTROUTINE DYNAMICS-24848/4.000000-ax dyn pre-66897/1-107.dcm
+Breast_MRI_375,Mammary Fibroglandular Tissue,1-148.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_375/01-01-1990-NA-BREASTROUTINE DYNAMICS-24848/4.000000-ax dyn pre-66897/1-148.dcm
+Breast_MRI_375,Fatty tissue of breast,1-142.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_375/01-01-1990-NA-BREASTROUTINE DYNAMICS-24848/4.000000-ax dyn pre-66897/1-142.dcm
+Breast_MRI_375,Fatty tissue of breast,1-098.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_375/01-01-1990-NA-BREASTROUTINE DYNAMICS-24848/4.000000-ax dyn pre-66897/1-098.dcm
+Breast_MRI_375,Fatty tissue of breast,1-050.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_375/01-01-1990-NA-BREASTROUTINE DYNAMICS-24848/4.000000-ax dyn pre-66897/1-050.dcm
+Breast_MRI_383,Mammary Fibroglandular Tissue,1-069.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_383/01-01-1990-NA-MRI BREAST BILATERAL WWO-85698/600.000000-ax 3d dyn MP-10102/1-069.dcm
+Breast_MRI_383,Mammary Fibroglandular Tissue,1-057.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_383/01-01-1990-NA-MRI BREAST BILATERAL WWO-85698/600.000000-ax 3d dyn MP-10102/1-057.dcm
+Breast_MRI_383,Fatty tissue of breast,1-124.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_383/01-01-1990-NA-MRI BREAST BILATERAL WWO-85698/600.000000-ax 3d dyn MP-10102/1-124.dcm
+Breast_MRI_383,Fatty tissue of breast,1-030.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_383/01-01-1990-NA-MRI BREAST BILATERAL WWO-85698/600.000000-ax 3d dyn MP-10102/1-030.dcm
+Breast_MRI_383,Fatty tissue of breast,1-066.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_383/01-01-1990-NA-MRI BREAST BILATERAL WWO-85698/600.000000-ax 3d dyn MP-10102/1-066.dcm
+Breast_MRI_383,Mammary Fibroglandular Tissue,1-136.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-136.dcm
+Breast_MRI_386,Mammary Fibroglandular Tissue,1-074.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_386/01-01-1990-NA-MRI BREAST BILATERAL WWO-89206/4.000000-ax dyn pre-60876/1-074.dcm
+Breast_MRI_386,Mammary Fibroglandular Tissue,1-099.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_386/01-01-1990-NA-MRI BREAST BILATERAL WWO-89206/4.000000-ax dyn pre-60876/1-099.dcm
+Breast_MRI_386,Fatty tissue of breast,1-123.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_386/01-01-1990-NA-MRI BREAST BILATERAL WWO-89206/4.000000-ax dyn pre-60876/1-123.dcm
+Breast_MRI_386,Fatty tissue of breast,1-050.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_386/01-01-1990-NA-MRI BREAST BILATERAL WWO-89206/4.000000-ax dyn pre-60876/1-050.dcm
+Breast_MRI_386,Fatty tissue of breast,1-104.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_386/01-01-1990-NA-MRI BREAST BILATERAL WWO-89206/4.000000-ax dyn pre-60876/1-104.dcm
+Breast_MRI_386,Mammary Fibroglandular Tissue,1-142.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-142.dcm
+Breast_MRI_389,Mammary Fibroglandular Tissue,1-126.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_389/01-01-1990-NA-MRI BREAST BILATERAL W  WO-29459/500.000000-ax dynamic-20314/1-126.dcm
+Breast_MRI_389,Mammary Fibroglandular Tissue,1-042.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_389/01-01-1990-NA-MRI BREAST BILATERAL W  WO-29459/500.000000-ax dynamic-20314/1-042.dcm
+Breast_MRI_389,Mammary Fibroglandular Tissue,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_389/01-01-1990-NA-MRI BREAST BILATERAL W  WO-29459/500.000000-ax dynamic-20314/1-090.dcm
+Breast_MRI_389,Fatty tissue of breast,1-084.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_389/01-01-1990-NA-MRI BREAST BILATERAL W  WO-29459/500.000000-ax dynamic-20314/1-084.dcm
+Breast_MRI_389,Fatty tissue of breast,1-036.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_389/01-01-1990-NA-MRI BREAST BILATERAL W  WO-29459/500.000000-ax dynamic-20314/1-036.dcm
+Breast_MRI_389,Fatty tissue of breast,1-167.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-167.dcm
+Breast_MRI_415,Fatty tissue of breast,1-016.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_415/01-01-1990-NA-MRI BREAST BILATERAL WWO-53367/600.000000-ax 3d dyn-66132/1-016.dcm
+Breast_MRI_415,Fatty tissue of breast,1-073.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_415/01-01-1990-NA-MRI BREAST BILATERAL WWO-53367/600.000000-ax 3d dyn-66132/1-073.dcm
+Breast_MRI_415,Fatty tissue of breast,1-149.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_415/01-01-1990-NA-MRI BREAST BILATERAL WWO-53367/600.000000-ax 3d dyn-66132/1-149.dcm
+Breast_MRI_415,Mammary Fibroglandular Tissue,1-116.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_415/01-01-1990-NA-MRI BREAST BILATERAL WWO-53367/600.000000-ax 3d dyn-66132/1-116.dcm
+Breast_MRI_415,Mammary Fibroglandular Tissue,1-091.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_415/01-01-1990-NA-MRI BREAST BILATERAL WWO-53367/600.000000-ax 3d dyn-66132/1-091.dcm
+Breast_MRI_415,Mammary Fibroglandular Tissue,1-163.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_415/01-01-1990-NA-MRI BREAST BILATERAL WWO-53367/600.000000-ax 3d dyn-66132/1-163.dcm
+Breast_MRI_419,Fatty tissue of breast,1-082.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_419/01-01-1990-NA-MRI BREAST BILATERAL WWO-48694/500.000000-ax 3d dyn-34536/1-082.dcm
+Breast_MRI_419,Fatty tissue of breast,1-155.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_419/01-01-1990-NA-MRI BREAST BILATERAL WWO-48694/500.000000-ax 3d dyn-34536/1-155.dcm
+Breast_MRI_419,Fatty tissue of breast,1-026.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_419/01-01-1990-NA-MRI BREAST BILATERAL WWO-48694/500.000000-ax 3d dyn-34536/1-026.dcm
+Breast_MRI_419,Mammary Fibroglandular Tissue,1-060.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_419/01-01-1990-NA-MRI BREAST BILATERAL WWO-48694/500.000000-ax 3d dyn-34536/1-060.dcm
+Breast_MRI_419,Mammary Fibroglandular Tissue,1-125.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_419/01-01-1990-NA-MRI BREAST BILATERAL WWO-48694/500.000000-ax 3d dyn-34536/1-125.dcm
+Breast_MRI_419,Mammary Fibroglandular Tissue,1-043.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_419/01-01-1990-NA-MRI BREAST BILATERAL WWO-48694/500.000000-ax 3d dyn-34536/1-043.dcm
+Breast_MRI_423,Mammary Fibroglandular Tissue,1-088.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_423/01-01-1990-NA-MRI BREAST BILATERAL W  WO-61591/500.000000-ax 3d dyn MP-11067/1-088.dcm
+Breast_MRI_423,Mammary Fibroglandular Tissue,1-065.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_423/01-01-1990-NA-MRI BREAST BILATERAL W  WO-61591/500.000000-ax 3d dyn MP-11067/1-065.dcm
+Breast_MRI_423,Mammary Fibroglandular Tissue,1-113.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_423/01-01-1990-NA-MRI BREAST BILATERAL W  WO-61591/500.000000-ax 3d dyn MP-11067/1-113.dcm
+Breast_MRI_423,Fatty tissue of breast,1-120.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_423/01-01-1990-NA-MRI BREAST BILATERAL W  WO-61591/500.000000-ax 3d dyn MP-11067/1-120.dcm
+Breast_MRI_423,Fatty tissue of breast,1-093.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_423/01-01-1990-NA-MRI BREAST BILATERAL W  WO-61591/500.000000-ax 3d dyn MP-11067/1-093.dcm
+Breast_MRI_423,Fatty tissue of breast,1-040.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_423/01-01-1990-NA-MRI BREAST BILATERAL W  WO-61591/500.000000-ax 3d dyn MP-11067/1-040.dcm
+Breast_MRI_424,Fatty tissue of breast,1-038.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_424/01-01-1990-NA-MRI BREAST BILATERAL WWO-06145/500.000000-ax 3d dyn MP-97392/1-038.dcm
+Breast_MRI_424,Fatty tissue of breast,1-151.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_424/01-01-1990-NA-MRI BREAST BILATERAL WWO-06145/500.000000-ax 3d dyn MP-97392/1-151.dcm
+Breast_MRI_424,Fatty tissue of breast,1-077.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_424/01-01-1990-NA-MRI BREAST BILATERAL WWO-06145/500.000000-ax 3d dyn MP-97392/1-077.dcm
+Breast_MRI_424,Mammary Fibroglandular Tissue,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_424/01-01-1990-NA-MRI BREAST BILATERAL WWO-06145/500.000000-ax 3d dyn MP-97392/1-090.dcm
+Breast_MRI_424,Mammary Fibroglandular Tissue,1-144.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_424/01-01-1990-NA-MRI BREAST BILATERAL WWO-06145/500.000000-ax 3d dyn MP-97392/1-144.dcm
+Breast_MRI_424,Mammary Fibroglandular Tissue,1-061.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_424/01-01-1990-NA-MRI BREAST BILATERAL WWO-06145/500.000000-ax 3d dyn MP-97392/1-061.dcm
+Breast_MRI_425,Mammary Fibroglandular Tissue,1-028.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_425/01-01-1990-NA-MRI BREAST BILATERAL WWO-84704/500.000000-ax 3d dyn-85124/1-028.dcm
+Breast_MRI_425,Mammary Fibroglandular Tissue,1-093.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_425/01-01-1990-NA-MRI BREAST BILATERAL WWO-84704/500.000000-ax 3d dyn-85124/1-093.dcm
+Breast_MRI_425,Mammary Fibroglandular Tissue,1-122.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_425/01-01-1990-NA-MRI BREAST BILATERAL WWO-84704/500.000000-ax 3d dyn-85124/1-122.dcm
+Breast_MRI_425,Fatty tissue of breast,1-101.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_425/01-01-1990-NA-MRI BREAST BILATERAL WWO-84704/500.000000-ax 3d dyn-85124/1-101.dcm
+Breast_MRI_425,Fatty tissue of breast,1-162.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_425/01-01-1990-NA-MRI BREAST BILATERAL WWO-84704/500.000000-ax 3d dyn-85124/1-162.dcm
+Breast_MRI_425,Fatty tissue of breast,1-034.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_425/01-01-1990-NA-MRI BREAST BILATERAL WWO-84704/500.000000-ax 3d dyn-85124/1-034.dcm
+Breast_MRI_434,Mammary Fibroglandular Tissue,1-128.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_434/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-45502/400.000000-Ax Vibrant MultiPhase-59155/1-128.dcm
+Breast_MRI_434,Mammary Fibroglandular Tissue,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_434/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-45502/400.000000-Ax Vibrant MultiPhase-59155/1-100.dcm
+Breast_MRI_434,Fatty tissue of breast,1-128.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_434/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-45502/400.000000-Ax Vibrant MultiPhase-59155/1-128.dcm
+Breast_MRI_434,Fatty tissue of breast,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_434/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-45502/400.000000-Ax Vibrant MultiPhase-59155/1-100.dcm
+Breast_MRI_434,Fatty tissue of breast,1-027.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_434/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-45502/400.000000-Ax Vibrant MultiPhase-59155/1-027.dcm
+Breast_MRI_434,Mammary Fibroglandular Tissue,1-002.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-002.dcm
+Breast_MRI_435,Fatty tissue of breast,1-147.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_435/01-01-1990-NA-MRI BREAST BILATERAL W  WO-49911/500.000000-ax 3d dyn MP-34621/1-147.dcm
+Breast_MRI_435,Fatty tissue of breast,1-053.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_435/01-01-1990-NA-MRI BREAST BILATERAL W  WO-49911/500.000000-ax 3d dyn MP-34621/1-053.dcm
+Breast_MRI_435,Fatty tissue of breast,1-082.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_435/01-01-1990-NA-MRI BREAST BILATERAL W  WO-49911/500.000000-ax 3d dyn MP-34621/1-082.dcm
+Breast_MRI_435,Mammary Fibroglandular Tissue,1-054.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_435/01-01-1990-NA-MRI BREAST BILATERAL W  WO-49911/500.000000-ax 3d dyn MP-34621/1-054.dcm
+Breast_MRI_435,Mammary Fibroglandular Tissue,1-016.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_435/01-01-1990-NA-MRI BREAST BILATERAL W  WO-49911/500.000000-ax 3d dyn MP-34621/1-016.dcm
+Breast_MRI_435,Mammary Fibroglandular Tissue,1-106.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_435/01-01-1990-NA-MRI BREAST BILATERAL W  WO-49911/500.000000-ax 3d dyn MP-34621/1-106.dcm
+Breast_MRI_438,Mammary Fibroglandular Tissue,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_438/01-01-1990-NA-MRI BREAST BILATERAL W  WO-81298/500.000000-ax 3d dyn-63939/1-090.dcm
+Breast_MRI_438,Mammary Fibroglandular Tissue,1-117.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_438/01-01-1990-NA-MRI BREAST BILATERAL W  WO-81298/500.000000-ax 3d dyn-63939/1-117.dcm
+Breast_MRI_438,Fatty tissue of breast,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_438/01-01-1990-NA-MRI BREAST BILATERAL W  WO-81298/500.000000-ax 3d dyn-63939/1-090.dcm
+Breast_MRI_438,Fatty tissue of breast,1-117.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_438/01-01-1990-NA-MRI BREAST BILATERAL W  WO-81298/500.000000-ax 3d dyn-63939/1-117.dcm
+Breast_MRI_438,Fatty tissue of breast,1-036.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_438/01-01-1990-NA-MRI BREAST BILATERAL W  WO-81298/500.000000-ax 3d dyn-63939/1-036.dcm
+Breast_MRI_438,Mammary Fibroglandular Tissue,1-154.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-154.dcm
+Breast_MRI_444,Mammary Fibroglandular Tissue,1-143.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_444/01-01-1990-NA-MRI BREAST BILATERAL WWO CONTRAST W 3D-22688/500.000000-ax dynamic-55973/1-143.dcm
+Breast_MRI_444,Mammary Fibroglandular Tissue,1-076.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_444/01-01-1990-NA-MRI BREAST BILATERAL WWO CONTRAST W 3D-22688/500.000000-ax dynamic-55973/1-076.dcm
+Breast_MRI_444,Mammary Fibroglandular Tissue,1-094.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_444/01-01-1990-NA-MRI BREAST BILATERAL WWO CONTRAST W 3D-22688/500.000000-ax dynamic-55973/1-094.dcm
+Breast_MRI_444,Fatty tissue of breast,1-156.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_444/01-01-1990-NA-MRI BREAST BILATERAL WWO CONTRAST W 3D-22688/500.000000-ax dynamic-55973/1-156.dcm
+Breast_MRI_444,Fatty tissue of breast,1-093.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_444/01-01-1990-NA-MRI BREAST BILATERAL WWO CONTRAST W 3D-22688/500.000000-ax dynamic-55973/1-093.dcm
+Breast_MRI_444,Fatty tissue of breast,1-053.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_444/01-01-1990-NA-MRI BREAST BILATERAL WWO CONTRAST W 3D-22688/500.000000-ax dynamic-55973/1-053.dcm
+Breast_MRI_446,Mammary Fibroglandular Tissue,1-070.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_446/01-01-1990-NA-BREASTROUTINEDYNAMICS-18768/7.000000-ax dyn pre-86286/1-070.dcm
+Breast_MRI_446,Mammary Fibroglandular Tissue,1-059.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_446/01-01-1990-NA-BREASTROUTINEDYNAMICS-18768/7.000000-ax dyn pre-86286/1-059.dcm
+Breast_MRI_446,Mammary Fibroglandular Tissue,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_446/01-01-1990-NA-BREASTROUTINEDYNAMICS-18768/7.000000-ax dyn pre-86286/1-100.dcm
+Breast_MRI_446,Fatty tissue of breast,1-041.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_446/01-01-1990-NA-BREASTROUTINEDYNAMICS-18768/7.000000-ax dyn pre-86286/1-041.dcm
+Breast_MRI_446,Fatty tissue of breast,1-059.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_446/01-01-1990-NA-BREASTROUTINEDYNAMICS-18768/7.000000-ax dyn pre-86286/1-059.dcm
+Breast_MRI_446,Fatty tissue of breast,1-114.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_446/01-01-1990-NA-BREASTROUTINEDYNAMICS-18768/7.000000-ax dyn pre-86286/1-114.dcm
+Breast_MRI_453,Mammary Fibroglandular Tissue,1-069.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_453/01-01-1990-NA-MRI BREAST BILATERAL WWO-07300/3.000000-ax dyn pre-33282/1-069.dcm
+Breast_MRI_453,Mammary Fibroglandular Tissue,1-037.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_453/01-01-1990-NA-MRI BREAST BILATERAL WWO-07300/3.000000-ax dyn pre-33282/1-037.dcm
+Breast_MRI_453,Mammary Fibroglandular Tissue,1-102.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_453/01-01-1990-NA-MRI BREAST BILATERAL WWO-07300/3.000000-ax dyn pre-33282/1-102.dcm
+Breast_MRI_453,Fatty tissue of breast,1-049.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_453/01-01-1990-NA-MRI BREAST BILATERAL WWO-07300/3.000000-ax dyn pre-33282/1-049.dcm
+Breast_MRI_453,Fatty tissue of breast,1-117.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_453/01-01-1990-NA-MRI BREAST BILATERAL WWO-07300/3.000000-ax dyn pre-33282/1-117.dcm
+Breast_MRI_453,Fatty tissue of breast,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_453/01-01-1990-NA-MRI BREAST BILATERAL WWO-07300/3.000000-ax dyn pre-33282/1-090.dcm
+Breast_MRI_456,Mammary Fibroglandular Tissue,1-147.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_456/01-01-1990-NA-BREASTGENERAL-57789/4.000000-ax dyn pre-00175/1-147.dcm
+Breast_MRI_456,Mammary Fibroglandular Tissue,1-081.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_456/01-01-1990-NA-BREASTGENERAL-57789/4.000000-ax dyn pre-00175/1-081.dcm
+Breast_MRI_456,Mammary Fibroglandular Tissue,1-074.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_456/01-01-1990-NA-BREASTGENERAL-57789/4.000000-ax dyn pre-00175/1-074.dcm
+Breast_MRI_456,Fatty tissue of breast,1-157.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_456/01-01-1990-NA-BREASTGENERAL-57789/4.000000-ax dyn pre-00175/1-157.dcm
+Breast_MRI_456,Fatty tissue of breast,1-045.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_456/01-01-1990-NA-BREASTGENERAL-57789/4.000000-ax dyn pre-00175/1-045.dcm
+Breast_MRI_456,Fatty tissue of breast,1-074.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_456/01-01-1990-NA-BREASTGENERAL-57789/4.000000-ax dyn pre-00175/1-074.dcm
+Breast_MRI_462,Mammary Fibroglandular Tissue,1-070.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_462/01-01-1990-NA-MRI BREAST BILATERAL W  WO-77067/500.000000-ax 3d dyn-90563/1-070.dcm
+Breast_MRI_462,Mammary Fibroglandular Tissue,1-123.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_462/01-01-1990-NA-MRI BREAST BILATERAL W  WO-77067/500.000000-ax 3d dyn-90563/1-123.dcm
+Breast_MRI_462,Mammary Fibroglandular Tissue,1-084.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_462/01-01-1990-NA-MRI BREAST BILATERAL W  WO-77067/500.000000-ax 3d dyn-90563/1-084.dcm
+Breast_MRI_462,Fatty tissue of breast,1-132.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_462/01-01-1990-NA-MRI BREAST BILATERAL W  WO-77067/500.000000-ax 3d dyn-90563/1-132.dcm
+Breast_MRI_462,Fatty tissue of breast,1-014.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_462/01-01-1990-NA-MRI BREAST BILATERAL W  WO-77067/500.000000-ax 3d dyn-90563/1-014.dcm
+Breast_MRI_462,Fatty tissue of breast,1-084.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_462/01-01-1990-NA-MRI BREAST BILATERAL W  WO-77067/500.000000-ax 3d dyn-90563/1-084.dcm
+Breast_MRI_483,Mammary Fibroglandular Tissue,1-108.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_483/01-01-1990-NA-MRI BREAST BILATERAL WWO-68742/500.000000-ax 3d dyn-01767/1-108.dcm
+Breast_MRI_483,Mammary Fibroglandular Tissue,1-151.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_483/01-01-1990-NA-MRI BREAST BILATERAL WWO-68742/500.000000-ax 3d dyn-01767/1-151.dcm
+Breast_MRI_483,Mammary Fibroglandular Tissue,1-087.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_483/01-01-1990-NA-MRI BREAST BILATERAL WWO-68742/500.000000-ax 3d dyn-01767/1-087.dcm
+Breast_MRI_483,Fatty tissue of breast,1-108.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_483/01-01-1990-NA-MRI BREAST BILATERAL WWO-68742/500.000000-ax 3d dyn-01767/1-108.dcm
+Breast_MRI_483,Fatty tissue of breast,1-029.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_483/01-01-1990-NA-MRI BREAST BILATERAL WWO-68742/500.000000-ax 3d dyn-01767/1-029.dcm
+Breast_MRI_483,Fatty tissue of breast,1-166.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_483/01-01-1990-NA-MRI BREAST BILATERAL WWO-68742/500.000000-ax 3d dyn-01767/1-166.dcm
+Breast_MRI_490,Mammary Fibroglandular Tissue,1-085.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_490/01-01-1990-NA-MRI BREAST BILATERAL W  WO-66436/600.000000-ax 3d dyn-26559/1-085.dcm
+Breast_MRI_490,Mammary Fibroglandular Tissue,1-133.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_490/01-01-1990-NA-MRI BREAST BILATERAL W  WO-66436/600.000000-ax 3d dyn-26559/1-133.dcm
+Breast_MRI_490,Mammary Fibroglandular Tissue,1-110.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_490/01-01-1990-NA-MRI BREAST BILATERAL W  WO-66436/600.000000-ax 3d dyn-26559/1-110.dcm
+Breast_MRI_490,Fatty tissue of breast,1-119.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_490/01-01-1990-NA-MRI BREAST BILATERAL W  WO-66436/600.000000-ax 3d dyn-26559/1-119.dcm
+Breast_MRI_490,Fatty tissue of breast,1-068.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_490/01-01-1990-NA-MRI BREAST BILATERAL W  WO-66436/600.000000-ax 3d dyn-26559/1-068.dcm
+Breast_MRI_490,Fatty tissue of breast,1-023.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_490/01-01-1990-NA-MRI BREAST BILATERAL W  WO-66436/600.000000-ax 3d dyn-26559/1-023.dcm
+Breast_MRI_492,Mammary Fibroglandular Tissue,1-103.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_492/01-01-1990-NA-MRI BREAST BILATERAL WWO-45519/500.000000-ax 3d dyn-68715/1-103.dcm
+Breast_MRI_492,Mammary Fibroglandular Tissue,1-124.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_492/01-01-1990-NA-MRI BREAST BILATERAL WWO-45519/500.000000-ax 3d dyn-68715/1-124.dcm
+Breast_MRI_492,Mammary Fibroglandular Tissue,1-085.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_492/01-01-1990-NA-MRI BREAST BILATERAL WWO-45519/500.000000-ax 3d dyn-68715/1-085.dcm
+Breast_MRI_492,Fatty tissue of breast,1-085.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_492/01-01-1990-NA-MRI BREAST BILATERAL WWO-45519/500.000000-ax 3d dyn-68715/1-085.dcm
+Breast_MRI_492,Fatty tissue of breast,1-050.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_492/01-01-1990-NA-MRI BREAST BILATERAL WWO-45519/500.000000-ax 3d dyn-68715/1-050.dcm
+Breast_MRI_492,Fatty tissue of breast,1-148.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_492/01-01-1990-NA-MRI BREAST BILATERAL WWO-45519/500.000000-ax 3d dyn-68715/1-148.dcm
+Breast_MRI_503,Mammary Fibroglandular Tissue,1-070.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_503/01-01-1990-NA-MRI BREAST BILATERAL WWO-16892/500.000000-ax 3d dyn-15162/1-070.dcm
+Breast_MRI_503,Mammary Fibroglandular Tissue,1-105.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_503/01-01-1990-NA-MRI BREAST BILATERAL WWO-16892/500.000000-ax 3d dyn-15162/1-105.dcm
+Breast_MRI_503,Fatty tissue of breast,1-083.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_503/01-01-1990-NA-MRI BREAST BILATERAL WWO-16892/500.000000-ax 3d dyn-15162/1-083.dcm
+Breast_MRI_503,Fatty tissue of breast,1-148.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_503/01-01-1990-NA-MRI BREAST BILATERAL WWO-16892/500.000000-ax 3d dyn-15162/1-148.dcm
+Breast_MRI_503,Fatty tissue of breast,1-018.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_503/01-01-1990-NA-MRI BREAST BILATERAL WWO-16892/500.000000-ax 3d dyn-15162/1-018.dcm
+Breast_MRI_503,Mammary Fibroglandular Tissue,1-011.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-011.dcm
+Breast_MRI_515,Mammary Fibroglandular Tissue,1-049.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_515/01-01-1990-NA-MRI BREAST BILATERAL WWO-40357/500.000000-ax 3d dyn-93413/1-049.dcm
+Breast_MRI_515,Mammary Fibroglandular Tissue,1-132.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_515/01-01-1990-NA-MRI BREAST BILATERAL WWO-40357/500.000000-ax 3d dyn-93413/1-132.dcm
+Breast_MRI_515,Mammary Fibroglandular Tissue,1-093.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_515/01-01-1990-NA-MRI BREAST BILATERAL WWO-40357/500.000000-ax 3d dyn-93413/1-093.dcm
+Breast_MRI_515,Fatty tissue of breast,1-126.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_515/01-01-1990-NA-MRI BREAST BILATERAL WWO-40357/500.000000-ax 3d dyn-93413/1-126.dcm
+Breast_MRI_515,Fatty tissue of breast,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_515/01-01-1990-NA-MRI BREAST BILATERAL WWO-40357/500.000000-ax 3d dyn-93413/1-090.dcm
+Breast_MRI_515,Fatty tissue of breast,1-041.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_515/01-01-1990-NA-MRI BREAST BILATERAL WWO-40357/500.000000-ax 3d dyn-93413/1-041.dcm
+Breast_MRI_516,Mammary Fibroglandular Tissue,1-094.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_516/01-01-1990-NA-BREASTROUTINE DYNAMICS-10485/4.000000-ax dyn pre-79771/1-094.dcm
+Breast_MRI_516,Mammary Fibroglandular Tissue,1-070.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_516/01-01-1990-NA-BREASTROUTINE DYNAMICS-10485/4.000000-ax dyn pre-79771/1-070.dcm
+Breast_MRI_516,Mammary Fibroglandular Tissue,1-164.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_516/01-01-1990-NA-BREASTROUTINE DYNAMICS-10485/4.000000-ax dyn pre-79771/1-164.dcm
+Breast_MRI_516,Fatty tissue of breast,1-005.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_516/01-01-1990-NA-BREASTROUTINE DYNAMICS-10485/4.000000-ax dyn pre-79771/1-005.dcm
+Breast_MRI_516,Fatty tissue of breast,1-094.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_516/01-01-1990-NA-BREASTROUTINE DYNAMICS-10485/4.000000-ax dyn pre-79771/1-094.dcm
+Breast_MRI_516,Fatty tissue of breast,1-130.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_516/01-01-1990-NA-BREASTROUTINE DYNAMICS-10485/4.000000-ax dyn pre-79771/1-130.dcm
+Breast_MRI_534,Fatty tissue of breast,1-128.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_534/01-01-1990-NA-BREASTROUTINE DYNAMICS-15945/4.000000-ax dyn pre-87107/1-128.dcm
+Breast_MRI_534,Fatty tissue of breast,1-009.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_534/01-01-1990-NA-BREASTROUTINE DYNAMICS-15945/4.000000-ax dyn pre-87107/1-009.dcm
+Breast_MRI_534,Fatty tissue of breast,1-104.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_534/01-01-1990-NA-BREASTROUTINE DYNAMICS-15945/4.000000-ax dyn pre-87107/1-104.dcm
+Breast_MRI_534,Mammary Fibroglandular Tissue,1-128.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_534/01-01-1990-NA-BREASTROUTINE DYNAMICS-15945/4.000000-ax dyn pre-87107/1-128.dcm
+Breast_MRI_534,Mammary Fibroglandular Tissue,1-104.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_534/01-01-1990-NA-BREASTROUTINE DYNAMICS-15945/4.000000-ax dyn pre-87107/1-104.dcm
+Breast_MRI_534,Mammary Fibroglandular Tissue,1-020.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-020.dcm
+Breast_MRI_550,Mammary Fibroglandular Tissue,1-140.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_550/01-01-1990-NA-MRI BREAST BILATERAL W  WO-47619/600.000000-ax dynamic-83418/1-140.dcm
+Breast_MRI_550,Mammary Fibroglandular Tissue,1-118.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_550/01-01-1990-NA-MRI BREAST BILATERAL W  WO-47619/600.000000-ax dynamic-83418/1-118.dcm
+Breast_MRI_550,Mammary Fibroglandular Tissue,1-088.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_550/01-01-1990-NA-MRI BREAST BILATERAL W  WO-47619/600.000000-ax dynamic-83418/1-088.dcm
+Breast_MRI_550,Fatty tissue of breast,1-118.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_550/01-01-1990-NA-MRI BREAST BILATERAL W  WO-47619/600.000000-ax dynamic-83418/1-118.dcm
+Breast_MRI_550,Fatty tissue of breast,1-088.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_550/01-01-1990-NA-MRI BREAST BILATERAL W  WO-47619/600.000000-ax dynamic-83418/1-088.dcm
+Breast_MRI_550,Fatty tissue of breast,1-030.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_550/01-01-1990-NA-MRI BREAST BILATERAL W  WO-47619/600.000000-ax dynamic-83418/1-030.dcm
+Breast_MRI_552,Mammary Fibroglandular Tissue,1-22.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_552/01-01-1990-NA-MRI BREAST BILATERAL W  WO-58725/5.000000-ax 3d pre-92967/1-22.dcm
+Breast_MRI_552,Mammary Fibroglandular Tissue,1-61.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_552/01-01-1990-NA-MRI BREAST BILATERAL W  WO-58725/5.000000-ax 3d pre-92967/1-61.dcm
+Breast_MRI_552,Mammary Fibroglandular Tissue,1-69.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_552/01-01-1990-NA-MRI BREAST BILATERAL W  WO-58725/5.000000-ax 3d pre-92967/1-69.dcm
+Breast_MRI_552,Fatty tissue of breast,1-22.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_552/01-01-1990-NA-MRI BREAST BILATERAL W  WO-58725/5.000000-ax 3d pre-92967/1-22.dcm
+Breast_MRI_552,Fatty tissue of breast,1-38.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_552/01-01-1990-NA-MRI BREAST BILATERAL W  WO-58725/5.000000-ax 3d pre-92967/1-38.dcm
+Breast_MRI_552,Fatty tissue of breast,1-79.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_552/01-01-1990-NA-MRI BREAST BILATERAL W  WO-58725/5.000000-ax 3d pre-92967/1-79.dcm
+Breast_MRI_555,Mammary Fibroglandular Tissue,1-108.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_555/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-40833/400.000000-Ax Vibrant MultiPhase-56996/1-108.dcm
+Breast_MRI_555,Mammary Fibroglandular Tissue,1-088.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_555/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-40833/400.000000-Ax Vibrant MultiPhase-56996/1-088.dcm
+Breast_MRI_555,Fatty tissue of breast,1-058.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_555/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-40833/400.000000-Ax Vibrant MultiPhase-56996/1-058.dcm
+Breast_MRI_555,Fatty tissue of breast,1-095.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_555/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-40833/400.000000-Ax Vibrant MultiPhase-56996/1-095.dcm
+Breast_MRI_555,Fatty tissue of breast,1-140.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_555/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-40833/400.000000-Ax Vibrant MultiPhase-56996/1-140.dcm
+Breast_MRI_555,Mammary Fibroglandular Tissue,1-162.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-162.dcm
+Breast_MRI_561,Mammary Fibroglandular Tissue,1-147.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_561/01-01-1990-NA-MRI BREAST BILATERAL W  WO-17851/700.000000-ax dynamic-41025/1-147.dcm
+Breast_MRI_561,Mammary Fibroglandular Tissue,1-127.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_561/01-01-1990-NA-MRI BREAST BILATERAL W  WO-17851/700.000000-ax dynamic-41025/1-127.dcm
+Breast_MRI_561,Mammary Fibroglandular Tissue,1-115.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_561/01-01-1990-NA-MRI BREAST BILATERAL W  WO-17851/700.000000-ax dynamic-41025/1-115.dcm
+Breast_MRI_561,Fatty tissue of breast,1-127.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_561/01-01-1990-NA-MRI BREAST BILATERAL W  WO-17851/700.000000-ax dynamic-41025/1-127.dcm
+Breast_MRI_561,Fatty tissue of breast,1-044.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_561/01-01-1990-NA-MRI BREAST BILATERAL W  WO-17851/700.000000-ax dynamic-41025/1-044.dcm
+Breast_MRI_561,Fatty tissue of breast,1-115.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_561/01-01-1990-NA-MRI BREAST BILATERAL W  WO-17851/700.000000-ax dynamic-41025/1-115.dcm
+Breast_MRI_565,Mammary Fibroglandular Tissue,1-126.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_565/01-01-1990-NA-MRI BREAST BILATERAL W  WO-14173/600.000000-ax 3d dyn-53020/1-126.dcm
+Breast_MRI_565,Mammary Fibroglandular Tissue,1-060.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_565/01-01-1990-NA-MRI BREAST BILATERAL W  WO-14173/600.000000-ax 3d dyn-53020/1-060.dcm
+Breast_MRI_565,Mammary Fibroglandular Tissue,1-085.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_565/01-01-1990-NA-MRI BREAST BILATERAL W  WO-14173/600.000000-ax 3d dyn-53020/1-085.dcm
+Breast_MRI_565,Fatty tissue of breast,1-027.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_565/01-01-1990-NA-MRI BREAST BILATERAL W  WO-14173/600.000000-ax 3d dyn-53020/1-027.dcm
+Breast_MRI_565,Fatty tissue of breast,1-060.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_565/01-01-1990-NA-MRI BREAST BILATERAL W  WO-14173/600.000000-ax 3d dyn-53020/1-060.dcm
+Breast_MRI_565,Fatty tissue of breast,1-160.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-160.dcm
+Breast_MRI_571,Mammary Fibroglandular Tissue,1-108.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_571/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-07318/400.000000-Ax Vibrant MultiPhase-94575/1-108.dcm
+Breast_MRI_571,Mammary Fibroglandular Tissue,1-140.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_571/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-07318/400.000000-Ax Vibrant MultiPhase-94575/1-140.dcm
+Breast_MRI_571,Fatty tissue of breast,1-108.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_571/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-07318/400.000000-Ax Vibrant MultiPhase-94575/1-108.dcm
+Breast_MRI_571,Fatty tissue of breast,1-140.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_571/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-07318/400.000000-Ax Vibrant MultiPhase-94575/1-140.dcm
+Breast_MRI_571,Fatty tissue of breast,1-012.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-012.dcm
+Breast_MRI_571,Mammary Fibroglandular Tissue,1-185.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-185.dcm
+Breast_MRI_579,Mammary Fibroglandular Tissue,1-103.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_579/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-33070/400.000000-Ax Vibrant MultiPhase-13178/1-103.dcm
+Breast_MRI_579,Mammary Fibroglandular Tissue,1-157.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_579/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-33070/400.000000-Ax Vibrant MultiPhase-13178/1-157.dcm
+Breast_MRI_579,Mammary Fibroglandular Tissue,1-093.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_579/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-33070/400.000000-Ax Vibrant MultiPhase-13178/1-093.dcm
+Breast_MRI_579,Fatty tissue of breast,1-093.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_579/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-33070/400.000000-Ax Vibrant MultiPhase-13178/1-093.dcm
+Breast_MRI_579,Fatty tissue of breast,1-145.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_579/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-33070/400.000000-Ax Vibrant MultiPhase-13178/1-145.dcm
+Breast_MRI_579,Fatty tissue of breast,1-031.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_579/01-01-1990-NA-MR BREAST BILAT W AND W-O CONT -DR-33070/400.000000-Ax Vibrant MultiPhase-13178/1-031.dcm
+Breast_MRI_590,Mammary Fibroglandular Tissue,1-070.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_590/01-01-1990-NA-MRI BREAST BILATERAL WWO-06713/3.000000-ax 3d dyn pre-79601/1-070.dcm
+Breast_MRI_590,Mammary Fibroglandular Tissue,1-048.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_590/01-01-1990-NA-MRI BREAST BILATERAL WWO-06713/3.000000-ax 3d dyn pre-79601/1-048.dcm
+Breast_MRI_590,Mammary Fibroglandular Tissue,1-018.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_590/01-01-1990-NA-MRI BREAST BILATERAL WWO-06713/3.000000-ax 3d dyn pre-79601/1-018.dcm
+Breast_MRI_590,Fatty tissue of breast,1-070.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_590/01-01-1990-NA-MRI BREAST BILATERAL WWO-06713/3.000000-ax 3d dyn pre-79601/1-070.dcm
+Breast_MRI_590,Fatty tissue of breast,1-133.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_590/01-01-1990-NA-MRI BREAST BILATERAL WWO-06713/3.000000-ax 3d dyn pre-79601/1-133.dcm
+Breast_MRI_590,Fatty tissue of breast,1-017.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_590/01-01-1990-NA-MRI BREAST BILATERAL WWO-06713/3.000000-ax 3d dyn pre-79601/1-017.dcm
+Breast_MRI_595,Mammary Fibroglandular Tissue,1-062.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_595/01-01-1990-NA-BREASTROUTINE DYNAMICS-45703/6.000000-ax dyn pre-06398/1-062.dcm
+Breast_MRI_595,Mammary Fibroglandular Tissue,1-138.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_595/01-01-1990-NA-BREASTROUTINE DYNAMICS-45703/6.000000-ax dyn pre-06398/1-138.dcm
+Breast_MRI_595,Mammary Fibroglandular Tissue,1-103.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_595/01-01-1990-NA-BREASTROUTINE DYNAMICS-45703/6.000000-ax dyn pre-06398/1-103.dcm
+Breast_MRI_595,Fatty tissue of breast,1-008.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_595/01-01-1990-NA-BREASTROUTINE DYNAMICS-45703/6.000000-ax dyn pre-06398/1-008.dcm
+Breast_MRI_595,Fatty tissue of breast,1-134.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_595/01-01-1990-NA-BREASTROUTINE DYNAMICS-45703/6.000000-ax dyn pre-06398/1-134.dcm
+Breast_MRI_595,Fatty tissue of breast,1-069.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_595/01-01-1990-NA-BREASTROUTINE DYNAMICS-45703/6.000000-ax dyn pre-06398/1-069.dcm
+Breast_MRI_598,Mammary Fibroglandular Tissue,1-124.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_598/01-01-1990-NA-BREASTGENERAL-41889/4.000000-ax dyn pre-76059/1-124.dcm
+Breast_MRI_598,Mammary Fibroglandular Tissue,1-076.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_598/01-01-1990-NA-BREASTGENERAL-41889/4.000000-ax dyn pre-76059/1-076.dcm
+Breast_MRI_598,Mammary Fibroglandular Tissue,1-149.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_598/01-01-1990-NA-BREASTGENERAL-41889/4.000000-ax dyn pre-76059/1-149.dcm
+Breast_MRI_598,Fatty tissue of breast,1-052.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_598/01-01-1990-NA-BREASTGENERAL-41889/4.000000-ax dyn pre-76059/1-052.dcm
+Breast_MRI_598,Fatty tissue of breast,1-165.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_598/01-01-1990-NA-BREASTGENERAL-41889/4.000000-ax dyn pre-76059/1-165.dcm
+Breast_MRI_598,Fatty tissue of breast,1-077.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_598/01-01-1990-NA-BREASTGENERAL-41889/4.000000-ax dyn pre-76059/1-077.dcm
+Breast_MRI_612,Mammary Fibroglandular Tissue,1-048.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_612/01-01-1990-NA-BREAST ROUTINE-50848/12.000000-ax dyn pre-98486/1-048.dcm
+Breast_MRI_612,Mammary Fibroglandular Tissue,1-130.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_612/01-01-1990-NA-BREAST ROUTINE-50848/12.000000-ax dyn pre-98486/1-130.dcm
+Breast_MRI_612,Mammary Fibroglandular Tissue,1-144.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_612/01-01-1990-NA-BREAST ROUTINE-50848/12.000000-ax dyn pre-98486/1-144.dcm
+Breast_MRI_612,Fatty tissue of breast,1-130.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_612/01-01-1990-NA-BREAST ROUTINE-50848/12.000000-ax dyn pre-98486/1-130.dcm
+Breast_MRI_612,Fatty tissue of breast,1-144.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_612/01-01-1990-NA-BREAST ROUTINE-50848/12.000000-ax dyn pre-98486/1-144.dcm
+Breast_MRI_612,Fatty tissue of breast,1-008.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_612/01-01-1990-NA-BREAST ROUTINE-50848/12.000000-ax dyn pre-98486/1-008.dcm
+Breast_MRI_628,Fatty tissue of breast,1-213.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_628/01-01-1990-NA-BREASTROUTINE-75449/4.000000-ax dyn pre-74608/1-213.dcm
+Breast_MRI_628,Fatty tissue of breast,1-061.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_628/01-01-1990-NA-BREASTROUTINE-75449/4.000000-ax dyn pre-74608/1-061.dcm
+Breast_MRI_628,Fatty tissue of breast,1-085.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_628/01-01-1990-NA-BREASTROUTINE-75449/4.000000-ax dyn pre-74608/1-085.dcm
+Breast_MRI_628,Mammary Fibroglandular Tissue,1-146.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_628/01-01-1990-NA-BREASTROUTINE-75449/4.000000-ax dyn pre-74608/1-146.dcm
+Breast_MRI_628,Mammary Fibroglandular Tissue,1-192.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_628/01-01-1990-NA-BREASTROUTINE-75449/4.000000-ax dyn pre-74608/1-192.dcm
+Breast_MRI_628,Mammary Fibroglandular Tissue,1-098.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_628/01-01-1990-NA-BREASTROUTINE-75449/4.000000-ax dyn pre-74608/1-098.dcm
+Breast_MRI_629,Mammary Fibroglandular Tissue,1-113.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_629/01-01-1990-NA-MRI BREAST BILATERAL WWO-59265/5.000000-ax dyn pre-02849/1-113.dcm
+Breast_MRI_629,Mammary Fibroglandular Tissue,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_629/01-01-1990-NA-MRI BREAST BILATERAL WWO-59265/5.000000-ax dyn pre-02849/1-100.dcm
+Breast_MRI_629,Mammary Fibroglandular Tissue,1-035.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_629/01-01-1990-NA-MRI BREAST BILATERAL WWO-59265/5.000000-ax dyn pre-02849/1-035.dcm
+Breast_MRI_629,Fatty tissue of breast,1-130.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_629/01-01-1990-NA-MRI BREAST BILATERAL WWO-59265/5.000000-ax dyn pre-02849/1-130.dcm
+Breast_MRI_629,Fatty tissue of breast,1-074.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_629/01-01-1990-NA-MRI BREAST BILATERAL WWO-59265/5.000000-ax dyn pre-02849/1-074.dcm
+Breast_MRI_629,Fatty tissue of breast,1-006.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-006.dcm
+Breast_MRI_639,Mammary Fibroglandular Tissue,1-095.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_639/01-01-1990-NA-MRI BREAST BILATERAL WWO-41401/500.000000-ax 3d dyn-35159/1-095.dcm
+Breast_MRI_639,Mammary Fibroglandular Tissue,1-108.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_639/01-01-1990-NA-MRI BREAST BILATERAL WWO-41401/500.000000-ax 3d dyn-35159/1-108.dcm
+Breast_MRI_639,Mammary Fibroglandular Tissue,1-139.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_639/01-01-1990-NA-MRI BREAST BILATERAL WWO-41401/500.000000-ax 3d dyn-35159/1-139.dcm
+Breast_MRI_639,Fatty tissue of breast,1-095.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_639/01-01-1990-NA-MRI BREAST BILATERAL WWO-41401/500.000000-ax 3d dyn-35159/1-095.dcm
+Breast_MRI_639,Fatty tissue of breast,1-138.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_639/01-01-1990-NA-MRI BREAST BILATERAL WWO-41401/500.000000-ax 3d dyn-35159/1-138.dcm
+Breast_MRI_639,Fatty tissue of breast,1-046.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_639/01-01-1990-NA-MRI BREAST BILATERAL WWO-41401/500.000000-ax 3d dyn-35159/1-046.dcm
+Breast_MRI_657,Fatty tissue of breast,1-121.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_657/01-01-1990-NA-MRI BREAST BILATERAL WWO-42695/500.000000-ax 3d dyn-91441/1-121.dcm
+Breast_MRI_657,Fatty tissue of breast,1-027.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_657/01-01-1990-NA-MRI BREAST BILATERAL WWO-42695/500.000000-ax 3d dyn-91441/1-027.dcm
+Breast_MRI_657,Fatty tissue of breast,1-083.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_657/01-01-1990-NA-MRI BREAST BILATERAL WWO-42695/500.000000-ax 3d dyn-91441/1-083.dcm
+Breast_MRI_657,Mammary Fibroglandular Tissue,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_657/01-01-1990-NA-MRI BREAST BILATERAL WWO-42695/500.000000-ax 3d dyn-91441/1-100.dcm
+Breast_MRI_657,Mammary Fibroglandular Tissue,1-083.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_657/01-01-1990-NA-MRI BREAST BILATERAL WWO-42695/500.000000-ax 3d dyn-91441/1-083.dcm
+Breast_MRI_657,Mammary Fibroglandular Tissue,1-154.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-154.dcm
+Breast_MRI_658,Mammary Fibroglandular Tissue,1-111.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_658/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-45998/500.000000-Ax Vibrant MultiPhase-20306/1-111.dcm
+Breast_MRI_658,Mammary Fibroglandular Tissue,1-125.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_658/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-45998/500.000000-Ax Vibrant MultiPhase-20306/1-125.dcm
+Breast_MRI_658,Fatty tissue of breast,1-111.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_658/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-45998/500.000000-Ax Vibrant MultiPhase-20306/1-111.dcm
+Breast_MRI_658,Fatty tissue of breast,1-034.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-034.dcm
+Breast_MRI_658,Fatty tissue of breast,1-180.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-180.dcm
+Breast_MRI_658,Mammary Fibroglandular Tissue,1-189.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-189.dcm
+Breast_MRI_662,Fatty tissue of breast,1-195.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_662/01-01-1990-NA-BREASTROUTINE-43987/6.000000-ax dyn pre-70995/1-195.dcm
+Breast_MRI_662,Fatty tissue of breast,1-070.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_662/01-01-1990-NA-BREASTROUTINE-43987/6.000000-ax dyn pre-70995/1-070.dcm
+Breast_MRI_662,Fatty tissue of breast,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_662/01-01-1990-NA-BREASTROUTINE-43987/6.000000-ax dyn pre-70995/1-100.dcm
+Breast_MRI_662,Mammary Fibroglandular Tissue,1-180.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_662/01-01-1990-NA-BREASTROUTINE-43987/6.000000-ax dyn pre-70995/1-180.dcm
+Breast_MRI_662,Mammary Fibroglandular Tissue,1-070.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_662/01-01-1990-NA-BREASTROUTINE-43987/6.000000-ax dyn pre-70995/1-070.dcm
+Breast_MRI_662,Mammary Fibroglandular Tissue,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_662/01-01-1990-NA-BREASTROUTINE-43987/6.000000-ax dyn pre-70995/1-100.dcm
+Breast_MRI_664,Mammary Fibroglandular Tissue,1-78.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_664/01-01-1990-NA-MRI BREAST BILATERAL W  WO-15281/6.000000-ax 3d pre-71177/1-78.dcm
+Breast_MRI_664,Mammary Fibroglandular Tissue,1-45.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_664/01-01-1990-NA-MRI BREAST BILATERAL W  WO-15281/6.000000-ax 3d pre-71177/1-45.dcm
+Breast_MRI_664,Mammary Fibroglandular Tissue,1-66.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_664/01-01-1990-NA-MRI BREAST BILATERAL W  WO-15281/6.000000-ax 3d pre-71177/1-66.dcm
+Breast_MRI_664,Fatty tissue of breast,1-45.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_664/01-01-1990-NA-MRI BREAST BILATERAL W  WO-15281/6.000000-ax 3d pre-71177/1-45.dcm
+Breast_MRI_664,Fatty tissue of breast,1-66.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_664/01-01-1990-NA-MRI BREAST BILATERAL W  WO-15281/6.000000-ax 3d pre-71177/1-66.dcm
+Breast_MRI_664,Fatty tissue of breast,1-01.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-01.dcm
+Breast_MRI_677,Mammary Fibroglandular Tissue,1-110.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_677/01-01-1990-NA-MRI BREAST BILATERAL WWO-75886/700.000000-ax 3d dyn MP-46085/1-110.dcm
+Breast_MRI_677,Mammary Fibroglandular Tissue,1-064.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_677/01-01-1990-NA-MRI BREAST BILATERAL WWO-75886/700.000000-ax 3d dyn MP-46085/1-064.dcm
+Breast_MRI_677,Mammary Fibroglandular Tissue,1-136.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_677/01-01-1990-NA-MRI BREAST BILATERAL WWO-75886/700.000000-ax 3d dyn MP-46085/1-136.dcm
+Breast_MRI_677,Fatty tissue of breast,1-014.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_677/01-01-1990-NA-MRI BREAST BILATERAL WWO-75886/700.000000-ax 3d dyn MP-46085/1-014.dcm
+Breast_MRI_677,Fatty tissue of breast,1-170.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_677/01-01-1990-NA-MRI BREAST BILATERAL WWO-75886/700.000000-ax 3d dyn MP-46085/1-170.dcm
+Breast_MRI_677,Fatty tissue of breast,1-064.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_677/01-01-1990-NA-MRI BREAST BILATERAL WWO-75886/700.000000-ax 3d dyn MP-46085/1-064.dcm
+Breast_MRI_694,Mammary Fibroglandular Tissue,1-076.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_694/01-01-1990-NA-MRI BREAST BILATERAL W  WO-87066/600.000000-ax dynamic-04600/1-076.dcm
+Breast_MRI_694,Mammary Fibroglandular Tissue,1-091.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_694/01-01-1990-NA-MRI BREAST BILATERAL W  WO-87066/600.000000-ax dynamic-04600/1-091.dcm
+Breast_MRI_694,Fatty tissue of breast,1-026.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_694/01-01-1990-NA-MRI BREAST BILATERAL W  WO-87066/600.000000-ax dynamic-04600/1-026.dcm
+Breast_MRI_694,Fatty tissue of breast,1-076.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_694/01-01-1990-NA-MRI BREAST BILATERAL W  WO-87066/600.000000-ax dynamic-04600/1-076.dcm
+Breast_MRI_694,Fatty tissue of breast,1-154.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_694/01-01-1990-NA-MRI BREAST BILATERAL W  WO-87066/600.000000-ax dynamic-04600/1-154.dcm
+Breast_MRI_694,Mammary Fibroglandular Tissue,1-151.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-151.dcm
+Breast_MRI_708,Mammary Fibroglandular Tissue,1-063.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_708/01-01-1990-NA-MRI BREAST BILATERAL WWO-72910/500.000000-ax 3d dyn-22300/1-063.dcm
+Breast_MRI_708,Mammary Fibroglandular Tissue,1-116.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_708/01-01-1990-NA-MRI BREAST BILATERAL WWO-72910/500.000000-ax 3d dyn-22300/1-116.dcm
+Breast_MRI_708,Fatty tissue of breast,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_708/01-01-1990-NA-MRI BREAST BILATERAL WWO-72910/500.000000-ax 3d dyn-22300/1-100.dcm
+Breast_MRI_708,Fatty tissue of breast,1-038.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_708/01-01-1990-NA-MRI BREAST BILATERAL WWO-72910/500.000000-ax 3d dyn-22300/1-038.dcm
+Breast_MRI_708,Fatty tissue of breast,1-147.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_708/01-01-1990-NA-MRI BREAST BILATERAL WWO-72910/500.000000-ax 3d dyn-22300/1-147.dcm
+Breast_MRI_708,Mammary Fibroglandular Tissue,1-146.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-146.dcm
+Breast_MRI_709,Mammary Fibroglandular Tissue,1-098.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_709/01-01-1990-NA-MRI BREAST BILATERAL WWO-96125/600.000000-ax 3d dyn-94567/1-098.dcm
+Breast_MRI_709,Mammary Fibroglandular Tissue,1-033.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_709/01-01-1990-NA-MRI BREAST BILATERAL WWO-96125/600.000000-ax 3d dyn-94567/1-033.dcm
+Breast_MRI_709,Mammary Fibroglandular Tissue,1-070.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_709/01-01-1990-NA-MRI BREAST BILATERAL WWO-96125/600.000000-ax 3d dyn-94567/1-070.dcm
+Breast_MRI_709,Fatty tissue of breast,1-098.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_709/01-01-1990-NA-MRI BREAST BILATERAL WWO-96125/600.000000-ax 3d dyn-94567/1-098.dcm
+Breast_MRI_709,Fatty tissue of breast,1-040.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_709/01-01-1990-NA-MRI BREAST BILATERAL WWO-96125/600.000000-ax 3d dyn-94567/1-040.dcm
+Breast_MRI_709,Fatty tissue of breast,1-137.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_709/01-01-1990-NA-MRI BREAST BILATERAL WWO-96125/600.000000-ax 3d dyn-94567/1-137.dcm
+Breast_MRI_711,Mammary Fibroglandular Tissue,1-087.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_711/01-01-1990-NA-BREASTROUTINE-66329/4.000000-ax dyn pre-02232/1-087.dcm
+Breast_MRI_711,Mammary Fibroglandular Tissue,1-136.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_711/01-01-1990-NA-BREASTROUTINE-66329/4.000000-ax dyn pre-02232/1-136.dcm
+Breast_MRI_711,Mammary Fibroglandular Tissue,1-188.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_711/01-01-1990-NA-BREASTROUTINE-66329/4.000000-ax dyn pre-02232/1-188.dcm
+Breast_MRI_711,Fatty tissue of breast,1-043.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_711/01-01-1990-NA-BREASTROUTINE-66329/4.000000-ax dyn pre-02232/1-043.dcm
+Breast_MRI_711,Fatty tissue of breast,1-206.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_711/01-01-1990-NA-BREASTROUTINE-66329/4.000000-ax dyn pre-02232/1-206.dcm
+Breast_MRI_711,Fatty tissue of breast,1-107.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_711/01-01-1990-NA-BREASTROUTINE-66329/4.000000-ax dyn pre-02232/1-107.dcm
+Breast_MRI_722,Mammary Fibroglandular Tissue,1-123.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_722/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98616/500.000000-ax 3d dyn-08932/1-123.dcm
+Breast_MRI_722,Mammary Fibroglandular Tissue,1-101.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_722/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98616/500.000000-ax 3d dyn-08932/1-101.dcm
+Breast_MRI_722,Mammary Fibroglandular Tissue,1-160.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_722/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98616/500.000000-ax 3d dyn-08932/1-160.dcm
+Breast_MRI_722,Fatty tissue of breast,1-026.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_722/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98616/500.000000-ax 3d dyn-08932/1-026.dcm
+Breast_MRI_722,Fatty tissue of breast,1-084.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_722/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98616/500.000000-ax 3d dyn-08932/1-084.dcm
+Breast_MRI_722,Fatty tissue of breast,1-139.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_722/01-01-1990-NA-MRI BREAST BILATERAL W  WO-98616/500.000000-ax 3d dyn-08932/1-139.dcm
+Breast_MRI_731,Mammary Fibroglandular Tissue,1-156.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_731/01-01-1990-NA-BREASTROUTINE DYNAMIC-45197/6.000000-ax dyn pre-02109/1-156.dcm
+Breast_MRI_731,Mammary Fibroglandular Tissue,1-086.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_731/01-01-1990-NA-BREASTROUTINE DYNAMIC-45197/6.000000-ax dyn pre-02109/1-086.dcm
+Breast_MRI_731,Mammary Fibroglandular Tissue,1-070.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_731/01-01-1990-NA-BREASTROUTINE DYNAMIC-45197/6.000000-ax dyn pre-02109/1-070.dcm
+Breast_MRI_731,Fatty tissue of breast,1-150.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_731/01-01-1990-NA-BREASTROUTINE DYNAMIC-45197/6.000000-ax dyn pre-02109/1-150.dcm
+Breast_MRI_731,Fatty tissue of breast,1-086.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_731/01-01-1990-NA-BREASTROUTINE DYNAMIC-45197/6.000000-ax dyn pre-02109/1-086.dcm
+Breast_MRI_731,Fatty tissue of breast,1-020.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_731/01-01-1990-NA-BREASTROUTINE DYNAMIC-45197/6.000000-ax dyn pre-02109/1-020.dcm
+Breast_MRI_741,Mammary Fibroglandular Tissue,1-098.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_741/01-01-1990-NA-BREAST ROUTINE-05939/4.000000-ax dyn pre-58810/1-098.dcm
+Breast_MRI_741,Mammary Fibroglandular Tissue,1-163.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_741/01-01-1990-NA-BREAST ROUTINE-05939/4.000000-ax dyn pre-58810/1-163.dcm
+Breast_MRI_741,Mammary Fibroglandular Tissue,1-085.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_741/01-01-1990-NA-BREAST ROUTINE-05939/4.000000-ax dyn pre-58810/1-085.dcm
+Breast_MRI_741,Fatty tissue of breast,1-201.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_741/01-01-1990-NA-BREAST ROUTINE-05939/4.000000-ax dyn pre-58810/1-201.dcm
+Breast_MRI_741,Fatty tissue of breast,1-024.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_741/01-01-1990-NA-BREAST ROUTINE-05939/4.000000-ax dyn pre-58810/1-024.dcm
+Breast_MRI_741,Fatty tissue of breast,1-085.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_741/01-01-1990-NA-BREAST ROUTINE-05939/4.000000-ax dyn pre-58810/1-085.dcm
+Breast_MRI_751,Mammary Fibroglandular Tissue,1-108.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_751/01-01-1990-NA-MRI BREAST BILATERAL W  WO-73485/500.000000-ax 3d dyn-66679/1-108.dcm
+Breast_MRI_751,Mammary Fibroglandular Tissue,1-066.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_751/01-01-1990-NA-MRI BREAST BILATERAL W  WO-73485/500.000000-ax 3d dyn-66679/1-066.dcm
+Breast_MRI_751,Mammary Fibroglandular Tissue,1-037.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_751/01-01-1990-NA-MRI BREAST BILATERAL W  WO-73485/500.000000-ax 3d dyn-66679/1-037.dcm
+Breast_MRI_751,Fatty tissue of breast,1-071.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_751/01-01-1990-NA-MRI BREAST BILATERAL W  WO-73485/500.000000-ax 3d dyn-66679/1-071.dcm
+Breast_MRI_751,Fatty tissue of breast,1-015.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_751/01-01-1990-NA-MRI BREAST BILATERAL W  WO-73485/500.000000-ax 3d dyn-66679/1-015.dcm
+Breast_MRI_751,Fatty tissue of breast,1-151.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-151.dcm
+Breast_MRI_755,Fatty tissue of breast,1-089.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_755/01-01-1990-NA-MRI BREAST BILATERAL W  WO-24574/600.000000-ax 3d dyn MP-49573/1-089.dcm
+Breast_MRI_755,Fatty tissue of breast,1-039.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_755/01-01-1990-NA-MRI BREAST BILATERAL W  WO-24574/600.000000-ax 3d dyn MP-49573/1-039.dcm
+Breast_MRI_755,Fatty tissue of breast,1-133.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_755/01-01-1990-NA-MRI BREAST BILATERAL W  WO-24574/600.000000-ax 3d dyn MP-49573/1-133.dcm
+Breast_MRI_755,Mammary Fibroglandular Tissue,1-089.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_755/01-01-1990-NA-MRI BREAST BILATERAL W  WO-24574/600.000000-ax 3d dyn MP-49573/1-089.dcm
+Breast_MRI_755,Mammary Fibroglandular Tissue,1-116.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_755/01-01-1990-NA-MRI BREAST BILATERAL W  WO-24574/600.000000-ax 3d dyn MP-49573/1-116.dcm
+Breast_MRI_755,Mammary Fibroglandular Tissue,1-157.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-157.dcm
+Breast_MRI_776,Mammary Fibroglandular Tissue,1-080.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_776/01-01-1990-NA-BREASTROUTINE DYNAMIC-05893/6.000000-ax dyn pre-88645/1-080.dcm
+Breast_MRI_776,Mammary Fibroglandular Tissue,1-165.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_776/01-01-1990-NA-BREASTROUTINE DYNAMIC-05893/6.000000-ax dyn pre-88645/1-165.dcm
+Breast_MRI_776,Mammary Fibroglandular Tissue,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_776/01-01-1990-NA-BREASTROUTINE DYNAMIC-05893/6.000000-ax dyn pre-88645/1-100.dcm
+Breast_MRI_776,Fatty tissue of breast,1-100.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_776/01-01-1990-NA-BREASTROUTINE DYNAMIC-05893/6.000000-ax dyn pre-88645/1-100.dcm
+Breast_MRI_776,Fatty tissue of breast,1-179.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_776/01-01-1990-NA-BREASTROUTINE DYNAMIC-05893/6.000000-ax dyn pre-88645/1-179.dcm
+Breast_MRI_776,Fatty tissue of breast,1-042.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_776/01-01-1990-NA-BREASTROUTINE DYNAMIC-05893/6.000000-ax dyn pre-88645/1-042.dcm
+Breast_MRI_780,Mammary Fibroglandular Tissue,1-130.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_780/01-01-1990-NA-BREASTROUTINE-79642/4.000000-ax dyn pre-55485/1-130.dcm
+Breast_MRI_780,Mammary Fibroglandular Tissue,1-030.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_780/01-01-1990-NA-BREASTROUTINE-79642/4.000000-ax dyn pre-55485/1-030.dcm
+Breast_MRI_780,Mammary Fibroglandular Tissue,1-147.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_780/01-01-1990-NA-BREASTROUTINE-79642/4.000000-ax dyn pre-55485/1-147.dcm
+Breast_MRI_780,Fatty tissue of breast,1-016.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_780/01-01-1990-NA-BREASTROUTINE-79642/4.000000-ax dyn pre-55485/1-016.dcm
+Breast_MRI_780,Fatty tissue of breast,1-130.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_780/01-01-1990-NA-BREASTROUTINE-79642/4.000000-ax dyn pre-55485/1-130.dcm
+Breast_MRI_780,Fatty tissue of breast,1-147.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_780/01-01-1990-NA-BREASTROUTINE-79642/4.000000-ax dyn pre-55485/1-147.dcm
+Breast_MRI_795,Mammary Fibroglandular Tissue,1-053.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_795/01-01-1990-NA-MRI BREAST BILATERAL W  WO-26819/600.000000-ax 3d dyn-94859/1-053.dcm
+Breast_MRI_795,Mammary Fibroglandular Tissue,1-035.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_795/01-01-1990-NA-MRI BREAST BILATERAL W  WO-26819/600.000000-ax 3d dyn-94859/1-035.dcm
+Breast_MRI_795,Mammary Fibroglandular Tissue,1-070.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_795/01-01-1990-NA-MRI BREAST BILATERAL W  WO-26819/600.000000-ax 3d dyn-94859/1-070.dcm
+Breast_MRI_795,Fatty tissue of breast,1-053.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_795/01-01-1990-NA-MRI BREAST BILATERAL W  WO-26819/600.000000-ax 3d dyn-94859/1-053.dcm
+Breast_MRI_795,Fatty tissue of breast,1-070.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_795/01-01-1990-NA-MRI BREAST BILATERAL W  WO-26819/600.000000-ax 3d dyn-94859/1-070.dcm
+Breast_MRI_795,Fatty tissue of breast,1-123.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_795/01-01-1990-NA-MRI BREAST BILATERAL W  WO-26819/600.000000-ax 3d dyn-94859/1-123.dcm
+Breast_MRI_806,Mammary Fibroglandular Tissue,1-075.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_806/01-01-1990-NA-MRI BREAST BILATERAL W  WO-92667/500.000000-ax dyn-77794/1-075.dcm
+Breast_MRI_806,Mammary Fibroglandular Tissue,1-110.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_806/01-01-1990-NA-MRI BREAST BILATERAL W  WO-92667/500.000000-ax dyn-77794/1-110.dcm
+Breast_MRI_806,Mammary Fibroglandular Tissue,1-033.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_806/01-01-1990-NA-MRI BREAST BILATERAL W  WO-92667/500.000000-ax dyn-77794/1-033.dcm
+Breast_MRI_806,Fatty tissue of breast,1-024.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_806/01-01-1990-NA-MRI BREAST BILATERAL W  WO-92667/500.000000-ax dyn-77794/1-024.dcm
+Breast_MRI_806,Fatty tissue of breast,1-118.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_806/01-01-1990-NA-MRI BREAST BILATERAL W  WO-92667/500.000000-ax dyn-77794/1-118.dcm
+Breast_MRI_806,Fatty tissue of breast,1-094.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_806/01-01-1990-NA-MRI BREAST BILATERAL W  WO-92667/500.000000-ax dyn-77794/1-094.dcm
+Breast_MRI_810,Mammary Fibroglandular Tissue,1-124.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_810/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-27895/400.000000-Ax Vibrant MultiPhase-60895/1-124.dcm
+Breast_MRI_810,Mammary Fibroglandular Tissue,1-103.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_810/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-27895/400.000000-Ax Vibrant MultiPhase-60895/1-103.dcm
+Breast_MRI_810,Fatty tissue of breast,1-017.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_810/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-27895/400.000000-Ax Vibrant MultiPhase-60895/1-017.dcm
+Breast_MRI_810,Fatty tissue of breast,1-098.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_810/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-27895/400.000000-Ax Vibrant MultiPhase-60895/1-098.dcm
+Breast_MRI_810,Fatty tissue of breast,1-143.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_810/01-01-1990-NA-MR BREAST BILAT W AND WO CONT-DR-27895/400.000000-Ax Vibrant MultiPhase-60895/1-143.dcm
+Breast_MRI_810,Mammary Fibroglandular Tissue,1-152.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-152.dcm
+Breast_MRI_815,Fatty tissue of breast,1-037.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_815/01-01-1990-NA-MRI BREAST BILATERAL W  WO-20271/600.000000-ax dynamic-58596/1-037.dcm
+Breast_MRI_815,Fatty tissue of breast,1-082.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_815/01-01-1990-NA-MRI BREAST BILATERAL W  WO-20271/600.000000-ax dynamic-58596/1-082.dcm
+Breast_MRI_815,Fatty tissue of breast,1-126.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_815/01-01-1990-NA-MRI BREAST BILATERAL W  WO-20271/600.000000-ax dynamic-58596/1-126.dcm
+Breast_MRI_815,Mammary Fibroglandular Tissue,1-058.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_815/01-01-1990-NA-MRI BREAST BILATERAL W  WO-20271/600.000000-ax dynamic-58596/1-058.dcm
+Breast_MRI_815,Mammary Fibroglandular Tissue,1-116.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_815/01-01-1990-NA-MRI BREAST BILATERAL W  WO-20271/600.000000-ax dynamic-58596/1-116.dcm
+Breast_MRI_815,Mammary Fibroglandular Tissue,1-004.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-004.dcm
+Breast_MRI_820,Mammary Fibroglandular Tissue,1-073.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_820/01-01-1990-NA-MRI BREAST BILATERAL WWO-52314/500.000000-ax 3d dyn MP-20541/1-073.dcm
+Breast_MRI_820,Mammary Fibroglandular Tissue,1-145.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_820/01-01-1990-NA-MRI BREAST BILATERAL WWO-52314/500.000000-ax 3d dyn MP-20541/1-145.dcm
+Breast_MRI_820,Mammary Fibroglandular Tissue,1-101.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_820/01-01-1990-NA-MRI BREAST BILATERAL WWO-52314/500.000000-ax 3d dyn MP-20541/1-101.dcm
+Breast_MRI_820,Fatty tissue of breast,1-103.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_820/01-01-1990-NA-MRI BREAST BILATERAL WWO-52314/500.000000-ax 3d dyn MP-20541/1-103.dcm
+Breast_MRI_820,Fatty tissue of breast,1-055.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_820/01-01-1990-NA-MRI BREAST BILATERAL WWO-52314/500.000000-ax 3d dyn MP-20541/1-055.dcm
+Breast_MRI_820,Fatty tissue of breast,1-149.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_820/01-01-1990-NA-MRI BREAST BILATERAL WWO-52314/500.000000-ax 3d dyn MP-20541/1-149.dcm
+Breast_MRI_821,Mammary Fibroglandular Tissue,1-081.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_821/01-01-1990-NA-MRI BREAST BILATERAL W  WO-79775/500.000000-ax 3d dyn-70079/1-081.dcm
+Breast_MRI_821,Mammary Fibroglandular Tissue,1-036.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_821/01-01-1990-NA-MRI BREAST BILATERAL W  WO-79775/500.000000-ax 3d dyn-70079/1-036.dcm
+Breast_MRI_821,Mammary Fibroglandular Tissue,1-090.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_821/01-01-1990-NA-MRI BREAST BILATERAL W  WO-79775/500.000000-ax 3d dyn-70079/1-090.dcm
+Breast_MRI_821,Fatty tissue of breast,1-081.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_821/01-01-1990-NA-MRI BREAST BILATERAL W  WO-79775/500.000000-ax 3d dyn-70079/1-081.dcm
+Breast_MRI_821,Fatty tissue of breast,1-049.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_821/01-01-1990-NA-MRI BREAST BILATERAL W  WO-79775/500.000000-ax 3d dyn-70079/1-049.dcm
+Breast_MRI_821,Fatty tissue of breast,1-116.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_821/01-01-1990-NA-MRI BREAST BILATERAL W  WO-79775/500.000000-ax 3d dyn-70079/1-116.dcm
+Breast_MRI_825,Fatty tissue of breast,1-076.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_825/01-01-1990-NA-MRI BREAST BILATERAL WWO-74069/500.000000-ax 3d dyn-92865/1-076.dcm
+Breast_MRI_825,Fatty tissue of breast,1-030.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_825/01-01-1990-NA-MRI BREAST BILATERAL WWO-74069/500.000000-ax 3d dyn-92865/1-030.dcm
+Breast_MRI_825,Mammary Fibroglandular Tissue,1-088.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_825/01-01-1990-NA-MRI BREAST BILATERAL WWO-74069/500.000000-ax 3d dyn-92865/1-088.dcm
+Breast_MRI_825,Mammary Fibroglandular Tissue,1-134.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_825/01-01-1990-NA-MRI BREAST BILATERAL WWO-74069/500.000000-ax 3d dyn-92865/1-134.dcm
+Breast_MRI_825,Fatty tissue of breast,1-181.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-181.dcm
+Breast_MRI_825,Mammary Fibroglandular Tissue,1-171.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-171.dcm
+Breast_MRI_827,Mammary Fibroglandular Tissue,1-111.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_827/01-01-1990-NA-MRI BREAST BILATERAL WWO-47973/500.000000-ax 3d dyn-19955/1-111.dcm
+Breast_MRI_827,Mammary Fibroglandular Tissue,1-070.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_827/01-01-1990-NA-MRI BREAST BILATERAL WWO-47973/500.000000-ax 3d dyn-19955/1-070.dcm
+Breast_MRI_827,Mammary Fibroglandular Tissue,1-038.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_827/01-01-1990-NA-MRI BREAST BILATERAL WWO-47973/500.000000-ax 3d dyn-19955/1-038.dcm
+Breast_MRI_827,Fatty tissue of breast,1-091.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_827/01-01-1990-NA-MRI BREAST BILATERAL WWO-47973/500.000000-ax 3d dyn-19955/1-091.dcm
+Breast_MRI_827,Fatty tissue of breast,1-144.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_827/01-01-1990-NA-MRI BREAST BILATERAL WWO-47973/500.000000-ax 3d dyn-19955/1-144.dcm
+Breast_MRI_827,Fatty tissue of breast,1-024.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_827/01-01-1990-NA-MRI BREAST BILATERAL WWO-47973/500.000000-ax 3d dyn-19955/1-024.dcm
+Breast_MRI_828,Mammary Fibroglandular Tissue,1-178.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_828/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-88180/400.000000-Ax Vibrant MultiPhase-90733/1-178.dcm
+Breast_MRI_828,Mammary Fibroglandular Tissue,1-152.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_828/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-88180/400.000000-Ax Vibrant MultiPhase-90733/1-152.dcm
+Breast_MRI_828,Mammary Fibroglandular Tissue,1-140.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_828/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-88180/400.000000-Ax Vibrant MultiPhase-90733/1-140.dcm
+Breast_MRI_828,Fatty tissue of breast,1-077.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_828/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-88180/400.000000-Ax Vibrant MultiPhase-90733/1-077.dcm
+Breast_MRI_828,Fatty tissue of breast,1-035.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_828/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-88180/400.000000-Ax Vibrant MultiPhase-90733/1-035.dcm
+Breast_MRI_828,Fatty tissue of breast,1-140.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_828/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-88180/400.000000-Ax Vibrant MultiPhase-90733/1-140.dcm
+Breast_MRI_831,Mammary Fibroglandular Tissue,1-142.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_831/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-96581/500.000000-ax dynamic-99174/1-142.dcm
+Breast_MRI_831,Mammary Fibroglandular Tissue,1-067.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_831/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-96581/500.000000-ax dynamic-99174/1-067.dcm
+Breast_MRI_831,Mammary Fibroglandular Tissue,1-095.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_831/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-96581/500.000000-ax dynamic-99174/1-095.dcm
+Breast_MRI_831,Fatty tissue of breast,1-161.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_831/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-96581/500.000000-ax dynamic-99174/1-161.dcm
+Breast_MRI_831,Fatty tissue of breast,1-023.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_831/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-96581/500.000000-ax dynamic-99174/1-023.dcm
+Breast_MRI_831,Fatty tissue of breast,1-067.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_831/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-96581/500.000000-ax dynamic-99174/1-067.dcm
+Breast_MRI_842,Mammary Fibroglandular Tissue,1-087.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_842/01-01-1990-NA-MRI BREAST BILATERAL WWO-76135/600.000000-ax 3d dyn-97337/1-087.dcm
+Breast_MRI_842,Mammary Fibroglandular Tissue,1-026.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_842/01-01-1990-NA-MRI BREAST BILATERAL WWO-76135/600.000000-ax 3d dyn-97337/1-026.dcm
+Breast_MRI_842,Mammary Fibroglandular Tissue,1-116.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_842/01-01-1990-NA-MRI BREAST BILATERAL WWO-76135/600.000000-ax 3d dyn-97337/1-116.dcm
+Breast_MRI_842,Fatty tissue of breast,1-158.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_842/01-01-1990-NA-MRI BREAST BILATERAL WWO-76135/600.000000-ax 3d dyn-97337/1-158.dcm
+Breast_MRI_842,Fatty tissue of breast,1-057.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_842/01-01-1990-NA-MRI BREAST BILATERAL WWO-76135/600.000000-ax 3d dyn-97337/1-057.dcm
+Breast_MRI_842,Fatty tissue of breast,1-112.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_842/01-01-1990-NA-MRI BREAST BILATERAL WWO-76135/600.000000-ax 3d dyn-97337/1-112.dcm
+Breast_MRI_849,Mammary Fibroglandular Tissue,1-053.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_849/01-01-1990-NA-BREASTGENERAL-98388/4.000000-ax dyn pre-83030/1-053.dcm
+Breast_MRI_849,Mammary Fibroglandular Tissue,1-028.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_849/01-01-1990-NA-BREASTGENERAL-98388/4.000000-ax dyn pre-83030/1-028.dcm
+Breast_MRI_849,Mammary Fibroglandular Tissue,1-112.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_849/01-01-1990-NA-BREASTGENERAL-98388/4.000000-ax dyn pre-83030/1-112.dcm
+Breast_MRI_849,Fatty tissue of breast,1-064.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_849/01-01-1990-NA-BREASTGENERAL-98388/4.000000-ax dyn pre-83030/1-064.dcm
+Breast_MRI_849,Fatty tissue of breast,1-138.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_849/01-01-1990-NA-BREASTGENERAL-98388/4.000000-ax dyn pre-83030/1-138.dcm
+Breast_MRI_849,Fatty tissue of breast,1-019.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_849/01-01-1990-NA-BREASTGENERAL-98388/4.000000-ax dyn pre-83030/1-019.dcm
+Breast_MRI_861,Mammary Fibroglandular Tissue,1-088.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_861/01-01-1990-NA-MRI BREAST BILATERAL W  WO-51003/700.000000-ax 3d dyn-30007/1-088.dcm
+Breast_MRI_861,Mammary Fibroglandular Tissue,1-150.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_861/01-01-1990-NA-MRI BREAST BILATERAL W  WO-51003/700.000000-ax 3d dyn-30007/1-150.dcm
+Breast_MRI_861,Mammary Fibroglandular Tissue,1-091.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_861/01-01-1990-NA-MRI BREAST BILATERAL W  WO-51003/700.000000-ax 3d dyn-30007/1-091.dcm
+Breast_MRI_861,Fatty tissue of breast,1-150.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_861/01-01-1990-NA-MRI BREAST BILATERAL W  WO-51003/700.000000-ax 3d dyn-30007/1-150.dcm
+Breast_MRI_861,Fatty tissue of breast,1-034.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_861/01-01-1990-NA-MRI BREAST BILATERAL W  WO-51003/700.000000-ax 3d dyn-30007/1-034.dcm
+Breast_MRI_861,Fatty tissue of breast,1-091.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_861/01-01-1990-NA-MRI BREAST BILATERAL W  WO-51003/700.000000-ax 3d dyn-30007/1-091.dcm
+Breast_MRI_873,Mammary Fibroglandular Tissue,1-095.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_873/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-19964/500.000000-ax dynamic-56876/1-095.dcm
+Breast_MRI_873,Mammary Fibroglandular Tissue,1-120.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_873/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-19964/500.000000-ax dynamic-56876/1-120.dcm
+Breast_MRI_873,Mammary Fibroglandular Tissue,1-149.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_873/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-19964/500.000000-ax dynamic-56876/1-149.dcm
+Breast_MRI_873,Fatty tissue of breast,1-053.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_873/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-19964/500.000000-ax dynamic-56876/1-053.dcm
+Breast_MRI_873,Fatty tissue of breast,1-126.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_873/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-19964/500.000000-ax dynamic-56876/1-126.dcm
+Breast_MRI_873,Fatty tissue of breast,1-064.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_873/01-01-1990-NA-MRI BREAST BILATERAL WITH AND WITHOUT CONTRAST-19964/500.000000-ax dynamic-56876/1-064.dcm
+Breast_MRI_876,Mammary Fibroglandular Tissue,1-075.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_876/01-01-1990-NA-MRI BREAST BILATERAL W  WO-43069/5.000000-ax 3d pre-63455/1-075.dcm
+Breast_MRI_876,Mammary Fibroglandular Tissue,1-026.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_876/01-01-1990-NA-MRI BREAST BILATERAL W  WO-43069/5.000000-ax 3d pre-63455/1-026.dcm
+Breast_MRI_876,Mammary Fibroglandular Tissue,1-042.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_876/01-01-1990-NA-MRI BREAST BILATERAL W  WO-43069/5.000000-ax 3d pre-63455/1-042.dcm
+Breast_MRI_876,Fatty tissue of breast,1-069.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_876/01-01-1990-NA-MRI BREAST BILATERAL W  WO-43069/5.000000-ax 3d pre-63455/1-069.dcm
+Breast_MRI_876,Fatty tissue of breast,1-030.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_876/01-01-1990-NA-MRI BREAST BILATERAL W  WO-43069/5.000000-ax 3d pre-63455/1-030.dcm
+Breast_MRI_876,Fatty tissue of breast,1-097.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_876/01-01-1990-NA-MRI BREAST BILATERAL W  WO-43069/5.000000-ax 3d pre-63455/1-097.dcm
+Breast_MRI_886,Mammary Fibroglandular Tissue,1-129.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_886/01-01-1990-NA-BREASTROUTINE-75593/5.000000-ax dyn pre-30492/1-129.dcm
+Breast_MRI_886,Mammary Fibroglandular Tissue,1-147.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_886/01-01-1990-NA-BREASTROUTINE-75593/5.000000-ax dyn pre-30492/1-147.dcm
+Breast_MRI_886,Fatty tissue of breast,1-014.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_886/01-01-1990-NA-BREASTROUTINE-75593/5.000000-ax dyn pre-30492/1-014.dcm
+Breast_MRI_886,Fatty tissue of breast,1-129.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_886/01-01-1990-NA-BREASTROUTINE-75593/5.000000-ax dyn pre-30492/1-129.dcm
+Breast_MRI_886,Fatty tissue of breast,1-147.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_886/01-01-1990-NA-BREASTROUTINE-75593/5.000000-ax dyn pre-30492/1-147.dcm
+Breast_MRI_886,Mammary Fibroglandular Tissue,1-186.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-186.dcm
+Breast_MRI_906,Mammary Fibroglandular Tissue,1-53.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_906/01-01-1990-NA-MRI BREAST BILATERAL W  WO-23322/5.000000-ax 3d pre-58161/1-53.dcm
+Breast_MRI_906,Mammary Fibroglandular Tissue,1-34.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_906/01-01-1990-NA-MRI BREAST BILATERAL W  WO-23322/5.000000-ax 3d pre-58161/1-34.dcm
+Breast_MRI_906,Fatty tissue of breast,1-41.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_906/01-01-1990-NA-MRI BREAST BILATERAL W  WO-23322/5.000000-ax 3d pre-58161/1-41.dcm
+Breast_MRI_906,Fatty tissue of breast,1-10.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_906/01-01-1990-NA-MRI BREAST BILATERAL W  WO-23322/5.000000-ax 3d pre-58161/1-10.dcm
+Breast_MRI_906,Fatty tissue of breast,1-82.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_906/01-01-1990-NA-MRI BREAST BILATERAL W  WO-23322/5.000000-ax 3d pre-58161/1-82.dcm
+Breast_MRI_906,Mammary Fibroglandular Tissue,1-86.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-86.dcm
+Breast_MRI_921,Mammary Fibroglandular Tissue,1-065.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-065.dcm
+Breast_MRI_921,Mammary Fibroglandular Tissue,1-140.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-140.dcm
+Breast_MRI_921,Mammary Fibroglandular Tissue,1-075.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-075.dcm
+Breast_MRI_921,Fatty tissue of breast,1-136.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-136.dcm
+Breast_MRI_921,Fatty tissue of breast,1-039.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-039.dcm
+Breast_MRI_921,Fatty tissue of breast,1-065.dcm,Duke-Breast-Cancer-MRI/Breast_MRI_921/01-01-1990-NA-NA-17235/500.000000-ax dynamic-75659/1-065.dcm

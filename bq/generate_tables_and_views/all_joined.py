@@ -24,6 +24,8 @@ import settings
 from google.cloud import bigquery
 from utilities.bq_helpers import create_BQ_dataset
 
+# Flatten the version/collection/... hierarchy
+# Note that we no longer include license here as the license can change over time.
 def create_all_flattened(client):
     view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_flattened"
     view = bigquery.Table(view_id)
@@ -82,9 +84,6 @@ def create_all_flattened(client):
     se.init_idc_version AS se_init_idc_version,
     se.rev_idc_version AS se_rev_idc_version,
     se.final_idc_version AS se_final_idc_version,
-    se.license_url,
-    se.license_long_name,
-    se.license_short_name,
     se.excluded se_excluded,
     se.redacted AS se_redacted,
     i.sop_instance_uid,
@@ -179,7 +178,9 @@ def create_all_joined_public(client):
     view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public"
     view = bigquery.Table(view_id)
     view.view_query = f"""
-    SELECT * from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
+    SELECT 
+        aj.*, 
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
     WHERE Access='Public'
     AND i_excluded=FALSE AND i_redacted=FALSE
     """
@@ -193,16 +194,16 @@ def create_all_joined_public(client):
 def create_all_joined_public_and_current(client):
     view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current"
     view = bigquery.Table(view_id)
-    # view.view_query = f"""
-    # SELECT aj.* from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` aj
-    # JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac
-    # ON aj.collection_id = ac.tcia_api_collection_id
-    # WHERE ((aj.i_source='tcia' AND ac.tcia_access='Public') OR (aj.i_source='idc' AND ac.idc_access='Public'))
-    # AND ((aj.i_source='tcia' and ac.tcia_metadata_sunset=0) OR (aj.i_source='idc' and ac.idc_metadata_sunset=0))
-    # AND idc_version={settings.CURRENT_VERSION} and aj.i_excluded=False
-    # """
+
     view.view_query = f"""
-    SELECT * from `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public`
+    SELECT 
+        aj.*, 
+        li.license.license_url,
+        li.license.license_long_name,
+        li.license.license_short_name
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public` aj
+    JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.licenses` li
+    ON aj.source_doi = li.source_doi AND aj.collection_id = li.collection_name
     WHERE idc_version={settings.CURRENT_VERSION} 
     AND metadata_sunset = 0
     """

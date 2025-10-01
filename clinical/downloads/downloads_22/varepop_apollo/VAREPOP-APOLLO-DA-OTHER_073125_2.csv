@@ -1,0 +1,44 @@
+Patient ID,Disease Site,Cancer Type,# DICOM Studies
+AP-6H6G,LUNG,Lung Adenocarcinoma,6
+AP-6M60,LUNG,Lung Adenocarcinoma,3
+AP-78LL,LUNG,Lung Squamous Cell Carcinoma,5
+AP-7DC5,LUNG,Lung Squamous Cell Carcinoma,6
+AP-95DK,LUNG,Lung Adenocarcinoma,7
+AP-97PG,LUNG,Lung-Misc,4
+AP-9GTR,LUNG,Lung-Misc,5
+AP-AMT4,LUNG,Lung Squamous Cell Carcinoma,12
+AP-CL9I,PANCREAS,Pancreatic adenocarcinoma,4
+AP-CUHF,LUNG,Lung Squamous Cell Carcinoma,5
+AP-DCLM,LUNG,Lung Squamous Cell Carcinoma,8
+AP-DKMN,LUNG,Lung Squamous Cell Carcinoma,9
+AP-DRVN,THYMOMA,Thymoma,7
+AP-E7LJ,LUNG,Lung Adenocarcinoma,4
+AP-E87U,LUNG,Lung Squamous Cell Carcinoma,7
+AP-EXQB,LUNG,Lung Squamous Cell Carcinoma,4
+AP-FMPL,LUNG,Lung Squamous Cell Carcinoma,5
+AP-GDKX,LUNG,Lung Adenocarcinoma,2
+AP-GNDK,LUNG,Lung Squamous Cell Carcinoma,6
+AP-GUEM,ESOPHAGEAL,Esophageal Carcinoma,1
+AP-JS5B,LUNG,Lung Squamous Cell Carcinoma,1
+AP-LCEW,LUNG,Lung Squamous Cell Carcinoma,7
+AP-R39K,LUNG,Lung Squamous Cell Carcinoma,4
+AP-R45K,LUNG,Lung Adenocarcinoma,4
+AP-RMFZ,LUNG,Lung Adenocarcinoma,6
+AP-V7RJ,LUNG,Lung Adenocarcinoma,11
+AP-X6NA,LUNG,Lung Squamous Cell Carcinoma,5
+AP-YGJE,LUNG,Lung Squamous Cell Carcinoma,6
+AP-Z5MF,LUNG,Lung Squamous Cell Carcinoma,9
+AP-ZPHN,LUNG,Lung Adenocarcinoma,2
+AP-ZUCQ,LUNG,Lung Squamous Cell Carcinoma,6
+AP-ZVBM,ESOPHAGEAL,Esophageal Carcinoma,3
+AP-22P7,LUNG,Lung-Misc,2
+AP-2CM3,LUNG,Lung-Misc,8
+AP-27ZN,RECTUM,Colon Adenocarinoma,36
+AP-2BGA,"HEAD, NECK",Head and Neck Squamous Cell Carcinoma,15
+AP-GEH6,LUNG,Lung Squamous Cell Carcinoma,8
+AP-7CQ6,LUNG,Lung Squamous Cell Carcinoma,10
+AP-26JK,LUNG,Lung Squamous Cell Carcinoma,5
+AP-SNKW,LUNG,Lung Squamous Cell Carcinoma,17
+AP-2BGM,LUNG,Lung Squamous Cell Carcinoma,8
+AP-ANXW,LUNG,Lung Squamous Cell Carcinoma,11
+,,, 

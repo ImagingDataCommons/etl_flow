@@ -469,6 +469,7 @@ def series_drill_down(series_ids, server="" ):
         server_url = NBIA_URL
         access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
     url = f'{server_url}/getStudyDrillDown'
+    # url = f'{server_url}/getStudyDrillDownWithSeriesIds'
     data = "&".join(['list={}'.format(id) for id in series_ids])
 
     try:
@@ -684,8 +685,10 @@ if __name__ == "__main__":
     # s = get_all_tcia_metadata_stage(type="collections")
     # c = get_collection_values_and_counts()
 
-    citations = get_all_tcia_metadata(type="citations", query_param="fields=Content")
-    collections = get_all_tcia_metadata(type="collections")
+    # v = get_collection_values_and_counts()
+    # l = get_license_info()
+    # citations = get_all_tcia_metadata(type="citations", query_param="fields=Content")
+    #collections = get_all_tcia_metadata(type="licenses")
 
     d = get_all_tcia_metadata(type="collections")
     d = get_all_tcia_metadata(type="analysis-results")

@@ -190,8 +190,9 @@ def build_instances_idc(sess, args, collection, patient, study, series):
         if not instance.done:
             # Copy the instance and validate the hash
             instance.hash = src_instance_metadata[instance.sop_instance_uid]['hash']
-            instance.size, hash = copy_gcs_to_gcs(args, client, args.prestaging_idc_bucket, series, instance, src_instance_metadata[instance.sop_instance_uid]['ingestion_url'])
-            if hash != instance.hash:
+            instance.size = copy_gcs_to_gcs(args, client, args.prestaging_idc_bucket,
+                            series, instance, src_instance_metadata[instance.sop_instance_uid]['ingestion_url'])
+            if instance.size == 0:
                 errlogger.error("       p%s: Copy files to GCS failed for %s/%s/%s/%s/%s", args.pid,
                                 collection.collection_id, patient.submitter_case_id, study.study_instance_uid,
                                 series.series_instance_uid, instance.sop_instance_uid)

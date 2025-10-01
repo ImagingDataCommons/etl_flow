@@ -22,30 +22,7 @@ import argparse
 from utilities.logging_config import successlogger, progresslogger
 import settings
 from google.cloud import storage, bigquery
-from gcs.empty_bucket_mp.empty_bucket_mp import del_all_instances
-
-# def get_collection_groups():
-#     client = bigquery.Client()
-#     collections = {}
-#     query = f"""
-#     SELECT REPLACE(REPLACE(LOWER(tcia_api_collection_id),'-','_'),' ','_') idc_webapp_collection_id, dev_tcia_url, dev_idc_url
-#     FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_collections`
-#     """
-#
-#     result = client.query(query).result()
-#     for row in result:
-#         collections[row['idc_webapp_collection_id']] = {"dev_tcia_url": row["dev_tcia_url"], "dev_idc_url": row["dev_idc_url"]}
-#
-#     return collections
-#
-# def preview_deletes(args, client, bucket_data):
-#     progresslogger.info('Deleting the following buckets')
-#     for collection_id in bucket_data:
-#         if client.bucket(f'idc_v{args.version}_tcia_{collection_id}').exists():
-#             progresslogger.info(f'Deleting idc_v{args.version}_tcia_{collection_id}')
-#         if client.bucket(f'idc_v{args.version}_idc_{collection_id}').exists():
-#             progresslogger.info(f'Deleting idc_v{args.version}_idc_{collection_id}')
-#     return
+from gcs.utilities.empty_bucket_mp import del_all_instances
 
 def get_prestage_buckets(args):
     client = bigquery.Client()
@@ -64,8 +41,6 @@ ORDER BY src_bucket"""
 
 def delete_buckets(args):
     client = storage.Client()
-    # bucket_data= get_collection_groups()
-    # preview_deletes(args, client, bucket_data)
     bucket_data = get_prestage_buckets(args)
 
     for row in bucket_data:
@@ -79,26 +54,6 @@ def delete_buckets(args):
             client.bucket(prestaging_bucket).delete()
         else:
             progresslogger.info((f'{prestaging_bucket} previously deleted'))
-
-    # for collection_id in bucket_data:
-    #     if client.bucket(f'idc_v{args.version}_tcia_{collection_id}').exists():
-    #         # copy_prestaging_to_staging(args, f'idc_v{args.version}_tcia_{collection_id}', bucket_data[collection_id]['dev_tcia_url'], dones)
-    #         prestaging_bucket = f'idc_v{args.version}_tcia_{collection_id}'
-    #         args.bucket = prestaging_bucket
-    #         progresslogger.info(f'Deleting bucket {prestaging_bucket}')
-    #         # Delete the contents of the bucket
-    #         del_all_instances(args)
-    #         # Delete the bucket itself
-    #         client.bucket(prestaging_bucket).delete()
-    #     if client.bucket(f'idc_v{args.version}_idc_{collection_id}').exists():
-    #         # copy_prestaging_to_staging(args, f'idc_v{args.version}_idc_{collection_id}', bucket_data[collection_id]['dev_idc_url'], dones)
-    #         prestaging_bucket = f'idc_v{args.version}_idc_{collection_id}'
-    #         args.bucket = prestaging_bucket
-    #         progresslogger.info(f'Deleting bucket {prestaging_bucket}')
-    #         # Delete the contents of the bucket
-    #         del_all_instances(args)
-    #         # Delete the bucket itself
-    #         client.bucket(prestaging_bucket).delete()
 
     return
 

@@ -1,0 +1,83 @@
+Col_num,ques_seq_no,field_name,ques_desc,data_type,resp_seq_no,resp_desc
+1,-1,inst_no,De-identified Institution Number,Char(16),,$F16.
+2,0,entryage,Patient age at Registration,#,,best8.
+3,2,A0e2,has the eligibility checklist been completed?,List,1,No
+3,2,A0e2,has the eligibility checklist been completed?,List,2,Yes
+4,3,A0e3,patient eligible for this study?,List,1,No
+4,3,A0e3,patient eligible for this study?,List,2,Yes
+5,4,A0e4,date the  study-specific consent form was signed. (mm/dd/yyyy),YYYY,,best4.
+6,4,A0e4d,Days from Base_dt to date the  study-specific consent form was signed. (mm/dd/yyyy),#,,best8.
+7,8,A0e8,date of birth,YYYY,,best4.
+8,8,A0e8d,Days from Base_dt to date of birth,#,,best8.
+9,9,A0e9,ethnic category,List,1,Hispanic or Latino
+9,9,A0e9,ethnic category,List,2,Not Hispanic or Latino
+9,9,A0e9,ethnic category,List,9,Unknown
+10,11,A0e11,Gender,List,1,Male
+10,11,A0e11,Gender,List,2,Female
+11,12,A0e12,country of residence,List,1,United States
+11,12,A0e12,country of residence,List,2,Canada
+11,12,A0e12,country of residence,List,3,Other
+11,12,A0e12,country of residence,List,9,Unknown
+12,14,A0e14,patient's insurance status,List,0,Other
+12,14,A0e14,patient's insurance status,List,1,Private Insurance
+12,14,A0e14,patient's insurance status,List,2,Medicare
+12,14,A0e14,patient's insurance status,List,3,Medicare and Private Insurance
+12,14,A0e14,patient's insurance status,List,4,Medicaid
+12,14,A0e14,patient's insurance status,List,5,Medicaid and Medicare
+12,14,A0e14,patient's insurance status,List,6,Military or Veterans Administration
+12,14,A0e14,patient's insurance status,List,7,Self Pay
+12,14,A0e14,patient's insurance status,List,8,No means of payment
+12,14,A0e14,patient's insurance status,List,9,Unknown/Decline to answer
+13,15,A0e15,any care at VA or military hospital,List,1,No
+13,15,A0e15,any care at VA or military hospital,List,2,Yes
+13,15,A0e15,any care at VA or military hospital,List,9,Unknown
+14,16,A0e16,calendar base date,YYYY,,best4.
+15,16,A0e16d,Days from Base_dt to calendar base date,#,,best8.
+16,17,A0e17,randomization date,YYYY,,best4.
+17,17,A0e17d,Days from Base_dt to randomization date,#,,best8.
+18,23,A0e23,"other country, specify",Char(80),,$F200.
+19,24,A0e24,diagnosis of dcis or invasive cancer in the non-study breast,List,1,No
+19,24,A0e24,diagnosis of dcis or invasive cancer in the non-study breast,List,2,Yes
+20,25,A0e25,initial cancer diagnosis including fna is within 60 days of the MRI,List,1,No
+20,25,A0e25,initial cancer diagnosis including fna is within 60 days of the MRI,List,2,Yes
+21,26,A0e26,date of biopsy in the non-study breast,YYYY,,best4.
+22,26,A0e26d,Days from Base_dt to date of biopsy in the non-study breast,#,,best8.
+23,27,A0e27,negative/benign mammogram and cbe of study breast w/in 90 days of MRI,List,1,No
+23,27,A0e27,negative/benign mammogram and cbe of study breast w/in 90 days of MRI,List,2,Yes
+24,28,A0e28,date of negative or benign mammogram,YYYY,,best4.
+25,28,A0e28d,Days from Base_dt to date of negative or benign mammogram,#,,best8.
+26,29,A0e29,date of negative or benign clinical breast exam,YYYY,,best4.
+27,29,A0e29d,Days from Base_dt to date of negative or benign clinical breast exam,#,,best8.
+28,30,A0e30,scheduled date of MRI scan,YYYY,,best4.
+29,30,A0e30d,Days from Base_dt to scheduled date of MRI scan,#,,best8.
+30,31,A0e31,contraindications to the MRI imaging,List,1,No
+30,31,A0e31,contraindications to the MRI imaging,List,2,Yes
+31,32,A0e32,pregnant,List,1,No
+31,32,A0e32,pregnant,List,2,Yes
+32,33,A0e33,less than 18 years of age,List,1,No
+32,33,A0e33,less than 18 years of age,List,2,Yes
+33,34,A0e34,psychological/other conditions which prevent informed consent,List,1,No
+33,34,A0e34,psychological/other conditions which prevent informed consent,List,2,Yes
+34,35,A0e35,previous breast bx in study breast within past 6 months including fna,List,1,No
+34,35,A0e35,previous breast bx in study breast within past 6 months including fna,List,2,Yes
+35,36,A0e36,MRI of study breast within 12 months prior to the study MRI,List,1,No
+35,36,A0e36,MRI of study breast within 12 months prior to the study MRI,List,2,Yes
+36,37,A0e37,current or recent hx (6 months prior to MRI) chemo therapy,List,1,No
+36,37,A0e37,current or recent hx (6 months prior to MRI) chemo therapy,List,2,Yes
+37,38,A0e38,history bx proven breast cancer dx greater than 60 days prior to MRI,List,1,No
+37,38,A0e38,history bx proven breast cancer dx greater than 60 days prior to MRI,List,2,Yes
+38,40,A0e40,date form completed (mm/dd/yyyy),YYYY,,best4.
+39,40,A0e40d,Days from Base_dt to date form completed (mm/dd/yyyy),#,,best8.
+40,42,A0e42,race:  american indian or alaskan native,List,1,No
+40,42,A0e42,race:  american indian or alaskan native,List,2,Yes
+41,43,A0e43,race:  asian,List,1,No
+41,43,A0e43,race:  asian,List,2,Yes
+42,44,A0e44,race:  black or african american,List,1,No
+42,44,A0e44,race:  black or african american,List,2,Yes
+43,45,A0e45,race:  native hawaiian or other pacific islander,List,1,No
+43,45,A0e45,race:  native hawaiian or other pacific islander,List,2,Yes
+44,46,A0e46,race:  white,List,1,No
+44,46,A0e46,race:  white,List,2,Yes
+45,47,A0e47,race:  unknown,List,1,No
+45,47,A0e47,race:  unknown,List,2,Yes
+46,48,Rec,Data Entry Date (Days from base date),#,,best8.

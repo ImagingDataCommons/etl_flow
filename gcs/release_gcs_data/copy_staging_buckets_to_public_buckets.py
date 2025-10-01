@@ -16,7 +16,7 @@
 
 
 import argparse
-from gcs.copy_bucket_mp import copy_all_instances
+from gcs.utilities.copy_bucket_mp import copy_all_instances
 from utilities.logging_config import successlogger, progresslogger, errlogger
 
 if __name__ == '__main__':

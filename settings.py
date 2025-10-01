@@ -19,8 +19,8 @@ import sys
 from os.path import join, dirname, exists
 from dotenv import load_dotenv
 
-CURRENT_VERSION=21
-PREVIOUS_VERSION=20
+CURRENT_VERSION=22
+PREVIOUS_VERSION=21
 
 # IF MITIGATION_VERSION is not 0, logging will be to m<MITIGATION_VERSION) rather than v<CURRENT_VERSION>
 # For normal ETL purposes it should be 0
@@ -30,7 +30,7 @@ SECURE_LOCAL_PATH = os.environ.get('SECURE_LOCAL_PATH', '')
 LOG_PATH = os.environ.get('LOG_PATH','/mnt/disks/idc-etl/logs')
 
 if not exists(join(dirname(__file__), SECURE_LOCAL_PATH, '.env')):
-    print("[ERROR] Couldn't open .env.idc-dev-etl file expected at {}!".format(
+    print("[ERROR] Couldn't open .env file expected at {}!".format(
         join(dirname(__file__), SECURE_LOCAL_PATH, '.env'))
     )
     print("[ERROR] Exiting settings.py load - check your Pycharm settings and secure_path.env file.")
@@ -142,3 +142,17 @@ AH_EXCHANGE_LOCATION = os.environ.get('AH_EXCHANGE_LOCATION', '')
 
 ZENODO_ACCESS_TOKEN = os.environ.get('ZENODO_ACCESS_TOKEN', '')
 
+CREDENTIALS_PATH = os.environ.get("CREDENTIALS_PATH")
+
+AWS_ADMIN_ID = os.environ.get('AWS_ADMIN_ID', '')
+os.putenv('AWS_ACCESS_KEY_ID', AWS_ADMIN_ID)
+AWS_ADMIN_SECRET = os.environ.get('AWS_ADMIN_SECRET', '')
+os.putenv('AWS_SECRET_ACCESS_KEY', AWS_ADMIN_SECRET)
+
+AWS_ID = os.environ.get('AWS_ID', '')
+os.putenv('AWS_ACCESS_KEY_ID', AWS_ID)
+AWS_SECRET = os.environ.get('AWS_SECRET', '')
+os.putenv('AWS_SECRET_ACCESS_KEY', AWS_SECRET)
+
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')

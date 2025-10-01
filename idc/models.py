@@ -320,6 +320,7 @@ class Collection(Base):
         nullable=True,
     )
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+    mitigation = Column(String, default="", comment="ID of the mitigation which redacted this object")
 
     versions = relationship('Version',
                                secondary=version_collection,
@@ -383,6 +384,7 @@ class Patient(Base):
         nullable=True,
     )
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+    mitigation = Column(String, default="", comment="ID of the mitigation which redacted this object")
 
     collections = relationship('Collection',
                                secondary=collection_patient,
@@ -446,6 +448,7 @@ class Study(Base):
         nullable=True,
     )
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+    mitigation = Column(String, default="", comment="ID of the mitigation which redacted this object")
 
     patients = relationship('Patient',
                             secondary=patient_study,
@@ -516,6 +519,7 @@ class Series(Base):
     analysis_result = Column(Boolean, comment='True if this series is from an analysis result, else False')
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
     versioned_source_doi = Column(String, comment='If present, a DOI to the wiki page of this version of this series')
+    mitigation = Column(String, default="", comment="ID of the mitigation which redacted this object")
 
     studies = relationship('Study',
                            secondary=study_series,

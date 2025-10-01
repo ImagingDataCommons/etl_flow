@@ -1,0 +1,145 @@
+Col_num,ques_seq_no,field_name,ques_desc,data_type,resp_seq_no,resp_desc
+1,1,F1e1,Timepoint of follow-up,List,1,12 months
+1,1,F1e1,Timepoint of follow-up,List,2,24 months
+1,1,F1e1,Timepoint of follow-up,List,3,Other
+2,2,F1e2,specify other follow-up timepoint,Char(80),,$F200.
+3,3,F1e3,date of follow-up contact,YYYY,,best4.
+4,3,F1e3d,Days from Base_dt to date of follow-up contact,#,,best8.
+5,4,F1e4,Participant's status,List,1,Alive
+5,4,F1e4,Participant's status,List,2,Dead
+5,4,F1e4,Participant's status,List,3,Lost to follow-up; unable to contact
+6,5,F1e5,date of death,YYYY,,best4.
+7,5,F1e5d,Days from Base_dt to date of death,#,,best8.
+8,6,F1e6,date of last contact,YYYY,,best4.
+9,6,F1e6d,Days from Base_dt to date of last contact,#,,best8.
+10,7,F1e7,Was a CBE performed of study breast within past 12 months?,List,1,No
+10,7,F1e7,Was a CBE performed of study breast within past 12 months?,List,2,Yes
+10,7,F1e7,Was a CBE performed of study breast within past 12 months?,List,99,Unknown
+11,8,F1e8,provide reason CBE not done,List,1,Patient missed appointment
+11,8,F1e8,provide reason CBE not done,List,2,Patient unable to be located
+11,8,F1e8,provide reason CBE not done,List,3,Patient pregnant or lactating
+11,8,F1e8,provide reason CBE not done,List,4,Patient refusal
+11,8,F1e8,provide reason CBE not done,List,5,Referring physician's choice
+11,8,F1e8,provide reason CBE not done,List,6,Expired
+11,8,F1e8,provide reason CBE not done,List,7,"Other, specify"
+12,9,F1e9,specify other reason CBE not done,Char(80),,$F200.
+13,10,F1e10,date of follow-up clinical breast exam,YYYY,,best4.
+14,10,F1e10d,Days from Base_dt to date of follow-up clinical breast exam,#,,best8.
+15,11,F1e11,specify findings of CBE,List,1,Negative; benign
+15,11,F1e11,specify findings of CBE,List,2,Abnormal CBE requiring further evaluation
+16,12,F1e12,Was a follow-up mammogram done of study breast in past 12 months?,List,1,No
+16,12,F1e12,Was a follow-up mammogram done of study breast in past 12 months?,List,2,"Yes, not previously reported"
+16,12,F1e12,Was a follow-up mammogram done of study breast in past 12 months?,List,3,"Yes, previously reported"
+16,12,F1e12,Was a follow-up mammogram done of study breast in past 12 months?,List,99,Unknown
+17,13,F1e13,provide reason mammogram not done,List,1,Patient missed appointment
+17,13,F1e13,provide reason mammogram not done,List,2,Patient unable to be located
+17,13,F1e13,provide reason mammogram not done,List,3,Patient pregnant or lactating
+17,13,F1e13,provide reason mammogram not done,List,4,Patient refusal
+17,13,F1e13,provide reason mammogram not done,List,5,Referring physician's choice
+17,13,F1e13,provide reason mammogram not done,List,6,Expired
+17,13,F1e13,provide reason mammogram not done,List,7,"Other, specify"
+18,14,F1e14,specify other reason mammogram not done,Char(80),,$F200.
+19,15,F1e15,date of follow-up  mammogram,YYYY,,best4.
+20,15,F1e15d,Days from Base_dt to date of follow-up  mammogram,#,,best8.
+21,16,F1e16,mammogram findings,List,0,Category 0 - Needs additional imaging
+21,16,F1e16,mammogram findings,List,1,Category 1- Negative
+21,16,F1e16,mammogram findings,List,2,Category 2 - Benign Finding
+21,16,F1e16,mammogram findings,List,3,Category 3 - Probably Benign Finding-Short interval follow-up suggested
+21,16,F1e16,mammogram findings,List,4,Category 4 - Suspicious Abnormality - Biopsy should be considered
+21,16,F1e16,mammogram findings,List,5,Category 5 - Highly Suggestive of Malignancy-Appropriate action should be taken
+22,17,F1e17,Was follow-up ultrasound done of study breast within past 12 months?,List,1,No
+22,17,F1e17,Was follow-up ultrasound done of study breast within past 12 months?,List,2,"Yes, not previously reported"
+22,17,F1e17,Was follow-up ultrasound done of study breast within past 12 months?,List,3,"Yes, previously reported"
+22,17,F1e17,Was follow-up ultrasound done of study breast within past 12 months?,List,99,Unknown
+23,18,F1e18,provide reason ultrasound not done,List,1,Patient missed appointment
+23,18,F1e18,provide reason ultrasound not done,List,2,Patient unable to be located
+23,18,F1e18,provide reason ultrasound not done,List,3,Patient pregnant or lactating
+23,18,F1e18,provide reason ultrasound not done,List,4,Patient refusal
+23,18,F1e18,provide reason ultrasound not done,List,5,Referring physician's choice
+23,18,F1e18,provide reason ultrasound not done,List,6,Expired
+23,18,F1e18,provide reason ultrasound not done,List,7,"Other, specify"
+24,19,F1e19,specify other reason ultrasound not done,Char(80),,$F200.
+25,20,F1e20,date of follow-up ultrasound,YYYY,,best4.
+26,20,F1e20d,Days from Base_dt to date of follow-up ultrasound,#,,best8.
+27,21,F1e21,ultrasound findings,List,0,Category 0 - Needs additional imaging
+27,21,F1e21,ultrasound findings,List,1,Category 1- Negative
+27,21,F1e21,ultrasound findings,List,2,Category 2 - Benign Finding
+27,21,F1e21,ultrasound findings,List,3,Category 3 - Probably Benign Finding-Short interval follow-up suggested
+27,21,F1e21,ultrasound findings,List,4,Category 4 - Suspicious Abnormality - Biopsy should be considered
+27,21,F1e21,ultrasound findings,List,5,Category 5 - Highly Suggestive of Malignancy-Appropriate action should be taken
+28,22,F1e22,Was follow-up MRI performed of study breast within past 12 months?,List,1,No
+28,22,F1e22,Was follow-up MRI performed of study breast within past 12 months?,List,2,"Yes, not previously reported"
+28,22,F1e22,Was follow-up MRI performed of study breast within past 12 months?,List,3,"Yes, previously reported"
+28,22,F1e22,Was follow-up MRI performed of study breast within past 12 months?,List,99,Unknown
+29,23,F1e23,provide reason MRI not done,List,1,Patient missed appointment
+29,23,F1e23,provide reason MRI not done,List,2,Patient unable to be located
+29,23,F1e23,provide reason MRI not done,List,3,Patient pregnant or lactating
+29,23,F1e23,provide reason MRI not done,List,4,Patient refusal
+29,23,F1e23,provide reason MRI not done,List,5,Referring physician's choice
+29,23,F1e23,provide reason MRI not done,List,6,Expired
+29,23,F1e23,provide reason MRI not done,List,7,"Other, specify"
+30,24,F1e24,specify other reason MRI not done,Char(80),,$F200.
+31,25,F1e25,date of follow-up MRI,YYYY,,best4.
+32,25,F1e25d,Days from Base_dt to date of follow-up MRI,#,,best8.
+33,26,F1e26,MRI findings,List,0,"Incomplete, need additional evaluation"
+33,26,F1e26,MRI findings,List,1,"Negative, no abnormal enhancement"
+33,26,F1e26,MRI findings,List,2,2-Benign
+33,26,F1e26,MRI findings,List,3,"Probably benign finding, short interval follow-up"
+33,26,F1e26,MRI findings,List,4,"Suspicious abnormality, biopsy should be considered"
+33,26,F1e26,MRI findings,List,5,"Highly suggestive of malignancy, appropriate action should be taken"
+34,27,F1e27,other imaging of study breast in past 12 months,List,1,No
+34,27,F1e27,other imaging of study breast in past 12 months,List,2,Yes
+34,27,F1e27,other imaging of study breast in past 12 months,List,99,Unknown
+35,28,F1e28,specify other imaging type,Char(80),,$F200.
+36,29,F1e29,date of other imaging,YYYY,,best4.
+37,29,F1e29d,Days from Base_dt to date of other imaging,#,,best8.
+38,30,F1e30,specify findings of other imaging,List,1,Negative; benign
+38,30,F1e30,specify findings of other imaging,List,2,Abnormal; requiring further evaluation
+39,31,F1e31,Were there any biopsies or surgeries of breast within past 12 months?,List,1,No
+39,31,F1e31,Were there any biopsies or surgeries of breast within past 12 months?,List,2,"Yes, not previously reported"
+39,31,F1e31,Were there any biopsies or surgeries of breast within past 12 months?,List,3,"Yes, previously reported"
+39,31,F1e31,Were there any biopsies or surgeries of breast within past 12 months?,List,99,Unknown
+40,32,F1e32,FNA date,YYYY,,best4.
+41,32,F1e32d,Days from Base_dt to FNA date,#,,best8.
+42,33,F1e33,core needle biopsy date,YYYY,,best4.
+43,33,F1e33d,Days from Base_dt to core needle biopsy date,#,,best8.
+44,34,F1e34,date of excisional biopsy,YYYY,,best4.
+45,34,F1e34d,Days from Base_dt to date of excisional biopsy,#,,best8.
+46,35,F1e35,lumpectomy date,YYYY,,best4.
+47,35,F1e35d,Days from Base_dt to lumpectomy date,#,,best8.
+48,36,F1e36,mastectomy date,YYYY,,best4.
+49,36,F1e36d,Days from Base_dt to mastectomy date,#,,best8.
+50,37,F1e37,lesion histology,List,1,Benign
+50,37,F1e37,lesion histology,List,2,Atypical
+50,37,F1e37,lesion histology,List,3,In situ carcinoma
+50,37,F1e37,lesion histology,List,4,Invasive carcinoma
+51,38,F1e38,types of benign histology,List,10,"Benign, non-proliferative"
+51,38,F1e38,types of benign histology,List,11,"Benign, proliferative, NOS"
+51,38,F1e38,types of benign histology,List,12,Fibroadenoma
+51,38,F1e38,types of benign histology,List,13,Radial scar
+51,38,F1e38,types of benign histology,List,14,"Other, specify"
+52,39,F1e39,specify other histologic type,Char(80),,$F200.
+53,40,F1e40,atypical histology,List,20,Atypical ductal hyperplasia
+53,40,F1e40,atypical histology,List,21,Atypical lobular hyperplasia
+54,41,F1e41,types of in situ carcinoma,List,30,Lobular carcinoma in situ
+54,41,F1e41,types of in situ carcinoma,List,31,Ductal  carcinoma in situ
+54,41,F1e41,types of in situ carcinoma,List,32,In situ ca; ductal and lobular features
+55,42,F1e42,types of invasive carcinoma,List,40,Infiltrating ductal carcinoma NOS
+55,42,F1e42,types of invasive carcinoma,List,41,Infiltrating lobular carcinoma
+55,42,F1e42,types of invasive carcinoma,List,42,Infiltrating ca; ductal/lobular features
+55,42,F1e42,types of invasive carcinoma,List,43,Tubular carcinoma
+55,42,F1e42,types of invasive carcinoma,List,44,Mucinous carcinoma
+55,42,F1e42,types of invasive carcinoma,List,45,Medullary carcinoma
+55,42,F1e42,types of invasive carcinoma,List,46,"Other, specify"
+56,43,F1e43,specify other invasive histology,Char(80),,$F200.
+57,44,F1e44,method of contact,List,1,At appointment
+57,44,F1e44,method of contact,List,2,By mail
+57,44,F1e44,method of contact,List,3,By telephone
+57,44,F1e44,method of contact,List,4,"Other, specify"
+58,45,F1e45,specify other method of contact,Char(80),,$F200.
+59,48,F1e48,date form completed (mm/dd/yyyy),YYYY,,best4.
+60,48,F1e48d,Days from Base_dt to date form completed (mm/dd/yyyy),#,,best8.
+61,50,F1e50,,List,1,Related to or probably related to breast cancer
+61,50,F1e50,,List,2,"Other, specify"
+61,50,F1e50,,List,99,Unknown
+62,52,Rec,Data Entry Date (Days from base date),#,,best8.

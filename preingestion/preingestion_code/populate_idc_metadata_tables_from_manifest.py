@@ -41,7 +41,7 @@ from preingestion.preingestion_code.remove_source_doi_elements import remove_col
 
 import time
 
-from ingestion.utilities.utils import get_merkle_hash
+from ingestion.utilities.utils import get_merkle_hash, md5_hasher
 
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
@@ -94,29 +94,32 @@ def build_instance(args, bucket, series, instance_data):
     blob = bucket.blob(blob_name)
     blob.reload()
     try:
-        instance.hash = b64decode(blob.md5_hash).hex()
-    except TypeError:
-        # Can't get md5 hash for some blobs (maybe multipart copied/)
-        # So try to compute it
+        instance.hash = instance_data["md5_hash"]
+    except:
         try:
-            # Copy the blob to disk
-            # if args.subdir:
-            #     ingestion_url = f"gs://{bucket.name}/{args.subdir}/{blob_name}"
-            # else:
-            #     ingestion_url = f"gs://{bucket.name}/{blob_name}"
+            instance.hash = b64decode(blob.md5_hash).hex()
+        except TypeError:
+            # Can't get md5 hash for some blobs (maybe multipart copied/)
+            # So try to compute it
+            try:
+                # Copy the blob to disk
+                # if args.subdir:
+                #     ingestion_url = f"gs://{bucket.name}/{args.subdir}/{blob_name}"
+                # else:
+                #     ingestion_url = f"gs://{bucket.name}/{blob_name}"
 
-            src = ingestion_url
+                src = ingestion_url
 
-            dst = f'{args.tmp_directory}/{blob_name}'
-            result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
+                dst = f'{args.tmp_directory}/{blob_name}'
+                result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
 
-            instance.hash = md5_hasher(f"{args.tmp_directory}/{blob_name}")
-            result = run(['rm', dst])
-            progresslogger.info(f'Computed md5 hash of {blob_name}')
+                instance.hash = md5_hasher(f"{args.tmp_directory}/{blob_name}")
+                result = run(['rm', dst])
+                progresslogger.info(f'Computed md5 hash of {blob_name}')
 
-        except Exception as exc:
-            errlogger.error(f'Failed to get hash/sizeof {blob_name}')
-            exit
+            except Exception as exc:
+                errlogger.error(f'Failed to get hash/sizeof {blob_name}')
+                exit
 
     instance.size = blob.size
     instance.idc_version = args.version
@@ -260,6 +263,7 @@ def build_collections(args, sess, manifest_data, sep=','):
     # Rename columns in case they are misnamed:
     manifest_data = manifest_data.rename( columns = {
         "Filename": "ingestion_url",
+        "Clinical Trial Protocol ID": "collection_id",
         "Patient ID": "patientID",
         "Study Instance UID": "StudyInstanceUID",
         "Series Instance UID": "SeriesInstanceUID",
@@ -277,14 +281,14 @@ def build_collections(args, sess, manifest_data, sep=','):
     undone_data = pd.merge(manifest_data, done_data, how="left", on=['SOPInstanceUID'], indicator=True)
     undone_data = undone_data[undone_data['_merge'] == 'left_only']
 
-    if 'collection_id' in args and args.collection_id:
-        collection_ids = [args.collection_id]
-        # Add/replace the collection_id column
-        undone_data['collection_id'] = args.collection_id
-    else:
-        collection_ids = sorted(undone_data['collection_id'].unique())
+    # if 'collection_id' in args and args.collection_id:
+    #     collection_ids = [args.collection_id]
+    #     # Add/replace the collection_id column
+    #     undone_data['collection_id'] = args.collection_id
+    # else:
+    #     collection_ids = sorted(undone_data['collection_id'].unique())
     # collection_ids = sorted(undone_data['collection_id'].unique())
-    for collection_id in collection_ids:
+    for collection_id in all_collection_ids:
         # Create the collection if it is not yet in the DB
         collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
         if not collection:
@@ -322,9 +326,7 @@ def build_collections(args, sess, manifest_data, sep=','):
             args.pid = process+1
             processes.append(
                 Process(target=worker, args=(task_queue, done_queue, args, collection_id,
-                        args.source_doi, args.versioned_source_doi)))
-                        # source_dois[collection_id] if source_dois is not None else args.source_doi,
-                        # versioned_source_dois[collection_id] if versioned_source_dois is not None else args.versioned_source_doi)))
+                        args.source_dois[collection_id], args.versioned_source_dois[collection_id])))
             processes[-1].start()
 
         args.pid = 0
@@ -382,7 +384,7 @@ def perform_partial_revision(sess, args, manifest_url, sep):
             exit(-1)
     else:
         try:
-            # If no manifest is provided, first see if we've already genetated one
+            # If no manifest is provided, first see if we've already generated one
             if args.subdir:
                 manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_partial_revision.csv", sep=sep,
                                             header=0)
@@ -400,6 +402,8 @@ def perform_partial_revision(sess, args, manifest_url, sep):
 
     return all_collection_ids
 
+
+# Delete the existing collection (as defined by its source_doi) before adding new data
 def perform_full_revision(sess, args, manifest_url, sep):
     client = storage.Client()
     remove_collections(client, args, sess)
@@ -413,7 +417,7 @@ def prebuild_from_manifests(args, sep=','):
             if manifest_type == 'partial_deletion':
                 all_collection_ids = perform_partial_deletion(sess, args, manifest_url, sep)
                 pass
-            elif manifest_type == 'partial_revision':
+            elif manifest_type in ['new_collection', 'partial_revision']:
                 all_collection_ids = perform_partial_revision(sess, args, manifest_url, sep)
             elif manifest_type == 'full_revision':
                 all_collection_ids = perform_full_revision(sess, args, manifest_url, sep)
@@ -429,7 +433,6 @@ def prebuild_from_manifests(args, sep=','):
         else:
             if validate_original_collection(args, all_collection_ids) == -1:
                 exit(1)
-
     if args.gen_hashes:
         gen_hashes()
     return
@@ -441,7 +444,8 @@ def prebuild_from_manifests(args, sep=','):
 #     parser.add_argument('--src_bucket', default='dac-vhm-dst', help='Bucket containing WSI instances')
 #     parser.add_argument('--metadata_table', default='./manifest.csv', help='csv table of study, series, SOPInstanceUID, filepath')
 #     parser.add_argument('--collection_id', default='NLM_visible_human_project', help='idc_webapp_collection id of the collection or ID of analysis result to which instances belong.')
-#     parser.add_argument('--source_doi', default='', help='Collection DOI')
+#     parser.add_argument('--source_dois', default={}, help='Dict of source DOIs indexed by collection_id')
+#     parser.add_argument('--versioned_source_dois', default={}, help='Dict of versioned source DOIs indexed by collection_id')
 #     parser.add_argument('--source_url', default='https://www.nlm.nih.gov/research/visible/visible_human.html',\
 #                         help='Info page URL')
 #     parser.add_argument('--license', default = {"license_url": 'https://www.nlm.nih.gov/databases/download/terms_and_conditions.html',\

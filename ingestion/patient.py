@@ -167,8 +167,10 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
             progresslogger.info  ('    p%s: Study %s unchanged',  args.pid, study.study_instance_uid)
 
     for study in retired_objects:
+        # breakpoint()
         retire_study(args, study)
         patient.studies.remove(study)
+        progresslogger.info('  p%s: Study %s is retired', args.pid, study.study_instance_uid)
 
     patient.expanded = True
     sess.commit()

@@ -14,11 +14,8 @@
 # limitations under the License.
 #
 
-# Mark instances, series, etc. as redacted in BQ tables that
-# document IDC sourced data. Hashes are revised as needed.
-# These tables have two  forms:
-# v1-v2: instance_uuid column
-# v3+: uuid column
+# Mark instances, series, etc. as redacted in PSQL tables that
+# document all ingested IDC.
 #
 
 import argparse
@@ -30,6 +27,11 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 def deprecate_instance(sess, idc_version, mitigation_id):
 
     # First mark redacted instances
+    # Don't mark instances
+    # WHERE d.i_final_idc_version > {idc_version}
+    # AND (d.i_rev_idc_version > {idc_version}
+    #      OR ({idc_version} > d.i_final_idc_version AND d.i_final_idc_version != 0)))
+    #     )
     query = f"""
 UPDATE instance AS i
 SET
@@ -53,23 +55,35 @@ WHERE i.uuid = redactions.uuid
     except Exception as exc:
         breakpoint()
 
+    # Validate redacted instances
+    query = f"""
+SELECT DISTINCT * 
+FROM instance
+WHERE redacted = 't' AND mitigation = '{mitigation_id}'
+"""
+    result = sess.execute(query).all()
+    progresslogger.info(f'Found {len(result)} redacted instances for mitigation {mitigation_id} and version {idc_version}')
+    breakpoint()
+
     return
 
 
 def deprecate_series(sess, idc_version, mitigation_id, parent, child, parent_alias, child_alias,
                     parent_id, child_id):
-    # Now mark the each parent object as redacted if all its children are redacted
+    # Now mark each series object as redacted if all its children are redacted
     query = f"""
 UPDATE {parent} AS {parent_alias}
 SET
     redacted = redactions.redacted,
-    hashes = redactions.hs
+    hashes = redactions.hs,
+    mitigation = '{mitigation_id}'
 FROM (
     -- For each parent in the mitigation metadata table,
     -- determine whether all its children have been redacted
     -- and its hash
     SELECT
         {parent_alias}_{child_alias}.{parent}_uuid parent_id,
+        -- If all children are redacted, then the parent is redacted
         bool_and({child_alias}.redacted) as redacted,
         if(bool_and({child_alias}.redacted),
             -- If all children are redacted, then the parent is redacted and its hashes are all null
@@ -119,17 +133,30 @@ WHERE {parent_alias}.uuid=redactions.parent_id
     except Exception as exc:
         breakpoint()
 
+    # Validate redacted series
+    query = f"""
+SELECT DISTINCT * 
+FROM series
+WHERE redacted = 't' AND mitigation = '{mitigation_id}'
+"""
+    result = sess.execute(query).all()
+    progresslogger.info(
+        f'Found {len(result)} redacted series for mitigation {mitigation_id} and version {idc_version}')
+    breakpoint()
+
     return
 
 
 def deprecate_level(sess, idc_version, mitigation_id, parent, child, parent_alias, child_alias,
                     parent_id, child_id):
-    # Now mark the each parent object as redacted if all its children are redacted
+    # Now mark each parent object as redacted if all its children are redacted
+    mitigation_assignment = "" if parent == "version" else f"mitigation = '{mitigation_id}',"
     query = f"""
 UPDATE {parent} AS {parent_alias}
 SET
     -- We do not expect to redact an entire version
     {"redacted = redactions.redacted," if parent != 'version' else ''}
+    {mitigation_assignment}
     hashes = redactions.hs
 FROM (
     -- For each parent in the mitigation metadata table,
@@ -179,18 +206,30 @@ WHERE {parent_alias}.{'uuid' if parent != 'version' else 'version'}=redactions.p
     except Exception as exc:
         breakpoint()
 
+    # Validate redacted object
+    if parent != "version":
+        query = f"""
+    SELECT DISTINCT * 
+    FROM {parent}
+    WHERE redacted = 't' AND mitigation = '{mitigation_id}'
+    """
+        result = sess.execute(query).all()
+        progresslogger.info(
+            f'Found {len(result)} redacted {parent} for mitigation {mitigation_id} and version {idc_version}')
+        breakpoint()
+
     return
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
-    parser.add_argument('--mitigation_id', default='m1', help='ID of this mitigation event')
+    parser.add_argument('--mitigation_id', default='m2', help='ID of this mitigation event')
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
-    with sa_session(echo=True) as sess:
+    with sa_session(echo=False) as sess:
 
         idc_version = args.version
         progresslogger.info(f'Revising version {idc_version}')

@@ -63,11 +63,29 @@ licenses_schema = [
 def get_all_tcia_collections_in_version(client, args):
     # Return collections that have specified access
     query = f"""
-    SELECT DISTINCT collection_name
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections`
-    WHERE access='Public' and source='tcia' and (metadata_sunset=0 or metadata_sunset>={settings.CURRENT_VERSION})
-    ORDER BY collection_name
-    """
+      SELECT distinct 
+      c.collection_id collection_name,
+      FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version` v
+      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version_collection` vc ON v.version = vc.version
+      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection` c ON vc.collection_uuid = c.uuid
+      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection_patient` cp ON c.uuid = cp.collection_uuid
+      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.patient` p ON cp.patient_uuid = p.uuid
+      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.patient_study` ps ON p.uuid = ps.patient_uuid
+      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.study` st ON ps.study_uuid = st.uuid
+      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.study_series` ss ON st.uuid = ss.study_uuid
+      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.series` se ON ss.series_uuid = se.uuid
+      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.series_instance` si ON se.uuid = si.series_uuid
+      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.instance` i ON si.instance_uuid = i.uuid
+      LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.doi_to_access` dtc
+      ON se.source_doi = dtc.source_doi
+      LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.metadata_sunset` ms
+      ON se.source_doi = ms.source_doi
+      WHERE (dtc.access is NULL OR dtc.access = "Public")
+        AND (ms.metadata_sunset is NULL OR CAST(ms.metadata_sunset AS INT64)>={settings.CURRENT_VERSION})
+        AND i.source = 'tcia'
+      ORDER by collection_name
+      """
+
     collections = {row.collection_name.lower().replace(' ','_').replace('-','_'): dict(row.items())\
         for row in client.query(query)}
     return collections
@@ -211,6 +229,9 @@ def get_tcia_analysis_results_licenses(client, args):
     # Get a list of all the source_dois in the current IDC data sourced from TCIA
     idc_ar_dois = get_tcia_dois(client, args)
 
+    # Get all the collection manager collections data
+    tcia_collection_metadata = {row['collection_short_title']: row for row in get_all_tcia_metadata('collections')}
+
     # Get TCIA Collection Manager analysis-results metadata of all TCIA analysis results
     all_tcia_analysis_results_metadata = get_all_tcia_metadata('analysis-results')
     # Keep only the metadata of analysis results which IDC has
@@ -235,22 +256,27 @@ def get_tcia_analysis_results_licenses(client, args):
 
                 if download_metadata['slug'] == target_slug:
                     license_short_name = download_metadata['data_license']
-                    tcia_licenses.append(
-                        {
-                            "collection_name": result_short_title,
-                            "source_doi": ar_metadata['result_doi'].lower(),
-                            "source_url": f'https://doi.org/{ar_metadata["result_doi"].lower()}',
-                            "source": 'tcia',
-                            "license": {
-                                "license_url": tcia_license_metadata[license_short_name]['license_url'],
-                                "license_long_name": LICENSE_NAME_MAP[license_short_name],
-                                "license_short_name": license_short_name
-                            }
-                        }
-                    )
+                    for id in ar_metadata['related_collections']:
+                        for k, d in tcia_collection_metadata.items():
+                            if d['id'] == id:
+                                tcia_licenses.append(
+                                    {
+                                        # "collection_name": result_short_title,
+                                        "collection_name": k,
+                                        "source_doi": ar_metadata['result_doi'].lower(),
+                                        "source_url": f'https://doi.org/{ar_metadata["result_doi"].lower()}',
+                                        "source": 'tcia',
+                                        "license": {
+                                            "license_url": tcia_license_metadata[license_short_name]['license_url'],
+                                            "license_long_name": LICENSE_NAME_MAP[license_short_name],
+                                            "license_short_name": license_short_name
+                                        }
+                                    }
+                                )
+                                break
                     break
-            if not next((collection for collection in tcia_licenses if collection['collection_name'] == result_short_title),0):
-                errlogger.error(f'No licenses found for TCIA analysis result {result_short_title}')
+            # if not next((collection for collection in tcia_licenses if collection['collection_name'] == result_short_title),0):
+            #     errlogger.error(f'No licenses found for TCIA analysis result {result_short_title}')
         except Exception as exc:
             errlogger.error(exc)
     return tcia_licenses

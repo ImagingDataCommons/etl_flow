@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# This is a single use script that opies all tables in datasets idc_vX, idc_vX_dev, idc_vX_pub to mitigation project
+# This is a single use script that copies all tables in datasets idc_vX, idc_vX_dev, idc_vX_pub to mitigation project
 # for some range of versions. In the process, it splits dataset idc_v<1..7> into idc_v<1..7>_dev and idc_v<1..7>_pub
 # for consistency with later versions.
 # It also copies dicom_metadata to both idc_vX_dev and idc_vX_pub.

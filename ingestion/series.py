@@ -135,9 +135,11 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
             # series.instances.append(instance)
 
     for instance in retired_objects:
-        # rootlogger.debug('        p%s: Instance %s:%s retiring', instance.sop_instance_uid, instance.uuid)
+        # breakpoint()
         instance.final_idc_version = settings.PREVIOUS_VERSION
         series.instances.remove(instance)
+        progresslogger.info('  p%s: Instance %s is retired', args.pid, instance.sop_instance_uid)
+
 
     series.expanded = True
     sess.commit()
