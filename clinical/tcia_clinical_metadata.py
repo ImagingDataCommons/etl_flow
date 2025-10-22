@@ -95,6 +95,7 @@ def get_raw_data():
     downloads = {d['id']: d for d in get_all_tcia_metadata("downloads")}
     clinical_downloads = {id: data for id, data in downloads.items() if likely_clinical(data)}
 
+    # Associate 0 or 1 collection with each clinical download
     for collection in public_tcia_collections:
         for id in collection['collection_downloads']:
             if id in clinical_downloads:
@@ -103,7 +104,7 @@ def get_raw_data():
                 clinical_downloads[id]['collection_doi'] = collection['collection_doi']
                 clinical_downloads[id]['collection_browse_title'] = collection['collection_browse_title']
 
-    # Associate 0 or 1 analysis result with each clinical download
+    # Associate 0 or more analysis result with each clinical download
     for result in public_analysis_results:
         for id in result['result_downloads']:
             if id in clinical_downloads:

@@ -30,12 +30,13 @@ import settings
 
 # This worker process scans a directory for files, and writes their paths to a queue.
 def get_aspera_package_directories(url):
+    breakpoint() # apera doesn't support offset
     MAX_TRIES = 10
     LIMIT = 1000
     offset = 0
     tries = 0
     while True:
-        cmmd = 'ascli --format=json faspex5 packages browse --query=@json:\'{"limit":' + str(LIMIT) + ',"offset":' + str(offset) + "}'" + \
+        cmmd = 'ascli --format=json faspex5 packages browse --query=@json:\'{pPer_page":' + str(LIMIT) + ',"offset":' + str(offset) + "}'" + \
                f' --url={url}'
         result = run(cmmd, capture_output=True, shell=True)
         if not result.stderr.startswith(b'ERROR'):

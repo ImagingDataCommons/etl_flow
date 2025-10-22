@@ -14,14 +14,16 @@
 # limitations under the License.
 #
 
-# Generate a dataframe of pathology files in idc-source-data source from TCIA
+# Generate a dataframe of pathology files in idc-source-data sourced from TCIA
 from google.cloud import bigquery, storage
 from base64 import b64decode
 import pandas as pd
+import settings
+import json
 
 from utilities.logging_config import progresslogger, errlogger
 
-def tcia_sourced_pathology_files():
+def get_files():
     # Skip buckets that don't have TCIA sourced pathology
     skipped_buckets = ['aimi-annotations', 'gevaert-cell-subtyping', 'htan-source-data', 'idc-lps-sardana', 'idc-rms-manual-region-annotations-xml', \
                      'idc-source-data-cmb-20240828', 'idc-source-data-bmdeep', 'idc-source-data-gtex', 'idc-source-data-pdxnet', \
@@ -45,6 +47,7 @@ def tcia_sourced_pathology_files():
                     # A blob might not have an md5 hash
                     md5_hash = ""
                 sources.append({"name": f"{bucket.name}/{blob.name}",
+                               # "endswith": blob.name.rsplit('/')[-1].replace('-','_'),
                                "md5_hash": md5_hash,
                                "created": blob.time_created,
                                "updated": blob.updated})
@@ -53,3 +56,18 @@ def tcia_sourced_pathology_files():
 
     return df
 
+
+def tcia_sourced_pathology_files():
+    try:
+        # Assume we've already got the list of expected series
+        conversion_sources = pd.read_csv(f"{settings.LOG_DIR}/../conversion_sources.csv")
+    except:
+        conversion_sources = get_files()
+        conversion_sources.to_csv(f"{settings.LOG_DIR}/../conversion_sources.csv")
+        conversion_source_names_endswith = {}
+        for index, row in conversion_sources.iterrows():
+            conversion_source_names_endswith[row['name'].replace('-','_').rsplit('/',1)[1]] = row['name']
+        with open(f"{settings.LOG_DIR}/../conversion_source_names_endswith.csv", 'w') as f:
+            json.dump(conversion_source_names_endswith,f)
+
+    return conversion_sources

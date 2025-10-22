@@ -22,7 +22,7 @@ import sys
 import json
 import argparse
 from fnmatch import fnmatch
-from time import sleep
+from time import sleep, time
 from google.cloud import storage
 from googleapiclient.errors import HttpError
 
@@ -151,13 +151,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
 
+    start_time = time()
+    progresslogger.info(f'DICOM store import start time: {start_time}')
     for suffix in [
-        # 'idc-open-data',
-        # 'idc-open-idc1',
-        # 'idc-open-cr'
-        'import_failure_blobs_whc'
+        'idc-open-data',
+        'idc-open-idc1',
+        'idc-open-cr'
         ]:
         breakpoint()
-        # args.staging_bucket = f'dicom_store_import_v{settings.CURRENT_VERSION}_{suffix}'
         args.staging_bucket = suffix
         import_buckets(args)
+    duratiom = time()-start_time
+    progresslogger.info(f'DICOM store import duration: {duratiom}')

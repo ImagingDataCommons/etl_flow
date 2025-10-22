@@ -22,6 +22,8 @@ from time import sleep
 import requests
 import logging
 import zipfile
+import pandas as pd
+from tcia_utils import datacite
 
 # from http.client import HTTPConnection
 # HTTPConnection.debuglevel = 0
@@ -672,6 +674,9 @@ def get_all_tcia_metadata(type, query_param=''):
 
 
 if __name__ == "__main__":
+    df = datacite.getDoi()
+    pd.display(df)
+
     # if not settings.configured:
     #     from python_settings import settings
     #     import settings as etl_settings
