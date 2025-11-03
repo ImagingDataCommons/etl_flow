@@ -41,11 +41,8 @@ if __name__ == '__main__':
     parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.11099086',\
                             help='Info page URL')
     parser.add_argument('--versioned_source_doi', default='10.5281/zenodo.16968001', help='Collection DOI')
-    parser.add_argument('--manifests', default=[
-        ('identifiers.txt', 'partial_revision'),
-        ],
-        help="""List of manifests. Each is a pair of (manifest URL, manifest type) where manifest type is one of 
-            "new_collection", "full_revision", "partial_revision", or "partial_deletion".""")
+    parser.add_argument('--manifest_url', default="",\
+                        help="URL of manifest. If NULL, a manifest will be generated.")
     parser.add_argument('--collection_id', default='CCDI-MCI', help='collection_name of the collection or ID of analysis result to which instances belong.')
     parser.add_argument('--license', default = {"license_url": 'https://creativecommons.org/licenses/by/4.0/',\
             "license_long_name": "Creative Commons Attribution 4.0 International License", \

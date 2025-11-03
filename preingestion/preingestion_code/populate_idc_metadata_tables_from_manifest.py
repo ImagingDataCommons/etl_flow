@@ -37,21 +37,17 @@ from preingestion.validation_code.validate_analysis_result import validate_analy
 from preingestion.validation_code.validate_original_collection import validate_original_collection
 from preingestion.preingestion_code.gen_hashes_sql import gen_hashes
 from preingestion.preingestion_code.gen_manifest_from_dicom_metadata import build_manifest
-from preingestion.preingestion_code.remove_source_doi_elements import remove_collections
 
 import time
 
-from ingestion.utilities.utils import get_merkle_hash, md5_hasher
+from ingestion.utilities.utils import get_merkle_hash, streaming_md5_hasher
 
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
 from utilities.sqlalchemy_helpers import sa_session
 from google.cloud import storage
 
 from multiprocessing import Queue, Process
 from queue import Empty
 
-from subprocess import run
 
 def build_instance(args, bucket, series, instance_data):
     instance_id = instance_data["SOPInstanceUID"]
@@ -101,25 +97,28 @@ def build_instance(args, bucket, series, instance_data):
         except TypeError:
             # Can't get md5 hash for some blobs (maybe multipart copied/)
             # So try to compute it
-            try:
-                # Copy the blob to disk
-                # if args.subdir:
-                #     ingestion_url = f"gs://{bucket.name}/{args.subdir}/{blob_name}"
-                # else:
-                #     ingestion_url = f"gs://{bucket.name}/{blob_name}"
+            breakpoint()
+            instance.hash = streaming_md5_hasher(blob)
 
-                src = ingestion_url
-
-                dst = f'{args.tmp_directory}/{blob_name}'
-                result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
-
-                instance.hash = md5_hasher(f"{args.tmp_directory}/{blob_name}")
-                result = run(['rm', dst])
-                progresslogger.info(f'Computed md5 hash of {blob_name}')
-
-            except Exception as exc:
-                errlogger.error(f'Failed to get hash/sizeof {blob_name}')
-                exit
+            # try:
+            #     # Copy the blob to disk
+            #     # if args.subdir:
+            #     #     ingestion_url = f"gs://{bucket.name}/{args.subdir}/{blob_name}"
+            #     # else:
+            #     #     ingestion_url = f"gs://{bucket.name}/{blob_name}"
+            #
+            #     src = ingestion_url
+            #
+            #     dst = f'{args.tmp_directory}/{blob_name}'
+            #     result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
+            #
+            #     instance.hash = md5_hasher(f"{args.tmp_directory}/{blob_name}")
+            #     result = run(['rm', dst])
+            #     progresslogger.info(f'Computed md5 hash of {blob_name}')
+            #
+            # except Exception as exc:
+            #     errlogger.error(f'Failed to get hash/sizeof {blob_name}')
+            #     exit
 
     instance.size = blob.size
     instance.idc_version = args.version
@@ -368,17 +367,16 @@ def build_collections(args, sess, manifest_data, sep=','):
 
     return all_collection_ids
 
-def perform_partial_deletion(sess, args, manifest_url, sep):
-    pass
 
-def perform_partial_revision(sess, args, manifest_url, sep):
+def perform_partial_revision(sess, args, sep):
     # Read the manifest into a data frame
-    if manifest_url:
+    manifest_id = args.manifest_id
+    if manifest_id:
         try:
             if args.subdir:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/{manifest_url}", sep=sep, header=0)
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/{manifest_id}", sep=sep, header=0)
             else:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{manifest_url}", sep=sep, header=0)
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{manifest_id}", sep=sep, header=0)
         except Exception as exc:
             errlogger.error(f'Failed to read manifest: {exc}')
             exit(-1)
@@ -386,44 +384,51 @@ def perform_partial_revision(sess, args, manifest_url, sep):
         try:
             # If no manifest is provided, first see if we've already generated one
             if args.subdir:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_partial_revision.csv", sep=sep,
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_manifest.csv", sep=sep,
                                             header=0)
             else:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/generated_partial_revision.csv", sep=sep, header=0)
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/generated_manifest.csv", sep=sep, header=0)
+            manifest_data = build_manifest(args, manifest_data)
+            # Save the manifest to the bucket in case manifest was extended
+            if args.subdir:
+                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_manifest.csv", sep=sep, index=False)
+            else:
+                manifest_data.to_csv(f"gs://{args.src_bucket}/generated_manifest.csv", sep=sep, index=False)
 
         except Exception as exc:
             manifest_data = build_manifest(args)
             # Save the manifest to the bucket in case we need to rerun
             if args.subdir:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_partial_revision.csv", sep=sep, index=False)
+                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_manifest.csv", sep=sep, index=False)
             else:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/generated_partial_revision.csv", sep=sep, index=False)
+                manifest_data.to_csv(f"gs://{args.src_bucket}/generated_manifest.csv", sep=sep, index=False)
     all_collection_ids = build_collections(args, sess, manifest_data, sep)
 
     return all_collection_ids
 
 
-# Delete the existing collection (as defined by its source_doi) before adding new data
-def perform_full_revision(sess, args, manifest_url, sep):
-    client = storage.Client()
-    remove_collections(client, args, sess)
-    all_collection_ids = perform_partial_revision(sess, args, manifest_url, sep)
-    return all_collection_ids
+# # Delete the existing collection (as defined by its source_doi) before adding new data
+# def perform_full_revision(sess, args, manifest_url, sep):
+#     client = storage.Client()
+#     remove_collections(client, args, sess)
+#     all_collection_ids = perform_partial_revision(sess, args, manifest_url, sep)
+#     return all_collection_ids
 
 
 def prebuild_from_manifests(args, sep=','):
     with sa_session(echo=False) as sess:
-        for manifest_url, manifest_type in args.manifests:
-            if manifest_type == 'partial_deletion':
-                all_collection_ids = perform_partial_deletion(sess, args, manifest_url, sep)
-                pass
-            elif manifest_type in ['new_collection', 'partial_revision']:
-                all_collection_ids = perform_partial_revision(sess, args, manifest_url, sep)
-            elif manifest_type == 'full_revision':
-                all_collection_ids = perform_full_revision(sess, args, manifest_url, sep)
-            else:
-                errlogger.error(f'Unknown manifest type {manifest_type}')
-                exit(1)
+        # for manifest_url, manifest_type in args.manifests:
+            # if manifest_type == 'partial_deletion':
+            #     all_collection_ids = perform_partial_deletion(sess, args, manifest_url, sep)
+            #     pass
+            # elif manifest_type in ['new_collection', 'partial_revision']:
+            #     all_collection_ids = perform_partial_revision(sess, args, manifest_url, sep)
+            # elif manifest_type == 'full_revision':
+            #     all_collection_ids = perform_full_revision(sess, args, manifest_url, sep)
+            # else:
+            #     errlogger.error(f'Unknown manifest type {manifest_type}')
+            #     exit(1)
+        all_collection_ids = perform_partial_revision(sess, args, sep)
         sess.commit()
 
     if args.validate:

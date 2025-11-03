@@ -674,8 +674,8 @@ def get_all_tcia_metadata(type, query_param=''):
 
 
 if __name__ == "__main__":
-    df = datacite.getDoi()
-    pd.display(df)
+    # df = datacite.getDoi()
+    # pd.display(df)
 
     # if not settings.configured:
     #     from python_settings import settings

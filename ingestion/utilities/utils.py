@@ -44,6 +44,20 @@ def is_skipped(skipped_collections, collection_id):
 def to_webapp(collection_id):
     return collection_id.lower().replace('-','_').replace(' ','_')
 
+
+def streaming_md5_hasher(blob, chunk_size = pow(2,30)):
+    md5_hasher = hashlib.md5()
+    with blob.open(mode="rb") as f:
+        i = 0
+        while True:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+            md5_hasher.update(chunk)
+
+    return md5_hasher.hexdigest()
+
+
 BUF_SIZE = 65536
 # Compute the hash of a file
 def md5_hasher(file_path):
