@@ -23,15 +23,15 @@ from google.cloud import storage
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--processes', default=1)
+    parser.add_argument('--processes', default=8)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--tmp_directory', default='/mnt/disks/idc-etl/tmp')
     parser.add_argument('--src_bucket', default='prostatex_targets', help='Source bucket containing instances')
-    parser.add_argument('--subdir', default='v1', help="Subdirectory of mount_point at which to start walking directory")
+    parser.add_argument('--subdir', default='', help="Subdirectory of mount_point at which to start walking directory")
     parser.add_argument('--source_doi', default='10.5281/zenodo.15643312', help='Collection DOI')
     parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.15643312',\
                             help='Info page URL')
-    parser.add_argument('--versioned_source_doi', default='10.5281/zenodo.15643312', help='Versioned collection DOI')
+    parser.add_argument('--versioned_source_doi', default='10.5281/zenodo.15643313', help='Versioned collection DOI')
     parser.add_argument('--manifest_id', default="",\
                         help="ID of manifest. If NULL, a manifest will be generated.")
     parser.add_argument('--collection_id', default='', help='collection_name of the collection or ID of analysis result to which instances belong.')
@@ -48,4 +48,4 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()
 
-    prebuild_from_manifests(args, sep='\t')
+    prebuild_from_manifests(args)

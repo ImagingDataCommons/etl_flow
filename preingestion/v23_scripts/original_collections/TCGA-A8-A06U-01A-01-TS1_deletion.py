@@ -38,4 +38,4 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()
 
-    perform_partial_deletion(args, args, sep='\t')
+    perform_partial_deletion(args)

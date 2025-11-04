@@ -48,4 +48,4 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()
 
-    prebuild_from_manifests(args, sep='\t')
+    prebuild_from_manifests(args)

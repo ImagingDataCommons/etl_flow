@@ -93,6 +93,7 @@ def gen_hashes():
         gen_patient_hashes(sess)
         gen_collection_hashes(sess)
         sess.commit()
+    progresslogger.info("Updated hashes")
 
 if __name__ == '__main__':
     gen_hashes()

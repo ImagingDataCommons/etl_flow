@@ -45,7 +45,7 @@ def build_manifest(args, manifest=None):
     #     manifest = pd.DataFrame(columns=['collection_id', 'patientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID', 'ingestion_url', 'md5_hash'])
     #     manifest.tail(1).to_csv('/mnt/disks/idc-etl/generated_partial_revision.csv', mode='a', header=False, index=False)
 
-    if not manifest:
+    if manifest is None:
         manifest = pd.DataFrame(columns=['collection_id', 'patientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID', 'ingestion_url', 'md5_hash'])
     done_instances = manifest['ingestion_url'].tolist()
     collection_ids = set()
@@ -57,7 +57,8 @@ def build_manifest(args, manifest=None):
         for page in iterator.pages:
             if page.num_items:
                 for blob in page:
-                    if blob.name not in done_instances:
+                    ingestion_url = f'gs://{args.src_bucket}/{blob.name}'
+                    if ingestion_url not in done_instances:
                         if not blob.name.endswith(('DICOMDIR', '.txt', '.csv', '/')) and args.inclusion_filter in blob.name:
                             with src_bucket.blob(blob.name).open('rb') as f:
                                 try:
@@ -91,32 +92,10 @@ def build_manifest(args, manifest=None):
                                     breakpoint()
                                     hash = streaming_md5_hasher(blob)
 
-                                    # try:
-                                    #     # # Copy the blob to disk
-                                    #     progresslogger.info(f'Computing md5 hash of {blob.name}')
-                                    #     # src = f'gs://{src_bucket.name}/{blob.name}'
-                                    #     #
-                                    #     # dst = f'{args.tmp_directory}/{blob.name}'
-                                    #     # result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
-                                    #     #
-                                    #     # hash = md5_hasher(f"{args.tmp_directory}/{blob.name}")
-                                    #     # result = run(['rm', dst])
-                                    #
-                                    #     md5_hash = hashlib.md5()
-                                    #     with src_bucket.blob(blob.name).open('rb') as f:
-                                    #         # Read the file in chunks to handle large files efficiently
-                                    #         for chunk in iter(lambda: f.read(pow(2,30)), b""):
-                                    #             md5_hash.update(chunk)
-                                    #     hash = md5_hash.hexdigest()
-                                    #
-                                    # except Exception as exc:
-                                    #     errlogger.error(f'Failed to get hash/sizeof {blob.name}')
-                                    #     exit
-
                                 progresslogger.info(f'Added {blob.name} to manifest')
-                                blob_subname = blob.name.removeprefix(f'{args.subdir}/') if args.subdir else blob.name
+                                # blob_subname = blob.name.removeprefix(f'{args.subdir}/') if args.subdir else blob.name
                                 manifest.loc[len(manifest)] = [collection_id, patient_id, study_id, series_id, \
-                                       instance_id, blob_subname, hash]
+                                       instance_id, ingestion_url, hash]
                                 manifest.tail(1).to_csv('/mnt/disks/idc-etl/generated_partial_revision.csv', mode='a', header=False, index=False)
                     else:
                         progresslogger.info((f'Skipping {blob.name}'))

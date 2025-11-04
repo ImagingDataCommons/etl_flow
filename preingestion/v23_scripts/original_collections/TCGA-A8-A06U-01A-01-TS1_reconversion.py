@@ -48,4 +48,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-    args.client=storage.Client()
+
+    prebuild_from_manifests(args, sep='\t')

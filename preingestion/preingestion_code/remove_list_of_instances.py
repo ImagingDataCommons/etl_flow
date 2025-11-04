@@ -24,7 +24,7 @@
 # import csv
 # from idc.models import Base, IDC_Collection, IDC_Patient, IDC_Study, IDC_Series
 # from ingestion.utilities.utils import get_merkle_hash, list_skips
-# from utilities.logging_config import successlogger, errlogger, progresslogger
+from utilities.logging_config import successlogger, errlogger, progresslogger
 # from python_settings import settings
 # from sqlalchemy.orm import Session
 # from sqlalchemy import create_engine, update
@@ -41,6 +41,8 @@ WHERE sop_instance_uid IN ({instance_list})
 RETURNING *
     """
     result = sess.execute(query).fetchall()
+    for row in result:
+        successlogger.info(f'Deleted instance: {row.sop_instance_uid}')
     return
 
 
@@ -56,6 +58,8 @@ WHERE NOT EXISTS (
 RETURNING *
     """
     result = sess.execute(query).fetchall()
+    for row in result:
+        successlogger.info(f'Deleted series: {row.series_instance_uid}')
     return
 
 def remove_studies(sess, instances):
@@ -70,6 +74,8 @@ WHERE NOT EXISTS (
 RETURNING *
     """
     result = sess.execute(query).fetchall()
+    for row in result:
+        successlogger.info(f'Deleted study: {row.study_instance_uid}')
     return
 
 
@@ -85,6 +91,8 @@ WHERE NOT EXISTS (
 RETURNING *
     """
     result = sess.execute(query).fetchall()
+    for row in result:
+        successlogger.info(f'Deleted patient: {row.submitter_case_id}')
     return
 
 
@@ -100,16 +108,16 @@ WHERE NOT EXISTS (
 RETURNING *
     """
     result = sess.execute(query).fetchall()
-
-    sess.commit()
+    for row in result:
+        successlogger.info(f'Deleted collection: {row.collection_id}')
     return
 
     
-def perform_partial_deletion(sess, args, sep):
+def perform_partial_deletion(args, sep=","):
 
     with sa_session(echo=False) as sess:
         manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/{args.manifest_id}", sep=sep, header=0)
         instances = manifest_data['SOPInstanceUID'].to_list()
         instances.sort()
         remove_collections(sess, instances)
-    sess.commit()
+        sess.commit()

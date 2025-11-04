@@ -59,9 +59,6 @@ def build_instance(args, bucket, series, instance_data):
         # url is relative to the bucket.
         if url.startswith('./'):
             blob_name = url.split('/',1)[-1]
-        # if args.subdir:
-        #     # If relative to a subdirectory of the bucket, add it
-        #     blob_name = f'{args.subdir}/{url}'
         else:
             blob_name = f'{url}'
         if args.subdir:
@@ -99,26 +96,6 @@ def build_instance(args, bucket, series, instance_data):
             # So try to compute it
             breakpoint()
             instance.hash = streaming_md5_hasher(blob)
-
-            # try:
-            #     # Copy the blob to disk
-            #     # if args.subdir:
-            #     #     ingestion_url = f"gs://{bucket.name}/{args.subdir}/{blob_name}"
-            #     # else:
-            #     #     ingestion_url = f"gs://{bucket.name}/{blob_name}"
-            #
-            #     src = ingestion_url
-            #
-            #     dst = f'{args.tmp_directory}/{blob_name}'
-            #     result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
-            #
-            #     instance.hash = md5_hasher(f"{args.tmp_directory}/{blob_name}")
-            #     result = run(['rm', dst])
-            #     progresslogger.info(f'Computed md5 hash of {blob_name}')
-            #
-            # except Exception as exc:
-            #     errlogger.error(f'Failed to get hash/sizeof {blob_name}')
-            #     exit
 
     instance.size = blob.size
     instance.idc_version = args.version
@@ -270,23 +247,18 @@ def build_collections(args, sess, manifest_data, sep=','):
         }
     )
     # Remove whitespace
-    manifest_data = manifest_data.applymap(lambda x: x.strip())
+    manifest_data = manifest_data.map(lambda x: x.strip())
+
+    # If a manifest is provided and there is a single collection, and a collection_id column to the manifest
+    if 'manifest_id' in args and args.manifest_id and 'collection_id' in args and args.collection_id:
+        manifest_data['collection_id'] = args.collection_id
 
     done_data = pd.DataFrame(dones, columns=['SOPInstanceUID'])
-    if 'collection_id' in args and args.collection_id:
-        all_collection_ids = [args.collection_id]
-    else:
-        all_collection_ids = sorted(manifest_data['collection_id'].unique())
+
+    all_collection_ids = sorted(manifest_data['collection_id'].unique())
     undone_data = pd.merge(manifest_data, done_data, how="left", on=['SOPInstanceUID'], indicator=True)
     undone_data = undone_data[undone_data['_merge'] == 'left_only']
 
-    # if 'collection_id' in args and args.collection_id:
-    #     collection_ids = [args.collection_id]
-    #     # Add/replace the collection_id column
-    #     undone_data['collection_id'] = args.collection_id
-    # else:
-    #     collection_ids = sorted(undone_data['collection_id'].unique())
-    # collection_ids = sorted(undone_data['collection_id'].unique())
     for collection_id in all_collection_ids:
         # Create the collection if it is not yet in the DB
         collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
@@ -302,13 +274,6 @@ def build_collections(args, sess, manifest_data, sep=','):
             progresslogger.info(f'Collection {collection_id} exists')
 
 
-        # if 'collection_id' in args and args.collection_id:
-        #     # If there is a single collection then all patients are in that collection
-        #     # A df of data for just this collection
-        #     collection_data = undone_data
-        # else:
-        #     # A df of data for just this collection
-        #     collection_data = undone_data[undone_data['collection_id'] == collection_id]
         collection_data = undone_data[undone_data['collection_id'] == collection_id]
         all_patient_ids = sorted(manifest_data["patientID"].unique())
         # All patients in the collection
@@ -324,8 +289,9 @@ def build_collections(args, sess, manifest_data, sep=','):
         for process in range(min(args.processes, len(patient_in_collection_ids))):
             args.pid = process+1
             processes.append(
-                Process(target=worker, args=(task_queue, done_queue, args, collection_id,
-                        args.source_dois[collection_id], args.versioned_source_dois[collection_id])))
+                 Process(target=worker, args=(task_queue, done_queue, args, collection_id,
+                                             args.source_doi,
+                                             args.versioned_source_doi)))
             processes[-1].start()
 
         args.pid = 0
@@ -407,27 +373,8 @@ def perform_partial_revision(sess, args, sep):
     return all_collection_ids
 
 
-# # Delete the existing collection (as defined by its source_doi) before adding new data
-# def perform_full_revision(sess, args, manifest_url, sep):
-#     client = storage.Client()
-#     remove_collections(client, args, sess)
-#     all_collection_ids = perform_partial_revision(sess, args, manifest_url, sep)
-#     return all_collection_ids
-
-
 def prebuild_from_manifests(args, sep=','):
     with sa_session(echo=False) as sess:
-        # for manifest_url, manifest_type in args.manifests:
-            # if manifest_type == 'partial_deletion':
-            #     all_collection_ids = perform_partial_deletion(sess, args, manifest_url, sep)
-            #     pass
-            # elif manifest_type in ['new_collection', 'partial_revision']:
-            #     all_collection_ids = perform_partial_revision(sess, args, manifest_url, sep)
-            # elif manifest_type == 'full_revision':
-            #     all_collection_ids = perform_full_revision(sess, args, manifest_url, sep)
-            # else:
-            #     errlogger.error(f'Unknown manifest type {manifest_type}')
-            #     exit(1)
         all_collection_ids = perform_partial_revision(sess, args, sep)
         sess.commit()
 

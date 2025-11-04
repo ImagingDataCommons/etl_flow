@@ -27,7 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--tmp_directory', default='/mnt/disks/idc-etl/tmp')
     parser.add_argument('--src_bucket', default='lung_pet_ct_dx_annotations', help='Source bucket containing instances')
-    parser.add_argument('--subdir', default='v1', help="Subdirectory of mount_point at which to start walking directory")
+    parser.add_argument('--subdir', default='', help="Subdirectory of mount_point at which to start walking directory")
     parser.add_argument('--source_doi', default='10.5281/zenodo.16989819', help='Collection DOI')
     parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.16989819',\
                             help='Info page URL')
@@ -48,4 +48,4 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()
 
-    prebuild_from_manifests(args, sep='\t')
+    prebuild_from_manifests(args)

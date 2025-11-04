@@ -23,7 +23,7 @@ from google.cloud import storage
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--processes', default=1)
+    parser.add_argument('--processes', default=8)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--tmp_directory', default='/mnt/disks/idc-etl/tmp')
     parser.add_argument('--src_bucket', default='til-maps-2018-2025-10-24', help='Source bucket containing instances')
@@ -48,4 +48,4 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()
 
-    prebuild_from_manifests(args, sep='\t')
+    prebuild_from_manifests(args)
