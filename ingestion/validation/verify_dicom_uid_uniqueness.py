@@ -14,8 +14,8 @@
 # limitations under the License.
 #
 
-# Verify that StudyInstanceUIDs, SeriesInstanceUIDs and SOPInstanceUIDs in the
-# database (as represented by BQ tables) are unique.
+# Verify that each SOPInstanceUID is unique...that a SOPInstance belongs to a single series. Similarly that
+# SeriesInstanceUIDs and StudyInstanceUIDs are unique.
 
 import argparse
 import settings
@@ -33,7 +33,7 @@ def validate_sopinstanceuid_uniqueness(args):
     d AS (SELECT sop_instance_uid, COUNT(series_instance_uid) count FROM p
     GROUP BY sop_instance_uid
     HAVING count>1)
-    SELECT p.*
+    SELECT p.*, d.count count
     FROM p
     JOIN d
     ON p.sop_instance_uid=d.sop_instance_uid

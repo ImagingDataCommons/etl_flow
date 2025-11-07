@@ -191,27 +191,27 @@ def create_all_joined_public(client):
     return view
 
 
-def create_all_joined_public_and_current(client):
-    view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current"
-    view = bigquery.Table(view_id)
-
-    view.view_query = f"""
-    SELECT 
-        aj.*, 
-        li.license.license_url,
-        li.license.license_long_name,
-        li.license.license_short_name
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public` aj
-    JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.licenses` li
-    ON aj.source_doi = li.source_doi AND aj.collection_id = li.collection_name
-    WHERE idc_version={settings.CURRENT_VERSION} 
-    AND metadata_sunset = 0
-    """
-    # Make an API request to create the view.
-    client.delete_table(view_id, not_found_ok=True)
-    view = client.create_table(view, exists_ok=True)
-    print(f"Created {view.table_type}: {str(view.reference)}")
-    return view
+# def create_all_joined_public_and_current(client):
+#     view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current"
+#     view = bigquery.Table(view_id)
+#
+#     view.view_query = f"""
+#     SELECT
+#         aj.*,
+#         li.license.license_url,
+#         li.license.license_long_name,
+#         li.license.license_short_name
+#     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public` aj
+#     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.licenses` li
+#     ON aj.source_doi = li.source_doi AND aj.collection_id = li.collection_name
+#     WHERE idc_version={settings.CURRENT_VERSION}
+#     AND metadata_sunset = 0
+#     """
+#     # Make an API request to create the view.
+#     client.delete_table(view_id, not_found_ok=True)
+#     view = client.create_table(view, exists_ok=True)
+#     print(f"Created {view.table_type}: {str(view.reference)}")
+#     return view
 
 
 
@@ -314,7 +314,6 @@ if __name__ == '__main__':
     create_all_joined_public(BQ_client)
     create_all_joined_limited(BQ_client)
     create_all_joined_excluded(BQ_client)
-    create_all_joined_public_and_current(BQ_client)
     create_idc_all_joined(BQ_client)
 
 

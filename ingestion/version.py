@@ -145,7 +145,7 @@ def expand_version(sess, args, all_sources, version):
             rev_collection.done = False
             rev_collection.is_new = False
             rev_collection.expanded = False
-            rev_collection.hashes = ("","","")
+            rev_collection.hashes = collection.hashes
             # The following line can probably be deleted because
             # a object's sources are computed hierarchically after
             # building all the children.
@@ -200,19 +200,20 @@ def expand_version(sess, args, all_sources, version):
 
     progresslogger.info(f'\n\nVersion expansion summary')
     new_collections = []
-    revised_collections = []
+    revised_collections = {}
     for collection in version.collections:
         if not collection.done:
             if collection.init_idc_version == collection.rev_idc_version:
                 new_collections.append(collection.collection_id)
             else:
-                revised_collections.append(collection.collection_id)
+                revised_collections[collection.collection_id] = collection.revised
     progresslogger.info('New collections:')
     for collection_id in sorted(new_collections):
         progresslogger.info(collection_id)
     progresslogger.info('\nRevised collections:')
-    for collection_id in sorted(revised_collections):
-        progresslogger.info(collection_id)
+
+    for collection_id in sorted(revised_collections.keys()):
+        progresslogger.info(f'{collection_id}: {revised_collections[collection_id]}')
     progresslogger.info('\nRetired collections:')
     for collection in retired_objects:
         progresslogger.info(collection.collection_id)
@@ -233,6 +234,7 @@ def build_version(sess, args, all_sources, version):
     for collection in idc_collections:
         collection_index = f'{idc_collections.index(collection) + 1} of {len(idc_collections)}'
         if not collection.done:
+            progresslogger.info(f'Building collection {collection.collection_id}')
             build_collection(sess, args, all_sources, collection_index, version, collection)
             pass
         else:

@@ -163,15 +163,19 @@ class All_Sources:
         return parent_hashes
 
 
-    # Compute object's hashes according to sources
-    def src_patient_hashes(self, collection_id, submitter_case_id, skipped_sources):
+    def src_patient_hashes(self, collection, patient, skipped_sources):
         patient_hashes = ['','']
+        if collection.hashes is None:
+            collection.hashes = ("", "", "")
         for source in self.sources:
             if skipped_sources[source.value]:
                 patient_hashes[source.value] = ""
+            elif not collection.revised[source.value]:
+                # If the sources' collection was not revised, then the patient's hash is unchanged
+                patient_hashes[source.value] = patient.hashes[source.value]
             else:
-                patient_hashes[source.value] = self.sources[source].src_patient_hash(collection_id,
-                                                                             submitter_case_id)
+                patient_hashes[source.value] = self.sources[source].src_patient_hash(collection.collection_id,
+                                                                             patient.submitter_case_id)
         return patient_hashes
 
 
@@ -235,14 +239,17 @@ class All_Sources:
         return parent_hashes
 
 
-    # Compute object's hashes according to sources
-    def src_study_hashes(self, collection_id, study_instance_uid, skipped_sources):
+    def src_study_hashes(self, patient, study, skipped_sources):
         study_hashes = ['','']
+        if patient.hashes is None:
+            patient.hashes = ("", "", "")
         for source in self.sources:
             if skipped_sources[source.value]:
                 study_hashes[source.value] = ""
+            elif not patient.revised[source.value]:
+                    study_hashes[source.value] = study.hashes[source.value]
             else:
-                study_hashes[source.value] = self.sources[source].src_study_hash(collection_id, study_instance_uid)
+                    study_hashes[source.value] = self.sources[source].src_study_hash(study.study_instance_uid)
         return study_hashes
 
     ###-------------------Series-----------------###
@@ -292,13 +299,17 @@ class All_Sources:
 
 
     # Compute object's hashes according to sources
-    def src_series_hashes(self, collection_id, series_instance_uid, skipped_sources):
+    def src_series_hashes(self, study, series, skipped_sources):
         series_hashes = ['', '']
+        if study.hashes is None:
+            study.hashes = ("", "", "")
         for source in self.sources:
             if skipped_sources[source.value]:
                 series_hashes[source.value] = ""
+            elif not study.revised[source.value]:
+                series_hashes[source.value]  = series.hashes[source.value]
             else:
-                series_hashes[source.value] = self.sources[source].src_series_hash(series_instance_uid)
+                series_hashes[source.value] = self.sources[source].src_series_hash(series.series_instance_uid)
 
         return series_hashes
 

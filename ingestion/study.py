@@ -116,7 +116,7 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
         # Get the hash from each source that is not skipped
         # The hash of a source is "" if the source is skipped, or the source that does not have
         # the object
-        src_hashes = all_sources.src_series_hashes(collection.collection_id, series.series_instance_uid, skipped)
+        src_hashes = all_sources.src_series_hashes(study, series, skipped)
         # A source is revised the idc hashes[source] and the source hash differ and the source is not skipped
         revised = [(x != y) and not z for x, y, z in \
                    zip(idc_hashes[:-1], src_hashes, skipped)]
@@ -131,7 +131,7 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
             rev_series.is_new = False
             rev_series.expanded = False
             rev_series.revised = revised
-            rev_series.hashes = ("","","")
+            rev_series.hashes = series.hashes
             rev_series.sources = seriess[series.series_instance_uid]
             rev_series.rev_idc_version = settings.CURRENT_VERSION
             rev_series.versioned_source_doi = dois_urls_licenses[series.series_instance_uid]['versioned_source_doi']
@@ -171,7 +171,6 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
         begin = time.time()
         successlogger.debug("    p%s: Expand Study %s, %s", args.pid, study.study_instance_uid, study_index)
         if not study.expanded:
-            # expand_study(sess, args, all_sources, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois)
             expand_study(sess, args, all_sources, version, collection, patient, study, dois_urls_licenses)
         successlogger.info("    p%s: Expanded Study %s, %s, %s series, expand time: %s", args.pid, study.study_instance_uid, study_index, len(study.seriess), time.time()-begin)
         for series in study.seriess:
@@ -194,11 +193,10 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
             study.study_instances = sum([series.series_instances for series in study.seriess])
 
             skipped = is_skipped(args.skipped_collections, collection.collection_id)
-            src_hashes = all_sources.src_study_hashes(collection.collection_id, study.study_instance_uid, skipped)
+            src_hashes = all_sources.src_study_hashes(patient, study, skipped)
             revised = [(x != y) and not z for x, y, z in \
                        zip(idc_hashes[:-1], src_hashes, skipped)]
             if any(revised):
-                # raise Exception('Hash match failed for study %s', study.study_instance_uid)
                 errlogger.error('Hash match failed for study %s', study.study_instance_uid)
             else:
                 study.done = True

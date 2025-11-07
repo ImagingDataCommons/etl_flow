@@ -24,11 +24,6 @@ from ingestion.utilities.utils import is_skipped
 from python_settings import settings
 
 
-# successlogger = logging.getLogger('root.success')
-# progresslogger = logging.getLogger('root.progress')
-# errlogger = logging.getLogger('root.err')
-
-
 def clone_series(series, uuid):
     new_series = Series(uuid=uuid)
     for key, value in series.__dict__.items():
@@ -95,7 +90,7 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
         new_instance.init_idc_version=settings.CURRENT_VERSION
         new_instance.rev_idc_version=settings.CURRENT_VERSION
         new_instance.source = instances[instance]
-        new_instance.hash = None
+        new_instance.hash = ""
         new_instance.timestamp = datetime.utcnow()
         new_instance.final_idc_version = 0
         series.instances.append(new_instance)
@@ -105,7 +100,6 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
         idc_hash = instance.hash
         src_hash = all_sources.src_instance_hashes(instance.sop_instance_uid, instances[instance.sop_instance_uid])
         revised = idc_hash != src_hash
-        # if any(revised):
         if revised:
             rev_instance = clone_instance(instance, str(uuid4()))
             rev_instance.revised = True
@@ -114,7 +108,7 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
             rev_instance.expanded = True
             rev_instance.timestamp = datetime.utcnow()
             rev_instance.source = instances[instance.sop_instance_uid]
-            rev_instance.hash = None
+            rev_instance.hash = instance.hash
             rev_instance.size = 0
             rev_instance.rev_idc_version = settings.CURRENT_VERSION
             series.instances.append(rev_instance)
@@ -135,7 +129,7 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
             # series.instances.append(instance)
 
     for instance in retired_objects:
-        # breakpoint()
+        breakpoint()
         instance.final_idc_version = settings.PREVIOUS_VERSION
         series.instances.remove(instance)
         progresslogger.info('  p%s: Instance %s is retired', args.pid, instance.sop_instance_uid)
@@ -169,7 +163,6 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
                 build_instances_idc(sess, args, collection, patient, study, series)
 
         if all(instance.done for instance in series.instances):
-            # series.min_timestamp = min(instance.timestamp for instance in series.instances)
             series.max_timestamp = max(instance.timestamp for instance in series.instances)
             # Get a list of what DB thinks are the series's hashes
             idc_hashes = all_sources.idc_series_hashes(series)
@@ -178,11 +171,10 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
             series.series_instances = len(series.instances)
 
             skipped = is_skipped(args.skipped_collections, collection.collection_id)
-            src_hashes = all_sources.src_series_hashes(collection.collection_id, series.series_instance_uid, skipped)
+            src_hashes = all_sources.src_series_hashes(study, series, skipped)
             revised = [(x != y) and not z for x, y, z in \
                        zip(idc_hashes[:-1], src_hashes, skipped)]
             if any(revised):
-                # raise Exception('Hash match failed for series %s', series.series_instance_uid)
                 errlogger.error('Hash match failed for series %s', series.series_instance_uid)
             else:
                 series.done = True

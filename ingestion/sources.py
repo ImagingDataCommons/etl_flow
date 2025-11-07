@@ -24,8 +24,6 @@ from ingestion.utilities.get_collection_dois_urls_licenses import get_patient_do
     get_patient_urls_idc, get_patient_dois_tcia, get_patient_urls_tcia_v2, get_patient_licenses_tcia, \
     get_patient_licenses_idc
 from utilities.logging_config import successlogger, progresslogger, errlogger, rootlogger
-# rootlogger = logging.getLogger('root')
-# errlogger = logging.getLogger('root.err')
 
 
 class Source:
@@ -148,7 +146,7 @@ class TCIA(Source):
         return studies
 
 
-    def src_study_hash(self, collection_id, study_instance_uid):
+    def src_study_hash(self, study_instance_uid):
         try:
             result = self.get_hash({'StudyInstanceUID': study_instance_uid})
         except Exception as exc:
@@ -291,7 +289,7 @@ class IDC(Source):
         return studies
 
 
-    def src_study_hash(self, collection_id, study_instance_uid):
+    def src_study_hash(self, study_instance_uid):
         query = select(IDC_Study.hash).where(IDC_Study.study_instance_uid == study_instance_uid)
         hash = self.sess.execute(query).fetchone().hash if self.sess.execute(query).fetchone() else ""
         return hash
