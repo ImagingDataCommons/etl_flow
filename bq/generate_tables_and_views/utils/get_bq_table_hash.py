@@ -14,11 +14,21 @@
 # limitations under the License.
 #
 
+# This routine returns a farm fingerprint hash of a table
 
-from google.cloud import bigquery
+from google.cloud import bigquery,storage
 
-version_metadata_schema = [
-    bigquery.SchemaField('idc_version', 'INTEGER', mode='REQUIRED', description='IDC version number'),
-    bigquery.SchemaField('version_hash', 'STRING', mode='REQUIRED', description='MD5 hash of hashes of collections in this version'),
-    bigquery.SchemaField('version_timestamp', 'STRING', mode='REQUIRED', description='Version creation timestamp')
-    ]
+def get_table_hash(table):
+
+    client = bigquery.Client()
+    query = f"""
+    WITH selected AS (
+        SELECT * 
+        FROM `{table}`
+    )
+    SELECT BIT_XOR(DISTINCT FARM_FINGERPRINT(TO_JSON_STRING(t))) as table_hash
+    FROM selected  AS t
+    """
+
+    table_hash =  [dict(row) for row in client.query(query)][0]['table_hash']
+    return table_hash

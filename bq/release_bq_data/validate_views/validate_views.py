@@ -13,6 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# Verify that corresponding views in project nci-bigquery-public-data and bigquery-public-data are identical
+# Not currently used
+
+
 import argparse
 import json
 import settings

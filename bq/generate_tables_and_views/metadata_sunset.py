@@ -19,8 +19,6 @@
 import settings
 import argparse
 from utils.google_sheet_to_bq_table import load_spreadsheet
-from utils.bq_table_to_cloudsql import export_table
-from google.cloud import bigquery
 
 
 if __name__ == '__main__':
@@ -36,10 +34,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print('args: {}'.format(args))
 
-    # schema = [
-    #     bigquery.SchemaField('source_doi', 'STRING', 'NULLABLE', None, None, (), None),
-    #     bigquery.SchemaField('metadata_sunset', 'INTEGER', 'NULLABLE', None, None, (), None)]
-
-
     load_spreadsheet(args)
-    # export_table(args)

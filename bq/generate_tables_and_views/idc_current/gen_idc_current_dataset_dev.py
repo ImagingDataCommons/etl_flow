@@ -20,7 +20,7 @@
 import argparse
 import sys
 from python_settings import settings
-from bq.generate_tables_and_views.idc_current.gen_idc_current_dataset import gen_idc_current_dataset
+from bq.copy_tables.copy_dataset import copy_dataset
 
 
 if __name__ == '__main__':
@@ -28,10 +28,9 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Current IDC version')
     parser.add_argument('--src_project', default=settings.DEV_PROJECT)
     parser.add_argument('--trg_project', default=settings.DEV_PROJECT)
-    parser.add_argument('--pub_project', default=settings.DEV_PROJECT)
-    parser.add_argument('--src_bqdataset', default=settings.BQ_DEV_EXT_DATASET, help='BQ dataset name')
-    parser.add_argument('--current_bqdataset', default=f'idc_current', help='current dataset name')
+    parser.add_argument('--src_dataset', default=settings.BQ_DEV_EXT_DATASET, help='BQ dataset name')
+    parser.add_argument('--trg_dataset', default=f'idc_current', help='Clinical dataset name')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-    gen_idc_current_dataset(args)
+    copy_dataset(args)

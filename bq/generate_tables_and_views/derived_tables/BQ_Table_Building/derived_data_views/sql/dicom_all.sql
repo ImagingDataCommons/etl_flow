@@ -3,7 +3,7 @@ WITH
   SELECT am.*, arm.ID as analysis_result_id
   FROM `{project}.{dataset}.auxiliary_metadata` am
   LEFT JOIN `{project}.{dataset}.analysis_results_metadata` arm
-  ON (LOWER(am.source_doi) = LOWERarm.source_doi))
+  ON (LOWER(am.source_doi) = LOWER(arm.source_doi))
   ),
   pre_dicom_all AS (
   SELECT

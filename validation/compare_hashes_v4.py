@@ -337,7 +337,7 @@ if __name__ == '__main__':
     parser.add_argument('--suffix', default="")
     parser.add_argument('--stop_expansion', default="Pa", help="Level at which to stop expansion")
     parser.add_argument('--stop', default=False, help='Stop expansion if no hash returned by NBIA')
-    parser.add_argument('--expand_all', default=False, help="Expand regardless of whether hashes match.")
+    parser.add_argument('--expand_all', default=True, help="Expand regardless of whether hashes match.")
     parser.add_argument('--ignore_differing_patient_counts', default=True)
     parser.add_argument('--only_mismatches', default=False, help='Only log mismatching hashes')
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
