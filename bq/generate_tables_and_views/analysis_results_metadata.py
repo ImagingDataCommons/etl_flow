@@ -75,11 +75,27 @@ def get_idc_sourced_analysis_metadata(client):
 
 # Get a list of subjects per source_doi
 def get_citation(source_url):
+    temp_citations = {
+
+        "https://doi.org/10.5281/zenodo.15643312": "Krishnaswamy, D., Bridge, C., Clunie, D., &amp; Fedorov, A. (2025). <i>PROSTATEx-Targets: Point annotations of lesion targets for the PROSTATEx collection</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.15643312",
+        "https://doi.org/10.5281/zenodo.15643334": "Krishnaswamy, D., Bridge, C., Clunie, D., &amp; Fedorov, A. (2025). <i>NLST-Sybil: Expert annotations of tumor regions in the NLST CT images</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.15643334",
+        "https://doi.org/10.5281/zenodo.16989819": "Krishnaswamy, D., Bridge, C., Clunie, D., &amp; Fedorov, A. (2025). <i>Lung-PET-CT-Dx-Annotations: Expert annotation of lung tumors for the Lung-PET-CT-Dx collection</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.16989819",
+
+        "https://doi.org/10.5281/zenodo.17362624": "Krishnaswamy, D., Clunie, D., &amp; Fedorov, A. (2025). <i>NLSTSeg: Expert lesion segmentations and radiomics features for NLST CT images</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.17362624",
+        "https://doi.org/10.5281/zenodo.17470190": "Bridge, C., Zheng, Y., Gevaert, O., Clunie, D., &amp; Fedorov, A. (2025). <i>TCGA-GBM360: GBM360 aggressiveness maps for a subset of TCGA pathology slides</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.17470190",
+        "https://doi.org/10.5281/zenodo.16966285": "Bridge, C., Abousamra, S., Saltz, J., Gupta, R., Kurc, T., Zhang, Y., Zhao, T., Batiste, R., Samaras, D., Bremer, E., Shroyer, K. R., Nguyen, V., Singh, P., Hou, L., Le, H., Van Arnam, J., Shmulevich, I., \
+Rao, A. U. K., Lazar, A. J., Sharma, A., Thorsson, V., Shankar, A., Chen, C., Clunie, D., &amp; Fedorov, A. (2025). <i>TCGA-SBU-TIL-Maps: AI-derived Tumor Infiltrating Lymphocyte maps for the TCGA collections</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.16966285"
+
+    }
+
     # header = {"Accept": "text/x-bibliography; style=apa"}
     header = {"Accept": "text/x-bibliography; style=elsevier-vancouver-no-et-al"}
     citation = requests.get(source_url, headers=header).text
     if citation.startswith("<!DOCTYPE html>"):
-        citation = f"A citation is available at {source_url}"
+        try:
+            citation = temp_citations[source_url]
+        except:
+            breakpoint()
 
     return citation
 
@@ -87,7 +103,7 @@ def get_citation(source_url):
 # Get collection-level metadata: CancerTypes, TumorLocations, AnalYsisArtifacts, Subjects, CollectionsAnalysed, for
 # each analysis result
 # analysis_metadata includes all TCIA analysis results, not just those that are in IDC. We need to deal with that.
-# 1. Load analysis_metadata into a temp BQ table
+# 1. Load analysis_metadata, loaded from spreadsheet, into a temp BQ table
 # 2. Remove analysis results that IDC does not have
 # 3. Get cumulative metadata for each remaining AR
 def get_analysis_results_metadata(client, analysis_metadata):
@@ -101,66 +117,52 @@ def get_analysis_results_metadata(client, analysis_metadata):
     table_id = 'gen_analysis_results_metadata'
     table_ref = client.dataset('whc_dev').table(table_id)
     table = bigquery.Table(table_ref, schema=schema)
+    client.delete_table(table, not_found_ok=True)
+    table = client.create_table(table,["schema"])
+    client.update_table(table,["schema"])
     try:
-        client.create_table(table)
-    except Exception as exc:
-        print(f"Table {table_id} already exists. Proceeding to load data.")
-    errors = client.insert_rows_json(table, [v for k,v in analysis_metadata.items()])
-    if errors:
-        print("Encountered errors while inserting rows:", errors)
-    else:
-        print("Data loaded successfully into temporary table.")
+        errors = client.insert_rows_json(table_ref, [v for k,v in analysis_metadata.items()])
 
+    except:
+        try:
+            # Known bug. Need to try to insert twice.
+            errors = client.insert_rows_json(table_ref, [v for k, v in analysis_metadata.items()])
+        except Exception as exc:
+            print("Encountered errors while inserting rows:", exc)
+            exit(1)
+    if errors != []:
+        print("Encountered errors while inserting rows:")
+        exit(1)
     query = f"""
-    WITH ocm AS (
-      SELECT *
-      FROM `idc-dev-etl.{settings.BQ_DEV_EXT_DATASET}.original_collections_metadata` , UNNEST(sources) ocm
-    ),
-    s1 AS (
-    SELECT garm.*, ac.collection_id, SPLIT(ocm.CancerTypes, ',') CancerTypes, 
-    SPLIT(ocm.TumorLocations, ',') TumorLocations, ocm.license
-    FROM `idc-dev-etl.whc_dev.{table_id}` garm
-    JOIN `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_collections` ac
-    ON garm.source_doi = ac.source_doi
-    JOIN ocm
-    ON ac.collection_name = ocm.collection_name AND garm.source_doi = ocm.source_doi
-    )
-    ,
-    s2a AS (
-    SELECT * except(CancerTypes), CancerTypes[0] AS CancerType
-    FROM S1, UNNEST(CancerTypes) CT
-    )
-    ,
-    s2 AS (
-    SELECT * except(TumorLocations), TumorLocations[0] AS TumorLocation
-    FROM s2a, UNNEST(TumorLocations) CT
-    )   
-    ,
-    s3 AS (
-    SELECT s2.ID, s2.Title, s2.collection_id,  s2.Access, s2.source_doi, updated, s2.license,
-    dm.Modality,
-    s2.CancerType,
-    s2.TumorLocation,
-     aj.submitter_case_id Subjects
-    FROM s2
-    JOIN `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` aj
-    ON s2.source_doi = aj.source_doi AND s2.collection_id = REPLACE(REPLACE(LOWER(aj.collection_id), '-', '_'), ' ', '_')
-    JOIN `idc-dev-etl.{settings.BQ_DEV_EXT_DATASET}.dicom_metadata` dm
-    ON aj.sop_instance_uid = dm.SOPInstanceUID
-    GROUP BY s2.ID, s2.Title, s2.Access, s2.source_doi, updated, collection_id, s2.license, dm.Modality, s2.CancerType, s2.TumorLocation, aj.submitter_case_id
-    )
-    select s3.ID, s3.Title, s3.Access, s3.source_doi, s3.updated, 
-    s3.license.license_url license_url, s3.license.license_long_name license_long_name, 
-    s3.license.license_short_name license_short_name,
-    STRING_AGG(DISTINCT s3.collection_id, ", " ORDER BY s3.collection_id) Collections,
-    STRING_AGG(DISTINCT s3.Modality, ", " ORDER BY s3.modality) AnalysisArtifacts,
-    STRING_AGG(DISTINCT s3.CancerType, ", " ORDER BY s3.CancerType) CancerTypes,
-    STRING_AGG(DISTINCT s3.TumorLocation, ", " ORDER BY s3.TumorLocation) TumorLocations,
-    COUNT(s3.Subjects) Subjects
-    FROM s3
-    GROUP BY s3.ID, s3.Title, s3.Access, s3.source_doi, s3.updated, 
-    s3.license, s3.license.license_url, s3.license.license_long_name, s3.license.license_short_name
-"""
+WITH ocm AS (
+  SELECT * except(Updated, sources, CancerTypes, TumorLocations, Subjects)
+  FROM `idc-dev-etl.{settings.BQ_DEV_EXT_DATASET}.original_collections_metadata` ocm, 
+  UNNEST(sources) AS srcs, UNNEST(SPLIT(CancerTypes, ',')) as CTypes, 
+  UNNEST(SPLIT(TumorLocations, ',')) TLocations, 
+  UNNEST(SPLIT(srcs.ImageTypes, ',')) ITypes
+)
+,
+s1 AS (
+      SELECT ocm.* except(Access), garm.* except(source_doi) 
+      FROM ocm
+      JOIN `idc-dev-etl.whc_dev.{table_id}` garm
+      ON ocm.source_doi = garm.source_doi
+ )
+
+SELECT DISTINCT ID, Title, s1.Access Access, s1.source_doi source_doi, CONCAT("https://doi.org/",s1.source_doi) source_url,  
+    STRING_AGG(DISTINCT TRIM(s1.CTypes, ' '), ", " ORDER BY TRIM(CTypes, ' ')) CancerTypes,
+    STRING_AGG(DISTINCT TRIM(TLocations, ' '), ", " ORDER BY TRIM(TLocations, ' ')) TumorLocations,
+    COUNT(DISTINCT da.PatientID) Subjects,
+    STRING_AGG( DISTINCT TRIM(s1.collection_id, ' '), ", " ORDER BY TRIM(s1.collection_id, ' ')) Collections,
+    STRING_AGG( DISTINCT TRIM(Modality, ' '), ", " ORDER BY TRIM(Modality, ' ')) AnalysisArtifacts,
+    Updated,
+    license_url, license_long_name, license_short_name
+    FROM s1
+    JOIN `idc-dev-etl.{settings.BQ_DEV_EXT_DATASET}.dicom_all` da
+    ON s1.source_doi = da.Source_DOI
+    GROUP BY ID, Title, Access, source_doi, source_url, Updated, license_url, license_long_name, license_short_name
+    ORDER BY ID
+    """
 
     results = {row['source_doi']:dict(row) for row in client.query(query)}
     return results
@@ -189,7 +191,7 @@ def build_metadata(args, BQ_client):
 
     rows = []
     for source_doi, analysis_data in analysis_results_metadata.items():
-        analysis_data['source_url'] = f'https://doi.org/{analysis_data["source_doi"]}'
+        # analysis_data['source_url'] = f'https://doi.org/{analysis_data["source_doi"]}'
         analysis_data['Description'] = descriptions[analysis_data['ID']]
         analysis_data['Citation'] = get_citation(analysis_data['source_url'])
         rows.append(json.dumps(analysis_data))
