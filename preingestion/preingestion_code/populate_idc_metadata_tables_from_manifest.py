@@ -37,21 +37,17 @@ from preingestion.validation_code.validate_analysis_result import validate_analy
 from preingestion.validation_code.validate_original_collection import validate_original_collection
 from preingestion.preingestion_code.gen_hashes_sql import gen_hashes
 from preingestion.preingestion_code.gen_manifest_from_dicom_metadata import build_manifest
-from preingestion.preingestion_code.remove_source_doi_elements import remove_collections
 
 import time
 
-from ingestion.utilities.utils import get_merkle_hash, md5_hasher
+from ingestion.utilities.utils import get_merkle_hash, streaming_md5_hasher
 
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
 from utilities.sqlalchemy_helpers import sa_session
 from google.cloud import storage
 
 from multiprocessing import Queue, Process
 from queue import Empty
 
-from subprocess import run
 
 def build_instance(args, bucket, series, instance_data):
     instance_id = instance_data["SOPInstanceUID"]
@@ -63,9 +59,6 @@ def build_instance(args, bucket, series, instance_data):
         # url is relative to the bucket.
         if url.startswith('./'):
             blob_name = url.split('/',1)[-1]
-        # if args.subdir:
-        #     # If relative to a subdirectory of the bucket, add it
-        #     blob_name = f'{args.subdir}/{url}'
         else:
             blob_name = f'{url}'
         if args.subdir:
@@ -101,25 +94,8 @@ def build_instance(args, bucket, series, instance_data):
         except TypeError:
             # Can't get md5 hash for some blobs (maybe multipart copied/)
             # So try to compute it
-            try:
-                # Copy the blob to disk
-                # if args.subdir:
-                #     ingestion_url = f"gs://{bucket.name}/{args.subdir}/{blob_name}"
-                # else:
-                #     ingestion_url = f"gs://{bucket.name}/{blob_name}"
-
-                src = ingestion_url
-
-                dst = f'{args.tmp_directory}/{blob_name}'
-                result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
-
-                instance.hash = md5_hasher(f"{args.tmp_directory}/{blob_name}")
-                result = run(['rm', dst])
-                progresslogger.info(f'Computed md5 hash of {blob_name}')
-
-            except Exception as exc:
-                errlogger.error(f'Failed to get hash/sizeof {blob_name}')
-                exit
+            breakpoint()
+            instance.hash = streaming_md5_hasher(blob)
 
     instance.size = blob.size
     instance.idc_version = args.version
@@ -271,23 +247,18 @@ def build_collections(args, sess, manifest_data, sep=','):
         }
     )
     # Remove whitespace
-    manifest_data = manifest_data.applymap(lambda x: x.strip())
+    manifest_data = manifest_data.map(lambda x: x.strip())
+
+    # If a manifest is provided and there is a single collection, and a collection_id column to the manifest
+    if 'manifest_id' in args and args.manifest_id and 'collection_id' in args and args.collection_id:
+        manifest_data['collection_id'] = args.collection_id
 
     done_data = pd.DataFrame(dones, columns=['SOPInstanceUID'])
-    if 'collection_id' in args and args.collection_id:
-        all_collection_ids = [args.collection_id]
-    else:
-        all_collection_ids = sorted(manifest_data['collection_id'].unique())
+
+    all_collection_ids = sorted(manifest_data['collection_id'].unique())
     undone_data = pd.merge(manifest_data, done_data, how="left", on=['SOPInstanceUID'], indicator=True)
     undone_data = undone_data[undone_data['_merge'] == 'left_only']
 
-    # if 'collection_id' in args and args.collection_id:
-    #     collection_ids = [args.collection_id]
-    #     # Add/replace the collection_id column
-    #     undone_data['collection_id'] = args.collection_id
-    # else:
-    #     collection_ids = sorted(undone_data['collection_id'].unique())
-    # collection_ids = sorted(undone_data['collection_id'].unique())
     for collection_id in all_collection_ids:
         # Create the collection if it is not yet in the DB
         collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
@@ -303,13 +274,6 @@ def build_collections(args, sess, manifest_data, sep=','):
             progresslogger.info(f'Collection {collection_id} exists')
 
 
-        # if 'collection_id' in args and args.collection_id:
-        #     # If there is a single collection then all patients are in that collection
-        #     # A df of data for just this collection
-        #     collection_data = undone_data
-        # else:
-        #     # A df of data for just this collection
-        #     collection_data = undone_data[undone_data['collection_id'] == collection_id]
         collection_data = undone_data[undone_data['collection_id'] == collection_id]
         all_patient_ids = sorted(manifest_data["patientID"].unique())
         # All patients in the collection
@@ -325,8 +289,9 @@ def build_collections(args, sess, manifest_data, sep=','):
         for process in range(min(args.processes, len(patient_in_collection_ids))):
             args.pid = process+1
             processes.append(
-                Process(target=worker, args=(task_queue, done_queue, args, collection_id,
-                        args.source_dois[collection_id], args.versioned_source_dois[collection_id])))
+                 Process(target=worker, args=(task_queue, done_queue, args, collection_id,
+                                             args.source_doi,
+                                             args.versioned_source_doi)))
             processes[-1].start()
 
         args.pid = 0
@@ -368,17 +333,16 @@ def build_collections(args, sess, manifest_data, sep=','):
 
     return all_collection_ids
 
-def perform_partial_deletion(sess, args, manifest_url, sep):
-    pass
 
-def perform_partial_revision(sess, args, manifest_url, sep):
+def perform_partial_revision(sess, args, sep):
     # Read the manifest into a data frame
-    if manifest_url:
+    manifest_id = args.manifest_id
+    if manifest_id:
         try:
             if args.subdir:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/{manifest_url}", sep=sep, header=0)
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/{manifest_id}", sep=sep, header=0)
             else:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{manifest_url}", sep=sep, header=0)
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{manifest_id}", sep=sep, header=0)
         except Exception as exc:
             errlogger.error(f'Failed to read manifest: {exc}')
             exit(-1)
@@ -386,44 +350,32 @@ def perform_partial_revision(sess, args, manifest_url, sep):
         try:
             # If no manifest is provided, first see if we've already generated one
             if args.subdir:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_partial_revision.csv", sep=sep,
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_manifest.csv", sep=sep,
                                             header=0)
             else:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/generated_partial_revision.csv", sep=sep, header=0)
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/generated_manifest.csv", sep=sep, header=0)
+            manifest_data = build_manifest(args, manifest_data)
+            # Save the manifest to the bucket in case manifest was extended
+            if args.subdir:
+                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_manifest.csv", sep=sep, index=False)
+            else:
+                manifest_data.to_csv(f"gs://{args.src_bucket}/generated_manifest.csv", sep=sep, index=False)
 
         except Exception as exc:
             manifest_data = build_manifest(args)
             # Save the manifest to the bucket in case we need to rerun
             if args.subdir:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_partial_revision.csv", sep=sep, index=False)
+                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_manifest.csv", sep=sep, index=False)
             else:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/generated_partial_revision.csv", sep=sep, index=False)
+                manifest_data.to_csv(f"gs://{args.src_bucket}/generated_manifest.csv", sep=sep, index=False)
     all_collection_ids = build_collections(args, sess, manifest_data, sep)
 
     return all_collection_ids
 
 
-# Delete the existing collection (as defined by its source_doi) before adding new data
-def perform_full_revision(sess, args, manifest_url, sep):
-    client = storage.Client()
-    remove_collections(client, args, sess)
-    all_collection_ids = perform_partial_revision(sess, args, manifest_url, sep)
-    return all_collection_ids
-
-
 def prebuild_from_manifests(args, sep=','):
     with sa_session(echo=False) as sess:
-        for manifest_url, manifest_type in args.manifests:
-            if manifest_type == 'partial_deletion':
-                all_collection_ids = perform_partial_deletion(sess, args, manifest_url, sep)
-                pass
-            elif manifest_type in ['new_collection', 'partial_revision']:
-                all_collection_ids = perform_partial_revision(sess, args, manifest_url, sep)
-            elif manifest_type == 'full_revision':
-                all_collection_ids = perform_full_revision(sess, args, manifest_url, sep)
-            else:
-                errlogger.error(f'Unknown manifest type {manifest_type}')
-                exit(1)
+        all_collection_ids = perform_partial_revision(sess, args, sep)
         sess.commit()
 
     if args.validate:

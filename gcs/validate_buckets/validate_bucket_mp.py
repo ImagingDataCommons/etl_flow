@@ -153,7 +153,7 @@ def get_found_blobs_in_bucket(args, found_series):
 
 
 
-def check_all_instances_mp(args, premerge=False, max_version=settings.CURRENT_VERSION):
+def check_all_instances_mp(args, max_version=settings.CURRENT_VERSION):
 
     found_series = get_found_series_in_bucket(args)
     expected_series = get_expected_series_in_bucket(args, max_version)

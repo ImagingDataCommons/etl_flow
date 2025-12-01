@@ -18,16 +18,11 @@
 # to build either with 'pre-merge or 'post-merge' GCS URLS of new instances.
 # It is also paramaterizable to build in the idc-dev-etl or idc-pdp-staging
 # projects
-import argparse
-import json
-import sys
 from google.cloud import bigquery
 
 from python_settings import settings
-from time import sleep
 from utilities.bq_helpers import load_BQ_from_json, query_BQ, create_BQ_table, delete_BQ_Table
 from utilities.logging_config import successlogger,progresslogger
-from bq.utils.gen_license_table import get_original_collection_licenses
 from bq.generate_tables_and_views.auxiliary_metadata_table.schema import auxiliary_metadata_schema
 
 

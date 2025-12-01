@@ -47,7 +47,7 @@ schema = [
     bigquery.SchemaField('Modified_download_date', 'DATETIME', mode='NULLABLE', description='Datetime of current download version'),
     bigquery.SchemaField('IDC_collection_name', 'STRING', mode='NULLABLE', description='Corresponding IDC collection name'),
     bigquery.SchemaField('IDC_collection_id', 'STRING', mode='NULLABLE', description='Corresponding IDC collection id'),
-    bigquery.SchemaField('IDC_collection_version', 'STRING', mode='NULLABLE', description='Corresponding IDC version'),
+    bigquery.SchemaField('IDC_collection_last_update', 'STRING', mode='NULLABLE', description='Corresponding IDC version'),
     # bigquery.SchemaField('IDC_Aspera_URL', 'STRING', mode='NULLABLE', description='Aspera URL of current IDC pathology data'),
     # bigquery.SchemaField('IDC_is_current', 'Boolean', mode='NULLABLE', description='True if IDC revision is current with TCIA revision'),
     # bigquery.SchemaField('IDC_version', 'Integer', mode='NULLABLE', description='IDC version of pathology data')
@@ -57,10 +57,8 @@ schema = [
 def query_collection_manager(type, query_param=''):
     if query_param:
         url = f"https://cancerimagingarchive.net/api/v1/{type}/?per_page=100&{query_param}"
-        # url = f"https://cancerimagingarchive.net/api/v1/{type}/?{query_param}"
     else:
         url = f"https://cancerimagingarchive.net/api/v1/{type}/?per_page=100"
-        # url = f"https://cancerimagingarchive.net/api/v1/{type}/"
     response = requests.get(url)
     if response.status_code == 200:
         # Parse the JSON response
@@ -173,17 +171,7 @@ def open_worksheet(args):
 def main():
     client = bigquery.Client()
 
-    # worksheet = open_worksheet(args)
-    # aspera_urls = pd.DataFrame(worksheet.get_all_records())
-    # aspera_urls['collection_id'] = aspera_urls['collection_id'].str.lower().str.replace('-', '_')
-    # current_aspera_urls = aspera_urls[aspera_urls['i_rev_idc_version'] <= args.version].groupby("collection_id").max()
-    # idc_collections = current_aspera_urls.to_dict('index')
-
     idc_collections = get_idc_collections(client)
-    # aspera_url =  f'https://docs.google.com/spreadsheets/d/{args.aspera_sheets_id}/gviz/tq?tqx=out:csv&sheet={args.aspera_sheet_name}'
-    #
-    # aspera_urls = pd.read_csv(aspera_url)
-    #
     downloads = query_collection_manager(type="downloads")
     pathology_downloads = {k['slug']: k for k in downloads if
                            (type(k['download_type']) == str and k['download_type'] == 'Pathology Images') or
@@ -212,11 +200,11 @@ def main():
             idc_collection_id = pdata['parent_slug'].replace('-', '_')
             pdata['idc_collection_id'] = idc_collection_id
             pdata['idc_collection_name'] = idc_collections[idc_collection_id]['collection_name']
-            pdata['idc_collection_version'] = idc_collections[idc_collection_id]['idc_version']
+            pdata['idc_collection_last_update'] = idc_collections[idc_collection_id]['idc_version']
         else:
             pdata['idc_collection_id'] = ""
             pdata['idc_collection_name'] = ""
-            pdata['idc_collection_version'] = ""
+            pdata['idc_collection_last_update'] = ""
 
     # Get all IDC collections that have pathology data
     query = f"""
@@ -224,11 +212,6 @@ def main():
     FROM `bigquery-public-data.idc_current.dicom_all`
     WHERE Modality='SM'
     """
-    idc_pathology_collection_ids = [row['collection_id'] for row in client.query(query).result()]
-
-    # # Add the corresponding IDC collection if it exists
-    # for p, pdata in pathology_downloads.items():
-    #     pdata['pathology'] = pdata['parent_slug'].replace('-', '_') in idc_pathology_collection_ids
 
     metadata = []
     for p, v in sorted(pathology_downloads.items()):
@@ -248,7 +231,7 @@ def main():
                 'Modified_download_date': v['modified'],
                 'IDC_collection_name':v["idc_collection_name"],
                 'IDC_collection_id':v["idc_collection_id"],
-                'IDC_collection_version': v["idc_collection_version"],
+                'idc_collection_last_update': v["idc_collection_last_update"],
 
                 # 'IDC_is_current': "",
                 # 'IDC_version': ""

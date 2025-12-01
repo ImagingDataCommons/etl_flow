@@ -64,10 +64,13 @@ def bq_dataset_exists(client, project , target_dataset):
 
 def copy_table(client, args,  table_id):
 
-    # try:
-    #     table = client.get_table(f'{args.trg_project}.{args.trg_dataset}.{table_id}')
-    #     progresslogger.info(f'Table {table} already exists.')
-    # except:
+    try:
+        table = client.get_table(f'{args.trg_project}.{args.trg_dataset}.{table_id}')
+        progresslogger.info(f'Table {table} already exists.')
+        client.delete_table(table)
+    except:
+        pass
+
     if True:
         src_table_id = f'{args.src_project}.{args.src_dataset}.{table_id}'
         trg_table_id = f'{args.trg_project}.{args.trg_dataset}.{table_id}'
@@ -109,7 +112,8 @@ def copy_view(client, args, view_id):
             view = client.get_table(f'{args.src_project}.{args.src_dataset}.{view_id}')
 
             new_view = bigquery.Table(f'{args.trg_project}.{args.trg_dataset}.{view_id}')
-            new_view.view_query = view.view_query.replace(args.src_project,args.pub_project). \
+            # new_view.view_query = view.view_query.replace(args.src_project,args.pub_project). \
+            new_view.view_query = view.view_query.replace(args.src_project, args.trg_project). \
                 replace(args.src_dataset,args.trg_dataset)
 
             new_view.friendly_name = view.friendly_name
@@ -149,7 +153,7 @@ def copy_dataset(args, table_ids={}, skipped_table_ids={}, copy_views=True):
         )
         create_dataset(client, args.trg_project, args.trg_dataset, dataset_dict)
 
-    progresslogger.info(f'Copying {args.src_dataset} to {args.trg_dataset}')
+    progresslogger.info(f'Copying {args.src_project}.{args.src_dataset} to {args.trg_project}.{args.trg_dataset}')
     if not table_ids:
         table_ids = {table.table_id: table.table_type for table in client.list_tables(f'{args.src_project}.{args.src_dataset}')}
     for table_id in skipped_table_ids:

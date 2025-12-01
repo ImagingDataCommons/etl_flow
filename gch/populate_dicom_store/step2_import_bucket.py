@@ -22,7 +22,7 @@ import sys
 import json
 import argparse
 from fnmatch import fnmatch
-from time import sleep
+from time import sleep, time
 from google.cloud import storage
 from googleapiclient.errors import HttpError
 
@@ -132,9 +132,8 @@ def import_buckets(args):
 
     try:
         progresslogger.info('\nImporting %s', args.staging_bucket)
-        breakpoint()
-        # content_uri = '{}/*/*'.format(args.staging_bucket)
-        content_uri = '{}/*'.format(args.staging_bucket)
+        content_uri = '{}/*/*'.format(args.staging_bucket)
+        # content_uri = '{}/*'.format(args.staging_bucket)
         response = import_dicom_instances(settings.GCH_PROJECT, settings.GCH_REGION, settings.GCH_DATASET,
                         settings.GCH_DICOMSTORE, content_uri)
         progresslogger.info('Response: %s', response)
@@ -151,13 +150,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
 
+    start_time = time()
+    progresslogger.info(f'DICOM store import start time: {start_time}')
     for suffix in [
-        # 'idc-open-data',
-        # 'idc-open-idc1',
-        # 'idc-open-cr'
-        'import_failure_blobs_whc'
+        'idc-open-data',
+        'idc-open-idc1',
+        'idc-open-cr'
         ]:
-        breakpoint()
-        # args.staging_bucket = f'dicom_store_import_v{settings.CURRENT_VERSION}_{suffix}'
-        args.staging_bucket = suffix
+        args.staging_bucket = f'dicom_store_import_v{settings.CURRENT_VERSION}_{suffix}'
         import_buckets(args)
+    duration = time()-start_time
+    progresslogger.info(f'DICOM store import duration: {duration}')

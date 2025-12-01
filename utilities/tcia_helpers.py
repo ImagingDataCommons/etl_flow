@@ -22,14 +22,13 @@ from time import sleep
 import requests
 import logging
 import zipfile
+import pandas as pd
+from tcia_utils import datacite
+from utilities.logging_config import errlogger
 
-# from http.client import HTTPConnection
-# HTTPConnection.debuglevel = 0
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-# rootlogger = logging.getLogger('root')
-# errlogger = logging.getLogger('root.err')
 
 # from python_settings import settings
 import settings
@@ -37,7 +36,7 @@ import logging
 logging.getLogger("requests").setLevel(logging.WARNING)
 
 
-TIMEOUT=60
+TIMEOUT=10.0
 CHUNK_SIZE=1024*1024
 
 TCIA_URL = 'https://services.cancerimagingarchive.net/services/v4/TCIA/query'
@@ -58,7 +57,11 @@ NLST_AUTH_URL = 'https://nlst.cancerimagingarchive.net/nbia-api/oauth/token'
 #                       requests.exceptions.RequestException,
 #                       max_tries=3)
 def get_url(url, headers="", timeout=TIMEOUT):  # , headers):
-    result =  requests.get(url, headers=headers, timeout=timeout)  # , headers=headers)
+    try:
+        result =  requests.get(url, headers=headers, timeout=timeout)  # , headers=headers)
+    except Exception as exc:
+        logging.error(f'In get_url: {exc}', exc_info=True)
+        raise
     if result.status_code != 200:
         raise RuntimeError('In get_url(): status_code=%s; url: %s', result.status_code, url)
     return result
@@ -83,41 +86,6 @@ def get_access_token(auth_server = NBIA_AUTH_URL):
     return (result.json()['access_token'], result.json()['refresh_token'])
 
 
-# def refresh_access_token(refresh_token, auth_server = NBIA_AUTH_URL):
-#     data = dict(
-#         refresh_token=refresh_token,
-#         client_id=settings.TCIA_CLIENT_ID,
-#         client_secret=settings.TCIA_CLIENT_SECRET,
-#         grant_type="refresh_token")
-#
-#     result = requests.post(auth_server, data = data)
-#     access_token = result.json()['access_token']
-#     return (access_token, refresh_token)
-
-
-# def get_collection_id_from_doi(doi):
-#     access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
-#     headers = dict(
-#         Authorization=f'Bearer {access_token}'
-#     )
-#     url = f"{NBIA_URL}/getCollectionOrSeriesForDOI"
-#     data = { "DOI": f'https://doi.org/{doi}', "CollectionOrSeries": 'collection' }
-#     result = requests.post(url, headers=headers, data=data).json()
-#     if len(result)>0:
-#         return result[0]['collection']
-#     else:
-#         return None
-
-
-# def get_instance_hash_nlst(sop_instance_uid, access_token=None):
-#     # if not access_token:
-#     #     access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
-#     headers = dict(
-#         Authorization=f'Bearer {access_token}'
-#     )
-#     url = f"{NLST_V1_URL}/getM5HashForImage?SOPInstanceUid={sop_instance_uid}"
-#     result = requests.get(url, headers=headers)
-#     return result
 
 def get_tcia_instance_hash(sop_instance_uid, access_token=None):
     # if not access_token:
@@ -129,28 +97,6 @@ def get_tcia_instance_hash(sop_instance_uid, access_token=None):
     result = requests.get(url, headers=headers)
     return result
 
-# def get_hash_nlst(request_data, access_token=''):
-#     access_token, refresh_token = get_access_token(NLST_AUTH_URL)
-#     retries = 4
-#     while retries:
-#         headers = dict(
-#             Authorization=f'Bearer {access_token}'
-#         )
-#         url = f"{NLST_URL}/getMD5Hierarchy"
-#         result = requests.post(url, headers=headers, data=request_data)
-#         if result.status_code == 200:
-#             break
-#         else:
-#             sleep( 2**(5-retries))
-#             retries -= 1
-#     return result
-
-    # headers = dict(
-    #     Authorization=f'Bearer {access_token}'
-    # )
-    # url = f"{NLST_URL}/getMD5Hierarchy"
-    # result = requests.post(url, headers=headers, data=request_data)
-    # return result
 
 def get_hash(request_data, access_token=None):
     if not access_token:
@@ -170,40 +116,12 @@ def get_hash(request_data, access_token=None):
     return result
 
 
-# def get_images_with_md5_hash_nlst(SeriesInstanceUID, access_token=None):
-#     headers = dict(
-#         Authorization=f'Bearer {access_token}'
-#     )
-#     server_url = NLST_V1_URL
-#     url = f'{server_url}/getImageWithMD5Hash?SeriesInstanceUID={SeriesInstanceUID}'
-#     result = requests.get(url, headers=headers)
-#     return result
-
-
 def get_images_with_md5_hash(SeriesInstanceUID, access_token=None):
     server_url = NBIA_V1_URL
     url = f'{server_url}/getImageWithMD5Hash?SeriesInstanceUID={SeriesInstanceUID}'
     result = requests.get(url)
     return result
 
-# Obsolete
-# def get_collection_values(server=NBIA_URL):
-#     if server == "NLST":
-#         server_url = NLST_URL
-#         access_token, refresh_token = get_access_token(NLST_AUTH_URL)
-#     elif server == "NBIA":
-#         server_url = NBIA_URL
-#         access_token, refresh_token = get_access_token()
-#     else:
-#         server_url = server
-#         access_token, refresh_token = get_access_token(auth_server = NLST_AUTH_URL)
-#     headers = dict(
-#         Authorization = f'Bearer {access_token}'
-#     )
-#     url = f'{server_url}/getCollectionValues'
-#     result = requests.get(url, headers=headers)
-#     collections = result.json()
-#     return collections
 
 # Get a list of the (public) collections that TCIA knows about. and count of the subjects in each
 def get_collection_values_and_counts(server=NBIA_URL):
@@ -263,25 +181,6 @@ def get_TCIA_studies_per_patient(collection_id, patientID, server=NBIA_V1_URL):
     return studies
 
 
-# def get_TCIA_studies_per_collection(collection_id, server=NBIA_V1_URL):
-#     if collection_id == "NLST":
-#         server_url = NLST_V2_URL
-#         access_token, refresh_token = get_access_token(NLST_AUTH_URL)
-#         headers = dict(
-#             Authorization=f'Bearer {access_token}'
-#         )
-#     elif server == "NBIA":
-#         server_url = NBIA_V1_URL
-#         headers = ''
-#     else:
-#         server_url = server
-#         headers = ''
-#     url = f'{server_url}/getPatientStudy?Collection={collection_id}'
-#     results = get_url(url)
-#     studies = results.json()
-#     return studies
-
-
 def get_TCIA_series_per_study(collection_id, patientID, studyInstanceUID, server=NBIA_V1_URL):
     if collection_id == "NLST":
         server_url = NLST_V2_URL
@@ -300,6 +199,7 @@ def get_TCIA_series_per_study(collection_id, patientID, studyInstanceUID, server
     series = results.json() if results.content else []
     return series
 
+
 def get_TCIA_series_metadata(seriesInstanceUID, server=NBIA_V1_URL):
     server_url = server
     headers = ''
@@ -307,6 +207,7 @@ def get_TCIA_series_metadata(seriesInstanceUID, server=NBIA_V1_URL):
     results = get_url(url, headers)
     series = results.json() if results.content else {}
     return series[0]
+
 
 def get_TCIA_instance_uids_per_series(collection_id, seriesInstanceUID, server=NBIA_V1_URL):
     if collection_id == "NLST":
@@ -350,72 +251,6 @@ def get_TCIA_instances_per_series_with_hashes(dicom, series):
     os.remove(f'{dirname}/md5hashes.csv')
 
     return hashes
-
-# # Not used
-# def get_TCIA_instances_per_series(dicom, series_instance_uid, server=NBIA_V1_URL):
-#     filename = "{}/{}.zip".format(dicom, series_instance_uid)
-#     if server == "NLST":
-#         server_url = NLST_V2_URL
-#         access_token, refresh_token = get_access_token(NLST_AUTH_URL)
-#         url = f'{server_url}/getImage?SeriesInstanceUID={series_instance_uid}'
-#         headers = f'Authorization:Bearer {access_token}'
-#         result = run(
-#             [
-#                 'curl',
-#                 '-o',
-#                 filename,
-#                 '-H',
-#                 headers,
-#                 '-k',
-#                 url
-#             ],
-#             stdout=PIPE,
-#             stderr=PIPE
-#         )
-#         # s = f'curl -o {filename} -H {headers} -k {url}'
-#         pass
-#
-#     else:
-#         if server == "":
-#             server = NBIA_V1_URL
-#         server_url = server
-#         url = f'{server_url}/getImage?SeriesInstanceUID={series_instance_uid}'
-#         result = run(
-#             [
-#                 'curl',
-#                 '-o',
-#                 filename,
-#                 url
-#             ],
-#             stdout=PIPE,
-#             stderr=PIPE
-#         )
-#
-#     # Now try to extract the instances to a directory DICOM/<series_instance_uid>
-#     try:
-#          result = run(
-#              [
-#                 'unzip',
-#                 "{}/{}.zip".format(dicom, series_instance_uid),
-#                 '-d',
-#                 "{}/{}".format(dicom, series_instance_uid)
-#              ],
-#              stdout=PIPE,
-#              stderr=PIPE
-#          )
-#          return
-#     except:
-#         errlogger.error("\tZip extract failed for series %s with error %s,%s,%s ", series_instance_uid,
-#                       sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2])
-#         raise
-
-
-# def get_TCIA_series_per_collection(collection, nbia_server=True):
-#     server_url = NBIA_V1_URL if nbia_server else TCIA_URL
-#     url = f'{server_url}/getSeries?Collection={collection}'
-#     results = get_url(url)
-#     series = results.json()
-#     return series
 
 
 # Get NBIAs internal ID for all the series in a collection/patient
@@ -511,87 +346,6 @@ def get_collection_descriptions_and_licenses(collection=None):
         nlst_description = get_collection_descriptions_and_licenses('NLST')
         collection_descriptions['NLST'] = nlst_description['NLST']
 
-#         if not 'CPTAC-GBM' in collection_descriptions:
-#             collection_descriptions['CPTAC-GBM'] = {
-#                 'licenseId': 1,
-#                 'description': """
-# <p>
-# 	<span class="conf-macro output-inline" data-hasbody="true" data-macro-name="excerpt">This collection contains subjects from the National Cancer Institute&rsquo;s <u><a class="external-link" href="https://proteomics.cancer.gov/programs/cptac" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> Glioblastoma Multiforme (CPTAC-GBM) cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics. Radiology and pathology images from CPTAC Phase 3 patients are being collected and made publicly available by The Cancer Imaging Archive to enable researchers to investigate cancer phenotypes which may correlate to corresponding proteomic, genomic and clinical data.</span></p>
-# <p>
-# 	&nbsp;</p>
-# <p>
-# 	<span class="iceOutTxt" id="MAINbody:collectionDescriptionPopupForm:j_id716">Please see the <a href="https://doi.org/10.7937/K9/TCIA.2018.3RJE41Q1">CPTAC-GBM</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</span></p>"""
-#             }
-#
-#         if not 'TCGA-GBM' in collection_descriptions:
-#             collection_descriptions['TCGA-GBM'] = {
-#                 'licenseId': 1,
-#                 'description': """
-# <p>The <a href="http://imaging.cancer.gov/" target="_blank"><u>Cancer Imaging Program (CIP)</u></a> is working directly with primary investigators from institutes participating in TCGA to obtain and load images relating to the genomic, clinical, and pathological data being stored within the <a href="http://tcga-data.nci.nih.gov/" target="_blank">TCGA Data Portal</a> Currently this large MR multi-sequence image collection of glioblastoma patients can be matched by each unique case identifier with the extensive gene and expression data of the same case from The Cancer Genome Atlas Data Portal to research the link between clinical phenome and tissue genome. </p><br />
-# <a href="https://doi.org/10.7937/K9/TCIA.2016.RNYFUYE9" target="_blank">TCGA-GBM</a></span> page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
-#             }
-#
-#         if not 'TCGA-HNSC' in collection_descriptions:
-#             collection_descriptions['TCGA-HNSC'] = {
-#                 'licenseId': 1,
-#                 'description': """
-# <p>The <a href="http://imaging.cancer.gov/" target="_blank"><u>Cancer Imaging Program (CIP)</u></a> is working directly with primary investigators from institutes participating in TCGA to obtain and load images relating to the genomic, clinical, and pathological data being stored within the <a href="http://tcga-data.nci.nih.gov/" target="_blank">TCGA Data Portal</a>. Currently this large PET/CT multi-sequence image collection of  head and neck squamous cell carcinoma (HNSC) patients can be matched by each unique case identifier with the extensive gene and expression data of the same case from The Cancer Genome Atlas Data Portal to research the link between clinical phenome and tissue genome.</p>
-# </br>
-# <p>Please see the <a href="https://doi.org/10.7937/K9/TCIA.2016.LXKQ47MS" target="_blank">TCGA-HNSC</a> page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
-#             }
-#
-#         if not 'TCGA-LGG' in collection_descriptions:
-#                 collection_descriptions['TCGA-LGG'] = {
-#                     'licenseId': 1,
-#                     'description': """
-# <div>
-# 	<strong>Note:&nbsp;This collection has special restrictions on its usage. See <a href="https://wiki.cancerimagingarchive.net/x/c4hF" target="_blank">Data Usage Policies and Restrictions</a>.</strong></div>
-# </br><p>The <a href="http://imaging.cancer.gov/" target="_blank"><u>Cancer Imaging Program (CIP)</u></a> is working directly with primary investigators from institutes participating in TCGA to obtain and load images relating to the genomic, clinical, and pathological data being stored within the <a href="http://tcga-data.nci.nih.gov/" target="_blank">TCGA Data Portal</a>. Currently this large MR multi-sequence image collection of low grade glioma patients can be matched by each unique case identifier with the extensive gene and expression data of the same case from The Cancer Genome Atlas Data Portal to research the link between clinical phenome and tissue genome.</p><br />
-# <p>Please see the <a href="https://doi.org/10.7937/K9/TCIA.2016.L4LTD3TK" target="_blank">TCGA-LGG</a> page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
-#                 }
-#
-#         if not 'CPTAC-AML' in collection_descriptions:
-#             # Also descriptions for TCIA collections that don't have descriptions.
-#             collection_descriptions['CPTAC-AML'] = {
-#                 'licenseId': 1,
-#                 'description': """
-# <p>
-#     <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> Acute Myeloid Leukemia (CPTAC-AML) cohort.&nbsp;<span style="color: rgb(33,37,41);">CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics.</span></p>
-# <p>
-#     Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-AML" target="_blank">CPTAC-AML</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
-#             }
-#
-#         if not 'CPTAC-BRCA' in collection_descriptions:
-#             collection_descriptions['CPTAC-BRCA'] = {
-#                 'licenseId': 1,
-#                 'description': """
-# <p>
-#     <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> CPTAC Breast Invasive Carcinoma cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics. Radiology and pathology images from CPTAC patients are being collected and made publicly available by The Cancer Imaging Archive to enable researchers to investigate cancer phenotypes which may correlate to corresponding proteomic, genomic and clinical data.</span></p>
-# <p>
-#     Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-BRCA" target="_blank">CPTAC-BRCA</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
-#             }
-#
-#         if not 'CPTAC-COAD' in collection_descriptions:
-#             collection_descriptions['CPTAC-COAD'] = {
-#                 'licenseId': 1,
-#                 'description': """
-# <p>
-#     <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> CPTAC&nbsp;Colon Adenocarcinoma cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics.</span></p>
-# <p>
-#     Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-COAD" target="_blank">CPTAC-COAD</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
-#                 }
-#
-#         if not 'CPTAC-OV' in collection_descriptions:
-#             collection_descriptions['CPTAC-OV'] = {
-#                 'licenseId': 1,
-#                 'description': """
-# <p>
-#     <span>This collection contains subjects from the National Cancer Institute&rsquo;s <u><a href="https://proteomics.cancer.gov/programs/cptac" class="external-link" rel="nofollow">Clinical Proteomic Tumor Analysis Consortium</a></u> CPTAC&nbsp;Ovarian Serous Cystadenocarcinoma cohort. CPTAC is a national effort to accelerate the understanding of the molecular basis of cancer through the application of large-scale proteome and genome analysis, or proteogenomics.</span></p>
-# <p>
-#     Please see the <a href="https://wiki.cancerimagingarchive.net/display/Public/CPTAC-OV" target="_blank">CPTAC-OV</a> wiki page to learn more about the images and to obtain any supporting metadata for this collection.</p>"""
-#                 }
-
-
     return collection_descriptions
 
 
@@ -672,6 +426,9 @@ def get_all_tcia_metadata(type, query_param=''):
 
 
 if __name__ == "__main__":
+    # df = datacite.getDoi()
+    # pd.display(df)
+
     # if not settings.configured:
     #     from python_settings import settings
     #     import settings as etl_settings

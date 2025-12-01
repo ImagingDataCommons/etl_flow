@@ -32,9 +32,7 @@ if __name__ == '__main__':
     parser.add_argument('--source_url', default='https://doi.org/10.5281/zenodo.14933087',\
                             help='Info page URL')
     parser.add_argument('--versioned_source_doi', default='10.5281/zenodo.16995570', help='Collection DOI')
-    parser.add_argument('--manifests', default=[
-        ('', 'new_collection'),
-        ],
+    parser.add_argument('--manifest_url', default="",
         help="""List of manifests. Each is a pair of (manifest URL, manifest type) where manifest type is one of 
             "new_collection", "full_revision", "partial_revision", or "partial_deletion".""")
     parser.add_argument('--collection_id', default='BoneMarrowWSI-PediatricLeukemia', help='collection_name of the collection or ID of analysis result to which instances belong.')

@@ -24,7 +24,21 @@ import settings
 from google.cloud import bigquery
 from utilities.bq_helpers import create_BQ_table, delete_BQ_Table, query_BQ
 from utilities.logging_config import successlogger
-from schema import mutable_metadata_schema
+
+mutable_metadata_schema = [
+    bigquery.SchemaField('crdc_study_uuid', 'STRING', mode='NULLABLE', description='UUID of this version of the study containing this instance'),
+    bigquery.SchemaField('crdc_series_uuid', 'STRING', mode='NULLABLE', description='UUID of this version of the series containing this instance'),
+    bigquery.SchemaField('crdc_instance_uuid', 'STRING', mode='NULLABLE', description='UUID of this version of this instance'),
+    bigquery.SchemaField('gcs_url', 'STRING', mode='NULLABLE', description='URL to this object containing the current version of this instance in Google Cloud Storage (GCS)'),
+    bigquery.SchemaField('aws_url', 'STRING', mode='NULLABLE', description='URL to this object containing the current version of this instance in Amazon Web Services (AWS)'),
+    bigquery.SchemaField('access', 'STRING', mode='NULLABLE', description='Collection access status: Public or Limited'),
+    bigquery.SchemaField('source_doi', 'STRING', mode='NULLABLE', description='The DOI of a wiki page that describes the original collection or analysis result that includes this instance'),
+    bigquery.SchemaField('source_url', 'STRING', mode='NULLABLE', description='The URL of a wiki page that describes the original collection or analysis result that includes this instance'),
+    bigquery.SchemaField('versioned_source_doi', 'STRING', mode='NULLABLE', description='If present, the DOI of a wiki page that describes the original collection or analysis result that includes this version of this instance'),
+    bigquery.SchemaField('license_url', 'STRING', mode='NULLABLE', description='URL of license of this analysis result'),
+    bigquery.SchemaField('license_long_name', 'STRING', mode='NULLABLE', description='Long name of license of this analysis result'),
+    bigquery.SchemaField('license_short_name', 'STRING', mode='NULLABLE', description='Short name of license of this analysis result'),
+]
 
 def gen_blob_table(args):
 
@@ -39,14 +53,16 @@ def gen_blob_table(args):
       CONCAT('s3://',
           pub_aws_bucket, '/', se_uuid, '/', i_uuid, '.dcm') aws_url,
       access,
-      source_url,
-      source_doi,
+      ajc.source_url,
+      ajc.source_doi,
       versioned_source_doi,
-      license_long_name,
-      license_short_name,
-      license_url
+      license.license_long_name,
+      license.license_short_name,
+      license.license_url
     FROM
-      `{args.src_project}.{args.src_bqdataset_name}.all_joined_public`
+      `{args.src_project}.{args.src_bqdataset_name}.all_joined_public` ajc
+    JOIN `{args.src_project}.{args.src_bqdataset_name}.licenses` l
+    ON ajc.source_doi = l.source_doi
     ORDER BY
       crdc_study_uuid,
       crdc_series_uuid,

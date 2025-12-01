@@ -217,8 +217,11 @@ def get_tcia_dois(client, args):
     # Return collections that have specified access
     query = f"""
     SELECT DISTINCT lower(source_doi) source_doi, lower(source_url)  source_url
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current`
-    WHERE se_sources.tcia = True
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public`
+    WHERE idc_version={settings.CURRENT_VERSION} 
+    AND metadata_sunset = 0
+    AND se_sources.tcia = True
+
     """
     dois = {row.source_doi: row for row in client.query(query)}
     return dois

@@ -36,7 +36,7 @@ def compare_tables(args):
     old_df = client.list_rows(old_table).to_dataframe()
     new_df = client.list_rows(new_table).to_dataframe()
 
-    merged=new_df.merge(old_df,'outer', on='download_id', indicator=True, suffixes=('_new', '_old'), sort=True)
+    merged=new_df.merge(old_df,'outer', on='Download_slug', indicator=True, suffixes=('_new', '_old'), sort=True)
     added_files = merged[merged['_merge']=='left_only']
     dropped_files = merged[merged['_merge']=='right_only']
     continuing_files = merged[merged['_merge']=='both']
@@ -44,28 +44,27 @@ def compare_tables(args):
 
     print("Dropped files:")
     if len(dropped_files)>0:
-        print("idc_collection_id    download_id   download_slug   date_updated    download_title")
+        print("TCIA_collection_id    IDC_collection_id   Download_slug   Modified_download_date    Download_title")
         for i, file in dropped_files.iterrows():
-            print(file['idc_collection_id_old'], ' : ', file['download_id'], ' : ', file['download_slug_old'], ' : ', \
-                file['date_updated_old'], ' : ', file['download_title_old'])
+            print(file['TCIA_collection_id_old'], ' : ', file['IDC_collection_id_old'], ' : ', file['Download_slug'], ' : ', \
+                file['Modified_download_date_old'], ' : ', file['Download_title_old'])
 
     print("\nAdded files:")
     if len(added_files)>0:
-        print("idc_collection_id    download_id   download_slug_name   date_updated    download_title")
+        print("TCIA_collection_id    IDC_collection_id   Download_slug   Modified_download_date    Download_title")
         for i, file in added_files.iterrows():
-            print(file['idc_collection_id_new'], ' : ', file['download_id'], ' : ', file['download_slug_new'], ' : ', \
-                file['date_updated_new'], ' : ', file['download_title_new'])
+            print(file['TCIA_collection_id_new'], ' : ', file['IDC_collection_id_new'], ' : ', file['Download_slug'], ' : ', \
+                file['Modified_download_date_new'], ' : ', file['Download_title_new'])
 
     print("\nRevised files:")
+    print("TCIA_collection_id    IDC_collection_id    Download_slug   Modified_download_date    Download_title")
     for i, file in continuing_files.iterrows():
-        if file['download_url_old'].split('context')[-1] != file['download_url_new'].split('context')[-1]:
-            print(file['idc_collection_id_new'], ' : ', file['download_id'], ' : ', file['download_slug_new'], ' : ', \
-                file['date_updated_new'], ' : ', file['download_title_new'])
-            print(f'\t\t{file["download_url_old"]}-->{file["download_url_new"]}')
+        if file['Aspera_URL_old'].split('context')[-1] != file['Aspera_URL_new'].split('context')[-1]:
+            print(file['TCIA_collection_id_new'], ' : ', file['IDC_collection_id_new'], ' : ', file['Download_slug'], ' : ', \
+                file['Modified_download_date_new'], ' : ', file['Download_title_new'])
+            print(f'\t\t{file["Aspera_URL_old"]} \n\t\t--> \n\t\t{file["Aspera_URL_new"]}')
 
-    pass
-
-
+    return
 
 
 if __name__ == "__main__":

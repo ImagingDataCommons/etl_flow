@@ -89,7 +89,7 @@ def expand_collection(sess, args, all_sources, collection):
     # retire it from the source.
     patients = all_sources.patients(collection, skipped)
 
-    # Since we are starting, delete everything from the prestaging bucket.
+    # Since we are starting, delete everything from the prestaging buckets.
     if collection.revised.tcia:
         progresslogger.info("Emptying tcia prestaging buckets")
         create_prestaging_bucket(args, args.prestaging_tcia_bucket)
@@ -156,10 +156,18 @@ def expand_collection(sess, args, all_sources, collection):
     n = 0
     for patient in sorted_patients:
         idc_hashes = patient.hashes
-        # Get the hash from each source that is not skipped
-        # The hash of a source is "" if the source is skipped, or the source that does not have
+        # Get the patients hash from each source. If the patient is skipped for a source,
+        # the hash of a source is "". If collection is not revised for a source, the patient'shash for that
+        # source is unchanged. or the source that does not have
         # the object
-        src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id, skipped)
+        # src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id, skipped)
+        while True:
+            try:
+                src_hashes = all_sources.src_patient_hashes(collection, patient, skipped)
+                break
+            except Exception as exc:
+                errlogger.error(f'expand_collection: {exc}, patient: {patient.submitter_case_id}')
+
         # A source is revised the if idc hashes[source] and the source hash differ and the source is not skipped
         revised = [(x != y) and  not z for x, y, z in \
                 zip(idc_hashes[:-1], src_hashes, skipped)]
@@ -174,7 +182,7 @@ def expand_collection(sess, args, all_sources, collection):
             rev_patient.is_new = False
             rev_patient.expanded = False
             rev_patient.revised = revised
-            rev_patient.hashes = ("","","")
+            rev_patient.hashes = patient.hashes
             # The following line can probably be deleted because
             # a object's sources are computed hierarchically after
             # building all the children.
@@ -294,7 +302,12 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         try:
             while not enqueued_patients == []:
                 # Timeout if waiting too long
-                results = done_queue.get(True)
+                try:
+                    results = done_queue.get(True, 60)
+                except Empty as e:
+                    pass
+                    continue
+
                 enqueued_patients.remove(results)
                 successlogger.info("  p%s: Patient %s dequeued", args.pid, results)
             # Tell child processes to stop

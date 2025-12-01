@@ -21,12 +21,15 @@ import argparse
 import json
 from google.cloud  import storage
 import settings
-from document_and_download_unconverted_tcia_pathology import bucket_collection_id, get_collection, get_aspera_package_urls
+from get_tcia_pathology_metadata import bucket_collection_id, get_collection, get_aspera_package_urls
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from time import strftime, gmtime
 from multiprocessing import Process, Queue
 import time
 from subprocess import run
+from pandas import read_csv
+from tcia_sourced_pathology_files import tcia_sourced_pathology_files
+
 
 
 ASPERA_DOWNLOAD_FOLDER = '/mnt/disks/aspera'
@@ -133,45 +136,52 @@ def download_from_aspera(args, aspera_files, dones, conversion_source_names, asp
 
 
 def main(args, download_slugs=[]):
-    client = storage.Client(project='idc-dev-etl')
-    download = False
-    idc_has = False
-    gen_manifest = True
     dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
+    conversion_sources = tcia_sourced_pathology_files()
+
+    # try:
+    #     # Assume we've already got the list of expected series
+    #     conversion_sources = read_csv(f"{settings.LOG_DIR}/../conversion_sources.csv")
+    # except:
+    #     conversion_sources = tcia_sourced_pathology_files()
+    #     conversion_sources.to_csv(f"{settings.LOG_DIR}/../conversion_sources.csv")
 
     aspera_package_urls = get_aspera_package_urls()
     for _, package in aspera_package_urls.iterrows():
-        if args.download_slugs == [] or package['slug'] in args.download_slugs:
+        if args.download_slugs == [] or package['Download_slug'] in args.download_slugs:
             idc_collection_id = package['IDC_collection_id']
-            bucket_tag = bucket_collection_id(idc_collection_id)
+            if idc_collection_id or args.only_idc_collections==False:
+                bucket_tag = bucket_collection_id(idc_collection_id)
 
-            manifest_params = get_collection(args, package)
-            aspera_files = manifest_params["aspera_files"]
-            conversion_source_names = manifest_params["conversion_source_names"]
+                manifest_params = get_collection(args, package, conversion_sources, args.version)
+                aspera_files = manifest_params["aspera_files"]
+                conversion_source_names = manifest_params["conversion_source_names"]
 
-            TCIA_collection_version = package['TCIA_collection_version']
-            IDC_collection_name = package['IDC_collection_name']
-            aspera_url = package['Aspera_URL']
-            slug = package['Download_slug']
+                TCIA_collection_version = package['TCIA_collection_version']
+                IDC_collection_name = package['IDC_collection_name']
+                aspera_url = package['Aspera_URL']
+                slug = package['Download_slug']
 
-            if IDC_collection_name in ['NLST', 'ICDC-Glioma']:
-                tag = ''
-            elif IDC_collection_name == 'CPTAC-CCRCC':
-                tag = 'CCRCC'
+                if IDC_collection_name in ['NLST', 'ICDC-Glioma']:
+                    tag = ''
+                elif IDC_collection_name == 'CPTAC-CCRCC':
+                    tag = 'CCRCC'
+                else:
+                    tag = aspera_files[0]['path'].split('/')[1]
+                progresslogger.info(manifest_params["logger_string"])
+                download_from_aspera(
+                    args, aspera_files, dones, conversion_source_names,
+                    aspera_url, bucket_tag,
+                    TCIA_collection_version, slug, tag)
             else:
-                tag = aspera_files[0]['path'].split('/')[1]
-            progresslogger.info(manifest_params["logger_string"])
-            download_from_aspera(
-                args, aspera_files, dones, conversion_source_names,
-                aspera_url, bucket_tag,
-                TCIA_collection_version, slug, tag)
+                successlogger.info(f'Skipping TCIA collection {package["TCIA_collection_id"]}')
 
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--version", default=21)
+    parser.add_argument("--version", default=settings.CURRENT_VERSION-1)
     parser.add_argument('--processes', default=1)
     parser.add_argument('--mode', default='download')
     parser.add_argument("--dst_bucket_prefix", default="", help="dst_bucket ID prefix")
@@ -179,8 +189,9 @@ if __name__ == "__main__":
     parser.add_argument("--dst_project", default='idc-source-data', help="Project in which to create bucket")
     parser.add_argument("--google_drive_folder", default="", help="Google Drive folder ID")
     parser.add_argument("--save_result", default=True, help="Save result to a Drive file if True")
-    parser.add_argument("--download_slugs", default = [], help="Slugs to process; all if empty")
+    parser.add_argument("--download_slugs", default = ['cptac-ov-da-path'], help="Slugs to process; all if empty")
     parser.add_argument("--manifest_file_name", default= f'manifest_{strftime("%Y%m%d_%H%M%S", gmtime())}.txt')
+    parser.add_argument("--only_idc_collections", default=True, help="Only include a collection if IDC already has it")
     args = parser.parse_args()
     print(f'args: {json.dumps(args.__dict__, indent=2)}')
 

@@ -50,6 +50,11 @@ def load_spreadsheet(args, schema=None):
     # Convert HTML to Markdown and delete empty lines
     for i, row in df.iterrows():
         description = markdownify.markdownify(df.at[i, 'description'])
+        # Clean up hyperlinks
+        description = description.replace('[','').replace(']',' ')
+        # More clean up
+        description = description.replace('**','')
+
         lines = []
         for line in description.split('\n'):
             if line:

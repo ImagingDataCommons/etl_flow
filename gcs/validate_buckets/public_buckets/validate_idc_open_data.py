@@ -33,9 +33,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=f'{settings.CURRENT_VERSION}')
     parser.add_argument('--processes', default=32)
     parser.add_argument('--bucket', default='idc-open-data', help='Bucket to be validated')
-    parser.add_argument('--expected_bucket', default='idc-open-data', help='Bucket for which to get expected series, instances. Usually the same as args.bucket')
     parser.add_argument('--dev_or_pub', default = 'pub', help='Validating a dev or pub bucket')
-    parser.add_argument('--premerge', default=False, help='True when performing prior to merging premerge  buckets')
     parser.add_argument('--expected_blobs', default=f'{settings.LOG_DIR}/expected_blobs.txt', help='List of blobs names expected to be in above collections')
     parser.add_argument('--found_blobs', default=f'{settings.LOG_DIR}/success.log', help='List of blobs names found in bucket')
     parser.add_argument('--find_blobs', default=True, help='Find blobs even if found_blobs bucket is not empty')
@@ -45,4 +43,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(f'args: {json.dumps(args.__dict__, indent=2)}')
 
-    check_all_instances_mp(args, premerge=args.premerge)
+    check_all_instances_mp(args)

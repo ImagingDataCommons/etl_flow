@@ -21,47 +21,65 @@ import argparse
 import json
 from google.cloud  import storage
 import settings
-from document_and_download_unconverted_tcia_pathology import bucket_collection_id, get_collection, get_aspera_package_urls
+from get_tcia_pathology_metadata import bucket_collection_id, get_collection, get_aspera_package_urls
 from utilities.logging_config import successlogger, progresslogger, errlogger
+from tcia_sourced_pathology_files import tcia_sourced_pathology_files
+from pandas import read_csv
+
 from time import strftime, gmtime
 
 def gen_manifest_of_idc_missing_pathology_source(slug, aspera_file_names_slashed,
-                                                 conversion_source_names, ingested_urls, aspera_files):
+                                                 conversion_source_names_endswith, ingested_urls, aspera_files):
     in_aspera_not_idc_source_data = []
     for file in aspera_file_names_slashed:
-        if not next((name for name in conversion_source_names if name.replace('/', '_').replace('-', '_').find(file.replace('/', '_').replace('-', '_')) >= 0), False):
+        if not file.replace('-', '_') in conversion_source_names_endswith:
             in_aspera_not_idc_source_data.append(file)
+
     successlogger.info(f"**** {len(in_aspera_not_idc_source_data)} files in Aspera package but not in idc-source-data")
     if in_aspera_not_idc_source_data:
         for file in in_aspera_not_idc_source_data:
             successlogger.info(file)
 
+    # Generate a list of files that are in idc-source-data
     in_aspera_and_in_idc_source_data = []
     for file in aspera_file_names_slashed:
-        if next((name for name in conversion_source_names if name.replace('/', '_').replace('-', '_').find(file.replace('/', '_').replace('-', '_')) >= 0), False):
-            in_aspera_and_in_idc_source_data.append(file)
+        if file.replace('/', '_').replace('-', '_') in conversion_source_names_endswith:
+            in_aspera_and_in_idc_source_data.append(conversion_source_names_endswith[file.replace('-', '_')])
+
+    # Find which files in idc-source-data have not been ingested
     in_idc_source_data_not_ingested_urls = []
-    for file in in_aspera_and_in_idc_source_data:
-        if not next((name for name in ingested_urls if name.replace('/', '_').replace('-', '_').find(file.replace('/', '_').replace('-', '_')) >= 0), False):
-            in_idc_source_data_not_ingested_urls.append(file)
+    if slug in ['nlst-da-path-1', 'nlst-da-path-2']:
+        for file in in_aspera_and_in_idc_source_data:
+            if not next((name for name in ingested_urls if
+                         # file.replace('/', '_').replace('-', '_').endswith(name.rsplit('/', 1)[1].replace('-', '_'))),
+                        name.replace('-','_').endswith(file.rsplit('/',1)[1].replace('-', '_'))),
+                        False):
+                in_idc_source_data_not_ingested_urls.append(file)
+    else:
+        for file in in_aspera_and_in_idc_source_data:
+            if not next((name for name in ingested_urls if
+                         file.replace('/', '_').replace('-', '_').endswith(name.replace('/', '_').replace('-', '_'))),
+                        False):
+                in_idc_source_data_not_ingested_urls.append(file)
+
     successlogger.info(f"**** {len(in_idc_source_data_not_ingested_urls)} files in idc-source-data but not in ingestion urls ****")
     for file in in_idc_source_data_not_ingested_urls:
         successlogger.info(file)
 
-    in_ingested_urls_not_idc_source_data = []
-    if slug not in ['cptac-ccrcc-da-path-nonccrcc', 'nlst-da-path-1', 'nlst-da-path-2']:
-        for file in ingested_urls:
-            if not next((name for name in ingested_urls if
-                         name.replace('/', '_').replace('-', '_').find(file.replace('/', '_').replace('-', '_')) >= 0),
-                        False):
-                in_ingested_urls_not_idc_source_data.append(file)
-        successlogger.info(
-            f"**** {len(in_ingested_urls_not_idc_source_data)} files in ingestion urls but not in idc-source-data ****")
-        for file in in_ingested_urls_not_idc_source_data:
-            successlogger.info(file)
-    else:
-        successlogger.info(
-            f"**** 0 files in ingestion urls but not in idc-source-data ****")
+    # in_ingested_urls_not_idc_source_data = []
+    # if slug not in ['cptac-ccrcc-da-path-nonccrcc', 'nlst-da-path-1', 'nlst-da-path-2']:
+    #     for file in ingested_urls:
+    #         if not next((name for name in ingested_urls if
+    #                      name.replace('/', '_').replace('-', '_').find(file.replace('/', '_').replace('-', '_')) >= 0),
+    #                     False):
+    #             in_ingested_urls_not_idc_source_data.append(file)
+    #     successlogger.info(
+    #         f"**** {len(in_ingested_urls_not_idc_source_data)} files in ingestion urls but not in idc-source-data ****")
+    #     for file in in_ingested_urls_not_idc_source_data:
+    #         successlogger.info(file)
+    # else:
+    #     successlogger.info(
+    #         f"**** 0 files in ingestion urls but not in idc-source-data ****")
     return
 
 
@@ -96,33 +114,43 @@ def main(args, download_slugs=[]):
     idc_has = False
     gen_manifest = True
 
-    aspera_package_urls = get_aspera_package_urls().sort_values('Download_slug')
+    conversion_sources = tcia_sourced_pathology_files()
+    with open(f"{settings.LOG_DIR}/../conversion_source_names_endswith.csv", 'r') as f:
+        conversion_source_names_endswith = json.load(f)
+
+    aspera_package_urls = get_aspera_package_urls() .sort_values('Download_slug')
     for _, package in aspera_package_urls.iterrows():
         if args.download_slugs == [] or package['Download_slug'] in args.download_slugs:
+
             progresslogger.info(f"Processing package: {package['Download_slug']}")
             idc_collection_id = package['IDC_collection_id']
-            bucket_tag = bucket_collection_id(idc_collection_id)
+            if idc_collection_id or args.only_idc_collections==False:
+                bucket_tag = bucket_collection_id(idc_collection_id)
 
-            manifest_params = get_collection(args, package)
-            aspera_files = manifest_params["aspera_files"]
-            conversion_source_names = manifest_params["conversion_source_names"]
-            ingested_urls = manifest_params["ingested_urls"]
+                manifest_params = get_collection(args, package, conversion_sources, args.version)
+                aspera_files = manifest_params["aspera_files"]
+                conversion_source_names = manifest_params["conversion_source_names"]
+                ingested_urls = manifest_params["ingested_urls"]
 
-            slug = package['Download_slug']
-            aspera_file_names_slashed = set(['/'.join(file['path'].split('/')[2:]) for file in aspera_files])
-            successlogger.info(manifest_params["logger_string"])
-            gen_manifest_of_idc_missing_pathology_source(
-                slug, aspera_file_names_slashed,
-                conversion_source_names,
-                ingested_urls, aspera_files
-            )
-            successlogger.info("")
+                slug = package['Download_slug']
+                # aspera_file_names_slashed = set(['/'.join(file['path'].split('/')[2:]) for file in aspera_files])
+                aspera_file_names_slashed = set(file['path'].rsplit('/',1)[1] for file in aspera_files)
+                successlogger.info(manifest_params["logger_string"])
+                gen_manifest_of_idc_missing_pathology_source(
+                    slug, aspera_file_names_slashed,
+                    # conversion_source_names,
+                    conversion_source_names_endswith,
+                    ingested_urls, aspera_files
+                )
+                successlogger.info("")
+            else:
+                successlogger.info(f'Skipping TCIA collection {package["TCIA_collection_id"]}\n')
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--version", default=22)
+    parser.add_argument("--version", default=settings.CURRENT_VERSION-1)
     parser.add_argument('--processes', default=1)
     parser.add_argument('--mode', default='download')
     parser.add_argument("--dst_bucket_prefix", default="", help="dst_bucket ID prefix")
@@ -130,8 +158,9 @@ if __name__ == "__main__":
     parser.add_argument("--dst_project", default='idc-source-data', help="Project in which to create bucket")
     parser.add_argument("--google_drive_folder", default="", help="Google Drive folder ID")
     parser.add_argument("--save_result", default=True, help="Save result to a Drive file if True")
-    parser.add_argument("--download_slugs", default = ['dlbcl-morphology-da-path'], help="Slugs to process; all if empty")
+    parser.add_argument("--download_slugs", default = [], help="Slugs to process; all if empty")
     parser.add_argument("--manifest_file_name", default= f'manifest_{strftime("%Y%m%d_%H%M%S", gmtime())}.txt')
+    parser.add_argument("--only_idc_collections", default=True, help="Only include a collection if IDC already has it")
     args = parser.parse_args()
     print(f'args: {json.dumps(args.__dict__, indent=2)}')
 

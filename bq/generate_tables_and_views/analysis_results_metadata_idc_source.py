@@ -19,7 +19,6 @@
 import settings
 import argparse
 from utils.google_sheet_to_bq_table import load_spreadsheet
-from utils.bq_table_to_cloudsql import export_table
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -35,4 +34,3 @@ if __name__ == '__main__':
     print('args: {}'.format(args))
 
     load_spreadsheet(args)
-    # export_table(args)

@@ -24,8 +24,12 @@ import hashlib
 import settings
 from utilities.bq_helpers import load_BQ_from_json
 from utilities.logging_config import successlogger
-from bq.generate_tables_and_views.version_metadata.version_metadata_schema import version_metadata_schema
 
+version_metadata_schema = [
+    bigquery.SchemaField('idc_version', 'INTEGER', mode='REQUIRED', description='IDC version number'),
+    bigquery.SchemaField('version_hash', 'STRING', mode='REQUIRED', description='MD5 hash of hashes of collections in this version'),
+    bigquery.SchemaField('version_timestamp', 'STRING', mode='REQUIRED', description='Version creation timestamp')
+    ]
 
 # Hash a sorted list of hashes
 def get_merkle_hash(hashes):

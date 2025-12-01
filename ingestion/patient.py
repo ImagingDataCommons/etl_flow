@@ -109,10 +109,10 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
         new_study.study_instances = 0
         new_study.revised = studies[study]
         # The following line can probably be deleted because
-        # a object's sources are computed hierarchically after
+        # an object's sources are computed hierarchically after
         # building all the children.
         new_study.source = studies[study]
-        new_study.hashes = None
+        new_study.hashes = ("","","")
         new_study.max_timestamp = new_study.min_timestamp
         new_study.init_idc_version=settings.CURRENT_VERSION
         new_study.rev_idc_version=settings.CURRENT_VERSION
@@ -129,8 +129,8 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
         # Get the hash from each source that is not skipped
         # The hash of a source is "" if the source is skipped, or the source does not have
         # the object
-        src_hashes = all_sources.src_study_hashes(collection.collection_id, study.study_instance_uid, skipped)
-        # A source is revised the idc hashes[source] and the source hash differ and the source is not skipped
+        src_hashes = all_sources.src_study_hashes(patient, study, skipped)
+        # A source is revised if the idc hashes[source] and the source hash differ and the source is not skipped
         revised = [(x != y) and not z for x, y, z in \
                    zip(idc_hashes[:-1], src_hashes, skipped)]
         # If any source is revised, then the object is revised.
@@ -142,9 +142,9 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
             rev_study.is_new = False
             rev_study.expanded = False
             rev_study.revised = revised
-            rev_study.hashes = None
+            rev_study.hashes = study.hashes
             # The following line can probably be deleted because
-            # a object's sources are computed hierarchically after
+            # an object's sources are computed hierarchically after
             # building all the children.
             rev_study.sources = studies[study.study_instance_uid]
             rev_study.rev_idc_version = settings.CURRENT_VERSION
@@ -167,7 +167,7 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
             progresslogger.info  ('    p%s: Study %s unchanged',  args.pid, study.study_instance_uid)
 
     for study in retired_objects:
-        # breakpoint()
+        breakpoint()
         retire_study(args, study)
         patient.studies.remove(study)
         progresslogger.info('  p%s: Study %s is retired', args.pid, study.study_instance_uid)
@@ -205,11 +205,10 @@ def build_patient(sess, args, all_sources, patient_index, version, collection, p
             patient.sources = accum_sources(patient, patient.studies)
 
             skipped = is_skipped(args.skipped_collections, collection.collection_id)
-            src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id, skipped)
+            src_hashes = all_sources.src_patient_hashes(collection, patient, skipped)
             revised = [(x != y) and  not z for x, y, z in \
                     zip(idc_hashes[:-1], src_hashes, skipped)]
             if any(revised):
-                # raise Exception('Hash match failed for patient %s', patient.submitter_case_id)
                 errlogger.error(Exception('Hash match failed for patient %s', patient.submitter_case_id))
             else:
                 patient.done = True
@@ -218,5 +217,4 @@ def build_patient(sess, args, all_sources, patient_index, version, collection, p
                 successlogger.info("  p%s: Built Patient %s, %s, in %s, %s", args.pid, patient.submitter_case_id, patient_index, duration, time.asctime())
     except Exception as exc:
         errlogger.exception('  p%s build_patient failed: %s for %s', args.pid, exc, patient.submitter_case_id)
-        # errlogger.error('  p%s build_patient failed: %s', args.pid, exc)
         raise exc

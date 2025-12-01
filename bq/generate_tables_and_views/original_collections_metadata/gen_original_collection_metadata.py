@@ -171,6 +171,7 @@ def get_url(url, headers=""):  # , headers):
 
 def get_citation(source_url):
 
+
     header = {"Accept": "text/x-bibliography; style=elsevier-vancouver-no-et-al"}
     citation = requests.get(source_url, headers=header).text
     if 'This DOI cannot be found in the DOI System' in citation:
@@ -461,7 +462,8 @@ def gen_collections_table(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
+    breakpoint()
+    parser.add_argument('--bqtable_name', default='original_collections_metadata_new', help='BQ table name')
     parser.add_argument('--access', default='Public', help="Generate original_collections_metadata if True; (deprecated)generate a table of excluded collections if false (deprecated)")
     parser.add_argument('--use_cached_metadata', default=False)
     parser.add_argument('--cached_metadata_file', default='cached_included_metadata.json', help='Where to cache metadata')
