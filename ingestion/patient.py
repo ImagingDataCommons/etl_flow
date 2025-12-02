@@ -25,6 +25,7 @@ from python_settings import settings
 
 # Return a dictionary of the dois and urls of all series in the patient
 def get_dois_urls_licenses(args, all_sources, collection, patient):
+    breakpoint() # Need to also get collection_type of each series in patient
     skipped_sources = is_skipped(args.skipped_collections, collection.collection_id)
     # Get all the dois for this patient
     all_dois = all_sources.get_patient_dois(collection, patient, skipped_sources)

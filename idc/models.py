@@ -516,10 +516,10 @@ class Series(Base):
     license_long_name = Column(String, comment="Long name of license.")
     license_url = Column(String, comment="License URL of this series.")
     license_short_name = Column(String, comment='Short name of license')
-    analysis_result = Column(Boolean, comment='True if this series is from an analysis result, else False')
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
     versioned_source_doi = Column(String, comment='If present, a DOI to the wiki page of this version of this series')
     mitigation = Column(String, default="", comment="ID of the mitigation which redacted this object")
+    collection_type = Column(String, comment="'original_collection' or 'analysis_result'")
 
     studies = relationship('Study',
                            secondary=study_series,

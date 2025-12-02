@@ -87,6 +87,7 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
         new_series.uuid = str(uuid4())
         new_series.min_timestamp = datetime.utcnow()
         try:
+            new_series.collection_type = dois_urls_licenses[series]['collection_type']
             new_series.source_doi = dois_urls_licenses[series]['source_doi']
             new_series.source_url = dois_urls_licenses[series]['source_url']
             new_series.versioned_source_doi = dois_urls_licenses[series]['versioned_source_doi']

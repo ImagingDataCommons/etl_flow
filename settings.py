@@ -19,8 +19,8 @@ import sys
 from os.path import join, dirname, exists
 from dotenv import load_dotenv
 
-CURRENT_VERSION=23
-PREVIOUS_VERSION=22
+CURRENT_VERSION=24
+PREVIOUS_VERSION=23
 
 # IF MITIGATION_VERSION is not 0, logging will be to m<MITIGATION_VERSION) rather than v<CURRENT_VERSION>
 # For normal ETL purposes it should be 0
