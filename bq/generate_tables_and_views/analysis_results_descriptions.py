@@ -22,10 +22,10 @@ from utils.google_sheet_to_bq_table import load_spreadsheet
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--spreadsheet_id', default = '1C0ZLeHzx23UbWALtb5j6WfzjmFvRVjd5ieuTcOw7dfE',
-    #                     help='"id" portion of spreadsheet URL')
-    parser.add_argument('--spreadsheet_id', default = '17fBpRPlI7XHPSQlXpDIIZzL48gh4sHAWagwr9y5OL7I',
+    parser.add_argument('--spreadsheet_id', default = '1C0ZLeHzx23UbWALtb5j6WfzjmFvRVjd5ieuTcOw7dfE',
                         help='"id" portion of spreadsheet URL')
+    # parser.add_argument('--spreadsheet_id', default = '17fBpRPlI7XHPSQlXpDIIZzL48gh4sHAWagwr9y5OL7I',
+    #                     help='"id" portion of spreadsheet URL')
     parser.add_argument('--sheet_name', default = 'idc_current', help='Sheet within spreadsheet to load')
     parser.add_argument('--project', default='idc-dev-etl', help='BQ project')
     parser.add_argument('--bq_dataset_id', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ datasey')

@@ -41,7 +41,7 @@ analysis_results_metadata_schema = [
     bigquery.SchemaField('TumorLocations', 'STRING', mode='REQUIRED', description='Body location that was analyzed'),
     bigquery.SchemaField('Subjects', 'INTEGER', mode='REQUIRED', description='Number of subjects whose data was analyzed'),
     bigquery.SchemaField('Collections', 'STRING', mode='REQUIRED', description='collection_names of original data collections analyzed'),
-    bigquery.SchemaField('AnalysisArtifacts', 'STRING', mode='REQUIRED', description='Types of analysis artifacts produced'),
+    bigquery.SchemaField('Modalities', 'STRING', mode='REQUIRED', description='Modalities of this analysis result'),
     bigquery.SchemaField('Updated', 'DATE', mode='REQUIRED', description='Most recent update reported by TCIA'),
     bigquery.SchemaField('license_url', 'STRING', mode='REQUIRED', description='URL of license of this analysis result'),
     bigquery.SchemaField('license_long_name', 'STRING', mode='REQUIRED', description='Long name of license of this analysis result'),
@@ -64,7 +64,6 @@ def get_descriptions(client,args):
 
 def get_idc_sourced_analysis_metadata(client):
     query = f"""
---     SELECT DISTINCT ID, Title, Access, DOI as source_doi, CancerType as CancerTypes, Location as CancerLocations, AnalysisArtifacts, Updated 
     SELECT DISTINCT ID, Title, Access, source_doi, Updated
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_metadata_idc_source`
     """
@@ -100,7 +99,7 @@ Rao, A. U. K., Lazar, A. J., Sharma, A., Thorsson, V., Shankar, A., Chen, C., Cl
     return citation
 
 
-# Get collection-level metadata: CancerTypes, TumorLocations, AnalYsisArtifacts, Subjects, CollectionsAnalysed, for
+# Get collection-level metadata: CancerTypes, TumorLocations, modalities, Subjects, CollectionsAnalysed, for
 # each analysis result
 # analysis_metadata includes all TCIA analysis results, not just those that are in IDC. We need to deal with that.
 # 1. Load analysis_metadata, loaded from spreadsheet, into a temp BQ table
@@ -154,7 +153,7 @@ SELECT DISTINCT ID, Title, s1.Access Access, s1.source_doi source_doi, CONCAT("h
     STRING_AGG(DISTINCT TRIM(TLocations, ' '), ", " ORDER BY TRIM(TLocations, ' ')) TumorLocations,
     COUNT(DISTINCT da.PatientID) Subjects,
     STRING_AGG( DISTINCT TRIM(s1.collection_id, ' '), ", " ORDER BY TRIM(s1.collection_id, ' ')) Collections,
-    STRING_AGG( DISTINCT TRIM(Modality, ' '), ", " ORDER BY TRIM(Modality, ' ')) AnalysisArtifacts,
+    STRING_AGG( DISTINCT TRIM(Modality, ' '), ", " ORDER BY TRIM(Modality, ' ')) Modalities,
     Updated,
     license_url, license_long_name, license_short_name
     FROM s1
