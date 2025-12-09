@@ -43,40 +43,52 @@ def get_aspera_package_urls():
 
 
 def get_aspera_package_files(files, directory, url):
+
     MAX_TRIES = 10
     tries = 0
 
+    progresslogger.info(f'Directory {directory}')
     while True:
+        # Escapes some characters that might be in the directory
+        escaped_directory = directory.replace(' ', '\ ').replace('&', '\&')
         cmmd = 'ascli --format=json faspex5 packages browse ' + \
-               f' --url={url} {directory}'
+               f' --url={url} {escaped_directory}'
         result = run(cmmd, capture_output=True, shell=True)
-        if not result.stderr.startswith(b'ERROR'):
+        # if not result.stderr.startswith(b'ERROR'):
+        if not result.stderr:
             some_files = json.load(StringIO(result.stdout.decode()))
             if len(some_files) > 0:
                 for file in some_files:
                     if file['type'] == 'directory':
-                        files = get_aspera_package_files(files, f"{directory}/{file['basename']}", url)
-                    elif not file["basename"].endswith("sums"):
-                        files.append(file)
+                        try:
+                            files = get_aspera_package_files(files, f"{directory}/{file['basename']}", url)
+                        except Exception as exc:
+                            errlogger.error(exc)
+                    # elif not file["basename"].endswith("sums"):
+                    else:
+                        try:
+                            files.append(file)
+                        except Exception as exc:
+                            errlogger.error(exc)
             break
         else:
-            errlogger.error(f'Failed to get new file list')
+            errlogger.error(f'Failed to get new file list, {result.stderr}')
             tries += 1
             if tries == MAX_TRIES:
-                errlogger.info(f"Failed to download aspera package, attempt {tries}")
+                errlogger.info(f"Failed to download aspera package, attempt {tries}, {result.stderr}")
                 break
 
     return files
 
 
-def get_blob_metadata(args, package, conversion_sources, ingested_conversion_results):
+def get_blob_metadata(args, package, ingested_conversion_results):
     client = storage.Client(project='idc-dev-etl')
     # Get list of (svs) aspera_files in package
     TCIA_collection_id = package['TCIA_collection_id']
     TCIA_collection_version = package['TCIA_collection_version']
     IDC_collection_name = package['IDC_collection_name']
     IDC_collection_last_update = package['IDC_collection_last_update']
-    aspera_url = package['Aspera_URL']
+    aspera_url = package['Aspera_URL'] if not '&' in package['Aspera_URL'] else package['Aspera_URL'].split('&')[0]
     aspera_files = get_aspera_package_files([], "", aspera_url)
 
     slug = package['Download_slug']
@@ -87,8 +99,8 @@ def get_blob_metadata(args, package, conversion_sources, ingested_conversion_res
     logger_string = f"TCIA {TCIA_collection_id}:TCIA v{TCIA_collection_version}/{slug}-->{len(aspera_file_names_slashed)} Aspera package urls; IDC {IDC_collection_name}:v{IDC_collection_last_update}-->{len(ingested_urls)} ingested urls"
 
     blob_metadata = dict(
-        conversion_source_names=set(conversion_sources['name']),
-        ingested_urls = ingested_urls,
+        # conversion_source_names=set(conversion_sources['name']),
+        # ingested_urls = ingested_urls,
         aspera_files = aspera_files,
         logger_string = logger_string
     )
@@ -114,12 +126,10 @@ def get_ingested_idc_converted_data_files(args, collection_id, version=None):
     return sources
 
 
-def get_collection(args, package, conversion_sources = None, version = None):
+def get_blob_metadata_from_package(args, package, version = None):
     idc_collection_id = package['IDC_collection_id']
-    if conversion_sources is None:
-        conversion_sources = tcia_sourced_pathology_files()
     ingested_conversion_results = get_ingested_idc_converted_data_files(args, idc_collection_id, version)
-    blob_metadata = get_blob_metadata(args, package, conversion_sources, ingested_conversion_results)
+    blob_metadata = get_blob_metadata(args, package, ingested_conversion_results)
     return blob_metadata
 
 
@@ -135,35 +145,6 @@ def bucket_collection_id(collection_id):
     except KeyError:
         return collection_id
 
-
-# def main(args, download_slugs=[]):
-#     breakpoint() # Seems obsolete
-#     client = storage.Client(project='idc-dev-etl')
-#     download = False
-#     idc_has = False
-#     gen_manifest = False
-#     if args.mode =='idc_has':
-#         idc_has = True
-#     elif args.mode == 'gen_manifest':
-#         gen_manifest = True
-#     elif args.mode == 'download':
-#         download = True
-#     else:
-#         errlogger.error(f'Invalid mode {args.mode}')
-#         exit(1)
-#     aspera_package_urls = get_aspera_package_urls()
-#     if download_slugs:
-#         for download_slug in download_slugs:
-#             for _, package in aspera_package_urls.iterrows():
-#                 if package['Download_slug'] == download_slug:
-#                     idc_collection_id = package['IDC_collection_id']
-#                     bucket_tag = bucket_collection_id(idc_collection_id)
-#                     get_collection(args, package, bucket_tag, download=download, idc_has=idc_has, gen_manifest=gen_manifest)
-#     else:
-#         for _, package in aspera_package_urls.iterrows():
-#             idc_collection_id = package['IDC_collection_id']
-#             bucket_tag = bucket_collection_id(idc_collection_id)
-#             get_collection(args, package, bucket_tag, download=download, idc_has=idc_has, gen_manifest=gen_manifest)
 
 
 

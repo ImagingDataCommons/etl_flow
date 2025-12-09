@@ -30,6 +30,17 @@ def get_files():
                      'idc-source-data-rms', 'nlm_visible_human', 'til-wsi-tcga', 'til-wsi-tcga-nature-new-results', \
                      'idc-source-data-mci', 'tcia-nondicom-parked', 'tcga_pathology_source_data']
 
+    included_buckets = [
+        'cptac_pathology_source_data',
+        'idc-source-data-cmb',
+        'idc-source-data-cmb-20240828',
+        'idc-source-icdc-glioma',
+        'nlst_pathology_source_data',
+        'tcga_pathology_source_data'
+
+
+    ]
+
     storage_client = storage.Client(project='idc-source-data')
     buckets = storage_client.list_buckets()
 

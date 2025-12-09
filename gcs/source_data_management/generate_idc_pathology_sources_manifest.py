@@ -21,7 +21,7 @@ import argparse
 import json
 from google.cloud  import storage
 import settings
-from get_tcia_pathology_metadata import bucket_collection_id, get_collection, get_aspera_package_urls
+from get_tcia_pathology_metadata import bucket_collection_id, get_blob_metadata, get_aspera_package_urls
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from tcia_sourced_pathology_files import tcia_sourced_pathology_files
 from pandas import read_csv
