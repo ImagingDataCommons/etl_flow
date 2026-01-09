@@ -36,6 +36,43 @@ Base = declarative_base()
 # These tables define the ETL database. There is a separate DB for each IDC version.
 # Note that earlier IDC versions used a one-to-many schema.
 
+
+# Flattened idc hierarchy (idc_collection, idc_patient,...). The underlying PSQL is a view.
+class IDC_All_Joined(Base):
+    __tablename__ = 'idc_all_joined'
+    collection_id = Column(String, nullable=False, comment='TCIA/NBIA collection ID')
+    c_hash = Column(String, comment='Collection hash')
+
+    submitter_case_id = Column(String, nullable=False, unique=True, primary_key=True, comment="Submitter's patient ID")
+    p_hash = Column(String, comment='Patient hash')
+
+    study_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
+    st_hash = Column(String, comment='Study hash')
+
+    series_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
+    se_hash = Column(String, comment='Series hash')
+    se_excluded = Column(Boolean, default=False, comment='True if this series should be excluded from ingestion')
+    source_doi = Column(String, comment='Source DOI of this series\' wiki')
+    source_url = Column(String, comment='Source URL of this series\' wiki')
+    versioned_source_doi = Column(String, comment='If present, a DOI to the wiki page of this version of this series')
+    third_party = Column(Boolean, comment='True if this series is from an analysis result, else False')
+    license_long_name = Column(String, comment='Long name of license')
+    license_short_name = Column(String, comment='short name of license')
+    license_url = Column(String, comment='URL of license description')
+    # redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+    # ingestion_script = Column(String, comment='Script which added this instance')
+
+    sop_instance_uid = Column(String, primary_key=True, nullable=False)
+    i_hash = Column(String, comment='Instance hash')
+    gcs_url = Column(String, comment='GCS URL of instance source')
+    size = Column(BigInteger, comment='Instance size in bytes')
+    i_excluded = Column(Boolean, default=False, comment='True if this instance should be excluded from ingestion')
+    idc_version = Column(Integer, comment='IDC version when this instance was added/revised')
+    # redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+    # mitigation = Column(String, default="", comment="ID of the mitigation which redacted this instance")
+    # source_file_hash = Column(String, default="", comment="md5 hash of the source file from which this instance was derived")
+
+
 # Flattened hierarchy. The underlying PSQL is a view.
 class All_Joined(Base):
     __tablename__ = 'all_joined'
@@ -92,6 +129,8 @@ class All_Joined(Base):
     c_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     c_rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     c_final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
+    # c_redacted = Column(Boolean, default=False, comment="True if collection has been redacted")
+    # c_mitigation = Column(String, default="", comment="ID of the mitigation which redacted this collection")
 
     submitter_case_id = Column(String, nullable=False, comment="Submitter's patient ID")
     idc_case_id = Column(String, nullable=False, comment="IDC assigned patient ID")
@@ -121,6 +160,8 @@ class All_Joined(Base):
     p_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     p_rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     p_final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
+    # p_redacted = Column(Boolean, default=False, comment="True if instance has been patient")
+    # p_mitigation = Column(String, default="", comment="ID of the mitigation which redacted this patient")
 
     study_instance_uid = Column(String, nullable=False, comment="DICOM StudyInstanceUID")
     st_uuid = Column(String, nullable=False, comment="IDC assigned UUID of a version of this object")
@@ -150,6 +191,8 @@ class All_Joined(Base):
     st_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     st_rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     st_final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
+    # st_redacted = Column(Boolean, default=False, comment="True if study has been redacted")
+    # st_mitigation = Column(String, default="", comment="ID of the mitigation which redacted this study")
 
     series_instance_uid = Column(String, nullable=False, comment="DICOM SeriesInstanceUID")
     se_uuid = Column(String, nullable=False, comment="IDC assigned UUID of a version of this object")
@@ -181,6 +224,8 @@ class All_Joined(Base):
     se_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     se_rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     se_final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
+    # se_redacted = Column(Boolean, default=False, comment="True if series has been redacted")
+    # se_mitigation = Column(String, default="", comment="ID of the mitigation which redacted this series")
 
     sop_instance_uid = Column(String, nullable=False, unique=False, comment='DICOM SOPInstanceUID')
     i_uuid = Column(String, primary_key=True, comment="IDC assigned UUID of a version of this object")
@@ -191,6 +236,11 @@ class All_Joined(Base):
     i_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     i_rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     i_final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
+    i_redacted = Column(Boolean, default=False, comment="True if instance has been redacted")
+    i_mitigation = Column(String, default="", comment="ID of the mitigation which redacted this instance")
+    ingestion_url = Column(String, default="", comment="GCS URL of the blob from which this instance was ingested. Does not apply if source='tcia'")
+    source_file_hash = Column(String, default="", comment="md5 hash of the source file from which this instance was derived")
+
 
 
 version_collection = Table('version_collection', Base.metadata,
@@ -549,6 +599,7 @@ class Instance(Base):
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
     mitigation = Column(String, default="", comment="ID of the mitigation which redacted this instance")
     ingestion_url = Column(String, default="", comment="GCS URL of the blob from which this instance was ingested. Does not apply if source='tcia'")
+    source_file_hash = Column(String, default="", comment="md5 hash of the source file from which this instance was derived")
 
     seriess = relationship('Series',
                           secondary=series_instance,
@@ -628,25 +679,43 @@ class IDC_Instance(Base):
     idc_version = Column(Integer, comment='IDC version when this instance was added/revised')
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
     mitigation = Column(String, default="", comment="ID of the mitigation which redacted this instance")
+    source_file_hash = Column(String, default="", comment="md5 hash of the source file from which this instance was derived")
 
     seriess = relationship("IDC_Series", back_populates="instances")
+
+
+# # The table that is the union of the previous five tables
+# class All_Collections(Base):
+#     __tablename__ = 'all_collections'
+#     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
+#     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
+#     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
+#     dev_idc_url = Column(String, comment="Dev idc bucket name")
+#     pub_gcs_tcia_url = Column(String, comment="Public gcs tcia bucket name")
+#     pub_gcs_idc_url = Column(String, comment="Public gcs idc bucket name")
+#     pub_aws_tcia_url = Column(String, comment="Public aws tcia bucket name")
+#     pub_aws_idc_url = Column(String, comment="Public aws idc bucket name")
+#     tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+#     idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
+#     tcia_metadata_sunset = Column(String, comment="Last version that metadata is published. 0==still visible'")
+#     idc_metadata_sunset = Column(String, comment="Last version that metadata is published. 0==still visible'")
 
 
 # The table that is the union of the previous five tables
 class All_Collections(Base):
     __tablename__ = 'all_collections'
-    tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-    idc_collection_id = Column(String, comment="idc_collection_id of this collection")
-    dev_tcia_url = Column(String, comment="Dev tcia bucket name")
-    dev_idc_url = Column(String, comment="Dev idc bucket name")
-    pub_gcs_tcia_url = Column(String, comment="Public gcs tcia bucket name")
-    pub_gcs_idc_url = Column(String, comment="Public gcs idc bucket name")
-    pub_aws_tcia_url = Column(String, comment="Public aws tcia bucket name")
-    pub_aws_idc_url = Column(String, comment="Public aws idc bucket name")
-    tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-    idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-    tcia_metadata_sunset = Column(String, comment="Last version that metadata is published. 0==still visible'")
-    idc_metadata_sunset = Column(String, comment="Last version that metadata is published. 0==still visible'")
+    collection_name = Column(String, primary_key=True, comment='Collection name')
+    collection_id = Column(String, comment='Collection id')
+    source_doi = Column(String)
+    source_url = Column(String)
+    source = Column(String)
+    Type = Column(String)
+    Access = Column(String)
+    metadata_sunset = Column(Integer)
+    dev_bucket = Column(String)
+    pub_gcs_bucket = Column(String)
+    pub_aws_bucket = Column(String)
+
 
 
 # collection_id_map maps an idc_collection_id to one or more tcia_api_collection_ids.
