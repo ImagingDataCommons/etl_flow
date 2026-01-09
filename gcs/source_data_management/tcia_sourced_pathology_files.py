@@ -81,4 +81,4 @@ def tcia_sourced_pathology_files():
         with open(f"{settings.LOG_DIR}/../conversion_source_names_endswith.csv", 'w') as f:
             json.dump(conversion_source_names_endswith,f)
 
-    return conversion_sources
+        return conversion_sources
