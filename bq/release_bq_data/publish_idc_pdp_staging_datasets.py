@@ -29,8 +29,8 @@ if __name__ == '__main__':
     parser.add_argument('--src_project', default="idc-pdp-staging", help='Project from which tables are copied')
     parser.add_argument('--trg_project', default="nci-idc-bigquery-data", help='Project to which tables are copied')
     parser.add_argument('--pub_project', default="nci-idc-bigquery-data", help='Project where public datasets live')
-    parser.add_argument('--table_ids', default={}, help="Copy all tables/views unless this is non-empty.")
-    parser.add_argument('--clinical_table_ids', default={}, help="Copy all tables/views unless this is non-empty")
+    parser.add_argument('--table_ids', default={}, help="Copy all tables/views unless this is non-empty. Entries should be like table_name: 'TABLE' or view_name: 'VIEW'")
+    parser.add_argument('--clinical_table_ids', default={}, help="Copy all tables/views unless this is non-empty. Entries should be like table_name: 'TABLE' or view_name: 'VIEW'")
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
