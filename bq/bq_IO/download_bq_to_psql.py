@@ -15,6 +15,7 @@
 #
 
 # Code from Gemini
+# Export a specified BQ table to Cloud SQL
 import settings
 
 # Copying a BigQuery table to Cloud SQL using Python, including schema extraction and destination table creation,
@@ -92,15 +93,15 @@ if __name__ == "__main__":
 
     # BigQuery details
     bq_project_id = "idc-dev-etl"
-    bq_dataset_id = "idc_v23_dev"
-    bq_table_id = "all_collections"
+    bq_dataset_id = "idc_v24_dev"
+    bq_table_id = "temp_source_file_hashes"
 
     # Cloud SQL PostgreSQL details
     pg_host = settings.CLOUD_HOST
     pg_database = "idc_v24"
     pg_user = settings.CLOUD_USERNAME
     pg_password = settings.CLOUD_PASSWORD
-    pg_table_name = "all_collections"
+    pg_table_name = "temp_source_file_hashes"
 
     # 1. Get BigQuery schema and data
     bq_schema, bq_data = get_bigquery_schema_and_data(bq_project_id, bq_dataset_id, bq_table_id)
