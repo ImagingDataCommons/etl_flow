@@ -40,66 +40,7 @@ def get_aspera_package_urls():
     aspera_packages.sort_values("IDC_collection_id", inplace=True)
     return aspera_packages
 
-# # Download a single file from an Aspera package
-# def download_a_file_from_aspera(args, aspera_url, file, slug, TCIA_collection_version="", tag=""):
-#     # Download the file to disk
-#     args_id = args.id if 'id' in args else 0
-#     progresslogger.info(f'p{args_id}: Starting aspera download of {file["path"]}')
-#
-#     try:
-#         MAX_TRIES = 6
-#         tries = MAX_TRIES
-#         aspera_start = time.time()
-#         while True:
-#             escaped_file_path = file["path"].replace(" ", "\ " ).replace("&", "\&").rsplit("/", 1)[0]
-#             cmmd = ' '.join(["ascli", "--progress-bar=no", "--format=json", f'--to-folder={ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{escaped_file_path}', "faspex5",
-#                  "packages", "receive", f"--url={aspera_url}", file["path"].replace(' ', '\ ').replace('&', '\&')])
-#             res = run(cmmd, capture_output=True, shell=True)
-#
-#             # res = run(
-#             #     ["ascli", "--progress-bar=no", "--format=json",
-#             #      f'--to-folder={ASPERA_DOWNLOAD_FOLDER}/{slug}{file["path"].rsplit("/", 1)[0]}', "faspex5",
-#             #      "packages", "receive", f"--url={aspera_url}", file["path"].replace(' ', '\ ').replace('&', '\&')]
-#             # )
-#
-#
-#
-#             aspera_delta = time.time() - aspera_start
-#             if res.stderr:
-#                 if tries:
-#                     tries -= 1
-#                     progresslogger.info(
-#                             f'p{args.id}: Aspera download failure {MAX_TRIES-tries}: {tag}/v{TCIA_collection_version}/{file["path"]}, stderr: {res.stderr}')
-#                     time.sleep(pow(2, MAX_TRIES - tries))
-#                     continue
-#                 else:
-#                     errlogger.error(
-#                             f'p{args.id}: Aspera download failed: {tag}/v{TCIA_collection_version}/{file["path"]}, stderr: {res.stderr}')
-#                     return 0
-#
-#                 return 0
-#             else:
-#                 if not os.path.exists(f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"]}'):
-#                     if tries:
-#                         tries -= 1
-#                         progresslogger.info(
-#                             f'p{args.id}: Aspera download failure {MAX_TRIES-tries}: {tag}/v{TCIA_collection_version}/{file["path"]}; file doesn\'t exist. Retrying')
-#                         time.sleep(pow(2,MAX_TRIES-tries))
-#                         continue
-#                     else:
-#                         errlogger.error(
-#                             f'p{args.id}: Aspera download failed: {tag}/v{TCIA_collection_version}/{file["path"]}; file doesn\'t exist. Aborting.')
-#                         return 0
-#
-#                 progresslogger.info(f'p{args_id}: Completed aspera download of {file["path"]}')
-#                 return aspera_delta
-#
-#     except Exception as exc:
-#         errlogger.error(
-#             f'p{args_id}: Aspera download failed: {tag}/v{TCIA_collection_version}/{file["path"]}, {exc}')
-#         return 0
 
-# Download one or more files from an Aspera package
 def download_aspera_package(args, aspera_url, slug, TCIA_collection_version="", tag="", \
                                json_params=""):
     # Download the file to disk
@@ -139,23 +80,6 @@ def download_aspera_package(args, aspera_url, slug, TCIA_collection_version="", 
 
                 return 0
             else:
-                continue_retries = False
-                # for file in files:
-                #     if not os.path.exists(f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"]}'):
-                #         if tries:
-                #             tries -= 1
-                #             progresslogger.info(
-                #                 f'p{args.id}: Aspera download failure {MAX_TRIES-tries}: {tag}/v{TCIA_collection_version}/{file["path"]}; file doesn\'t exist. Retrying')
-                #             time.sleep(pow(2,MAX_TRIES-tries))
-                #             continue_retries = True
-                #             break
-                #         else:
-                #             errlogger.error(
-                #                 f'p{args.id}: Aspera download failed: {tag}/v{TCIA_collection_version}/{file["path"]}; file doesn\'t exist. Aborting.')
-                #             errlogger.error(f'p{args.id}: cmmd: {cmmd}')
-                #             return 0
-                # if continue_retries:
-                #     continue
                 progresslogger.info(f'p{args_id}: Completed aspera download')
                 return aspera_delta
 
@@ -234,23 +158,6 @@ def download_files_from_aspera(args, aspera_url, files, slug, TCIA_collection_ve
         return 0
 
 
-# def file_ids_in_sums_file(args, aspera_url, file):
-#     delta_time = download_a_file_from_aspera(args, aspera_url, file, 'sums_file')
-#     escaped_file_path = file["path"].replace(" ", "\ " ).replace("&", "\&")
-#     with open(f'{ASPERA_DOWNLOAD_FOLDER}/sums_file/p{args.id}{escaped_file_path}') as f:
-#         files_zips = f.read().splitlines()
-#     files = [{
-#         "path": f'/{file.split(" ", 1)[1]}',
-#         "basename": f'{file.split(" ", 1)[1].split("/")[-1]}'
-#         }
-#         for file in files_zips if file.split(" ")[1].split("/")[-1] != "filelist"]
-#     return files
-
-
-# Generate a list of the files in an Aspera package.
-# At any level in the directory hierarchy, if there is a sums file, add the
-# file names in the sums file to the files list; do not further traverse that subdirectory.
-# Otherwise, traverse each subdirectory.
 def get_aspera_package_files(args, files, directory, url, indent=""):
 
     MAX_TRIES = 6
@@ -264,15 +171,8 @@ def get_aspera_package_files(args, files, directory, url, indent=""):
                 "--query=@json:'{\"per_page\": 10}'" + \
                 f' --url={url} {directory}')
         result = run(cmmd, capture_output=True, shell=True)
-        # if not result.stderr.startswith(b'ERROR'):
         if not result.stderr:
             some_files = json.load(StringIO(result.stdout.decode()))
-        # try:
-        #     sums_file = next(file for file in some_files if file['basename'].endswith('.sums'))
-        #     files.append(sums_file)
-        #     files.extend(file_ids_in_sums_file(args, url, sums_file))
-        #     break
-        # except StopIteration:
             # No sums file in this directory. Proceed to walk the rest of the subdirectories and files
             progresslogger.info(f'{indent}{directory}: {len(some_files)} files')
             if len(some_files) > 0:
@@ -371,7 +271,6 @@ def get_collection(args, package, conversion_sources = None, version = None):
     if conversion_sources is None:
         conversion_sources = tcia_sourced_pathology_files()
     ingested_conversion_results = get_ingested_idc_converted_data_files(args, idc_collection_id, version)
-    # blob_metadata = get_blob_metadata(args, package, conversion_sources, ingested_conversion_results)
     blob_metadata = get_blob_metadata(args, package, ingested_conversion_results)
     return blob_metadata
 

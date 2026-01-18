@@ -21,12 +21,9 @@ import argparse
 import json
 from google.cloud  import storage
 import settings
-from get_tcia_pathology_metadata import bucket_collection_id, get_blob_metadata_from_package, get_aspera_package_urls, \
-    download_aspera_package
+from get_tcia_pathology_metadata import bucket_collection_id, get_blob_metadata_from_package, get_aspera_package_urls
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from time import strftime, gmtime
-from pathlib import Path
-import shutil
 from base64 import b64decode
 import logging
 import contextlib

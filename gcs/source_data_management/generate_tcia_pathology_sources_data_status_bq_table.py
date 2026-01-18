@@ -14,19 +14,12 @@
 # limitations under the License.
 #
 import pandas as pd
-import numpy as np
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
 import os
 import argparse
 import json
 from google.cloud  import bigquery, storage
 import settings
-from get_tcia_pathology_metadata import bucket_collection_id, get_aspera_package_urls, get_collection
-from utilities.logging_config import successlogger, progresslogger
-from tcia_sourced_pathology_files import tcia_sourced_pathology_files
-from pandas import read_csv
+from get_tcia_pathology_metadata import bucket_collection_id, get_aspera_package_urls
 from utilities.logging_config import successlogger, progresslogger, errlogger
 
 from time import strftime, gmtime
@@ -123,75 +116,7 @@ def gen_manifest_of_idc_missing_pathology_source(slug, aspera_file_names_slashed
     for file in in_idc_source_data_not_ingested_urls:
         successlogger.info(file)
 
-    # in_ingested_urls_not_idc_source_data = []
-    # if slug not in ['cptac-ccrcc-da-path-nonccrcc', 'nlst-da-path-1', 'nlst-da-path-2']:
-    #     for file in ingested_urls:
-    #         if not next((name for name in ingested_urls if
-    #                      name.replace('/', '_').replace('-', '_').find(file.replace('/', '_').replace('-', '_')) >= 0),
-    #                     False):
-    #             in_ingested_urls_not_idc_source_data.append(file)
-    #     successlogger.info(
-    #         f"**** {len(in_ingested_urls_not_idc_source_data)} files in ingestion urls but not in idc-source-data ****")
-    #     for file in in_ingested_urls_not_idc_source_data:
-    #         successlogger.info(file)
-    # else:
-    #     successlogger.info(
-    #         f"**** 0 files in ingestion urls but not in idc-source-data ****")
     return
-
-
-# def create_google_drive_folder(parent_folder_id, folder_name, credentials_path):
-#     """Copies a file to a specified Google Drive folder.
-#     Args:
-#        file_path: Path to the file on your local system.
-#        drive_folder_id: The ID of the Google Drive folder to copy to.
-#        credentials_path: Path to your credentials.json file.
-#     """
-#     creds = service_account.Credentials.from_service_account_file(credentials_path)
-#     service = build('drive', 'v3', credentials=creds)
-#     # file_name = os.path.basename(file_path)
-#     # media = MediaFileUpload(file_path, mimetype='text/plain')
-#     file_metadata = {
-#         'name': folder_name,
-#         'mimeType': 'application/vnd.google-apps.folder',
-#         'parents': [parent_folder_id]
-#     }
-#
-#     try:
-#         # file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-#         # Create the folder
-#         file = service.files().create(body=file_metadata,
-#                                       fields='id, name').execute()
-#         print(f"Folder '{file.get('name')}' created with ID: {file.get('id')}")
-#         return file
-#     except Exception as e:
-#         print(f"An error occurred: {e}")
-
-
-
-# def copy_file_to_drive(args, file_path, drive_folder_id, credentials_path):
-#     """Copies a file to a specified Google Drive folder.
-#     Args:
-#        file_path: Path to the file on your local system.
-#        drive_folder_id: The ID of the Google Drive folder to copy to.
-#        credentials_path: Path to your credentials.json file.
-#     """
-#     creds = service_account.Credentials.from_service_account_file(credentials_path)
-#     service = build('drive', 'v3', credentials=creds)
-#     file_name = os.path.basename(file_path)
-#     media = MediaFileUpload(file_path, mimetype='text/plain')
-#     # media = MediaFileUpload(file_path, mimetype='*/*')
-#     file_metadata = {
-#         # 'name': file_name,
-#         'name': args.manifest_file_name,
-#         'parents': [drive_folder_id]
-#     }
-#
-#     try:
-#         file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-#         print(f"File '{file_name}' copied successfully. File ID: {file.get('id')}")
-#     except Exception as e:
-#         print(f"An error occurred: {e}")
 
 
 def get_idc_dicom_metadata():
@@ -269,8 +194,10 @@ def main(args, download_slugs=[]):
     source_file_hashes_df = pd.DataFrame(source_file_hashes)
     source_status = source_file_hashes_df.merge(all_idc_dicom_metadata, left_on='hash',\
                 right_on='source_file_hash', how='left')
+    source_status.rename(columns={'hash': 'md5_hash'}, inplace=True)
     source_status.drop('source_file_hash', axis='columns', inplace=True)
     source_status.fillna('', inplace=True)
+    source_status = source_status.reindex(columns=['collection_name', 'source_url', 'md5_hash', 'patientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID', 'ingestion_url'])
 
     job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")
     table_id = f'{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.tcia_pathology_source_data_status'
@@ -278,29 +205,6 @@ def main(args, download_slugs=[]):
     result = job.result()
 
     return
-
-
-            #     bucket_tag = bucket_collection_id(idc_collection_id)
-            #
-            #     manifest_params = get_collection(args, package, conversion_sources, args.version)
-            #     aspera_files = manifest_params["aspera_files"]
-            #     conversion_source_names = manifest_params["conversion_source_names"]
-            #     ingested_urls = manifest_params["ingested_urls"]
-            #
-            #     slug = package['Download_slug']
-            #     # aspera_file_names_slashed = set(['/'.join(file['path'].split('/')[2:]) for file in aspera_files])
-            #     aspera_file_names_slashed = set(file['path'].rsplit('/',1)[1] for file in aspera_files)
-            #     successlogger.info(manifest_params["logger_string"])
-            #     gen_manifest_of_idc_missing_pathology_source(
-            #         slug, aspera_file_names_slashed,
-            #         # conversion_source_names,
-            #         conversion_source_names_endswith,
-            #         ingested_urls, aspera_files
-            #     )
-            #     successlogger.info("")
-            # else:
-            #     successlogger.info(f'Skipping TCIA collection {package["TCIA_collection_id"]}\n')
-
 
 if __name__ == "__main__":
 
@@ -319,9 +223,6 @@ if __name__ == "__main__":
     parser.add_argument("--only_idc_collections", default=False, help="Only include a collection if IDC already has it")
     args = parser.parse_args()
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
-
-    # drive_folder_id = '1T8VA3RaO65rMAoWYKEIiBwTwbsQYW2jP'  # Replace with your Google Drive folder ID
-    # folder = create_google_drive_folder(drive_folder_id, args.manifest_folder_name, settings.CREDENTIALS_PATH)
 
     main(args)
 

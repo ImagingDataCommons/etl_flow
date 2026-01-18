@@ -19,12 +19,9 @@ import argparse
 import json
 from google.cloud  import storage
 import settings
-from get_tcia_pathology_metadata import bucket_collection_id, get_blob_metadata_from_package, get_aspera_package_urls, \
-    download_aspera_package
+from get_tcia_pathology_metadata import bucket_collection_id, get_blob_metadata_from_package, get_aspera_package_urls
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from time import strftime, gmtime
-from pathlib import Path
-import shutil
 from base64 import b64decode
 import logging
 import contextlib
@@ -35,9 +32,6 @@ ASPERA_DOWNLOAD_FOLDER = '/mnt/disks/idc-etl/aspera'
 
 @contextlib.contextmanager
 def temp_logger(Download_slug):
-
-    # successlogger = logging.getLogger('root.success')
-    # successlogger.setLevel(INFO)
     for hdlr in successlogger.handlers[:]:
         successlogger.removeHandler(hdlr)
     os.makedirs(f'{settings.LOG_DIR}/{Download_slug}', exist_ok=True)
@@ -47,8 +41,6 @@ def temp_logger(Download_slug):
     successformatter = logging.Formatter('%(message)s')
     success_fh.setFormatter(successformatter)
 
-    # progresslogger = logging.getLogger('root.progress')
-    # progresslogger.setLevel(INFO)
     for hdlr in progresslogger.handlers[:]:
         progresslogger.removeHandler(hdlr)
     progress_fh = logging.FileHandler(f'{settings.LOG_DIR}/{Download_slug}/progress.log')
