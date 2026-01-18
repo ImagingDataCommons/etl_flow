@@ -237,20 +237,6 @@ def get_original_collections_metadata_tcia_source(client, args, idc_collections)
     return metadata
 
 
-def merge_metadata(tcia_collection_metadata, idc_collection_metadata):
-    collection_metadata = {}
-    for collection_id, metadata in tcia_collection_metadata.items():
-        collection_metadata[collection_id] = metadata
-        # If IDC sources data from the same collection add its source data
-        if collection_id in idc_collection_metadata:
-            metadata['Sources'].extend(idc_collection_metadata[collection_id]['Sources'])
-    for collection_id, metadata in idc_collection_metadata.items():
-        if not collection_id in tcia_collection_metadata:
-            collection_metadata[collection_id] = metadata
-
-    return collection_metadata
-
-
 # Get basic metadata for both TCIA and IDC sourced collections
 def get_collection_metadata(client, args):
     # Get all the collections in this version. For each collection, get whether original collection data
