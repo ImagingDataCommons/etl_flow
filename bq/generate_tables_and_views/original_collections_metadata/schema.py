@@ -29,6 +29,8 @@ data_collections_metadata_schema = [
         "RECORD",
         mode="REPEATED",
         fields=[
+            bigquery.SchemaField('ID', 'STRING', mode='NULLABLE', description='Original collection or Analysis result ID'),
+            bigquery.SchemaField('Type', 'STRING', mode='NULLABLE', description='Original collection or Analysis result'),
             bigquery.SchemaField('Access', 'STRING', mode='NULLABLE', description='Limited or Public'),
             bigquery.SchemaField('source_doi', 'STRING', mode='NULLABLE',
                                  description='DOI that can be resolved at doi.org to a collection information page'),
