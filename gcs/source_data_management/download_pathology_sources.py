@@ -25,15 +25,8 @@ from time import strftime, gmtime
 from multiprocessing import Process, Queue
 import time
 from subprocess import run
-from tcia_sourced_pathology_files import tcia_sourced_pathology_files
-from io import StringIO
-from ingestion.utilities.utils import md5_hasher
-from base64 import b64decode
 import logging
-from logging import INFO, ERROR, WARNING
 import contextlib
-
-
 
 ASPERA_DOWNLOAD_FOLDER = '/mnt/disks/idc-etl/aspera'
 
@@ -42,6 +35,10 @@ def copy_files_to_gcs(args, files, dst_bucket, TCIA_collection_version, slug, ta
         gcs_start = time.time()
         file = files[0]
         progresslogger.info(f'p{args.id}: Starting GCS transfer of {file["path"]}, {len(files)} files')
+
+        breakpoint()  # Configure gsutil so that it will not do multipart uploads
+        res = run(['gsutil', 'setprop', 'storage/parallel_composite_upload_enabled', 'False'])
+
         if tag:
             if tag.startswith('CMB') or tag in ('AML', 'BRCA', 'CCRCC', 'CM', 'COAD', 'GBM', 'HNSCC', 'LSCC', 'LUAD', 'OV', 'PDA', 'SAR', 'UCEC'):
                 cmmd = ' '.join(['gsutil', '-m', '-q', 'cp', f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"].rsplit("/",1)[0]}/*',
@@ -53,7 +50,6 @@ def copy_files_to_gcs(args, files, dst_bucket, TCIA_collection_version, slug, ta
                        f'gs://{dst_bucket.name}/{tag}/v{TCIA_collection_version}/{slug}{file["path"].rsplit("/",1)[0]}/'])
                 res = run(['gsutil', '-m', '-q', 'cp', f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"].rsplit("/",1)[0]}/*',
                            f'gs://{dst_bucket.name}/{tag}/v{TCIA_collection_version}/{slug}{file["path"].rsplit("/",1)[0]}/'])
-
         else:
             cmmd = ' '.join(['gsutil', '-m', '-q', 'cp', f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"].rsplit("/",1)[0]}/*',
                        f'gs://{dst_bucket.name}/v{TCIA_collection_version}/{slug}{file["path"].rsplit("/",1)[0]}'])
