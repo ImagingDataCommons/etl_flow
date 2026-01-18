@@ -1,0 +1,248 @@
+[
+ {
+   "source_doi": "10.7937/31v8-4a40",
+   "type": "Cr",
+   "access": "Public",
+   "collection_id": "MIDRC-RICORD-1B"
+ },
+ {
+   "source_doi": "10.7937/91ah-v663",
+   "type": "Cr",
+   "access": "Public",
+   "collection_id": "MIDRC-RICORD-1C"
+ },
+ {
+   "source_doi": "10.7937/e4wt-cd02",
+   "type": "Cr",
+   "access": "Public",
+   "collection_id": "Breast-Cancer-Screening-DBT"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2015.l4fret6z",
+   "type": "Cr",
+   "access": "Public",
+   "collection_id": "NSCLC-Radiomics-Genomics"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2015.pf0m9rei",
+   "type": "Cr",
+   "access": "Public",
+   "collection_id": "NSCLC-Radiomics"
+ },
+ {
+   "source_doi": "10.7937/tcia.2019.cwvlpd26",
+   "type": "Cr",
+   "access": "Public",
+   "collection_id": "NSCLC-RADIOMICS-INTEROBSERVER1"
+ },
+ {
+   "source_doi": "10.7937/tcia.2019.cwvlpd26",
+   "type": "Cr",
+   "access": "Public",
+   "collection_id": "NSCLC-Radiomics-Interobserver1"
+ },
+ {
+   "source_doi": "10.7937/tcia.e3sv-re93",
+   "type": "Cr",
+   "access": "Public",
+   "collection_id": "Duke-Breast-Cancer-MRI"
+ },
+ {
+   "source_doi": "10.7937/vtw4-x588",
+   "type": "Cr",
+   "access": "Public",
+   "collection_id": "MIDRC-RICORD-1A"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2018.6emub5l2",
+   "type": "Defaced",
+   "access": "Public",
+   "collection_id": "CPTAC-LSCC"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2018.odu24gze",
+   "type": "Defaced",
+   "access": "Public",
+   "collection_id": "CPTAC-CM"
+ },
+ {
+   "source_doi": "10.7937/tcia.2019.30ilqfcl",
+   "type": "Defaced",
+   "access": "Public",
+   "collection_id": "ACRIN-NSCLC-FDG-PET"
+ },
+ {
+   "source_doi": "10.7937/tcia.2019.zjjwb9ip",
+   "type": "Defaced",
+   "access": "Public",
+   "collection_id": "Anti-PD-1_Lung"
+ },
+ {
+   "source_doi": "10.7937/9npb-2637",
+   "type": "Excluded",
+   "access": "Excluded",
+   "collection_id": "LDCT-and-Projection-data"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2015.588ozuzb",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "REMBRANDT"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2015.7akgjupz",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "Head-Neck Cetuximab"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2015.k0f5cgli",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "QIN-HEADNECK"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2015.vosn3hn1",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "RIDER NEURO MRI"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2016.5di84js8",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "QIN-BRAIN-DSC-MRI"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2016.jqejzzng",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "ACRIN-HNSCC-FDG-PET-CT"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2016.l4ltd3tk",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "TCGA-LGG"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2016.lxkq47ms",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "TCGA-HNSC"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2016.nqf4gpn2",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "QIN GBM Treatment Response"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2016.rnyfuye9",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "TCGA-GBM"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2016.xlwan6nl",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "IvyGAP"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2017.8oje5q00",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "Head-Neck-PET-CT"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2017.dwehtz9v",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "LGG-1p19qDeletion"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2018.13upr2xf",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "HNSCC-3DCT-RT"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2018.15quzvnb",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "Brain-Tumor-Progression"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2018.3f08iejt",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "MRI-DIR"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2018.3rje41q1",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "CPTAC-GBM"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2018.uw45nh81",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "CPTAC-HNSCC"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2018.vohlekok",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "ACRIN-FMISO-Brain"
+ },
+ {
+   "source_doi": "10.7937/k9/tcia.2020.a8sh-7363",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "HNSCC"
+ },
+ {
+   "source_doi": "10.7937/tcia.2018.ow6ce3ml",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "TCGA-LGG"
+ },
+ {
+   "source_doi": "10.7937/tcia.2018.ow6ce3ml",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "TCGA-GBM"
+ },
+ {
+   "source_doi": "10.7937/tcia.2019.1ae0qtcu",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "Anti-PD-1_MELANOMA"
+ },
+ {
+   "source_doi": "10.7937/tcia.2019.8dho2gls",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "OPC-Radiomics"
+ },
+ {
+   "source_doi": "10.7937/tcia.2019.8kap372n",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "HEAD-NECK-RADIOMICS-HN1"
+ },
+ {
+   "source_doi": "10.7937/tcia.2019.bcfjqfqb",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "AAPM-RT-MAC"
+ },
+ {
+   "source_doi": "10.7937/tcia.2019.zr1pjf4i",
+   "type": "Redacted",
+   "access": "Limited",
+   "collection_id": "ACRIN-DSC-MR-Brain"
+ }
+]
