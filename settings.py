@@ -68,7 +68,6 @@ STAGING_MITIGATION_PROJECT=os.environ.get('STAGING_MITIGATION_PROJECT', '')
 
 SUBMISSION_PROJECT=os.environ.get('SUBMISSION_PROJECT', '')
 
-
 # GCH DICOM stores are now only created in the PUB_PROJECT
 GCH_PROJECT=os.environ.get('GCH_PROJECT', '')
 GCH_REGION=os.environ.get('GCH_REGION', '')
