@@ -186,7 +186,8 @@ def worker(input, args, dst_bucket_name):
         if content:
             # gdc_versions = get_gdc_version_of_file(file)
             # gdc_version = gdc_versions[-1]['data_release']
-            gdc_version = file['gdc_version']
+            history = file['history']
+            gdc_version = max(history, key=lambda version: version['data_release'])['data_release']
             copy_file_to_gcs(client, file, content, dst_bucket, gdc_version)
 
 
@@ -223,7 +224,7 @@ def get_new_files(client, new_files, dst_bucket):
 
 def download_files_to_dst_bucket(client, project_id, files, dst_bucket):
     existing_blobs = {blob.name.rsplit('/',1)[-1]: blob  for blob in dst_bucket.list_blobs()}
-    new_files = []
+    files_needing_to_be_downloaded = []
     for file in files:
         try:
             blob = existing_blobs[file["file_name"]]
@@ -236,10 +237,10 @@ def download_files_to_dst_bucket(client, project_id, files, dst_bucket):
                 pass
         except Exception as exc:
             progresslogger.info(f'\t\tNew file: {file["file_name"]}')
-        new_files.append(file)
+        files_needing_to_be_downloaded.append(file)
 
-    if new_files:
-        get_new_files(client, new_files, dst_bucket)
+    if files_needing_to_be_downloaded:
+        get_new_files(client, files_needing_to_be_downloaded, dst_bucket)
 
     return
 
@@ -256,8 +257,8 @@ def get_gdc_version_of_file(file):
     while _try <= MAXTRIES:
         try:
             response = requests.get(url, params=params)
-            versions = response.json()
-            return versions
+            history = response.json()
+            return history
         except Exception as exc:
             progresslogger.info(f'p{args.id}  Failure to get gdc version  {_try}: {file["file_id"]}')
             _try += 1
@@ -270,27 +271,19 @@ def download_files(project_id, files):
     bucket_name = f'{project_id.lower().replace("-", "_")}_pathology_data'
     dst_bucket = client.bucket(bucket_name)
     new_files = []
-    manifest = []
     max_version = "1.0"
     # Accept any files whose GDC version is later than some threshold version
     for file in files:
-        gdc_versions = get_gdc_version_of_file(file)
-        gdc_version = gdc_versions[-1]['data_release']
+        history = get_gdc_version_of_file(file)
+        gdc_version = max(history, key=lambda version: version['data_release'])['data_release']
+        file['history'] = history
         if gdc_version >= args.min_gdc_version or not args.min_gdc_version:
             if file['access'] == 'open':
-                file['gdc_version'] = gdc_version
                 new_files.append(file)
             else:
                 progresslogger.info(f'File {file["file_name"]} not accessible')
         else:
-            progresslogger.info(f'File {file["file_name"]} too old')
-        manifest_entry = {
-            'file_name': file['file_name'],
-            'md5sum': file['md5sum'],
-            'gdc_release': gdc_version,
-            'file_version': file['version']
-        }
-        manifest.append(manifest_entry)
+            progresslogger.info(f'File {file["file_name"]} most recent release prior to release threshold')
         max_version = max(max_version, gdc_version)
 
     if new_files:
@@ -310,7 +303,7 @@ def download_files(project_id, files):
     progresslogger.info(f'Latest release for {project_id}: {max_version}')
     if max_version >= args.min_gdc_version or not args.min_gdc_version:
         blob = dst_bucket.blob(f'{max_version}/manifest.json')
-        result = blob.upload_from_string(json.dumps(manifest))
+        result = blob.upload_from_string(json.dumps(files))
     return
 
 
@@ -337,7 +330,7 @@ if __name__ == "__main__":
         # if project_id in dones:
             progresslogger.info(f'Project {project_id} previously completed')
         else:
-            args.min_gdc_version = "37.0" if project_id.startswith('TCGA') else ""
+            args.min_gdc_version = "37.0" if project_id.startswith('TCGA') else "1.0"
             if not projects or project_id in projects:
                 progresslogger.info(f'Processing project {project_id}')
                 files = get_pathology_files(project_id)
