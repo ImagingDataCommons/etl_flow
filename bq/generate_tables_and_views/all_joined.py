@@ -78,7 +78,6 @@ def create_all_flattened(client):
     se.source_url,
     se.versioned_source_doi,
     CONCAT('https://doi.org/', se.versioned_source_doi) versioned_source_url,
-    se.analysis_result,
     se.hashes AS se_hashes,
     se.sources AS se_sources,
     se.init_idc_version AS se_init_idc_version,
