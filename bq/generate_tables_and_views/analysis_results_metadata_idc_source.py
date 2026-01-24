@@ -18,7 +18,7 @@
 # spreadsheet in Google Drive
 import settings
 import argparse
-from utils.google_sheet_to_bq_table import load_spreadsheet
+from utils.json_to_bq_table import json_to_bq
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -33,4 +33,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print('args: {}'.format(args))
 
-    load_spreadsheet(args)
+    with open('table_generation_jsons/idc_analysis_results_metadata.json') as f:
+        json_string = f.read()
+
+    json_to_bq(args, json_string)
