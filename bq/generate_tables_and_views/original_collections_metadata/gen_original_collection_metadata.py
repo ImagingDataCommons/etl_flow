@@ -38,8 +38,8 @@ def add_programs(client, args, collection_metadata):
     # programs = {collection: program for cur.fetchall()
 
 # Generate a dict of collections in the current version,
-# indexed by "idc_webapp_collection_ids" and mapping t
-# "tcia_api_collection_id". Includes sources of each collection.
+# indexed by "collection_name". Includes whether collection is sources from tcia,
+# or idc or both,
 def get_collections_in_version(client, args):
     # Return collections that have specified access
     query = f"""
@@ -54,6 +54,8 @@ def get_collections_in_version(client, args):
         if not row['collection_name'] in collections:
             collections[row['collection_name']] = dict(row)
         else:
+            # If we found a second entry for a collection, it must be because the collection
+            # has data from both tcia and idc
             collections[row['collection_name']]['tcia_source'] = True
             collections[row['collection_name']]['idc_source'] = True
     return collections
@@ -213,6 +215,8 @@ def get_original_collections_metadata_tcia_source(client, args, idc_collections)
                     if isinstance(collection_metadata['species'], list) else '',
                 Sources = [
                     dict(
+                    ID = "",
+                    Type = "",
                     Access="Public",
                     source_doi=collection_metadata['collection_doi'].lower(),
                     source_url=f"https://doi.org/{collection_metadata['collection_doi'].lower()}",
@@ -448,7 +452,6 @@ def gen_collections_table(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    breakpoint()
     parser.add_argument('--bqtable_name', default='original_collections_metadata_new', help='BQ table name')
     parser.add_argument('--access', default='Public', help="Generate original_collections_metadata if True; (deprecated)generate a table of excluded collections if false (deprecated)")
     parser.add_argument('--use_cached_metadata', default=False)
