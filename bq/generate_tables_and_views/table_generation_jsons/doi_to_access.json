@@ -78,12 +78,6 @@
    "collection_id": "Anti-PD-1_Lung"
  },
  {
-   "source_doi": "10.7937/9npb-2637",
-   "type": "Excluded",
-   "access": "Excluded",
-   "collection_id": "LDCT-and-Projection-data"
- },
- {
    "source_doi": "10.7937/k9/tcia.2015.588ozuzb",
    "type": "Redacted",
    "access": "Limited",

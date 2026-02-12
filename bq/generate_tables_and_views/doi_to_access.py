@@ -18,14 +18,13 @@
 # spreadsheet in Google Drive
 import settings
 import argparse
-from utils.google_sheet_to_bq_table import load_spreadsheet
+from utils.json_to_bq_table import json_to_bq
 from utils.bq_table_to_cloudsql import export_table
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--spreadsheet_id', default = '1HqKVSjvfaX1IOrZYgkVtVmwuSj8iIjTt',
                         help='"id" portion of spreadsheet URL')
-    parser.add_argument('--sheet_name', default = f'idc_v{settings.CURRENT_VERSION}', help='Sheet within spreadsheet to load')
     parser.add_argument('--project', default='idc-dev-etl', help='BQ project')
     parser.add_argument('--bq_dataset_id', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ datasey')
     parser.add_argument('--table_id', default='doi_to_access', help='Table name to which to copy data')
@@ -34,5 +33,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print('args: {}'.format(args))
 
-    load_spreadsheet(args)
-    export_table(args)
+    with open('table_generation_jsons/doi_to_access.json') as f:
+        json_string = f.read()
+    json_to_bq(args, json_string)
