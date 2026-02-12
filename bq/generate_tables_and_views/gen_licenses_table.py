@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Generate a table of current licenses for all collections in the current verion, indexed by source_doi.
+# Generate a table of current licenses for all collections in the current version, indexed by source_doi.
 # Note that this includes the license of the collection itself
 # as well as the license(s) of any analysis results in the
 # collection
