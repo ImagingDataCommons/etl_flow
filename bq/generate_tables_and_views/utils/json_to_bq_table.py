@@ -14,22 +14,21 @@
 # limitations under the License.
 #
 
-# Create a BQ table from a JSON formatted string. The JSON string should be formatted as records...a list of
-# dicts.
+# Create a BQ table from a JSON formatted string in a specified file.
+# The JSON string should be formatted as records...a list of dicts.
 
 import pandas as pd
 from google.cloud import bigquery
+from bq.utilities import read_json_to_dataframe
+from datetime import datetime, timedelta
+import pytz
 
-def json_to_bq(args, json_string, schema=None):
-    # Load the Google Sheets data into a Pandas DataFrame
 
-    # url = f'https://docs.google.com/spreadsheets/d/{args.spreadsheet_id}/gviz/tq?tqx=out:csv&sheet={args.sheet_name}'
-    #
-    # df = pd.read_csv(url)
-    # df = df.map(str)
-    # df = df.replace({'nan': None})
-
-    df = pd.read_json(json_string)
+# Create and populate a BQ table from a JSON file
+# If lifetime is specified, configure the table to be deleted after lifetime minutes
+def json_file_to_bq(args, file_name, lifetime=None):
+    # Get the json from the specified file as a dataframe
+    df = read_json_to_dataframe(file_name)
 
     # Initialize the BigQuery client
     client = bigquery.Client()
@@ -39,15 +38,13 @@ def json_to_bq(args, json_string, schema=None):
             if not columnName in args.columns:
                 df = df.drop(columnName, axis=1)
 
-    if not schema:
-        # Create the BigQuery table schema based on the DataFrame columns
-        # We assume all columns are STRINGs
-        schema = []
-        for column in df.columns:
-            schema.append(bigquery.SchemaField(column, 'STRING'))
+    schema = []
+    for column in df.columns:
+        schema.append(bigquery.SchemaField(column, 'STRING'))
 
     # Define the BigQuery table reference
-    table_ref = client.dataset(args.bq_dataset_id, project=args.project).table(args.table_id)
+    # table_ref = client.dataset(args.bq_dataset_id, project=args.project).table(args.table_id)
+    table_ref = f'{args.bq_dataset_id}.{args.project}.{args.table_id}'
 
     # Create the BigQuery table if it doesn't exist
     try:
@@ -60,6 +57,11 @@ def json_to_bq(args, json_string, schema=None):
     job_config = bigquery.LoadJobConfig(schema=schema, write_disposition='WRITE_TRUNCATE')
     job = client.load_table_from_dataframe(df, table_ref, job_config=job_config)
     job.result()
+
+    # 3. Set the expiration time on the created table
+    table = client.get_table(table_ref)  # Get the table object
+    expiration_time = datetime.now(pytz.utc) + timedelta(minutes=lifetime)
+    table.expires = expiration_time
 
     print('Data imported successfully!')
 

@@ -100,7 +100,7 @@ def get_expected_blobs_in_bucket(args, premerge=False):
     query = f"""
       SELECT distinct concat(se_uuid,'/', i_uuid, '.dcm') as blob_name
       FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
-      JOIN `idc-dev-etl.idc_v{args.version}_dev.all_collections` aic
+      JOIN `idc-dev-etl.idc_v{args.version}_dev.all_sources` aic
       ON aj.idc_collection_id = aic.idc_collection_id
       WHERE ((i_source='tcia' and aic.{"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_tcia_url="{args.bucket}")
       OR (i_source='idc' and aic.{"dev" if args.dev_or_pub=="dev" else "pub_gcs"}_idc_url="{args.bucket}"))

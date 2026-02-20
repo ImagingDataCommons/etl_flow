@@ -22,17 +22,22 @@ import argparse
 import pandas as pd
 from google.cloud import bigquery
 import markdownify
+from bq.utilities import read_json_to_dataframe, dataframe_to_bq
+import re
 
 
 # Get the descriptions of collections that are only sourced from IDC
 def get_idc_descriptions(args, schema=None):
     # Load the Google Sheets data into a Pandas DataFrame
 
-    url = f'https://docs.google.com/spreadsheets/d/{args.spreadsheet_id}/gviz/tq?tqx=out:csv&sheet={args.sheet_name}'
+    file_path = f'{settings.BQ_JSON_PROJECT_PATH}/idc_original_collections_descriptions.json5'
+    df = read_json_to_dataframe(file_path)
 
-    df = pd.read_csv(url)
-    df = df.map(str)
-    df = df.replace({'nan': None})
+    # url = f'https://docs.google.com/spreadsheets/d/{args.spreadsheet_id}/gviz/tq?tqx=out:csv&sheet={args.sheet_name}'
+    #
+    # df = pd.read_csv(url)
+    # df = df.map(str)
+    # df = df.replace({'nan': None})
 
     return df
 
@@ -56,7 +61,7 @@ SELECT DISTINCT
         tcd.description
         ) description
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.tcia_collection_descriptions` tcd
-    RIGHT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac
+    RIGHT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_sources` ac
     ON tcd.collection_id = ac.collection_name
     LEFT JOIN path
     ON tcd.collection_id = path.collection_id
@@ -90,56 +95,68 @@ def convert_to_markdown(df):
 
     return df
 
-def output_to_bq(df):
 
-    client = bigquery.Client()
+def modify_full_hyperlinks(html_text):
+    # Pattern explanation:
+    # Group 1: Opening tag up to the href quote
+    # Group 2: The quote type (captured for backreference)
+    # Group 3: The URL itself
+    # Group 4: The rest of the opening tag
+    # Group 5: The inner link content (text/images)
+    # Group 6: The closing tag
+    pattern = r'(<a\s+[^>]*?href=([\'"]))(.*?)\2([^>]*?>)(.*?)(</a>)'
 
-    if args.columns:
-        for (columnName, columnData) in df.iteritems():
-            if not columnName in args.columns:
-                df = df.drop(columnName, axis=1)
+    def replacement_wrapper(match):
+        full_original = match.group(0)
+        tag_start = match.group(1)
+        quote_type = match.group(2)
+        url = match.group(3)
+        tag_end = match.group(4)
+        inner_content = match.group(5)
+        closing_tag = match.group(6)
 
-    # Create the BigQuery table schema based on the DataFrame columns
-    # We assume all columns are STRINGs
-    schema = []
-    for column in df.columns:
-        schema.append(bigquery.SchemaField(column, 'STRING'))
-    # Define the BigQuery table reference
-    table_ref = client.dataset(args.bq_dataset_id, project=args.project).table(args.table_id)
+        # --- Filter Logic ---
+        # If ".gov" is in the URL, return the match exactly as it was found
+        if ".gov" in url.lower():
+            return full_original
 
-    client.delete_table(table_ref, not_found_ok=True )
-    table = bigquery.Table(table_ref, schema=schema)
-    client.create_table(table)
+        # --- Modification Logic ---
+        # Let's say we want to add a CSS class and change the text
+        new_url = f"https://myproxy.io/view?url={url}"
+        modified_content = f"EXT: {inner_content}"
 
-    # Create the BigQuery table if it doesn't exist
-    # try:
-    #     client.get_table(table_ref)
-    # except:
-    #     table = bigquery.Table(table_ref, schema=schema)
-    #     client.create_table(table)
+        # return f"{tag_start}{new_url}{quote_type}{tag_end}{modified_content}{closing_tag}"
+        return f'<a  href="" url="{url}" data-toggle="modal" data-target="#external-web-warning" class="external-link">{inner_content}<i class="fa-solid fa-external-link external-link-icon" aria-hidden="true"></i></a>'
 
-    # Write the DataFrame data to BigQuery
-    job_config = bigquery.LoadJobConfig(schema=schema, write_disposition='WRITE_TRUNCATE')
-    job = client.load_table_from_dataframe(df, table_ref, job_config=job_config)
-    job.result()
+    # re.DOTALL allows (.*?) to match across newlines
+    # re.IGNORECASE handles <A HREF="..."> as well as <a>
+    modified_html = re.sub(pattern, replacement_wrapper, html_text, flags=re.IGNORECASE | re.DOTALL)
+    return modified_html
 
-    print('Data imported successfully!')
+
+def convert_hyperlinks(df):
+
+    for i, row in df.iterrows():
+        description = df.at[i, 'description']
+        revised_description = modify_full_hyperlinks(description)
+        df.at[i,'description'] = revised_description
+
+    return df
+
 
 def main(args):
     idc_descriptions = get_idc_descriptions(args)
     tcia_descriptions = get_tcia_descriptions(args)
     all_descriptions = pd.concat([idc_descriptions, tcia_descriptions], ignore_index=True)
-    markdown_descriptions = convert_to_markdown(all_descriptions)
-    output_to_bq(markdown_descriptions)
+    all_descriptions = convert_hyperlinks(all_descriptions)
+    # markdown_descriptions = convert_to_markdown(all_descriptions)
+    dataframe_to_bq(args, all_descriptions)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--spreadsheet_id', default = '1rto9Dh7GPrSv55lyo9n0lg9gIdszTnKbLl5k_yawV8E',
-                        help='"id" portion of spreadsheet URL')
-    parser.add_argument('--sheet_name', default = f'idc_v{settings.CURRENT_VERSION}', help='Sheet within spreadsheet to load')
     parser.add_argument('--project', default='idc-dev-etl', help='BQ project')
     parser.add_argument('--bq_dataset_id', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ datasey')
-    parser.add_argument('--table_id', default='original_collections_descriptions_end_user_new', help='Table name to which to copy data')
+    parser.add_argument('--table_id', default='original_collections_tooltip_descriptions', help='Table name to which to copy data')
     parser.add_argument('--columns', default=[], help='Columns in df to keep. Keep all if list is empty')
 
     args = parser.parse_args()

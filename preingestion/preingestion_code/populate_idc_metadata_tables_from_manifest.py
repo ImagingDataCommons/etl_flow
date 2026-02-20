@@ -123,10 +123,10 @@ def build_series(args, bucket, study, series_data, source_doi, versioned_source_
     except Exception as exc:
         raise
     # Always set/update the source_doi in case it has changed
-    series.license_url = args.license['license_url']
-    series.license_long_name = args.license['license_long_name']
-    series.license_short_name = args.license['license_short_name']
-    series.analysis_result = args.analysis_result
+    # series.license_url = args.license['license_url']
+    # series.license_long_name = args.license['license_long_name']
+    # series.license_short_name = args.license['license_short_name']
+    # series.analysis_result = args.analysis_result
     series.source_doi = source_doi.lower()
     series.source_url = f'https://doi.org/{source_doi.lower()}'
     series.versioned_source_doi = versioned_source_doi.lower()
@@ -219,7 +219,7 @@ def worker(input, output, args, collection_id, source_doi, versioned_source_doi)
                         build_patient(args, bucket, collection, patient_data, source_doi, versioned_source_doi)
                     except Exception as exc:
                         raise
-                    sess.commit()
+                    # sess.commit()
                     output.put(patient_data.iloc[0]["patientID"])
                     break
                 except Exception as exc:
@@ -268,7 +268,7 @@ def build_collections(args, sess, manifest_data, sep=','):
             collection.collection_id = collection_id
             collection.redacted = False
             sess.add(collection)
-            sess.commit()
+            # sess.commit()
             progresslogger.info(f'Collection {collection_id} added')
         else:
             progresslogger.info(f'Collection {collection_id} exists')
@@ -318,7 +318,7 @@ def build_collections(args, sess, manifest_data, sep=','):
             for process in processes:
                 process.join()
 
-            sess.commit()
+            # sess.commit()
 
         except Empty as e:
             errlogger.error("Timeout in build_collection %s", collection.collection_id)
@@ -347,27 +347,29 @@ def perform_partial_revision(sess, args, sep):
             errlogger.error(f'Failed to read manifest: {exc}')
             exit(-1)
     else:
+        suffix = '.csv' if sep == ',' else '.tsv'
         try:
             # If no manifest is provided, first see if we've already generated one
             if args.subdir:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_manifest.csv", sep=sep,
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/etl_generated_manifest{suffix}", sep=sep,
                                             header=0)
             else:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/generated_manifest.csv", sep=sep, header=0)
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/etl_generated_manifest{suffix}", sep=sep, header=0)
             manifest_data = build_manifest(args, manifest_data)
             # Save the manifest to the bucket in case manifest was extended
+
             if args.subdir:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_manifest.csv", sep=sep, index=False)
+                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/etl_generated_manifest{suffix}", sep=sep, index=False)
             else:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/generated_manifest.csv", sep=sep, index=False)
+                manifest_data.to_csv(f"gs://{args.src_bucket}/etl_generated_manifest{suffix}", sep=sep, index=False)
 
         except Exception as exc:
             manifest_data = build_manifest(args)
             # Save the manifest to the bucket in case we need to rerun
             if args.subdir:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_manifest.csv", sep=sep, index=False)
+                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/etl_generated_manifest{suffix}", sep=sep, index=False)
             else:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/generated_manifest.csv", sep=sep, index=False)
+                manifest_data.to_csv(f"gs://{args.src_bucket}/etl_generated_manifest{suffix}", sep=sep, index=False)
     all_collection_ids = build_collections(args, sess, manifest_data, sep)
 
     return all_collection_ids
@@ -376,7 +378,7 @@ def perform_partial_revision(sess, args, sep):
 def prebuild_from_manifests(args, sep=','):
     with sa_session(echo=False) as sess:
         all_collection_ids = perform_partial_revision(sess, args, sep)
-        sess.commit()
+        # sess.commit()
 
     if args.validate:
         if args.analysis_result:

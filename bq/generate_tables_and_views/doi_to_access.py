@@ -14,12 +14,11 @@
 # limitations under the License.
 #
 
-# Generate the analysis_results_descriptions table in BQ and PSQL from a
-# spreadsheet in Google Drive
+# Generate the doi_to_access BQ tables from a file
+#
 import settings
 import argparse
-from utils.json_to_bq_table import json_to_bq
-from utils.bq_table_to_cloudsql import export_table
+from bq.utilities import json_file_to_bq
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -28,11 +27,9 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='idc-dev-etl', help='BQ project')
     parser.add_argument('--bq_dataset_id', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ datasey')
     parser.add_argument('--table_id', default='doi_to_access', help='Table name to which to copy data')
-    parser.add_argument('--columns', default=[], help='Columns in df to keep. Keep all if list is empty')
 
     args = parser.parse_args()
     print('args: {}'.format(args))
 
-    with open('table_generation_jsons/doi_to_access.json') as f:
-        json_string = f.read()
-    json_to_bq(args, json_string)
+    json_file_path = f"{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/doi_to_access.json"
+    json_file_to_bq(args, json_file_path)

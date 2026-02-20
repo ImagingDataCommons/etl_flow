@@ -117,7 +117,7 @@ if __name__ == '__main__':
                 'MIDI-B-Curated-Test', 'MIDI-B-Curated-Validation', 'MIDI-B-Synthetic-Test', 'MIDI-B-Synthetic-Validation',
                 'A091105', 'ACNS0332', 'AHEP0731', 'AHOD0831', 'ARAR0331', 'AREN0532', 'AREN0533', 'AREN0534', 'CALGB50303',
                 'S0819',
-                'ACRIN-NSCLC-FDG-PET', 'Anti-PD-1_Lung',
+                # 'ACRIN-NSCLC-FDG-PET', 'Anti-PD-1_Lung',
                 'NLST',
                 'APOLLO-5-ESCA', 'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-PAAD', 'APOLLO-5-THYM', 'APOLLO-5-LUNG-MISC'],
             help='List of additional tcia collections to be skipped')

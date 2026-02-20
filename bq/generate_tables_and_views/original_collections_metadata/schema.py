@@ -20,6 +20,7 @@ from google.cloud import bigquery
 data_collections_metadata_schema = [
     bigquery.SchemaField('collection_name', 'STRING', mode='REQUIRED', description='Collection name as used externally by IDC webapp'),
     bigquery.SchemaField('collection_id', 'STRING', mode='REQUIRED', description='Collection ID as used internally by IDC webapp'),
+    bigquery.SchemaField('Title', 'STRING', mode='REQUIRED', description='Collection ID as used internally by IDC webapp'),
     bigquery.SchemaField('CancerTypes','STRING', mode='REQUIRED', description='Cancer type of this collection '),
     bigquery.SchemaField('TumorLocations','STRING', mode='REQUIRED', description='Body location that was studied'),
     bigquery.SchemaField('Subjects', 'INTEGER', mode='REQUIRED', description='Number of subjects in collection'),
@@ -33,11 +34,11 @@ data_collections_metadata_schema = [
             bigquery.SchemaField('Type', 'STRING', mode='NULLABLE', description='Original collection or Analysis result'),
             bigquery.SchemaField('Access', 'STRING', mode='NULLABLE', description='Limited or Public'),
             bigquery.SchemaField('source_doi', 'STRING', mode='NULLABLE',
-                                 description='DOI that can be resolved at doi.org to a collection information page'),
+                                 description='DOI that can be resolved at doi.org to a information page of this source'),
             bigquery.SchemaField('source_url', 'STRING', mode='REQUIRED',
-                                 description='URL of collection information page'),
+                                 description='URL of source information page'),
             bigquery.SchemaField('ImageTypes', 'STRING', mode='NULLABLE',
-                                 description='Enumeration of image type/modality'),
+                                 description='Enumeration of types/modalities of instances from this source'),
             bigquery.SchemaField(
                 "license",
                 "RECORD",
@@ -52,7 +53,8 @@ data_collections_metadata_schema = [
             ),
             bigquery.SchemaField('Citation', 'STRING', mode='NULLABLE',
                                  description='Citation to be used for this source'),
-        ]
+        ],
+        description='Array of metadata for each source of instance data in this collection'
     ),
     bigquery.SchemaField('SupportingData', 'STRING', mode='NULLABLE', description='Type(s) of addional available data'),
     bigquery.SchemaField('Program', 'STRING', mode='REQUIRED', description='Program to which this collection belongs'),

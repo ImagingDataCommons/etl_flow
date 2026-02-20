@@ -684,24 +684,6 @@ class IDC_Instance(Base):
     seriess = relationship("IDC_Series", back_populates="instances")
 
 
-# # The table that is the union of the previous five tables
-# class All_Collections(Base):
-#     __tablename__ = 'all_collections'
-#     tcia_api_collection_id = Column(String, primary_key=True, comment='Collection ID')
-#     idc_collection_id = Column(String, comment="idc_collection_id of this collection")
-#     dev_tcia_url = Column(String, comment="Dev tcia bucket name")
-#     dev_idc_url = Column(String, comment="Dev idc bucket name")
-#     pub_gcs_tcia_url = Column(String, comment="Public gcs tcia bucket name")
-#     pub_gcs_idc_url = Column(String, comment="Public gcs idc bucket name")
-#     pub_aws_tcia_url = Column(String, comment="Public aws tcia bucket name")
-#     pub_aws_idc_url = Column(String, comment="Public aws idc bucket name")
-#     tcia_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-#     idc_access = Column(String, comment="'Public', 'Limited', or 'Excluded'")
-#     tcia_metadata_sunset = Column(String, comment="Last version that metadata is published. 0==still visible'")
-#     idc_metadata_sunset = Column(String, comment="Last version that metadata is published. 0==still visible'")
-
-
-# The table that is the union of the previous five tables
 class All_Collections(Base):
     __tablename__ = 'all_collections'
     collection_name = Column(String, primary_key=True, comment='Collection name')
@@ -709,8 +691,8 @@ class All_Collections(Base):
     source_doi = Column(String)
     source_url = Column(String)
     source = Column(String)
-    Type = Column(String)
-    Access = Column(String)
+    type = Column(String)
+    access = Column(String)
     metadata_sunset = Column(Integer)
     dev_bucket = Column(String)
     pub_gcs_bucket = Column(String)
@@ -779,11 +761,11 @@ class Analysis_Results_Descriptions(Base):
     id = Column(String, primary_key=True, comment='Analysis result id')
     description = Column(String, comment='Analysis result description')
 
-# This table is populated with IDC assigned UUID of each analysis result.
-class Analysis_Id_Map(Base):
-    __tablename__ = 'analysis_id_map'
-    collection_id = Column(String, comment='Analysis result ID')
-    idc_id = Column(String, primary_key=True, comment='IDC assigned UUID')
+# # This table is populated with IDC assigned UUID of each analysis result.
+# class Analysis_Id_Map(Base):
+#     __tablename__ = 'analysis_id_map'
+#     collection_id = Column(String, comment='Analysis result ID')
+#     idc_id = Column(String, primary_key=True, comment='IDC assigned UUID')
 
 # This table gives the program to which collection, as identified by its
 # tcia_wiki_collection_id, belongs.

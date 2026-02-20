@@ -509,8 +509,10 @@ def xget_TCIA_instances_per_series_with_hashes_nlst(dicom, series_instance_uid, 
     # os.remove(f'{dirname}/md5hashes.csv')
 
     return hashes
-# if __name__ == "__main__":
-#
+if __name__ == "__main__":
+    c = get_all_tcia_metadata("programs", query_param='')
+    pass
+
 #     access_token = get_access_token(auth_server=NLST_AUTH_URL)[0]
 #     for patientID in ('126153', '215303'):
 #         print("Patient: ", patientID)

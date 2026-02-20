@@ -187,9 +187,9 @@ def upload_series(client, args, table, order_by):
       STRUCT(tcia_rev AS tcia,
         idc_rev AS idc) AS revised,
       excluded,
-      license_long_name,
-      license_url,
-      license_short_name,
+--       license_long_name,
+--       license_url,
+--       license_short_name,
       collection_type,
       redacted, 
       mitigation
@@ -202,8 +202,9 @@ def upload_series(client, args, table, order_by):
             (hashes).idc AS idc_hash, (hashes).all_sources AS all_hash, 
             (sources).tcia AS tcia_src, (sources).idc AS idc_src, 
             (revised).tcia AS tcia_rev, (revised).idc AS idc_rev,
-            source_url, excluded, license_long_name, license_url,
-            license_short_name, redacted, versioned_source_doi, mitigation,
+            source_url, excluded, 
+--             license_long_name, license_url, license_short_name, 
+            redacted, versioned_source_doi, mitigation,
             collection_type
         FROM {table}''')
     ORDER BY {order_by}

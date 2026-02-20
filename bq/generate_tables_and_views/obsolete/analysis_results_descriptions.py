@@ -15,7 +15,9 @@
 #
 
 # Generate the analysis_results_descriptions table in BQ and PSQL from a
-# spreadsheet in Google Drive
+# json file in Google Drive
+# Note that TCIA does not provide tool tip descriptions of analysis results. Thus
+# we generate all descriptions
 import settings
 import argparse
 from utils.google_sheet_to_bq_table import load_spreadsheet

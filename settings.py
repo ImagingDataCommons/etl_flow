@@ -39,8 +39,13 @@ if not exists(join(dirname(__file__), SECURE_LOCAL_PATH, '.env')):
 load_dotenv(dotenv_path=join(dirname(__file__), SECURE_LOCAL_PATH, '.env'))
 
 DEBUG = (os.environ.get('DEBUG', 'False') == 'True')
-
 #print("[STATUS] DEBUG mode is "+str(DEBUG))
+
+# Path to the project top level directory
+PROJECT_PATH = os.path.dirname(os.path.abspath(__file__))
+
+# Path to JSONs used to generate some BQ tables
+BQ_JSON_PROJECT_PATH = f'{PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons'
 
 # These are no longer used since we moved to Cloud SQL.
 # Kept here in case we need to run PSQL locally
