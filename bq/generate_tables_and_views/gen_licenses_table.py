@@ -164,7 +164,7 @@ def get_idc_collection_licences(args):
 
 # Get a dataframe of the licenses in all idc sourced analysis results, indexed by source_doi
 def get_idc_analysis_results_licences(args):
-    df = pd.read_json('table_generation_jsons/idc_analysis_results_metadata.json')
+    df = pd.read_json('table_generation_jsons/idc_analysis_results_metadata.json5')
     df = df[['ID', 'source_doi', 'license_url', 'license_long_name', 'license_short_name']]
     df.rename(columns={'ID': 'collection_name'}, inplace=True),
     df['source'] = 'idc'

@@ -1,8 +1,19 @@
 [
+  /*
  {
+   "ID": "template",
+   "Title": "",
+   "source_doi": "",
+   "current versioned_source_doi": "",
+   "Updated": "",
+   "license_url": "",
+   "license_long_name": "",
+   "license_short_name": ""
+ },
+ */
+{
    "ID": "BAMF-AIMI-Annotations",
    "Title": "Image segmentations produced by the AIMI Annotations initiative",
-   "Access": "Public",
    "source_doi": "10.5281/zenodo.8345959",
    "current versioned_source_doi": "",
    "Updated": "2023-11-07",
@@ -13,7 +24,6 @@
  {
    "ID": "Lung-PET-CT-Dx-Annotations",
    "Title": "Expert annotation of lung tumors for the Lung-PET-CT-Dx collection",
-   "Access": "Public",
    "source_doi": "10.5281/zenodo.16989819",
    "current versioned_source_doi": "10.5281/zenodo.16989820",
    "Updated": "2024-02-24",
@@ -24,7 +34,6 @@
  {
    "ID": "NLST-Sybil",
    "Title": "Expert annotations of tumor regions in the NLST CT images",
-   "Access": "Public",
    "source_doi": "10.5281/zenodo.15643334",
    "current versioned_source_doi": "10.5281/zenodo.15643335",
    "Updated": "2024-02-24",
@@ -35,7 +44,6 @@
  {
    "ID": "NLSTSeg",
    "Title": "Expert tumor segmentations and radiomics features for NLST CT images",
-   "Access": "Public",
    "source_doi": "10.5281/zenodo.17362624",
    "current versioned_source_doi": "10.5281/zenodo.17362625",
    "Updated": "2024-02-24",
@@ -46,7 +54,6 @@
  {
    "ID": "nnU-Net-BPR-annotations",
    "Title": "AI-derived annotations for the NLST and NSCLC-Radiomics computed tomography imaging collections",
-   "Access": "Public",
    "source_doi": "10.5281/zenodo.7473970",
    "current versioned_source_doi": "",
    "Updated": "2023-05-26",
@@ -57,7 +64,6 @@
  {
    "ID": "Pan-Cancer-Nuclei-Seg-DICOM",
    "Title": "DICOM converted Dataset of Segmented Nuclei in Hematoxylin and Eosin Stained Histopathology Images (Pan-Cancer-Nuclei-Seg)",
-   "Access": "Public",
    "source_doi": "10.5281/zenodo.11099004",
    "current versioned_source_doi": "",
    "Updated": "2024-08-05",
@@ -68,7 +74,6 @@
  {
    "ID": "Pancreas-CT-SEG",
    "Title": "DICOM converted annotations for the Pancreas-CT collection",
-   "Access": "Public",
    "source_doi": "10.5281/zenodo.12130275",
    "current versioned_source_doi": "",
    "Updated": "2024-07-16",
@@ -79,7 +84,6 @@
  {
    "ID": "Prostate-MRI-US-Biopsy-DICOM-Annotations",
    "Title": "DICOM converted annotations for the Prostate-MRI-US-Biopsy collection",
-   "Access": "Public",
    "source_doi": "10.5281/zenodo.10069910",
    "current versioned_source_doi": "",
    "Updated": "2023-11-03",
@@ -90,7 +94,6 @@
  {
    "ID": "PROSTATEx-Targets",
    "Title": "Point annotations of lesion targets for the PROSTATEx collection",
-   "Access": "Public",
    "source_doi": "10.5281/zenodo.15643312",
    "current versioned_source_doi": "10.5281/zenodo.15643313",
    "Updated": "2024-02-24",
@@ -101,7 +104,6 @@
  {
    "ID": "RMS-Mutation-Prediction-Expert-Annotations",
    "Title": "Expert annotations of the tissue types for the RMS-Mutation-Prediction microscopy images",
-   "Access": "Public",
    "source_doi": "10.5281/zenodo.10462857",
    "current versioned_source_doi": "",
    "Updated": "2024-02-24",
@@ -112,7 +114,6 @@
  {
    "ID": "TCGA-GBM360",
    "Title": "GBM360 aggressiveness maps for a subset of TCGA pathology slides",
-   "Access": "Public",
    "source_doi": "10.5281/zenodo.17470190",
    "current versioned_source_doi": "10.5281/zenodo.17470191",
    "Updated": "2024-02-24",
@@ -123,7 +124,6 @@
  {
    "ID": "TCGA-SBU-TIL-Maps",
    "Title": "AI-derived Tumor Infiltrating Lymphocyte maps for the TCGA collections",
-   "Access": "Public",
    "source_doi": "10.5281/zenodo.16966285",
    "current versioned_source_doi": "10.5281/zenodo.16966285",
    "Updated": "2024-02-24",
@@ -134,7 +134,6 @@
  {
    "ID": "TotalSegmentator-CT-Segmentations",
    "Title": "AI-driven enrichment of NCI Imaging Data Commons CT images with volumetric segmentations and radiomics features",
-   "Access": "Public",
    "source_doi": "10.5281/zenodo.8347011",
    "current versioned_source_doi": "",
    "Updated": "2024-02-24",
