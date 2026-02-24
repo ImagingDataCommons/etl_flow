@@ -13,6 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+
+# Generate a BQ table that maps collection_name to the program of that collection
+# The tables includes all TCIA collections, not just TCIA collections that IDC also
+# has...it's a superset of IDC collections.
+
 import pandas as pd
 
 import settings
@@ -31,21 +37,24 @@ def gen_table(args):
     query = f'''
     SELECT collection_id, program
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_metadata_idc_source`
-    WHERE idc_only = 'True'
+    WHERE idc_only = True
 '''
     idc_programs = [row.values() for row in client.query(query)]
 
     # Get a list of the program of each TCIA sourced collection
-    tcia_programs = [(row['collection_short_title'].lower().replace('-', '_').replace(' ', '_'), row['program'][0]) for
+    tcia_programs = [(row['collection_short_title'].lower().replace('-', '_').replace(' ', '_'),
+                      row['program'][0]) if type(row['program']) == list else "" for
             row in get_all_tcia_metadata(type="collections", query_param="&_fields=collection_short_title,program") \
                      if row['collection_short_title'] != 'TEST-PAGE']
 
     all_programs = idc_programs
     all_programs.extend(tcia_programs)
     df = pd.DataFrame(all_programs, columns=['collection_id', 'program'])
+    df.dropna(axis=0, how='all', inplace=True)
 
     # Define the BigQuery table reference
-    table_ref = client.dataset(args.bq_dataset_id, project=args.project).table(args.table_id)
+    # table_ref = client.dataset(args.bq_dataset_id, project=args.project).table(args.table_id)
+    table_ref = f'{args.project}.{args.bq_dataset_id}.{args.table_id}'
 
     # Create the BigQuery table schema based on the DataFrame columns
     # We assume all columns are STRINGs
@@ -75,7 +84,7 @@ if __name__ == '__main__':
     parser.add_argument('--sheet_name', default = 'Sheet1', help='Sheet within spreadsheet to load')
     parser.add_argument('--project', default='idc-dev-etl', help='BQ project')
     parser.add_argument('--bq_dataset_id', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ datasey')
-    parser.add_argument('--table_id', default='program', help='Table name to which to copy data')
+    parser.add_argument('--table_id', default='collection_program_map', help='Table name to which to copy data')
     parser.add_argument('--columns', default=['tcia_wiki_collection_id', 'program'], help='Columns in df to keep. Keep all if list is empty')
 
     args = parser.parse_args()

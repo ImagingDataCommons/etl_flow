@@ -117,7 +117,7 @@ def get_original_collections_metadata_idc_source(client, args):
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_metadata_idc_source`
     ORDER BY collection_id
     """
-    idc_sourced_original_collections_metadata = read_json_to_dataframe(f'{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_original_collections_metadata.json')
+    idc_sourced_original_collections_metadata = read_json_to_dataframe(f'{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_original_collections_metadata.json5')
 
     idc_only_metadata = {}
     for index, row in idc_sourced_original_collections_metadata.iterrows():
@@ -133,7 +133,8 @@ def get_original_collections_metadata_idc_source(client, args):
                 Sources=[],
                 SupportingData=row['SupportingData'],
                 Status=row['Status'],
-                Updated=row['Updated'] if row['Updated'] != 'NA' else None,
+                Updated = None
+#                Updated=row['Updated'] if row['Updated'] != 'NA' else None,
             )
     return idc_only_metadata
 
@@ -187,7 +188,8 @@ def get_original_collections_metadata_tcia_source(client, args, idc_collections)
                 SupportingData=", ".join(collection_metadata['supporting_data']) \
                     if isinstance(collection_metadata['supporting_data'], list) else '',
                 Status=collection_metadata['collection_status'],
-                Updated=collection_metadata['date_updated'].split('T')[0]
+                Updated=None
+                # Updated=collection_metadata['date_updated'].split('T')[0]
              )
         except Exception as exc:
             print(exc)
@@ -218,7 +220,7 @@ def get_collection_metadata(client, args):
     idc_collections = get_collections_in_version(client, args)
 
     # Get metadata for each collection for which we source radiology data or pathology data or both from TCIA.
-    idc_sourced_original_collections_metadata = read_json_to_dataframe(f'{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_original_collections_metadata.json')
+    idc_sourced_original_collections_metadata = read_json_to_dataframe(f'{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_original_collections_metadata.json5')
     # Now remove from idc_collections, any collection for which we do not get any data from TCIA
     tcia_sourced_collections = idc_collections
     for index, row in idc_sourced_original_collections_metadata.iterrows():
@@ -245,7 +247,7 @@ def get_collection_metadata(client, args):
 def add_descriptions(client, args, collection_metadata):
     query = f"""
     SELECT * 
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_descriptions_end_user`
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_end_user_descriptions`
     ORDER BY collection_id
     """
 
@@ -373,7 +375,7 @@ def add_sources(client, collection_metadata):
 def add_ids(client, collection_metadata):
     tcia_collection_metadata = { data['collection_doi'].lower(): {
         "ID": data['collection_short_title'],
-        "Type": "original collection"
+        "Type": "original data"
     } for data in get_all_tcia_metadata('collections')}
     tcia_analysis_results_metadata = {data['result_doi'].lower(): {
         "ID": data['result_short_title'],
@@ -381,8 +383,8 @@ def add_ids(client, collection_metadata):
     } for data in  get_all_tcia_metadata('analysis-results')}
     idc_collection_metadata = {data['source_doi'].lower(): {
         "ID": data['collection_name'],
-        "Type": "original collection"
-    } for index, data in read_json_to_dataframe(f'{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_original_collections_metadata.json').iterrows()}
+        "Type": "original data"
+    } for index, data in read_json_to_dataframe(f'{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_original_collections_metadata.json5').iterrows()}
     idc_analysis_results_metadata = {data['source_doi'].lower(): {
         "ID": data['ID'],
         "Type": "analysis result"

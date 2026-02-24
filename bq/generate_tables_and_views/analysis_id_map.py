@@ -29,17 +29,33 @@ def update_table():
     client = bigquery.Client()
     query=f'''
     SELECT *
-    FROM `{settings.DEV_PROJECT}.idc_v{settings.CURRENT_VERSION - 1}_dev.analysis_id_map`
+    FROM `{settings.DEV_PROJECT}.idc_v{settings.PREVIOUS_VERSION}_dev.analysis_id_map`
     '''
     analysis_id_map =  client.query_and_wait(query).to_dataframe()
+    analysis_id_map_lowered = analysis_id_map.copy(deep=True)
+    analysis_id_map_lowered['collection_id'] = analysis_id_map_lowered['collection_id'].str.lower()
+
     query = f'''
     SELECT *
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_descriptions`
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_tooltip_descriptions`
     '''
+
     analysis_results_descriptions =  client.query_and_wait(query).to_dataframe()
+    analysis_results_descriptions_lowered = analysis_results_descriptions.copy(deep=True)
+    analysis_results_descriptions_lowered['id'] = analysis_results_descriptions_lowered['id'].str.lower()
     for id in analysis_results_descriptions['id']:
         if id not in analysis_id_map['collection_id'].values:
-            analysis_id_map.loc[len(analysis_id_map)] = {'collection_id': id, 'idc_id': str(uuid4())}
+            if id.lower() in analysis_id_map_lowered['collection_id'].values:
+                analysis_id_map.loc[len(analysis_id_map)] = {
+                    'collection_id': id,
+                    'idc_id': analysis_id_map_lowered[analysis_id_map_lowered['collection_id']==id.lower()]['idc_id'].item()
+                }
+            else:
+                analysis_id_map.loc[len(analysis_id_map)] = {'collection_id': id, 'idc_id': str(uuid4())}
+    for collection_id in analysis_id_map['collection_id']:
+        if collection_id.lower() not in analysis_results_descriptions_lowered['id'].values:
+            analysis_id_map = analysis_id_map[analysis_id_map['collection_id'] != collection_id]
+
     pandas_gbq.to_gbq(analysis_id_map, f'{settings.BQ_DEV_INT_DATASET}.analysis_id_map', project_id=settings.DEV_PROJECT, if_exists='replace')
 
 

@@ -88,8 +88,8 @@
    "license_short_name": "CC BY 4.0"
  },
  {
-   "ID": "ProstateX-Targets",
-   "Title": "Point annotations of lesion targets for the ProstateX collection",
+   "ID": "PROSTATEx-Targets",
+   "Title": "Point annotations of lesion targets for the PROSTATEx collection",
    "Access": "Public",
    "source_doi": "10.5281/zenodo.15643312",
    "current versioned_source_doi": "10.5281/zenodo.15643313",

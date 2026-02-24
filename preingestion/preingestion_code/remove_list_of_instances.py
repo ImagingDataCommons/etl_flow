@@ -16,6 +16,8 @@
 
 # Hierarchically removes instances having SOPInstanceUIDs in a list, then hierarchically removes higher level elements
 # Does not update the hashes
+# The instances to be removed are supplied to perform_partial_deletion in a list_of_instances parameter, or
+# in a manifest in GDC. In the latter case, the manifest URL is included in the args param.
 
 # import os
 # import io
@@ -113,11 +115,13 @@ RETURNING *
     return
 
     
-def perform_partial_deletion(args, sep=","):
-
+def perform_partial_deletion(args, list_of_instances=[], sep=","):
     with sa_session(echo=False) as sess:
-        manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/{args.manifest_id}", sep=sep, header=0)
-        instances = manifest_data['SOPInstanceUID'].to_list()
+        if list_of_instances:
+            instances = list_of_instances
+        else:
+            manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/{args.manifest_id}", sep=sep, header=0)
+            instances = manifest_data['SOPInstanceUID'].to_list()
         instances.sort()
         remove_collections(sess, instances)
         sess.commit()

@@ -56,9 +56,9 @@ def gen_blob_table(args):
       ajc.source_url,
       ajc.source_doi,
       versioned_source_doi,
-      license.license_long_name,
-      license.license_short_name,
-      license.license_url
+      license_long_name,
+      license_short_name,
+      license_url
     FROM
       `{args.src_project}.{args.src_bqdataset_name}.all_joined_public` ajc
     JOIN `{args.src_project}.{args.src_bqdataset_name}.licenses` l

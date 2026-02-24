@@ -156,7 +156,7 @@ def get_tcia_analysis_results_licenses(client, args, tcia_downloads_metadata):
 
 # Get a dataframe of the licenses in all idc sourced collections indexed by source_doi
 def get_idc_collection_licences(args):
-    df = pd.read_json('table_generation_jsons/idc_original_collections_metadata.json')
+    df = pd.read_json('table_generation_jsons/idc_original_collections_metadata.json5')
     df = df[['collection_name', 'source_doi', 'license_url', 'license_long_name', 'license_short_name']]
     df['source'] = 'idc'
     return df

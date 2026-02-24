@@ -52,7 +52,7 @@ SELECT
       c_init_idc_version AS collection_init_idc_version,
       c_rev_idc_version AS collection_revised_idc_version,
     --
-      submitter_case_id AS submitter_case_id,
+      submitter_case_id AS PatientID,
       idc_case_id AS idc_case_id,
       p_hashes.all_hash AS patient_hash,
       p_init_idc_version AS patient_init_idc_version,
@@ -104,7 +104,6 @@ SELECT
       nvsd.versioned_source_doi,
       series_instances,
       se_hashes.all_hash AS series_hash,
-      access AS access,
       se_init_idc_version AS series_init_idc_version,
       se_rev_idc_version AS series_revised_idc_version,
       se_final_idc_version AS series_final_idc_version,
@@ -174,7 +173,9 @@ SELECT
       i_final_idc_version AS instance_final_idc_version,
       license_url,
       license_long_name,
-      license_short_name
+      license_short_name,
+      submitter_case_id AS submitter_case_id,
+      "Public" Access
       FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` aj
       JOIN newest_versioned_source_dois nvsd
       ON aj.source_doi = nvsd.source_doi
