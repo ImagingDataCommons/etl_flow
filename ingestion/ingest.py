@@ -129,7 +129,7 @@ if __name__ == '__main__':
     parser.add_argument('--prestaging_idc_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_idc_', help='Copy idc instances here before forwarding to --staging_bucket')
     parser.add_argument('--copy_through_directory', default=f'/mnt/disks/idc-dev-etl-v{settings.CURRENT_VERSION}', \
                         help='If instance is a composite object, copy it through this directory to GCS to convert to non-composite object')
-    parser.add_argument('--stop_after_collection_summary', type=bool, default=False, \
+    parser.add_argument('--stop_after_collection_summary', type=bool, default=True, \
                         help='Stop after printing a summary of collection dispositions')
 
     args = parser.parse_args()

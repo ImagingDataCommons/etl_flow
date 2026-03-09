@@ -191,15 +191,15 @@ def export_changed_to_sheets(args, spreadsheet, same_file_ids, old_df, new_df, s
             all_rows.append(new_line)
             row += 2
     sheet.append_rows(all_rows)
-    sheet.format(highlighted,
-         {
-             "backgroundColor": {
-                 "red": 0.9,
-                 "green": 0.8,
-                 "blue": 0.8
-             }
-         }
-     )
+    # sheet.format(highlighted,
+    #      {
+    #          "backgroundColor": {
+    #              "red": 0.9,
+    #              "green": 0.8,
+    #              "blue": 0.8
+    #          }
+    #      }
+    #  )
 
     # Format the sheet a bit
     sheet.columns_auto_resize(0, col)

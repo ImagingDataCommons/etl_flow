@@ -32,20 +32,10 @@ from google.cloud import storage
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--processes', default=1)
+    parser.add_argument('--processes', default=0)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--tmp_directory', default='/mnt/disks/idc-etl/tmp')
-    parser.add_argument('--src_bucket', default='ccdi_mci_pathology', help='Source bucket containing instances')
-    parser.add_argument('--subdir', default='idc-conversion-outputs-mci_round8', help="Subdirectory of mount_point at which to start walking directory")
-    parser.add_argument('--source_doi', default='10.5281/zenodo.11099086', help='Collection DOI')
-    parser.add_argument('--versioned_source_doi', default='10.5281/zenodo.18675667', help='Collection DOI')
-    parser.add_argument('--manifest_id', default="identifiers.txt",\
-                        help="ID of manifest. If NULL, a manifest will be generated.")
-    parser.add_argument('--collection_id', default='CCDI-MCI', help='collection_name of the collection or ID of analysis result to which instances belong.')
-    parser.add_argument('--license', default={"license_url": 'https://creativecommons.org/licenses/by/4.0/', \
-                                              "license_long_name": "Creative Commons Attribution 4.0 International License", \
-                                              "license_short_name": "CC BY 4.0"}, help="(Sub-)Collection license")
-    parser.add_argument('--analysis_result', type=bool, default=False, help='True if an analysis result')
+    parser.add_argument('--collection_id', default='HTAN-TNP-SARDANA', help='collection_name of the collection or ID of analysis result to which instances belong.')
+
     parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
     parser.add_argument('--exclusion_filter', default='', help='Ignore blob name during validation if value is in blob name')

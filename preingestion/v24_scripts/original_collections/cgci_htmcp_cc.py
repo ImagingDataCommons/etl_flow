@@ -14,6 +14,15 @@
 # limitations under the License.
 #
 
+# Adds/replaces data to the idc_collection/_patient/_study/_series/_instance DB tables
+# from a specified bucket.
+#
+# For this purpose, the bucket containing the instance blobs is gcsfuse mounted, and
+# pydicom is then used to extract needed metadata.
+#
+# The script walks the directory hierarchy from a specified subdirectory of the
+# gcsfuse mount point
+
 import sys
 import argparse
 
@@ -25,8 +34,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--processes', default=0)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--collection_id', default='BoneMarrowWSI-PediatricLeukemia', help='collection_name of the collection or ID of analysis result to which instances belong.')
-    parser.add_argument("--excluded_patients", default=['A5E00132373A7031000FD987A3C9F87B'])
+    parser.add_argument('--collection_id', default='CGCI-HTMCP-CC', help='collection_name of the collection or ID of analysis result to which instances belong.')
 
     parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
@@ -37,4 +45,6 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()
 
-    prebuild_from_manifests(args)
+    prebuild_from_manifests(args, sep='\t')
+
+

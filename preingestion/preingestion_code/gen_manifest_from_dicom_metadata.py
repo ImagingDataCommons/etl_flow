@@ -36,6 +36,22 @@ from google.cloud import storage
 
 import pandas as pd
 
+def excluded(args, patient_id, study_id, series_id, instance_id):
+    if "excluded_patients" in args and patient_id in args.excluded_patients:
+        progresslogger.info(f'Excluded patient {patient_id}')
+        return True
+    if "excluded_studies" in args and study_id in args.excluded_studies:
+        progresslogger.info(f'Excluded study {study_id}')
+        return True
+    if "excluded_series" in args and series_id in args.excluded_series:
+        progresslogger.info(f'Excluded series {series_id}')
+        return True
+    if "excluded_instances" in args and instance_id in args.excluded_instances:
+        progresslogger.info(f'Excluded instance {instance_id}')
+        return True
+    return False
+
+
 def build_manifest(args, manifest=None):
     client = storage.Client()
     src_bucket = storage.Bucket(client, args.src_bucket)
@@ -67,6 +83,8 @@ def build_manifest(args, manifest=None):
                                     study_id = r.StudyInstanceUID
                                     series_id = r.SeriesInstanceUID
                                     instance_id = r.SOPInstanceUID
+                                    if excluded(args, patient_id, study_id, series_id, instance_id):
+                                        continue
                                     # if collection_map:
                                     #     collection_id = collection_map[patient_id]
                                     if not args.collection_id:

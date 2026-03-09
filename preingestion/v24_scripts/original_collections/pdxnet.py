@@ -14,15 +14,6 @@
 # limitations under the License.
 #
 
-# Adds/replaces data to the idc_collection/_patient/_study/_series/_instance DB tables
-# from a specified bucket.
-#
-# For this purpose, the bucket containing the instance blobs is gcsfuse mounted, and
-# pydicom is then used to extract needed metadata.
-#
-# The script walks the directory hierarchy from a specified subdirectory of the
-# gcsfuse mount point
-
 import sys
 import argparse
 
@@ -32,17 +23,10 @@ from google.cloud import storage
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--processes', default=1)
+    parser.add_argument('--processes', default=0)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--tmp_directory', default='/mnt/disks/idc-etl/tmp')
-    parser.add_argument('--collection_id', default='CATCH', help='collection_name of the collection or ID of analysis result to which instances belong.')
-    parser.add_argument('--src_bucket', default='catch', help='Source bucket containing instances')
-    parser.add_argument('--subdir', default='', help="Subdirectory of mount_point at which to start walking directory")
-    parser.add_argument('--manifest_id', default="identifiers.txt",\
-                        help="ID of manifest. If NULL, a manifest will be generated.")
-
-    parser.add_argument('--source_doi', default='10.5281/zenodo.18526943', help='Collection DOI')
-    parser.add_argument('--versioned_source_doi', default='10.5281/zenodo.18526944', help='Collection DOI')
+    breakpoint() # collection_id?
+    parser.add_argument('--collection_id', default='PDXNet', help='collection_name of the collection or ID of analysis result to which instances belong.')
 
     parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
@@ -54,5 +38,3 @@ if __name__ == '__main__':
     args.client=storage.Client()
 
     prebuild_from_manifests(args, sep='\t')
-
-
