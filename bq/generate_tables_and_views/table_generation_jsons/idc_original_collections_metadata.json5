@@ -17,107 +17,144 @@
            "license_long_name": "Creative Commons Attribution 4.0 International License",
            "license_short_name": "CC BY 4.0",
            "source_bucket": "",
-           "manifest_id": ""
+           "manifest_id": "",
     },
     */
     {
-           "collection_name": "PDXNet",
-           "collection_id": "pdxnet",
-           "title": "",
-           "idc_only": true,
-           "Status": "",
-           "source_doi": "10.5281/zenodo.17202661",
-           "current_versioned_source_doi": "10.5281/zenodo.17202662",
-           "CancerTypes": "",
-           "SupportingData": "",
-           "Species": "",
-           "TumorLocations": "",
-           "program": "",
-           "license_url": "https://creativecommons.org/licenses/by/4.0/",
-           "license_long_name": "Creative Commons Attribution 4.0 International License",
-           "license_short_name": "CC BY 4.0",
-           "source_bucket": "",
-           "manifest_id": ""
+        "collection_name": "CGCI-HTMCP-DLBCL",
+        "collection_id": "cgci_htmcp_dlbcl",
+        "title": "CGCI-HTMCP-DLBCL: DICOM converted whole slide images from the Cancer Genome Characterization Initiative (CGCI) HIV+ Tumor Molecular Characterization Project (HTMCP) - Diffuse Large B-Cell Lymphoma",
+        "idc_only": true,
+        "Status": "Complete",
+        "source_doi": "10.5281/zenodo.17381412",
+        "current_versioned_source_doi": "10.5281/zenodo.17381413",
+        "CancerTypes": "Diffuse Large B-Cell Lymphoma, Not Otherwise Specified",
+        "SupportingData": "",
+        "Species": "Human",
+        "TumorLocations": "Various",
+        "program": "CGCI",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "license_long_name": "Creative Commons Attribution 4.0 International License",
+        "license_short_name": "CC BY 4.0",
+        "source_bucket": "",
+        "manifest_id": "",
+        "original_version": "24",
+        "revised_version": "24",
+        "final_version": ""
     },
-   {
-           "collection_name": "CGCI-BLGSP",
-           "collection_id": "cgci_blgsp",
-           "title": "CGCI Burkitt Lymphoma Genome Sequencing Project\n",
-           "idc_only": true,
-           "Status": "Complete",
-           "source_doi": "10.5281/zenodo.17381396",
-           "current_versioned_source_doi": "17381397",
-           "CancerTypes": "Burkitt Lymphoma",
-           "SupportingData": "genomics",
-           "Species": "Human",
-           "TumorLocations": "Various",
-           "program": "CGCI",
-           "license_url": "https://creativecommons.org/licenses/by/4.0/",
-           "license_long_name": "Creative Commons Attribution 4.0 International License",
-           "license_short_name": "CC BY 4.0",
-           "source_bucket": "cgci_blgsp",
-           "source_subdirectory": "",
-            "manifest_id": ""
+    {
+        "collection_name": "PDXNet",
+        "collection_id": "pdxnet",
+        "title": "A Pan-Cancer PDX Histology Image Repository with Genomic and Pathologic Annotation",
+        "idc_only": true,
+        "Status": "Ongoing",
+        "source_doi": "10.5281/zenodo.16967600",
+        "current_versioned_source_doi": "10.5281/zenodo.16967601",
+        "CancerTypes": "Acinar Cell Carcinoma, Adrenal Cortical Carcinoma, Carcinosarcoma, Chondrosarcoma, Colon Adenocarcinoma, Ewing Sarcoma, Gastrointestinal Stromal Tumor, Head and Neck Squamous Cell Carcinoma, Invasive Breast Carcinoma, Invasive Breast Carcinoma of No Special Type, Leiomyosarcoma, Lung Adenocarcinoma, Lung Squamous Cell Carcinoma, Malignant Peripheral Nerve Sheath Tumor, Melanoma, Merkel Cell Carcinoma, Mesothelial Neoplasm, Mucoepidermoid Carcinoma, Myxofibrosarcoma, Neuroendocrine Carcinoma, Non-Small Cell Carcinoma, Osteosarcoma, Pancreatic Adenocarcinoma, Renal Cell Carcinoma, Not Otherwise Specified, Rhabdomyosarcoma, Spindle Cell Sarcoma, Synovial Sarcoma, Transitional Cell Carcinoma, Urothelial Carcinoma",
+        "SupportingData": "Clinical, Image Analyses, Genomics",
+        "Species": "Human, Mouse",
+        "TumorLocations": "adrenal gland, bladder organ, bone element, breast, colon, gallbladder, genitourinary system, larynx, lip, oral cavity, lung, ovary, pancreas, peripheral nervous system, prostate gland, rectum, skin of body, small intestine, thyroid gland, uterine cervix, uterus, stomach, vagina",
+        "program": "nih",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "license_long_name": "Creative Commons Attribution 4.0 International License",
+        "license_short_name": "CC BY 4.0",
+        "source_bucket": "",
+        "manifest_id": "",
+        "original_version": "24",
+        "revised_version": "24",
+        "final_version": "",
+    },
+    {
+        "collection_name": "CGCI-BLGSP",
+        "collection_id": "cgci_blgsp",
+        "title": "CGCI Burkitt Lymphoma Genome Sequencing Project\n",
+        "idc_only": true,
+        "Status": "Complete",
+        "source_doi": "10.5281/zenodo.17381396",
+        "current_versioned_source_doi": "17381397",
+        "CancerTypes": "Burkitt Lymphoma",
+        "SupportingData": "genomics",
+        "Species": "Human",
+        "TumorLocations": "Various",
+        "program": "CGCI",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "license_long_name": "Creative Commons Attribution 4.0 International License",
+        "license_short_name": "CC BY 4.0",
+        "source_bucket": "cgci_blgsp",
+        "source_subdirectory": "",
+        "manifest_id": "",
+        "original_version": "24",
+        "revised_version": "24",
+        "final_version": "",
     },
     {
         "collection_name": "UW-CIRP-Mouse-PET-CT-NSCLC",
         "collection_id": "uw_cirp_mouse_pet_ct_nsclc",
         "title": "Genetically-engineered mouse model (GEMM) of lung carcinoma imaged with 18F-FDG before and after a novel combination therapy (immune checkpoint inhibitor with neutrophil depletion therapy)",
         "idc_only": true,
-        "Status": "",
+        "Status": "Ongoing",
         "source_doi": "10.5281/zenodo.17257735",
         "current_versioned_source_doi": "10.5281/zenodo.17257736",
         "CancerTypes": "Lung squamous cell carcinoma",
-        "SupportingData": "No additional data",
+        "SupportingData": "Image Analyses, Clinical",
         "Species": "Mouse",
         "TumorLocations": "Lung",
-        "program": "Community",
+        "program": "NIH",
         "license_url": "https://creativecommons.org/licenses/by/4.0/",
         "license_long_name": "Creative Commons Attribution 4.0 International License",
         "license_short_name": "CC BY 4.0",
         "source_bucket": "cirp_uw",
         "source_subdirectory": "for-ingestion",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "24",
+        "revised_version": "24",
+        "final_version": ""
     },
     {
         "collection_name": "CGCI-HTMCP-CC",
         "collection_id": "cgci_htmcp_cc",
-        "title": "CGCI HIV+ Tumor Molecular Characterization",
+        "title": "CGCI-HTMCP-CC: DICOM converted whole slide images from the Cancer Genome Characterization Initiative (CGCI) HIV+ Tumor Molecular Characterization Project (HTMCP) - Cervical Cancer",
         "idc_only": true,
         "Status": "Complete",
         "source_doi": "10.5281/zenodo.17381404",
         "current_versioned_source_doi": "10.5281/zenodo.17381405",
-        "CancerTypes": "various",
+        "CancerTypes": "ervical Squamous Cell Carcinoma",
         "SupportingData": "genomics",
         "Species": "Human",
-        "TumorLocations": "cervix",
+        "TumorLocations": "uterine cervix",
         "program": "CGCI",
         "license_url": "https://creativecommons.org/licenses/by/4.0/",
         "license_long_name": "Creative Commons Attribution 4.0 International License",
         "license_short_name": "CC BY 4.0",
         "source_bucket": "cgci_htmcp_cc",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "24",
+        "revised_version": "24",
+        "final_version": ""
     },
     {
         "collection_name": "CATCH",
         "collection_id": "catch",
         "title": "CAnine CuTaneous Cancer Histology Dataset",
         "idc_only": true,
-        "Status": "",
-        "source_doi": "10.5281/zenodo.18526943",
-        "current_versioned_source_doi": "10.5281/zenodo.18526944",
-        "CancerTypes": "",
-        "SupportingData": "",
-        "Species": "",
-        "TumorLocations": "",
-        "program": "",
+        "Status": "Complete",
+        "source_doi": "10.5281/zenodo.18526942",
+        "current_versioned_source_doi": "10.5281/zenodo.18526943",
+        "CancerTypes": "Melanoma, Squamous Cell Carcinoma, Malignant Peripheral Nerve Sheath Tumor, Skin Fibrous Histiocytoma",
+        "SupportingData": "Image Analyses",
+        "Species": "Canine",
+        "TumorLocations": "skin of body",
+        "program": "Community",
         "license_url": "https://creativecommons.org/licenses/by/4.0/",
         "license_long_name": "Creative Commons Attribution 4.0 International License",
         "license_short_name": "CC BY 4.0",
         "source_bucket": "catch",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "24",
+        "revised_version": "24",
+        "final_version": ""
     },
     {
         "collection_name": "HTAN-TNP-SARDANA",
@@ -127,48 +164,54 @@
         "Status": "Ongoing",
         "source_doi": "10.5281/zenodo.18488943",
         "current_versioned_source_doi": "10.5281/zenodo.18488944",
-        "CancerTypes": "Colon Mucinous Adenocarcinoma, Not Reported",
+        "CancerTypes": "Colon Mucinous Adenocarcinoma",
         "SupportingData": "clinical",
         "Species": "Human",
-        "TumorLocations": "colon, tonsil",
+        "TumorLocations": "colon",
         "program": "HTAN",
         "license_url": "https://creativecommons.org/licenses/by/4.0/",
         "license_long_name": "Creative Commons Attribution 4.0 International License",
         "license_short_name": "CC BY 4.0",
         "source_bucket": "htan-tnp-sardana",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "24",
+        "revised_version": "24",
+        "final_version": ""
     },
     {
         "collection_name": "HCMI-CMDC",
         "collection_id": "hcmi_cmdc",
         "title": "NCI Cancer Model Development for the Human Cancer Model Initiative",
         "idc_only": true,
-        "Status": "",
+        "Status": "Ongoing",
         "source_doi": "10.5281/zenodo.17381441",
         "current_versioned_source_doi": "10.5281/zenodo.17381442",
-        "CancerTypes": "various",
+        "CancerTypes": "Adenocarcinoma, Breast Ductal Carcinoma, Glioblastoma, Melanoma, Breast Lobular Carcinoma, Mucinous Adenocarcinoma, Squamous Cell Carcinoma",
         "SupportingData": "genomic",
         "Species": "Human",
-        "TumorLocations": "various",
-        "program": "",
+        "TumorLocations": "colon, pancreas, esophagus, breast, rectum, brain, skin of body, lung, stomach, ovary, bladder organ, body of uterus, kidney, liver",
+        "program": "HCMI",
         "license_url": "https://creativecommons.org/licenses/by/4.0/",
         "license_long_name": "Creative Commons Attribution 4.0 International License",
         "license_short_name": "CC BY 4.0",
         "source_bucket": "hcmi_cmdc",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "24",
+        "revised_version": "24",
+        "final_version": ""
     },
     {
         "collection_name": "CGCI-HTMCP-LC",
         "collection_id": "cgci_htmcp_lc",
-        "title": "Cancer Genome Characterization Initiative (CGCI): HIV+ Tumor Molecular Characterization Project - Lung Cancer (HTMCP - LC)",
+        "title": "CGCI-HTMCP-LC: DICOM converted whole slide images from the Cancer Genome Characterization Initiative (CGCI) HIV+ Tumor Molecular Characterization Project (HTMCP) - Lung Cancer",
         "idc_only": true,
         "Status": "Complete",
         "source_doi": "10.5281/zenodo.17381428",
         "current_versioned_source_doi": "10.5281/zenodo.17381429",
-        "CancerTypes": "Lung",
-        "SupportingData": "genomics",
+        "CancerTypes": "Non-Small Cell Carcinoma",
+        "SupportingData": "",
         "Species": "Human",
         "TumorLocations": "Lung",
         "program": "CGCI",
@@ -177,27 +220,33 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "cgci_htmcp_lc",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "24",
+        "revised_version": "24",
+        "final_version": ""
     },
     {
         "collection_name": "CDDP-EAGLE-1",
         "collection_id": "cddp_eagle_1",
-        "title": "Integrative Analysis of Lung Adenocarcinoma in Environment And Genetics in Lung cancer Etiology (EAGLE) (Phase 2)",
+        "title": "CDDP-EAGLE-1: DICOM converted whole slide images from the Environment And Genetics in Lung cancer Etiology (EAGLE) study",
         "idc_only": true,
         "Status": "Complete",
         "source_doi": "10.5281/zenodo.17372206",
         "current_versioned_source_doi": "10.5281/zenodo.17372207",
         "CancerTypes": "Lung Adenocarcinoma",
-        "SupportingData": "genomics",
+        "SupportingData": "",
         "Species": "Human",
         "TumorLocations": "Lung",
-        "program": "GDC",
+        "program": "cddp_eagle",
         "license_url": "https://creativecommons.org/licenses/by/4.0/",
         "license_long_name": "Creative Commons Attribution 4.0 International License",
         "license_short_name": "CC BY 4.0",
         "source_bucket": "cddp_eagle_1",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "24",
+        "revised_version": "24",
+        "final_version": ""
     },
     {
         "collection_name": "BoneMarrowWSI-PediatricLeukemia",
@@ -208,7 +257,7 @@
         "source_doi": "10.5281/zenodo.14933087",
         "current_versioned_source_doi": "10.5281/zenodo.18499180",
         "CancerTypes": "Leukemia",
-        "SupportingData": "Clinical",
+        "SupportingData": "clinical",
         "Species": "Human",
         "TumorLocations": "Bone Marrow",
         "program": "Community",
@@ -217,7 +266,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "bmdeep",
         "source_subdirectory": "annotations/v1",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "22",
+        "revised_version": "24",
+        "final_version": ""
     },
     {
         "collection_name": "CCDI-MCI",
@@ -237,7 +289,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "ccdi_mci_pathology",
         "source_subdirectory": "idc-conversion-outputs-mci_round8",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "19",
+        "revised_version": "24",
+        "final_version": ""
     },
     {
         "collection_name": "CMB-OV",
@@ -257,7 +312,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CPTAC-BRCA",
@@ -277,7 +335,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CPTAC-COAD",
@@ -297,7 +358,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CPTAC-OV",
@@ -317,7 +381,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "GTEx",
@@ -337,7 +404,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "HTAN-HMS",
@@ -357,7 +427,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "HTAN-OHSU",
@@ -377,7 +450,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "HTAN-VANDERBILT",
@@ -397,7 +473,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "HTAN-WUSTL",
@@ -417,7 +496,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "NLM-Visible-Human-Project",
@@ -437,7 +519,10 @@
         "license_short_name": "National Library of Medicine Terms and Conditions; May 21, 2019",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "RMS-Mutation-Prediction",
@@ -457,7 +542,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-ACC",
@@ -477,7 +565,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-CHOL",
@@ -497,7 +588,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-DLBC",
@@ -517,7 +611,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-MESO",
@@ -537,7 +634,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-PAAD",
@@ -557,7 +657,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-PCPG",
@@ -577,7 +680,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-SKCM",
@@ -597,7 +703,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-TGCT",
@@ -617,7 +726,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-THYM",
@@ -637,7 +749,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-UCS",
@@ -657,7 +772,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-UVM",
@@ -677,7 +795,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CPTAC-GBM",
@@ -697,7 +818,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CPTAC-HNSCC",
@@ -717,7 +841,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-GBM",
@@ -737,7 +864,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-HNSC",
@@ -757,7 +887,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-LGG",
@@ -777,7 +910,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CMB-AML",
@@ -797,7 +933,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CMB-BRCA",
@@ -817,7 +956,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CMB-CRC",
@@ -837,7 +979,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CMB-GEC",
@@ -857,7 +1002,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CMB-LCA",
@@ -877,7 +1025,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CMB-MEL",
@@ -897,7 +1048,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CMB-MML",
@@ -917,7 +1071,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CMB-PCA",
@@ -937,7 +1094,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CPTAC-AML",
@@ -957,7 +1117,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CPTAC-CCRCC",
@@ -977,7 +1140,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CPTAC-CM",
@@ -997,7 +1163,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CPTAC-LSCC",
@@ -1017,7 +1186,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CPTAC-LUAD",
@@ -1037,7 +1209,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CPTAC-PDA",
@@ -1057,7 +1232,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CPTAC-SAR",
@@ -1077,7 +1255,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "CPTAC-UCEC",
@@ -1097,7 +1278,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "ICDC-Glioma",
@@ -1117,7 +1301,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "NLST",
@@ -1137,7 +1324,10 @@
         "license_short_name": "CC BY 4.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-BLCA",
@@ -1157,7 +1347,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-BRCA",
@@ -1177,7 +1370,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-CESC",
@@ -1197,7 +1393,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-COAD",
@@ -1217,7 +1416,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-ESCA",
@@ -1237,7 +1439,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-KICH",
@@ -1257,7 +1462,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-KIRC",
@@ -1277,7 +1485,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-KIRP",
@@ -1297,7 +1508,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-LIHC",
@@ -1317,7 +1531,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-LUAD",
@@ -1337,7 +1554,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-LUSC",
@@ -1357,7 +1577,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-OV",
@@ -1377,7 +1600,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-PRAD",
@@ -1397,7 +1623,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-READ",
@@ -1417,7 +1646,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-SARC",
@@ -1437,7 +1669,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-STAD",
@@ -1457,7 +1692,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-THCA",
@@ -1477,7 +1715,10 @@
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
         "source_subdirectory": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     },
     {
         "collection_name": "TCGA-UCEC",
@@ -1496,6 +1737,9 @@
         "license_long_name": "Creative Commons Attribution 3.0 Unported License",
         "license_short_name": "CC BY 3.0",
         "source_bucket": "",
-        "manifest_id": ""
+        "manifest_id": "",
+        "original_version": "",
+        "revised_version": "",
+        "final_version": ""
     }
 ]
