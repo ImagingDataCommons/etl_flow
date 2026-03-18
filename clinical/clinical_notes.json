@@ -209,6 +209,11 @@
                 "form": "bmdeep"
             }
         ],
+        "tabletypes": [
+            {
+                "laboratory": "laboratory"
+            }
+        ],
         "case_id": "same",
         "tcia": "yes"
     },
@@ -326,7 +331,8 @@
             [
                 {
                     "filenm": "TCIA_CCR_Parameters_Anonymized.xlsx",
-                    "sheet": 1
+                    "sheet": 1,
+                    "skipCols": [2,3,4,5,6,7]
                 }
             ],
             [
@@ -1063,6 +1069,44 @@
         "tcia": "yes",
         "idc_id": "ispy2"
     },
+    "ldct_and_projection_data": {
+        "notes": "several xlsx files distinguished by ",
+        "uzip": "Clinical-data-Mar-2023.zip",
+        "srcs": [
+            [
+                {
+                    "filenm": "Abdomen_v9 Mar 2023.xlsx",
+                    "patientIdIdx": 1,
+                    "headrows": [0, 1],
+                    "archive": [
+                        "Clinical-data-Mar-2023.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "Chest_v9 Mar 2023.xlsx",
+                    "patientIdIdx": 1,
+                    "headrows": [0, 1],
+                    "archive": [
+                        "Clinical-data-Mar-2023.zip"
+                    ]
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "abdomen_v9": "clinical"
+            },
+            {
+                "chest_v9": "clinical"
+            }
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "ldct_and_projection_data"
+    },
+
     "lidc_idri": {
         "notes": "",
         "alternate": [
