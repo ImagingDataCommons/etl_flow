@@ -13,6 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+
+# Copy a set of blobs defined by a BQ query
+
+
 import json
 import os
 import argparse
@@ -23,14 +28,10 @@ import time
 from multiprocessing import Process, Queue
 from utilities.logging_config import successlogger, progresslogger, errlogger
 
-# Copy the blobs that are new to a version from dev pre-staging buckets
-# to dev staging buckets.
-import settings
-
 
 # The query should return a table with a single column, 'blob_name'
 # basically <series_uuid>/<instance_uuid>.dcm
-def get_urls(args, query):
+def blob_names(args, query):
     client = bigquery.Client()
     query_job = client.query(query)  # Make an API request.
     query_job.result()  # Wait for the query to complete.
@@ -92,7 +93,7 @@ def worker(input, args, dones):
 
 def copy_all_blobs(args, query):
     bq_client = bigquery.Client()
-    destination = get_urls(args, query)
+    blobs = blob_names(args, query)
     dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
 
     strt = time.time()
@@ -108,7 +109,7 @@ def copy_all_blobs(args, query):
 
     # Distribute the work across the task_queues
     n = 0
-    for page in bq_client.list_rows(destination, page_size=args.batch).pages:
+    for page in bq_client.list_rows(blobs, page_size=args.batch).pages:
         urls = [row.blob_name for row in page]
         task_queue.put((urls, n))
         # print(f'Queued {n}:{n+args.batch-1}')
