@@ -32,9 +32,9 @@ import settings
 import requests
 
 analysis_results_metadata_schema = [
-    bigquery.SchemaField('analysis_collection_name', 'STRING', mode='REQUIRED', description='Analysis result name as used externally by IDC webapp'),
-    bigquery.SchemaField('analysis_collection_id', 'STRING', mode='REQUIRED', description='Analysis result ID as used internally by IDC webapp'),
-    bigquery.SchemaField('analysis_collection_title', 'STRING', mode='REQUIRED', description='Descriptive title of this analysis result'),
+    bigquery.SchemaField('analysis_result_name', 'STRING', mode='REQUIRED', description='Analysis result name as used externally by IDC webapp'),
+    bigquery.SchemaField('analysis_result_id', 'STRING', mode='REQUIRED', description='Analysis result ID as used internally by IDC webapp'),
+    bigquery.SchemaField('analysis_result_title', 'STRING', mode='REQUIRED', description='Descriptive title of this analysis result'),
     bigquery.SchemaField('source_doi','STRING', mode='NULLABLE', description='DOI that can be resolved at doi.org to an information page'),
     bigquery.SchemaField('source_url','STRING', mode='REQUIRED', description='URL of a wiki page'),
     bigquery.SchemaField('cancer_types','STRING', mode='REQUIRED', description='Type(s) of cancer analyzed'),
@@ -52,7 +52,7 @@ analysis_results_metadata_schema = [
                          description='Citation to be used for this analysis result'),
     # Deprecations
     bigquery.SchemaField('ID', 'STRING', mode='REQUIRED',
-                         description='DEPRECATED: Duplicate of anlaysis_collection_name'),
+                         description='DEPRECATED: Duplicate of anlaysis_result_name'),
     bigquery.SchemaField('Title', 'STRING', mode='REQUIRED', description='DEPRECATED: Duplicate of analysis_collection_title'),
     bigquery.SchemaField('CancerTypes', 'STRING', mode='REQUIRED', description='DEPRECATED: Duplicate of cancer_types'),
     bigquery.SchemaField('TumorLocations', 'STRING', mode='REQUIRED', description='DEPRECATED: Duplicate of tumor_locations'),

@@ -30,7 +30,7 @@ data_collections_metadata_schema = [
         "RECORD",
         mode="REPEATED",
         fields=[
-            bigquery.SchemaField('collection_name', 'STRING', mode='NULLABLE', description='collection_name of this source'),
+            bigquery.SchemaField('collection_id', 'STRING', mode='NULLABLE', description='collection_id of this source'),
             bigquery.SchemaField('source_doi', 'STRING', mode='NULLABLE',
                                  description='DOI that can be resolved at doi.org to the information page of this source'),
             bigquery.SchemaField('source_url', 'STRING', mode='REQUIRED',
@@ -59,8 +59,8 @@ data_collections_metadata_schema = [
         "RECORD",
         mode="REPEATED",
         fields=[
-            bigquery.SchemaField('analysis_collection_name', 'STRING', mode='NULLABLE',
-                                 description='analysis_collection_name of this related analysis result'),
+            bigquery.SchemaField('analysis_result_id', 'STRING', mode='NULLABLE',
+                                 description='analysis_result_id of this related analysis result'),
             bigquery.SchemaField('source_doi', 'STRING', mode='NULLABLE',
                                  description='DOI that can be resolved at doi.org to a information page of this source'),
             bigquery.SchemaField('source_url', 'STRING', mode='REQUIRED',
