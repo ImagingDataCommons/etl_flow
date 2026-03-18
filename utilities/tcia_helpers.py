@@ -459,10 +459,8 @@ def get_collection_license_info():
 def get_all_tcia_metadata(type, query_param=''):
     if query_param:
         url = f"https://cancerimagingarchive.net/api/v1/{type}/?per_page=100&{query_param}"
-        # url = f"https://cancerimagingarchive.net/api/v1/{type}/?{query_param}"
     else:
         url = f"https://cancerimagingarchive.net/api/v1/{type}/?per_page=100"
-        # url = f"https://cancerimagingarchive.net/api/v1/{type}/"
     response = requests.get(url)
     if response.status_code == 200:
         # Parse the JSON response
@@ -482,35 +480,32 @@ def get_all_tcia_metadata(type, query_param=''):
         print('Error accessing the API:', response.status_code)
         exit
 
-def xget_TCIA_instances_per_series_with_hashes_nlst(dicom, series_instance_uid, access_token, uuid=None ):
-    filename = "{}/{}.zip".format(dicom, series_instance_uid)
-    dirname = "{}/{}".format(dicom, series_instance_uid)
+def get_all_tcia_metadata_v2(type, query_param=''):
+    page = 1
+    collections = []
+    while True:
+        if query_param:
+            url = f"https://cancerimagingarchive.net/api/v2/{type}/?per_page=100&page={page}&{query_param}"
+        else:
+            url = f"https://cancerimagingarchive.net/api/v2/{type}/?per_page=100&page={page}"
+        response = requests.get(url)
+        if response.status_code == 200:
+            # Parse the JSON response
+            result = response.json()
+            collections.extend(result['results'])
+            page += 1
+            if page > result["total_pages"]:
+                break
+        else:
+            print('Error accessing the API:', response.status_code)
+            exit
 
-    headers = headers = dict(
-        Authorization=f'Bearer {access_token}'
-    )
+    return collections
 
-    url = f'{NLST_V2_URL}/getImageWithMD5Hash?SeriesInstanceUID={series_instance_uid}'
-    with requests.get(url, headers=headers, stream=True) as r:
-        r.raise_for_status()
-        with open(filename, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                # If you have chunk encoded response uncomment if
-                # and set chunk_size parameter to None.
-                #if chunk:
-                f.write(chunk)
 
-    # Now try to extract the instances to a directory DICOM/<series_instance_uid>
-    os.makedirs(f"{dirname}", exist_ok=True )
-    with zipfile.ZipFile(filename, "r") as zip_ref:
-        zip_ref.extractall(f'{dirname}')
 
-    hashes = open(f'{dirname}/md5hashes.csv').read().splitlines()[1:]
-    # os.remove(f'{dirname}/md5hashes.csv')
-
-    return hashes
 if __name__ == "__main__":
-    c = get_all_tcia_metadata("collections", query_param='')
+    c = get_all_tcia_metadata_v2("collections", query_param='')
     pass
 
 #     access_token = get_access_token(auth_server=NLST_AUTH_URL)[0]
