@@ -53,6 +53,8 @@ def worker(input, output, args, access, lock):
                                   args.skipped_tcia_collections, args.skipped_idc_collections, lock)
 
         for more_args in iter(input.get, 'STOP'):
+            successlogger.info("p%s, Building patient %s/%s, %s; %s", args.pid, exc, attempt,
+                            collection.collection_id, patient.submitter_case_id, index, time.asctime())
             for attempt in range(PATIENT_TRIES):
                 time.sleep((2**attempt)-1)
                 index, collection_id, submitter_case_id = more_args
@@ -61,6 +63,8 @@ def worker(input, output, args, access, lock):
                     collection = next(collection for collection in version.collections if collection.collection_id ==collection_id)
                     patient = next(patient for patient in collection.patients if patient.submitter_case_id==submitter_case_id)
                     build_patient(sess, args, all_sources, index, version, collection, patient)
+                    successlogger.info("p%s, Built patient %s/%s, %s; %s", args.pid, exc, attempt,
+                                       collection.collection_id, patient.submitter_case_id, index, time.asctime())
                     break
                 except Exception as exc:
                     errlogger.error("p%s, exception %s; reattempt %s on patient %s/%s, %s; %s", args.pid, exc, attempt, collection.collection_id, patient.submitter_case_id, index, time.asctime())

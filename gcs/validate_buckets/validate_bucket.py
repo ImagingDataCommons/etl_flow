@@ -36,7 +36,7 @@ def get_expected_blobs_in_bucket(args, premerge=False):
     #       JOIN `idc-dev-etl.idc_v{args.version}_dev.series` se ON ss.series_uuid = se.uuid
     #       JOIN `idc-dev-etl.idc_v{args.version}_dev.series_instance` si ON se.uuid = si.series_uuid
     #       JOIN `idc-dev-etl.idc_v{args.version}_dev.instance` i ON si.instance_uuid = i.uuid
-    #       JOIN `idc-dev-etl.idc_v{args.version}_dev.all_collections` aic
+    #       JOIN `idc-dev-etl.idc_v{args.version}_dev.all_sources` aic
     #       ON c.collection_id = aic.tcia_api_collection_id
     #       WHERE ((i.source='tcia' and aic.{args.dev_or_pub}_tcia_url="{args.bucket}")
     #       OR (i.source='idc' and aic.{args.dev_or_pub}_idc_url="{args.bucket}"))
@@ -47,7 +47,7 @@ def get_expected_blobs_in_bucket(args, premerge=False):
     query = f"""
       SELECT distinct concat(se_uuid,'/', i_uuid, '.dcm') as blob_name
       FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined` aj
-      JOIN `idc-dev-etl.idc_v{args.version}_dev.all_collections` aic
+      JOIN `idc-dev-etl.idc_v{args.version}_dev.all_sources` aic
       ON aj.idc_collection_id = aic.idc_collection_id
       WHERE ((i_source='tcia' and aic.{args.dev_or_pub}_gcs_tcia_url="{args.bucket}")
       OR (i_source='idc' and aic.{args.dev_or_pub}_gcs_idc_url="{args.bucket}"))

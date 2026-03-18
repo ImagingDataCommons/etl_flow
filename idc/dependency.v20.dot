@@ -6,10 +6,10 @@ digraph etl {
     "original_collections_metadata_idc_source.py" -> "1fWG9Json963fDL8P9dPyzYEVqs11Nba6nnhZtrSJepQ"
     "program" -> {"original_collections_metadata_idc_source.bq", "get_all_tcia_metadata.py"}
     "version_metadata" -> {"version", "auxiliary_metadata", "collection", "version"}
-    "licenses"-> {"all_collections", "idc_all_joined"}
+    "licenses"-> {"all_sources", "idc_all_joined"}
     "original_collections_metadata" -> {"original_collections_metadata_idc_source.bq" , "program", "all_joined_public_and_current", "dicom_metadata", "original_collections_descriptions_end_user",
         "licenses", "version_metadata", "collection", "get_original_collection_licenses.py"}
-    "get_original_collection_licenses.py" -> "all_collections"
+    "get_original_collection_licenses.py" -> "all_sources"
     "auxiliary_metadata" -> "gen_auxiliary_metadata_table.py" -> "all_joined_public_and_current"
     "analysis_results_metadata" -> {"licenses", "all_joined_public_and_current", "analysis_results_descriptions_end_user", "analysis_results_metadata_idc_source.bq"}
     "analysis_results_metadata_idc_source.bq" -> "analysis_results_metadata_idc_source.py"
@@ -22,7 +22,7 @@ digraph etl {
     "upload_psql_to_bq_vnext_dev.py" -> {"idc_collection.psql", "idc_patient.psql", "idc_study.psql", "idc_series.psql", "idc_instance.psql"} -> "preingest.py"
     "preingest.py" -> {"original_collections_metadata_idc_source.psql", "analysis_results_metadata_idc_source.psql"}
     "all_joined_public_and_current" -> "all_joined" -> "all_flattened"
-    "all_collections" -> {"all_flattened", "all_dois"}
+    "all_sources" -> {"all_flattened", "all_dois"}
     "all_dois" -> {"all_flattened", "doi_to_access"}
     "all_flattened" -> {"version.bq", "collection.bq", "patient.bq", "study.bq", "series.bq", "instance.bq"} -> "upload_psql_to_bq_vnext_dev.py"
     "upload_psql_to_bq_vnext_dev.py" -> {"version.psql", "collection.psql", "patient.psql", "study.psql", "series.psql", "instance.psql"} -> "ingest.py"

@@ -33,6 +33,7 @@ pyarrow
 pydicom
 python-dotenv
 python_settings
+pyYAML
 requests
 sqlalchemy==1.4.50
 sqlalchemy_utils

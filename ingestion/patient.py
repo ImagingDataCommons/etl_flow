@@ -24,26 +24,26 @@ from ingestion.study import clone_study, build_study, retire_study
 from python_settings import settings
 
 # Return a dictionary of the dois and urls of all series in the patient
-def get_dois_urls_licenses(args, all_sources, collection, patient):
+def get_dois_urls(args, all_sources, collection, patient):
     skipped_sources = is_skipped(args.skipped_collections, collection.collection_id)
     # Get all the dois for this patient
     all_dois = all_sources.get_patient_dois(collection, patient, skipped_sources)
     # source_urls are always https://doi.org
-    # Get all the licenses for this patient
-    licenses = all_sources.get_patient_licenses(collection, patient, skipped_sources)
-    # Populate the dictionary with any url that were found
-    dois_urls_licenses = {}
+    # # Get all the licenses for this patient
+    # licenses = all_sources.get_patient_licenses(collection, patient, skipped_sources)
+    # # Populate the dictionary with any url that were found
+    dois_urls = {}
     # Add source_dois.
     for key, dois in all_dois.items():
-        dois_urls_licenses[key] = dict(
+        dois_urls[key] = dict(
             source_doi = dois["source_doi"],
             source_url = f'https://doi.org/{dois["source_doi"]}',
             versioned_source_doi = dois["versioned_source_doi"]
         )
-    # Add licenses.
-    for key, license in licenses.items():
-        dois_urls_licenses[key]["license"] = license
-    return dois_urls_licenses
+    # # Add licenses.
+    # for key, license in licenses.items():
+    #     dois_urls_licenses[key]["license"] = license
+    return dois_urls
 
 
 def clone_patient(patient, uuid):
@@ -182,18 +182,22 @@ def build_patient(sess, args, all_sources, patient_index, version, collection, p
         begin = time.time()
         successlogger.debug("  p%s: Expand Patient %s, %s", args.pid, patient.submitter_case_id, patient_index)
         if not patient.expanded:
-            successlogger.info("  p%s: Expanding Patient %s, %s, %s studies, expand_time: %s, %s", args.pid, patient.submitter_case_id, patient_index, len(patient.studies), time.time()-begin, time.asctime())
+            successlogger.info("  p%s: Expanding Patient %s, %s, %s studies", args.pid, patient.submitter_case_id, patient_index, len(patient.studies))
             expand_patient(sess, args, all_sources, version, collection, patient)
             successlogger.info("  p%s: Expanded Patient %s, %s, %s studies, expand_time: %s, %s", args.pid, patient.submitter_case_id, patient_index, len(patient.studies), time.time()-begin, time.asctime())
+        else:
+            successlogger.info("  p%s: Previously expanded patient %s, %s, %s studies", args.pid, patient.submitter_case_id, patient_index, len(patient.studies))
 
-        # Get the source_doi, source_url and license for each series in the patient
+        # Get the source_doi and source_url for each series in the patient
         # dois_urls_licenses = get_dois_urls_licenses(args, all_sources, collection.collection_id, patient.submitter_case_id)
-        dois_urls_licenses = get_dois_urls_licenses(args, all_sources, collection, patient)
+        dois_urls = get_dois_urls(args, all_sources, collection, patient)
         for study in patient.studies:
             study_index = f'{patient.studies.index(study) + 1} of {len(patient.studies)}'
             if not study.done:
                 # build_study(sess, args, all_sources, study_index, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois)
-                build_study(sess, args, all_sources, study_index, version, collection, patient, study, dois_urls_licenses)
+                successlogger.info("    p%s: Building study %s, %s ", args.pid, study.study_instance_uid, study_index)
+                build_study(sess, args, all_sources, study_index, version, collection, patient, study, dois_urls)
+                successlogger.info("    p%s: Built study %s, %s ", args.pid, study.study_instance_uid, study_index)
             else:
                 successlogger.info("    p%s: Study %s, %s, previously built", args.pid, study.study_instance_uid, study_index)
         if all([study.done for study in patient.studies]):

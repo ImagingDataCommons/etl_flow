@@ -49,7 +49,7 @@ def retire_study(args, study ):
 
 
 # def expand_study(sess, args, all_sources, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois):
-def expand_study(sess, args, all_sources, version, collection, patient, study, dois_urls_licenses):
+def expand_study(sess, args, all_sources, version, collection, patient, study, dois_urls):
     skipped = is_skipped(args.skipped_collections, collection.collection_id)
     # Get the series that the sources know about
     seriess = all_sources.series(study, skipped)
@@ -87,12 +87,13 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
         new_series.uuid = str(uuid4())
         new_series.min_timestamp = datetime.utcnow()
         try:
-            new_series.source_doi = dois_urls_licenses[series]['source_doi']
-            new_series.source_url = dois_urls_licenses[series]['source_url']
-            new_series.versioned_source_doi = dois_urls_licenses[series]['versioned_source_doi']
-            new_series.license_url = dois_urls_licenses[series]['license']['license_url']
-            new_series.license_long_name = dois_urls_licenses[series]['license']['license_long_name']
-            new_series.license_short_name = dois_urls_licenses[series]['license']['license_short_name']
+            # new_series.collection_type = dois_urls[series]['collection_type']
+            new_series.source_doi = dois_urls[series]['source_doi']
+            new_series.source_url = dois_urls[series]['source_url']
+            new_series.versioned_source_doi = dois_urls[series]['versioned_source_doi']
+            # new_series.license_url = dois_urls_licenses[series]['license']['license_url']
+            # new_series.license_long_name = dois_urls_licenses[series]['license']['license_long_name']
+            # new_series.license_short_name = dois_urls_licenses[series]['license']['license_short_name']
         except Exception as exc:
             errlogger.error(f'No DOI/URL for series {series.series_instance_uid}')
             return
@@ -134,7 +135,7 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
             rev_series.hashes = series.hashes
             rev_series.sources = seriess[series.series_instance_uid]
             rev_series.rev_idc_version = settings.CURRENT_VERSION
-            rev_series.versioned_source_doi = dois_urls_licenses[series.series_instance_uid]['versioned_source_doi']
+            rev_series.versioned_source_doi = dois_urls[series.series_instance_uid]['versioned_source_doi']
             study.seriess.append(rev_series)
             progresslogger.debug('      p%s:Series %s revised',  args.pid, rev_series.series_instance_uid)
 
@@ -165,18 +166,28 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
     return
 
 # def build_study(sess, args, all_sources, study_index, version, collection, patient, study, data_collection_doi_url, analysis_collection_dois):
-def build_study(sess, args, all_sources, study_index, version, collection, patient, study, dois_urls_licenses):
+def build_study(sess, args, all_sources, study_index, version, collection, patient, study, dois_urls):
 
     try:
         begin = time.time()
         successlogger.debug("    p%s: Expand Study %s, %s", args.pid, study.study_instance_uid, study_index)
         if not study.expanded:
-            expand_study(sess, args, all_sources, version, collection, patient, study, dois_urls_licenses)
-        successlogger.info("    p%s: Expanded Study %s, %s, %s series, expand time: %s", args.pid, study.study_instance_uid, study_index, len(study.seriess), time.time()-begin)
+            successlogger.info("    p%s: Expanding Study %s, %s, %s series", args.pid,
+                               study.study_instance_uid, study_index, len(study.seriess))
+            expand_study(sess, args, all_sources, version, collection, patient, study, dois_urls)
+            successlogger.info("    p%s: Expanded Study %s, %s, %s series, expand time: %s", args.pid, study.study_instance_uid, study_index, len(study.seriess), time.time()-begin)
+        else:
+            successlogger.info("    p%s: Study previously expanded %s, %s, %s series", args.pid,
+                               study.study_instance_uid, study_index, len(study.seriess))
+
         for series in study.seriess:
             series_index = f'{study.seriess.index(series) + 1} of {len(study.seriess)}'
             if not series.done:
+                successlogger.info("      p%s: Building Series %s, %s", args.pid, series.series_instance_uid,
+                                   series_index)
                 build_series(sess, args, all_sources, series_index, version, collection, patient, study, series)
+                successlogger.info("      p%s: Built Series %s, %s", args.pid, series.series_instance_uid,
+                                   series_index)
                 # Verify that source is consistent
                 if (series.hashes[instance_source.tcia.value] == "" and series.sources.tcia == True) or \
                         (series.hashes[instance_source.idc.value] == "" and series.sources.idc == True):

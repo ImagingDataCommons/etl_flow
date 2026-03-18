@@ -98,6 +98,23 @@ def get_tcia_instance_hash(sop_instance_uid, access_token=None):
     return result
 
 
+def get_hash_nlst(request_data, access_token=''):
+    access_token, refresh_token = get_access_token(NLST_AUTH_URL)
+    retries = 4
+    while retries:
+        headers = dict(
+            Authorization=f'Bearer {access_token}'
+        )
+        url = f"{NLST_URL}/getMD5Hierarchy"
+        result = requests.post(url, headers=headers, data=request_data)
+        if result.status_code == 200:
+            break
+        else:
+            sleep( 2**(5-retries))
+            retries -= 1
+    return result
+
+
 def get_hash(request_data, access_token=None):
     if not access_token:
         access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
@@ -113,6 +130,16 @@ def get_hash(request_data, access_token=None):
         else:
             sleep( 2**(5-retries))
             retries -= 1
+    return result
+
+
+def get_images_with_md5_hash_nlst(SeriesInstanceUID, access_token=None):
+    headers = dict(
+        Authorization=f'Bearer {access_token}'
+    )
+    server_url = NLST_V1_URL
+    url = f'{server_url}/getImageWithMD5Hash?SeriesInstanceUID={SeriesInstanceUID}'
+    result = requests.get(url, headers=headers)
     return result
 
 
@@ -228,6 +255,37 @@ def get_TCIA_instance_uids_per_series(collection_id, seriesInstanceUID, server=N
     return instance_uids
 
 
+def get_TCIA_instances_per_series_with_hashes_nlst(dicom, series, access_token ):
+    filename = "{}/{}.zip".format(dicom, series.uuid)
+    dirname = "{}/{}".format(dicom, series.uuid)
+
+    headers = headers = dict(
+        Authorization=f'Bearer {access_token}'
+    )
+
+    url = f'{NLST_V1_URL}/getImageWithMD5Hash?SeriesInstanceUID={series.series_instance_uid}'
+    with requests.get(url, headers=headers, stream=True) as r:
+        r.raise_for_status()
+        with open(filename, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                # If you have chunk encoded response uncomment if
+                # and set chunk_size parameter to None.
+                #if chunk:
+                f.write(chunk)
+
+    # Now try to extract the instances to a directory DICOM/<series_instance_uid>
+    os.makedirs(f"{dirname}", exist_ok=True )
+    with zipfile.ZipFile(filename, "r") as zip_ref:
+        zip_ref.extractall(f'{dirname}')
+
+    hashes = open(f'{dirname}/md5hashes.csv').read().splitlines()[1:]
+    os.remove(f'{dirname}/md5hashes.csv')
+
+    return hashes
+
+
+
+
 def get_TCIA_instances_per_series_with_hashes(dicom, series):
     filename = "{}/{}.zip".format(dicom, series.uuid)
     dirname = "{}/{}".format(dicom, series.uuid)
@@ -243,7 +301,7 @@ def get_TCIA_instances_per_series_with_hashes(dicom, series):
                 f.write(chunk)
 
     # Now try to extract the instances to a directory DICOM/<series_instance_uid>
-    os.mkdir(f"{dirname}")
+    os.makedirs(f"{dirname}", exist_ok=True)
     with zipfile.ZipFile(filename, "r") as zip_ref:
         zip_ref.extractall(f'{dirname}')
 
@@ -303,8 +361,8 @@ def series_drill_down(series_ids, server="" ):
     else:
         server_url = NBIA_URL
         access_token, refresh_token = get_access_token(NBIA_AUTH_URL)
-    url = f'{server_url}/getStudyDrillDown'
-    # url = f'{server_url}/getStudyDrillDownWithSeriesIds'
+    # url = f'{server_url}/getStudyDrillDown'
+    url = f'{server_url}/getStudyDrillDownWithSeriesIds'
     data = "&".join(['list={}'.format(id) for id in series_ids])
 
     try:
@@ -401,10 +459,8 @@ def get_collection_license_info():
 def get_all_tcia_metadata(type, query_param=''):
     if query_param:
         url = f"https://cancerimagingarchive.net/api/v1/{type}/?per_page=100&{query_param}"
-        # url = f"https://cancerimagingarchive.net/api/v1/{type}/?{query_param}"
     else:
         url = f"https://cancerimagingarchive.net/api/v1/{type}/?per_page=100"
-        # url = f"https://cancerimagingarchive.net/api/v1/{type}/"
     response = requests.get(url)
     if response.status_code == 200:
         # Parse the JSON response
@@ -424,50 +480,57 @@ def get_all_tcia_metadata(type, query_param=''):
         print('Error accessing the API:', response.status_code)
         exit
 
+def get_all_tcia_metadata_v2(type, query_param=''):
+    page = 1
+    collections = []
+    while True:
+        if query_param:
+            url = f"https://cancerimagingarchive.net/api/v2/{type}/?per_page=100&page={page}&{query_param}"
+        else:
+            url = f"https://cancerimagingarchive.net/api/v2/{type}/?per_page=100&page={page}"
+        response = requests.get(url)
+        if response.status_code == 200:
+            # Parse the JSON response
+            result = response.json()
+            collections.extend(result['results'])
+            page += 1
+            if page > result["total_pages"]:
+                break
+        else:
+            print('Error accessing the API:', response.status_code)
+            exit
+
+    return collections
+
+
 
 if __name__ == "__main__":
-    # df = datacite.getDoi()
-    # pd.display(df)
-
-    # if not settings.configured:
-    #     from python_settings import settings
-    #     import settings as etl_settings
-    #
-    #     settings.configure(etl_settings)
-    #     assert settings.configured
-
-    # c=get_collection_values(server=NBIA_V2_URL)
-    # es = get_TCIA_instances_per_series_with_hashes('./temp', '1.3.6.1.4.1.14519.5.2.1.2452.1800.989133494427522093545007937296')
-    # print(f'PYTHONPATH: {os.environ["PYTHONPATH"]}')
-    # s = get_all_tcia_metadata_stage(type="collections")
-    # c = get_collection_values_and_counts()
-
-    # v = get_collection_values_and_counts()
-    # l = get_license_info()
-    # citations = get_all_tcia_metadata(type="citations", query_param="fields=Content")
-    #collections = get_all_tcia_metadata(type="licenses")
-
-    d = get_all_tcia_metadata(type="collections")
-    d = get_all_tcia_metadata(type="analysis-results")
-    d = get_all_tcia_metadata(type="citations")
-    d = get_all_tcia_metadata(type="downloads", query_param="include=42023,42025,42027,42029,42031")
-    # d = get_collection_metadata("ACRIN-Contralateral-Breast-MR")
-    # d = get_collection_descriptions_and_licenses()
-    # i = get_collection_id_from_doi('10.7937/k9/tcia.2016.eln8ygle')
-    # i=get_license_info()
-    # m=get_TCIA_series_metadata('1.2.246.352.71.2.494841863751.4253207.20190214211543')
-    # d=get_collection_descriptions_and_licenses(collection='CT-vs-PET-Ventilation-Imaging')
-    # r=get_internal_series_ids("NLST", "", third_party="no", size=100000, server="NLST" )
-    # hash = get_hash_nlst(
-    #     {'Collection': 'NLST', 'PatientID': '123342'})
-    # p = get_TCIA_patients_per_collection('NLST')
-    # st = get_TCIA_studies_per_patient('NLST', '108001')
-    # s = get_TCIA_series_metadata('1.3.6.1.4.1.14519.5.2.1.6834.5010.105031608124440650687374568136')
-    # p = get_collection_license_info()
-    # # print(p)
-    # c = get_collection_values_and_counts()
-    # h = get_hash({'Collection': 'TCGA-BRCA'})
-    # h = get_hash({'Collection': 'ACRIN-6698'})
-    # d = get_collection_descriptions_and_licenses()
+    c = get_all_tcia_metadata_v2("collections", query_param='')
     pass
+
+#     access_token = get_access_token(auth_server=NLST_AUTH_URL)[0]
+#     for patientID in ('126153', '215303'):
+#         print("Patient: ", patientID)
+#         studies = get_TCIA_studies_per_patient('NLST', patientID)
+#         for study in studies:
+#             # print("  ", "Study: ", study)
+#             print("  ", "Study: ", study['StudyInstanceUID'])
+#
+#             seriess = get_TCIA_series_per_study('NLST', patientID, study['StudyInstanceUID'])
+#             for series in seriess:
+#                 # print("      ", "Series: ", series)
+#                 print("      ", "Series: ", series['SeriesInstanceUID'])
+#
+#                 instances=get_TCIA_instance_uids_per_series('NLST', series['SeriesInstanceUID'])
+#                 # print("        ", "Instances: ", instances)
+#                 os.makedirs(f'/mnt/disks/idc-etl/tmp/{patientID}/{study["StudyInstanceUID"]}', exist_ok=True)
+#                 hashes = xget_TCIA_instances_per_series_with_hashes_nlst(f'/mnt/disks/idc-etl/tmp/{patientID}/{study["StudyInstanceUID"]}', series['SeriesInstanceUID'], access_token)
+#                 # print("        ", "Hashes: ", hashes)
+#                 print("        ", "Instances: ", len(instances))
+#                 count = len(os.listdir(f'/mnt/disks/idc-etl/tmp/{patientID}/{study["StudyInstanceUID"]}/{series["SeriesInstanceUID"]}'))
+#                 if len(instances) != count -1:
+#                     pass
+#
+#                 pass
+#     pass
 

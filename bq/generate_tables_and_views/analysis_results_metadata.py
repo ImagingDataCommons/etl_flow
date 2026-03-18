@@ -26,7 +26,7 @@ from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json
 # from bq.generate_tables_and_views.analysis_results_metadata.schema import analysis_results_metadata_schema
 from utilities.tcia_helpers import get_all_tcia_metadata
-from utilities.logging_config import successlogger, progresslogger
+from utilities.logging_config import successlogger, progresslogger, errlogger
 # from python_settings import settings
 import settings
 import requests
@@ -34,14 +34,13 @@ import requests
 analysis_results_metadata_schema = [
     bigquery.SchemaField('ID', 'STRING', mode='REQUIRED', description='Results ID'),
     bigquery.SchemaField('Title', 'STRING', mode='REQUIRED', description='Descriptive title'),
-    bigquery.SchemaField('Access', 'STRING', mode='REQUIRED', description='Limited or Public'),
     bigquery.SchemaField('source_doi','STRING', mode='NULLABLE', description='DOI that can be resolved at doi.org to a wiki page'),
     bigquery.SchemaField('source_url','STRING', mode='REQUIRED', description='URL of a wiki page'),
     bigquery.SchemaField('CancerTypes','STRING', mode='REQUIRED', description='Type(s) of cancer analyzed'),
     bigquery.SchemaField('TumorLocations', 'STRING', mode='REQUIRED', description='Body location that was analyzed'),
     bigquery.SchemaField('Subjects', 'INTEGER', mode='REQUIRED', description='Number of subjects whose data was analyzed'),
     bigquery.SchemaField('Collections', 'STRING', mode='REQUIRED', description='collection_names of original data collections analyzed'),
-    bigquery.SchemaField('AnalysisArtifacts', 'STRING', mode='REQUIRED', description='Types of analysis artifacts produced'),
+    bigquery.SchemaField('Modalities', 'STRING', mode='REQUIRED', description='Modalities of this analysis result'),
     bigquery.SchemaField('Updated', 'DATE', mode='REQUIRED', description='Most recent update reported by TCIA'),
     bigquery.SchemaField('license_url', 'STRING', mode='REQUIRED', description='URL of license of this analysis result'),
     bigquery.SchemaField('license_long_name', 'STRING', mode='REQUIRED', description='Long name of license of this analysis result'),
@@ -50,13 +49,14 @@ analysis_results_metadata_schema = [
                          description='Analysis result description'),
     bigquery.SchemaField('Citation', 'STRING', mode='NULLABLE',
                          description='Citation to be used for this source'),
+    bigquery.SchemaField('Access', 'STRING', mode='REQUIRED', description='Deprecated: Access is always Public'),
 ]
 
 
 def get_descriptions(client,args):
     query = f"""
     SELECT ID, Description
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_descriptions_end_user` 
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_end_user_descriptions` 
     """
     descriptions = {c.ID: c.Description for c in client.query(query).result()}
     return descriptions
@@ -64,8 +64,8 @@ def get_descriptions(client,args):
 
 def get_idc_sourced_analysis_metadata(client):
     query = f"""
---     SELECT DISTINCT ID, Title, Access, DOI as source_doi, CancerType as CancerTypes, Location as CancerLocations, AnalysisArtifacts, Updated 
-    SELECT DISTINCT ID, Title, Access, source_doi, Updated
+--     SELECT DISTINCT ID, Title, Access, source_doi, Updated
+    SELECT DISTINCT ID, Title, source_doi, Updated
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_metadata_idc_source`
     """
     results = [dict(row) for row in client.query(query).result()]
@@ -77,14 +77,14 @@ def get_idc_sourced_analysis_metadata(client):
 def get_citation(source_url):
     temp_citations = {
 
-        "https://doi.org/10.5281/zenodo.15643312": "Krishnaswamy, D., Bridge, C., Clunie, D., &amp; Fedorov, A. (2025). <i>PROSTATEx-Targets: Point annotations of lesion targets for the PROSTATEx collection</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.15643312",
-        "https://doi.org/10.5281/zenodo.15643334": "Krishnaswamy, D., Bridge, C., Clunie, D., &amp; Fedorov, A. (2025). <i>NLST-Sybil: Expert annotations of tumor regions in the NLST CT images</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.15643334",
-        "https://doi.org/10.5281/zenodo.16989819": "Krishnaswamy, D., Bridge, C., Clunie, D., &amp; Fedorov, A. (2025). <i>Lung-PET-CT-Dx-Annotations: Expert annotation of lung tumors for the Lung-PET-CT-Dx collection</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.16989819",
-
-        "https://doi.org/10.5281/zenodo.17362624": "Krishnaswamy, D., Clunie, D., &amp; Fedorov, A. (2025). <i>NLSTSeg: Expert lesion segmentations and radiomics features for NLST CT images</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.17362624",
-        "https://doi.org/10.5281/zenodo.17470190": "Bridge, C., Zheng, Y., Gevaert, O., Clunie, D., &amp; Fedorov, A. (2025). <i>TCGA-GBM360: GBM360 aggressiveness maps for a subset of TCGA pathology slides</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.17470190",
-        "https://doi.org/10.5281/zenodo.16966285": "Bridge, C., Abousamra, S., Saltz, J., Gupta, R., Kurc, T., Zhang, Y., Zhao, T., Batiste, R., Samaras, D., Bremer, E., Shroyer, K. R., Nguyen, V., Singh, P., Hou, L., Le, H., Van Arnam, J., Shmulevich, I., \
-Rao, A. U. K., Lazar, A. J., Sharma, A., Thorsson, V., Shankar, A., Chen, C., Clunie, D., &amp; Fedorov, A. (2025). <i>TCGA-SBU-TIL-Maps: AI-derived Tumor Infiltrating Lymphocyte maps for the TCGA collections</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.16966285"
+#         "https://doi.org/10.5281/zenodo.15643312": "Krishnaswamy, D., Bridge, C., Clunie, D., &amp; Fedorov, A. (2025). <i>PROSTATEx-Targets: Point annotations of lesion targets for the PROSTATEx collection</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.15643312",
+#         "https://doi.org/10.5281/zenodo.15643334": "Krishnaswamy, D., Bridge, C., Clunie, D., &amp; Fedorov, A. (2025). <i>NLST-Sybil: Expert annotations of tumor regions in the NLST CT images</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.15643334",
+#         "https://doi.org/10.5281/zenodo.16989819": "Krishnaswamy, D., Bridge, C., Clunie, D., &amp; Fedorov, A. (2025). <i>Lung-PET-CT-Dx-Annotations: Expert annotation of lung tumors for the Lung-PET-CT-Dx collection</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.16989819",
+#
+#         "https://doi.org/10.5281/zenodo.17362624": "Krishnaswamy, D., Clunie, D., &amp; Fedorov, A. (2025). <i>NLSTSeg: Expert lesion segmentations and radiomics features for NLST CT images</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.17362624",
+#         "https://doi.org/10.5281/zenodo.17470190": "Bridge, C., Zheng, Y., Gevaert, O., Clunie, D., &amp; Fedorov, A. (2025). <i>TCGA-GBM360: GBM360 aggressiveness maps for a subset of TCGA pathology slides</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.17470190",
+#         "https://doi.org/10.5281/zenodo.16966285": "Bridge, C., Abousamra, S., Saltz, J., Gupta, R., Kurc, T., Zhang, Y., Zhao, T., Batiste, R., Samaras, D., Bremer, E., Shroyer, K. R., Nguyen, V., Singh, P., Hou, L., Le, H., Van Arnam, J., Shmulevich, I., \
+# Rao, A. U. K., Lazar, A. J., Sharma, A., Thorsson, V., Shankar, A., Chen, C., Clunie, D., &amp; Fedorov, A. (2025). <i>TCGA-SBU-TIL-Maps: AI-derived Tumor Infiltrating Lymphocyte maps for the TCGA collections</i>[Dataset]. Zenodo. https://doi.org/10.5281/zenodo.16966285"
 
     }
 
@@ -100,7 +100,7 @@ Rao, A. U. K., Lazar, A. J., Sharma, A., Thorsson, V., Shankar, A., Chen, C., Cl
     return citation
 
 
-# Get collection-level metadata: CancerTypes, TumorLocations, AnalYsisArtifacts, Subjects, CollectionsAnalysed, for
+# Get collection-level metadata: CancerTypes, TumorLocations, modalities, Subjects, CollectionsAnalysed, for
 # each analysis result
 # analysis_metadata includes all TCIA analysis results, not just those that are in IDC. We need to deal with that.
 # 1. Load analysis_metadata, loaded from spreadsheet, into a temp BQ table
@@ -110,7 +110,7 @@ def get_analysis_results_metadata(client, analysis_metadata):
     schema = [
         bigquery.SchemaField("ID", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("Title", "STRING", mode="REQUIRED"),
-        bigquery.SchemaField("Access", "STRING", mode="REQUIRED"),
+        # bigquery.SchemaField("Access", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("source_doi", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("Updated", "STRING", mode="REQUIRED"),
     ]
@@ -135,6 +135,7 @@ def get_analysis_results_metadata(client, analysis_metadata):
         exit(1)
     query = f"""
 WITH ocm AS (
+--   Flatten 
   SELECT * except(Updated, sources, CancerTypes, TumorLocations, Subjects)
   FROM `idc-dev-etl.{settings.BQ_DEV_EXT_DATASET}.original_collections_metadata` ocm, 
   UNNEST(sources) AS srcs, UNNEST(SPLIT(CancerTypes, ',')) as CTypes, 
@@ -143,24 +144,27 @@ WITH ocm AS (
 )
 ,
 s1 AS (
-      SELECT ocm.* except(Access), garm.* except(source_doi) 
+      SELECT DISTINCT garm.*, ocm.collection_id, ocm.CTypes, ocm.TLocations, ocm.ITypes 
       FROM ocm
       JOIN `idc-dev-etl.whc_dev.{table_id}` garm
       ON ocm.source_doi = garm.source_doi
  )
 
-SELECT DISTINCT ID, Title, s1.Access Access, s1.source_doi source_doi, CONCAT("https://doi.org/",s1.source_doi) source_url,  
+SELECT DISTINCT ID, Title, s1.source_doi source_doi, CONCAT("https://doi.org/",s1.source_doi) source_url,  
     STRING_AGG(DISTINCT TRIM(s1.CTypes, ' '), ", " ORDER BY TRIM(CTypes, ' ')) CancerTypes,
     STRING_AGG(DISTINCT TRIM(TLocations, ' '), ", " ORDER BY TRIM(TLocations, ' ')) TumorLocations,
-    COUNT(DISTINCT da.PatientID) Subjects,
+    COUNT(DISTINCT ajpac.submitter_case_id) Subjects,
     STRING_AGG( DISTINCT TRIM(s1.collection_id, ' '), ", " ORDER BY TRIM(s1.collection_id, ' ')) Collections,
-    STRING_AGG( DISTINCT TRIM(Modality, ' '), ", " ORDER BY TRIM(Modality, ' ')) AnalysisArtifacts,
+    STRING_AGG( DISTINCT TRIM(Modality, ' '), ", " ORDER BY TRIM(Modality, ' ')) Modalities,
     Updated,
-    license_url, license_long_name, license_short_name
+    license_url, license_long_name, license_short_name,
+    "Public" Access
     FROM s1
-    JOIN `idc-dev-etl.{settings.BQ_DEV_EXT_DATASET}.dicom_all` da
-    ON s1.source_doi = da.Source_DOI
-    GROUP BY ID, Title, Access, source_doi, source_url, Updated, license_url, license_long_name, license_short_name
+    JOIN `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` ajpac
+    ON s1.source_doi = ajpac.source_doi
+    JOIN `idc-dev-etl.{settings.BQ_DEV_EXT_DATASET}.dicom_metadata` dm
+    ON ajpac.sop_instance_uid = dm.SOPInstanceUID
+    GROUP BY ID, Title, source_doi, source_url, Updated, license_url, license_long_name, license_short_name
     ORDER BY ID
     """
 
@@ -174,7 +178,7 @@ def get_tcia_sourced_analysis_metadata(BQ_client):
         ar_metadata[ar['result_doi'].lower()] = dict(
             ID = ar['result_short_title'],
             Title = ar['result_title'],
-            Access = ar['result_page_accessibility'],
+            # Access = ar['result_page_accessibility'],
             source_doi = ar['result_doi'].lower(),
             Updated = ar['date_updated'],
         )
@@ -192,13 +196,17 @@ def build_metadata(args, BQ_client):
     rows = []
     for source_doi, analysis_data in analysis_results_metadata.items():
         # analysis_data['source_url'] = f'https://doi.org/{analysis_data["source_doi"]}'
-        analysis_data['Description'] = descriptions[analysis_data['ID']]
+        try:
+            analysis_data['Description'] = descriptions[analysis_data['ID']]
+        except Exception as exc:
+            errlogger.error(f'No description found for {analysis_data["ID"]}')
+
         analysis_data['Citation'] = get_citation(analysis_data['source_url'])
         rows.append(json.dumps(analysis_data))
     metadata = '\n'.join(rows)
     return metadata
 
-def gen_collections_table(args):
+def gen_table(args):
     BQ_client = bigquery.Client(project=settings.DEV_PROJECT)
     metadata = build_metadata(args, BQ_client)
     try:
@@ -219,4 +227,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-    gen_collections_table(args)
+    gen_table(args)

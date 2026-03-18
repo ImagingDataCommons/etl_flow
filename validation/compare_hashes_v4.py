@@ -23,7 +23,8 @@ import argparse
 import hashlib
 from logging import INFO
 from utilities.tcia_helpers_v4 import get_hash, get_images_with_md5_hash,\
-    get_TCIA_patients_per_collection, get_TCIA_studies_per_patient, get_TCIA_series_per_study
+    get_TCIA_patients_per_collection, get_TCIA_studies_per_patient, get_TCIA_series_per_study, \
+    get_TCIA_instances_per_series_with_hashes
 from ingestion.utilities.utils import get_merkle_hash
 from utilities.logging_config import successlogger, progresslogger, errlogger
 import settings
@@ -342,7 +343,7 @@ if __name__ == '__main__':
     parser.add_argument('--only_mismatches', default=False, help='Only log mismatching hashes')
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
                         help='Levels at which to log')
-    parser.add_argument('--collections', default=['ACRIN-NSCLC-FDG-PET'], \
+    parser.add_argument('--collections', default=['NLST'], \
                         help='List of collections to compare. If empty, compare all collections')
     parser.add_argument('--patients', default = [],
                         help='List of patients to compare. If empty, compare all patients')

@@ -42,10 +42,10 @@ successlogger = logging.getLogger('root.success')
 successlogger.setLevel(INFO)
 for hdlr in successlogger.handlers[:]:
     successlogger.removeHandler(hdlr)
-progress_fh = logging.FileHandler('{}/success.log'.format(settings.LOG_DIR))
-successlogger.addHandler(progress_fh)
+success_fh = logging.FileHandler('{}/success.log'.format(settings.LOG_DIR))
+successlogger.addHandler(success_fh)
 successformatter = logging.Formatter('%(message)s')
-progress_fh.setFormatter(successformatter)
+success_fh.setFormatter(successformatter)
 
 progresslogger = logging.getLogger('root.progress')
 progresslogger.setLevel(INFO)

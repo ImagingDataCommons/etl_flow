@@ -36,8 +36,8 @@ def compare_dois():
         # include both original collection dois and analysis results dois
         rows = sess.query(Collection.collection_id,Series.source_doi).distinct().join(Collection.patients). \
             join(Patient.studies).join(Study.seriess). \
-            join(All_Collections, Collection.collection_id==All_Collections.tcia_api_collection_id). \
-            filter(and_(or_(Series.sources == [True, False], Series.sources == [True, True]), All_Collections.tcia_access=="Public")).all()
+            join(All_Collections, Collection.collection_id==All_Collections.collection_name). \
+            filter(and_(or_(Series.sources == [True, False], Series.sources == [True, True]), All_Collections.access=="Public")).all()
         idc_dois = {row.source_doi.lower(): row.collection_id for row in rows if row.source_doi }
 
         tcia_original_dois = {row['collection_doi'].lower(): row['collection_short_title'] for row in get_all_tcia_metadata(type="collections", query_param="&_fields=collection_short_title,collection_doi")}

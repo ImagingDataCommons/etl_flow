@@ -36,7 +36,7 @@ if __name__ == '__main__':
     args.skipped_table_ids = []
     args.table_ids = []
     dev_table_ids = {
-        # "all_collections": "TABLE",
+        # "all_sources": "TABLE",
         # "version": "TABLE",
         # "version_collection": "TABLE",
         # "collection": "TABLE",

@@ -95,12 +95,6 @@
         "type": "STRING"
       },
       {
-        "description": "UUID of this version of study containing this instance",
-        "mode": "NULLABLE",
-        "name": "crdc_study_uuid",
-        "type": "STRING"
-      },
-      {
         "description": "md5 hash of the data in the this version of the study containing this instance",
         "mode": "NULLABLE",
         "name": "study_hash",
@@ -121,7 +115,7 @@
       {
         "description": "UUID of this version of series containing this instance",
         "mode": "NULLABLE",
-        "name": "crdc_series_uuid",
+        "name": "series_uuid",
         "type": "STRING"
       },
       {
@@ -157,7 +151,7 @@
       {
         "description": "UUID of this version of this instance",
         "mode": "NULLABLE",
-        "name": "crdc_instance_uuid",
+        "name": "instance_uuid",
         "type": "STRING"
       },
       {
@@ -248,6 +242,24 @@
         "description": "The short name of the license of the collection that contains this instance",
         "mode": "NULLABLE",
         "name": "license_short_name",
+        "type": "STRING"
+      },
+      {
+        "description": "DEPRECATED: UUID of this version of study containing this instance",
+        "mode": "NULLABLE",
+        "name": "crdc_study_uuid",
+        "type": "STRING"
+      },
+      {
+        "description": "DEPRECATED: Duplicate of series_uuid",
+        "mode": "NULLABLE",
+        "name": "crdc_series_uuid",
+        "type": "STRING"
+      },
+      {
+        "description": "DEPRECATED: Duplicate of instance_uuid",
+        "mode": "NULLABLE",
+        "name": "crdc_instance_uuid",
         "type": "STRING"
       },
       {

@@ -76,7 +76,7 @@ def likely_clinical(download):
 def get_raw_data():
     client = bigquery.Client()
     # Get collections and source_dois that we have in IDC
-    all_idc_collections = client.list_rows(client.get_table(f'{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections')).to_dataframe()
+    all_idc_collections = client.list_rows(client.get_table(f'{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_sources')).to_dataframe()
     all_idc_source_dois = all_idc_collections[['source_doi', 'Access']].copy()
     # Get all TCIA collections which we also have
     all_tcia_collection_metadata = get_all_tcia_metadata("collections")

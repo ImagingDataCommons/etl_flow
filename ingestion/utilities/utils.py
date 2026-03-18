@@ -20,7 +20,7 @@ import hashlib
 from base64 import b64decode
 # import logging
 from subprocess import run, STDOUT, DEVNULL
-from google.cloud import storage
+from google.cloud import storage, bigquery
 from google.api_core.exceptions import Conflict
 
 from sqlalchemy import and_
@@ -266,8 +266,14 @@ def accum_sources(parent, children):
 # The list is specific to a source.
 def list_skips(sess, skipped_collections):
     skips = [collection for collection in skipped_collections]
-    collections = sess.query(DOI_To_Access.collection_id).distinct().filter(DOI_To_Access.access != "Public").all()
-    for collection in collections:
-        skips.append(collection.collection_id)
+    client = bigquery.Client()
+    query = f"""
+SELECT collection_id
+FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.doi_to_access`
+WHERE access = 'Limited'
+"""
+    collections = client.query(query).to_dataframe()
+    for i, row in collections.iterrows():
+        skips.append(row.collection_id)
     skips.sort()
     return skips

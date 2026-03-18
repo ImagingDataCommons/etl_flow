@@ -16,19 +16,10 @@
 
 # Hierarchically removes instances having SOPInstanceUIDs in a list, then hierarchically removes higher level elements
 # Does not update the hashes
+# The instances to be removed are supplied to perform_partial_deletion in a list_of_instances parameter, or
+# in a manifest in GDC. In the latter case, the manifest URL is included in the args param.
 
-# import os
-# import io
-# import sys
-# import argparse
-# import csv
-# from idc.models import Base, IDC_Collection, IDC_Patient, IDC_Study, IDC_Series
-# from ingestion.utilities.utils import get_merkle_hash, list_skips
 from utilities.logging_config import successlogger, errlogger, progresslogger
-# from python_settings import settings
-# from sqlalchemy.orm import Session
-# from sqlalchemy import create_engine, update
-# from google.cloud import storage
 from utilities.sqlalchemy_helpers import sa_session
 import pandas as pd
 
@@ -113,11 +104,13 @@ RETURNING *
     return
 
     
-def perform_partial_deletion(args, sep=","):
-
+def perform_partial_deletion(args, list_of_instances=[], sep=","):
     with sa_session(echo=False) as sess:
-        manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/{args.manifest_id}", sep=sep, header=0)
-        instances = manifest_data['SOPInstanceUID'].to_list()
+        if list_of_instances:
+            instances = list_of_instances
+        else:
+            manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/{args.manifest_id}", sep=sep, header=0)
+            instances = manifest_data['SOPInstanceUID'].to_list()
         instances.sort()
         remove_collections(sess, instances)
         sess.commit()

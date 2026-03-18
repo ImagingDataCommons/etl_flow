@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import settings
 # Adds/replaces data to the idc_collection/_patient/_study/_series/_instance DB tables
 # from a specified bucket.
 #
@@ -29,6 +28,8 @@ import settings
 # The script walks the directory hierarchy from a specified subdirectory of the
 # gcsfuse mount point
 
+import settings
+import json5
 from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance
 from utilities.logging_config import successlogger, errlogger, progresslogger
 from base64 import b64decode
@@ -47,6 +48,12 @@ from google.cloud import storage
 
 from multiprocessing import Queue, Process
 from queue import Empty
+
+import requests
+import yaml
+from io import StringIO
+
+
 
 
 def build_instance(args, bucket, series, instance_data):
@@ -123,10 +130,10 @@ def build_series(args, bucket, study, series_data, source_doi, versioned_source_
     except Exception as exc:
         raise
     # Always set/update the source_doi in case it has changed
-    series.license_url = args.license['license_url']
-    series.license_long_name = args.license['license_long_name']
-    series.license_short_name = args.license['license_short_name']
-    series.analysis_result = args.analysis_result
+    # series.license_url = args.license['license_url']
+    # series.license_long_name = args.license['license_long_name']
+    # series.license_short_name = args.license['license_short_name']
+    # series.analysis_result = args.analysis_result
     series.source_doi = source_doi.lower()
     series.source_url = f'https://doi.org/{source_doi.lower()}'
     series.versioned_source_doi = versioned_source_doi.lower()
@@ -219,7 +226,7 @@ def worker(input, output, args, collection_id, source_doi, versioned_source_doi)
                         build_patient(args, bucket, collection, patient_data, source_doi, versioned_source_doi)
                     except Exception as exc:
                         raise
-                    sess.commit()
+                    # sess.commit()
                     output.put(patient_data.iloc[0]["patientID"])
                     break
                 except Exception as exc:
@@ -249,9 +256,10 @@ def build_collections(args, sess, manifest_data, sep=','):
     # Remove whitespace
     manifest_data = manifest_data.map(lambda x: x.strip())
 
-    # If a manifest is provided and there is a single collection, and a collection_id column to the manifest
-    if 'manifest_id' in args and args.manifest_id and 'collection_id' in args and args.collection_id:
-        manifest_data['collection_id'] = args.collection_id
+    # # If a manifest is provided and there is a single collection, and no collection_id column
+    # breakpoint() # When would this ever happen?
+    # if args.manifest_id and args.collection_id and "collection_id" not in manifest_data:
+    #     manifest_data['collection_id'] = args.collection_id
 
     done_data = pd.DataFrame(dones, columns=['SOPInstanceUID'])
 
@@ -268,7 +276,7 @@ def build_collections(args, sess, manifest_data, sep=','):
             collection.collection_id = collection_id
             collection.redacted = False
             sess.add(collection)
-            sess.commit()
+            # sess.commit()
             progresslogger.info(f'Collection {collection_id} added')
         else:
             progresslogger.info(f'Collection {collection_id} exists')
@@ -279,54 +287,62 @@ def build_collections(args, sess, manifest_data, sep=','):
         # All patients in the collection
         patient_in_collection_ids = sorted(collection_data['patientID'].unique())
 
-        processes = []
-        # Create queues
-        task_queue = Queue()
-        done_queue = Queue()
-        # List of patients enqueued
-        enqueued_patients = []
-        # Start worker processes
-        for process in range(min(args.processes, len(patient_in_collection_ids))):
-            args.pid = process+1
-            processes.append(
-                 Process(target=worker, args=(task_queue, done_queue, args, collection_id,
-                                             args.source_doi,
-                                             args.versioned_source_doi)))
-            processes[-1].start()
-
         args.pid = 0
-        for patient_id in patient_in_collection_ids:
-            # Data for this patient
-            patient_data = collection_data[collection_data['patientID'] == patient_id]
-            patient_index = f'{all_patient_ids.index(patient_id) + 1} of {len(all_patient_ids)}'
+        if args.processes == 0:
+            bucket = client.bucket(args.src_bucket)
+            for patient_id in patient_in_collection_ids:
+                # Data for this patient
+                patient_data = collection_data[collection_data['patientID'] == patient_id]
+                patient_index = f'{all_patient_ids.index(patient_id) + 1} of {len(all_patient_ids)}'
+                build_patient(args, bucket, collection, patient_data, args.source_doi, args.versioned_source_doi)
+        else:
+            processes = []
+            # Create queues
+            task_queue = Queue()
+            done_queue = Queue()
+            # List of patients enqueued
+            enqueued_patients = []
+            # Start worker processes
+            for process in range(min(args.processes, len(patient_in_collection_ids))):
+                args.pid = process+1
+                processes.append(
+                     Process(target=worker, args=(task_queue, done_queue, args, collection_id,
+                                                 args.source_doi,
+                                                 args.versioned_source_doi)))
+                processes[-1].start()
 
-            task_queue.put((patient_index, patient_data))
-            enqueued_patients.append(patient_id)
+            for patient_id in patient_in_collection_ids:
+                # Data for this patient
+                patient_data = collection_data[collection_data['patientID'] == patient_id]
+                patient_index = f'{all_patient_ids.index(patient_id) + 1} of {len(all_patient_ids)}'
 
-        # Collect the results for each patient
-        try:
-            while not enqueued_patients == []:
-                # Timeout if waiting too long
-                results = done_queue.get(True)
-                enqueued_patients.remove(results)
+                task_queue.put((patient_index, patient_data))
+                enqueued_patients.append(patient_id)
 
-            # Tell child processes to stop
-            for process in processes:
-                task_queue.put('STOP')
+            # Collect the results for each patient
+            try:
+                while not enqueued_patients == []:
+                    # Timeout if waiting too long
+                    results = done_queue.get(True)
+                    enqueued_patients.remove(results)
 
-            # Wait for them to stop
-            for process in processes:
-                process.join()
+                # Tell child processes to stop
+                for process in processes:
+                    task_queue.put('STOP')
 
-            sess.commit()
+                # Wait for them to stop
+                for process in processes:
+                    process.join()
 
-        except Empty as e:
-            errlogger.error("Timeout in build_collection %s", collection.collection_id)
-            for process in processes:
-                process.terminate()
-                process.join()
-            sess.rollback()
-            successlogger.info("Collection %s, %s, NOT completed in %s", collection.collection_id)
+                # sess.commit()
+
+            except Empty as e:
+                errlogger.error("Timeout in build_collection %s", collection.collection_id)
+                for process in processes:
+                    process.terminate()
+                    process.join()
+                sess.rollback()
+                successlogger.info("Collection %s, %s, NOT completed in %s", collection.collection_id)
 
         hashes = [patient.hash for patient in collection.patients]
         collection.hash= get_merkle_hash(hashes)
@@ -334,9 +350,47 @@ def build_collections(args, sess, manifest_data, sep=','):
     return all_collection_ids
 
 
+def get_conversion_metadata_from_json(sess, collection_id, sep):
+    breakpoint() # Deal with analysis results
+    file_path = f"{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_original_collections_metadata.json5"
+    with open(file_path) as f:
+        metadata = json5.load(f)
+    all_collections_metadata = pd.DataFrame(metadata)
+    try:
+        collection_metadata = all_collections_metadata[all_collections_metadata["collection_name"] == collection_id].squeeze(axis=0).to_dict()
+    except Exception as exc:
+        errlogger.error(f'No entry for collection_id {collection_id}')
+        exit(1)
+    conversion_metadata = dict(
+        src_bucket = collection_metadata['source_bucket'],
+        subdir = collection_metadata['source_subdirectory'],
+        source_doi = collection_metadata['source_doi'],
+        versioned_source_doi = collection_metadata['current_versioned_source_doi'],
+        manifest_id = collection_metadata["manifest_id"]
+    )
+    return conversion_metadata
+
+
+def get_conversion_metadata_from_comet(collection_name, branch="current"):
+    collection_id = collection_name.lower().replace('-','_').replace(' ', '_')
+    file_url = f"https://raw.githubusercontent.com/ImagingDataCommons/idc-comet/{branch}/collections/original/{collection_id}.yaml"
+    response = requests.get(file_url)
+    if response.status_code == 200:
+        # Specify the local path where you want to save the file
+        collection_metadata = yaml.load(StringIO(response.text))
+    else:
+        print(f"Failed to retrieve file. Status code: {response.status_code}")
+
 def perform_partial_revision(sess, args, sep):
-    # Read the manifest into a data frame
-    manifest_id = args.manifest_id
+    breakpoint() # Deal with analysis results
+    conversion_metadata = get_conversion_metadata_from_json(args.collection_id)
+    # conversion_metadata = get_conversion_metadata_from_comet(args.collection_id, args.comet_branch)
+    src_bucket = conversion_metadata['source_bucket'],
+    subdir = conversion_metadata['source_subdirectory'],
+    source_doi = conversion_metadata['source_doi'],
+    versioned_source_doi = conversion_metadata['current_versioned_source_doi'],
+    manifest_id = conversion_metadata["manifest_id"]
+
     if manifest_id:
         try:
             if args.subdir:
@@ -347,27 +401,29 @@ def perform_partial_revision(sess, args, sep):
             errlogger.error(f'Failed to read manifest: {exc}')
             exit(-1)
     else:
+        suffix = '.csv' if sep == ',' else '.tsv'
         try:
             # If no manifest is provided, first see if we've already generated one
             if args.subdir:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_manifest.csv", sep=sep,
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/etl_generated_manifest{suffix}", sep=sep,
                                             header=0)
             else:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/generated_manifest.csv", sep=sep, header=0)
+                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/etl_generated_manifest{suffix}", sep=sep, header=0)
             manifest_data = build_manifest(args, manifest_data)
+
             # Save the manifest to the bucket in case manifest was extended
             if args.subdir:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_manifest.csv", sep=sep, index=False)
+                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/etl_generated_manifest{suffix}", sep=sep, index=False)
             else:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/generated_manifest.csv", sep=sep, index=False)
+                manifest_data.to_csv(f"gs://{args.src_bucket}/etl_generated_manifest{suffix}", sep=sep, index=False)
 
         except Exception as exc:
             manifest_data = build_manifest(args)
             # Save the manifest to the bucket in case we need to rerun
             if args.subdir:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/generated_manifest.csv", sep=sep, index=False)
+                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/etl_generated_manifest{suffix}", sep=sep, index=False)
             else:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/generated_manifest.csv", sep=sep, index=False)
+                manifest_data.to_csv(f"gs://{args.src_bucket}/etl_generated_manifest{suffix}", sep=sep, index=False)
     all_collection_ids = build_collections(args, sess, manifest_data, sep)
 
     return all_collection_ids
@@ -376,7 +432,7 @@ def perform_partial_revision(sess, args, sep):
 def prebuild_from_manifests(args, sep=','):
     with sa_session(echo=False) as sess:
         all_collection_ids = perform_partial_revision(sess, args, sep)
-        sess.commit()
+        # sess.commit()
 
     if args.validate:
         if args.analysis_result:

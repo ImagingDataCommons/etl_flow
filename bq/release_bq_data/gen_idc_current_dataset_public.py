@@ -32,7 +32,8 @@ if __name__ == '__main__':
     parser.add_argument('--trg_project', default=settings.AH_PROJECT)
     parser.add_argument('--src_dataset', default=f'idc_v{version}', help='BQ dataset name')
     parser.add_argument('--trg_dataset', default=f'idc_current', help='Clinical dataset name')
+    parser.add_argument('--table_ids', default={}, help="Copy all tables/views unless this is non-empty. Entries should be like table_name: 'TABLE' or view_name: 'VIEW'")
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-    copy_dataset(args)
+    copy_dataset(args, table_ids=args.table_ids)
