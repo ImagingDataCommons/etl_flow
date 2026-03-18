@@ -1,9 +1,8 @@
+import io
+
 from google.cloud import bigquery
-import json
-import sys
-from clinical.utils import read_clin_file
 from python_settings import settings
-from os import path, listdir,mkdir
+from os import path, mkdir
 import shutil
 import requests
 import hashlib
@@ -44,18 +43,18 @@ if __name__=="__main__":
       download_url = row['download_url']
       download_type = row['download_type']
       coldir = download_dir+'/'+id
-      filenmA = download_url.split('/')
-      filenm = filenmA[len(filenmA)-1]
-      if '?' in filenm:
-        filenmA = filenm.split('?')
-        filenm = filenmA[0]
+      filename = download_url.split('/')[-1]
+      if '?' in filename:
+        filenameA = filename.split('?')
+        filename = filenameA[0]
       if not path.isdir(coldir):
         mkdir(coldir)
       resp = requests.get(download_url)
       md5 = hashlib.md5(resp.content).hexdigest()
-      with open(coldir + '/' + filenm, 'wb') as f:
+
+      with open(coldir + '/' + filename, 'wb') as f:
         f.write(resp.content)
-      ndata.append(id+'\t'+filenm+'\t'+download_type+'\n')
+      ndata.append(id+'\t'+filename+'\t'+download_type+'\n')
 
   fl = open(download_dir+"/summary.txt","w+")
   fl.writelines(ndata)

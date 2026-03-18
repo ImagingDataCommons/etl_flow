@@ -72,14 +72,15 @@ def upload_collection(client, args, table, order_by):
         idc_src AS idc) AS sources,
       STRUCT(tcia_rev AS tcia,
         idc_rev AS idc) AS revised,
-      redacted
+      redacted,
+      mitigation
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT collection_id, idc_collection_id, uuid, min_timestamp, max_timestamp, 
             init_idc_version, rev_idc_version, final_idc_version, done, is_new, expanded, 
             (hashes).tcia AS tcia_hash, (hashes).idc AS idc_hash, (hashes).all_sources AS all_hash, 
             (sources).tcia AS tcia_src, (sources).idc AS idc_src, (revised).tcia AS tcia_rev, 
-            (revised).idc AS idc_rev, redacted
+            (revised).idc AS idc_rev, redacted, mitigation
         FROM {table}''')
     ORDER BY {order_by}
     """
@@ -108,14 +109,15 @@ def upload_patient(client, args, table, order_by):
         idc_src AS idc) AS sources,
       STRUCT(tcia_rev AS tcia,
         idc_rev AS idc) AS revised,
-      redacted
+      redacted,
+      mitigation
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT submitter_case_id, idc_case_id, uuid, min_timestamp, max_timestamp, 
             init_idc_version, rev_idc_version, final_idc_version, done, is_new, expanded, 
             (hashes).tcia AS tcia_hash, (hashes).idc AS idc_hash, (hashes).all_sources AS all_hash, 
             (sources).tcia AS tcia_src, (sources).idc AS idc_src, (revised).tcia AS tcia_rev, 
-            (revised).idc AS idc_rev, redacted
+            (revised).idc AS idc_rev, redacted, mitigation
         FROM {table}''')
     ORDER BY {order_by}
     """
@@ -143,7 +145,8 @@ def upload_study(client, args, table, order_by):
         idc_src AS idc) AS sources,
       STRUCT(tcia_rev AS tcia,
         idc_rev AS idc) AS revised,
-      redacted
+      redacted,
+      mitigation
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT study_instance_uid, uuid, study_instances, min_timestamp, 
@@ -151,7 +154,7 @@ def upload_study(client, args, table, order_by):
             done, is_new, expanded, (hashes).tcia AS tcia_hash, (hashes).idc AS idc_hash, 
             (hashes).all_sources AS all_hash, (sources).tcia AS tcia_src, 
             (sources).idc AS idc_src, (revised).tcia AS tcia_rev, (revised).idc AS idc_rev,
-            redacted 
+            redacted, mitigation
         FROM {table}''')
     ORDER BY {order_by}
     """
@@ -184,11 +187,12 @@ def upload_series(client, args, table, order_by):
       STRUCT(tcia_rev AS tcia,
         idc_rev AS idc) AS revised,
       excluded,
-      license_long_name,
-      license_url,
-      license_short_name,
-      analysis_result,
-      redacted
+--       license_long_name,
+--       license_url,
+--       license_short_name,
+      collection_type,
+      redacted, 
+      mitigation
       
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
@@ -198,8 +202,10 @@ def upload_series(client, args, table, order_by):
             (hashes).idc AS idc_hash, (hashes).all_sources AS all_hash, 
             (sources).tcia AS tcia_src, (sources).idc AS idc_src, 
             (revised).tcia AS tcia_rev, (revised).idc AS idc_rev,
-            source_url, excluded, license_long_name, license_url,
-            license_short_name, analysis_result, redacted, versioned_source_doi
+            source_url, excluded, 
+--             license_long_name, license_url, license_short_name, 
+            redacted, versioned_source_doi, mitigation,
+            collection_type
         FROM {table}''')
     ORDER BY {order_by}
     """
@@ -225,13 +231,14 @@ def upload_instance(client, args, table, order_by):
       excluded,
       redacted,
       mitigation,
-      ingestion_url
+      ingestion_url, 
+      source_file_hash
     FROM
       EXTERNAL_QUERY ( '{args.federated_query}',
         '''SELECT sop_instance_uid, uuid, hash, size, revised, done, is_new, 
             expanded, init_idc_version, rev_idc_version, final_idc_version, 
             cast(source AS varchar) AS source, timestamp, excluded, redacted,
-            mitigation, ingestion_url
+            mitigation, ingestion_url, source_file_hash
         FROM {table}''')
     ORDER BY {order_by}
     """

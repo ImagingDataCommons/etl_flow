@@ -43,7 +43,7 @@ def get_dois_tcia(collection, patient="", third_party="no", server=""):
         seriesIDs = []
         for study in subject["studyIdentifiers"]:
             seriesIDs.extend(study["seriesIdentifiers"])
-        study_metadata = series_drill_down(seriesIDs, server=server)
+        study_metadata = series_drill_down(collection, seriesIDs, server=server)
         for study in study_metadata:
             for series in study["seriesList"]:
                 uri = series["descriptionURI"]

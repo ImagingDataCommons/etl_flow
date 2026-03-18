@@ -22,7 +22,7 @@ import argparse
 from utilities.logging_config import successlogger, progresslogger
 import settings
 from google.cloud import storage, bigquery
-from gcs.utilities.empty_bucket_mp import del_all_instances
+from gcs.gcs_utilities.empty_bucket_mp import del_all_instances
 
 def get_prestage_buckets(args):
     client = bigquery.Client()

@@ -39,7 +39,7 @@ if __name__ == '__main__':
     parser.add_argument('--collection_id', default='TCGA-BRCA', help='collection_id of the collection or ID of analysis result to which instances belong.')
     parser.add_argument('--license', default = {"license_url": 'https://creativecommons.org/licenses/by/4.0/',\
             "license_long_name": "Creative Commons Attribution 4.0 International License", \
-            "license_short_name": "CC BY 4.0"}, help="(Sub-)Collection license")
+            "license_short_name": "CC BY 3.0"}, help="(Sub-)Collection license")
     parser.add_argument('--analysis_result', type=bool, default=False, help='True if an analysis result')
     parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')

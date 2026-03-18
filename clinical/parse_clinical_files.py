@@ -1281,7 +1281,7 @@ def add_from_archive():
 if __name__ == "__main__":
 
     colls = [] # Collections to parse. Parse all collections if empty.
-    # colls = [] # Collections to parse. Parse all collections if empty.
+    # colls = ['cc_radiomics_phantom_3'] # Collections to parse. Parse all collections if empty.
     dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
 
     # Copy files from the ./clinical/archive directory to ./clinical/downloads/download_xx

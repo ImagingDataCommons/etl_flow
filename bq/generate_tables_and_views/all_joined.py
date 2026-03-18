@@ -78,7 +78,6 @@ def create_all_flattened(client):
     se.source_url,
     se.versioned_source_doi,
     CONCAT('https://doi.org/', se.versioned_source_doi) versioned_source_url,
-    se.analysis_result,
     se.hashes AS se_hashes,
     se.sources AS se_sources,
     se.init_idc_version AS se_init_idc_version,
@@ -119,8 +118,8 @@ def create_all_flattened(client):
     return view
 
 
-def create_all_collections(client):
-    table_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections"
+def create_all_sources(client):
+    table_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_sources"
     query = f"""
 with basics as (
   SELECT distinct 
@@ -162,7 +161,7 @@ def create_all_joined(client):
 -- SELECT af.*, ac.source, ac.Class, ac.Access, ac.metadata_sunset, ac.dev_bucket, ac.pub_gcs_bucket, ac.pub_aws_bucket
 SELECT af.*, ac.source, ac.Type, ac.Access, ac.metadata_sunset, ac.dev_bucket, ac.pub_gcs_bucket, ac.pub_aws_bucket
 FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_flattened` af
-JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_collections` ac
+JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_sources` ac
 ON af.source_doi = ac.source_doi 
 WHERE af.collection_id=ac.collection_name
 
@@ -191,32 +190,6 @@ def create_all_joined_public(client):
     return view
 
 
-# def create_all_joined_public_and_current(client):
-#     view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current"
-#     view = bigquery.Table(view_id)
-#
-#     view.view_query = f"""
-#     SELECT
-#         aj.*,
-#         li.license.license_url,
-#         li.license.license_long_name,
-#         li.license.license_short_name
-#     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public` aj
-#     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.licenses` li
-#     ON aj.source_doi = li.source_doi AND aj.collection_id = li.collection_name
-#     WHERE idc_version={settings.CURRENT_VERSION}
-#     AND metadata_sunset = 0
-#     """
-#     # Make an API request to create the view.
-#     client.delete_table(view_id, not_found_ok=True)
-#     view = client.create_table(view, exists_ok=True)
-#     print(f"Created {view.table_type}: {str(view.reference)}")
-#     return view
-
-
-
-
-# All instances having limited access (redacted), across all IDC versions
 def create_all_joined_limited(client):
     view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_limited"
     view = bigquery.Table(view_id)
@@ -270,9 +243,6 @@ def create_idc_all_joined(client):
      versioned_source_doi,
      CONCAT('https://doi.org/', versioned_source_doi) versioned_source_url,
      analysis_result, 
-     license_long_name,
-     license_short_name, 
-     license_url,
      sop_instance_uid, 
      i.hash i_hash, 
      ingestion_url,
@@ -298,6 +268,29 @@ def create_idc_all_joined(client):
     return view
 
 
+def create_all_joined_public_and_current(client):
+    view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current"
+    view = bigquery.Table(view_id)
+
+    view.view_query = f"""
+    SELECT 
+        aj.*, 
+        license_url,
+        license_long_name,
+        license_short_name
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public` aj
+    JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.licenses` li
+--     ON aj.source_doi = li.source_doi AND aj.collection_id = li.collection_name
+    ON aj.source_doi = li.source_doi
+    WHERE idc_version={settings.CURRENT_VERSION} 
+    AND metadata_sunset = 0
+    """
+    # Make an API request to create the view.
+    client.delete_table(view_id, not_found_ok=True)
+    view = client.create_table(view, exists_ok=True)
+    print(f"Created {view.table_type}: {str(view.reference)}")
+    return view
+
 
 if __name__ == '__main__':
     # Create BQ datasets.
@@ -309,9 +302,10 @@ if __name__ == '__main__':
         pass
 
     create_all_flattened(BQ_client)
-    create_all_collections(BQ_client)
+    create_all_sources(BQ_client)
     create_all_joined(BQ_client)
     create_all_joined_public(BQ_client)
+    create_all_joined_public_and_current(BQ_client)
     create_all_joined_limited(BQ_client)
     create_all_joined_excluded(BQ_client)
     create_idc_all_joined(BQ_client)

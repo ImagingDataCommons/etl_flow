@@ -18,14 +18,11 @@
 # spreadsheet in Google Drive
 import settings
 import argparse
-from utils.google_sheet_to_bq_table import load_spreadsheet
+from bq.utilities import json_file_to_bq
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--spreadsheet_id', default = '1xxdSAZ2k6eeJpde26wv5nc8_y5rCJJiV',
-                        help='"id" portion of spreadsheet URL')
-    parser.add_argument('--sheet_name', default = f'idc_v{settings.CURRENT_VERSION}', help='Sheet within spreadsheet to load')
     parser.add_argument('--project', default='idc-dev-etl', help='BQ project')
     parser.add_argument('--bq_dataset_id', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ datasey')
     parser.add_argument('--table_id', default='metadata_sunset', help='Table name to which to copy data')
@@ -34,4 +31,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print('args: {}'.format(args))
 
-    load_spreadsheet(args)
+    json_file_path = f"{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/metadata_sunset.json"
+    json_file_to_bq(args, json_file_path)

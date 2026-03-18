@@ -19,8 +19,8 @@ import sys
 from os.path import join, dirname, exists
 from dotenv import load_dotenv
 
-CURRENT_VERSION=23
-PREVIOUS_VERSION=22
+CURRENT_VERSION=24
+PREVIOUS_VERSION=23
 
 # IF MITIGATION_VERSION is not 0, logging will be to m<MITIGATION_VERSION) rather than v<CURRENT_VERSION>
 # For normal ETL purposes it should be 0
@@ -39,8 +39,13 @@ if not exists(join(dirname(__file__), SECURE_LOCAL_PATH, '.env')):
 load_dotenv(dotenv_path=join(dirname(__file__), SECURE_LOCAL_PATH, '.env'))
 
 DEBUG = (os.environ.get('DEBUG', 'False') == 'True')
-
 #print("[STATUS] DEBUG mode is "+str(DEBUG))
+
+# Path to the project top level directory
+PROJECT_PATH = os.path.dirname(os.path.abspath(__file__))
+
+# Path to JSONs used to generate some BQ tables
+BQ_JSON_PROJECT_PATH = f'{PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons'
 
 # These are no longer used since we moved to Cloud SQL.
 # Kept here in case we need to run PSQL locally
@@ -67,7 +72,6 @@ DEV_MITIGATION_PROJECT=os.environ.get('DEV_MITIGATION_PROJECT', '')
 STAGING_MITIGATION_PROJECT=os.environ.get('STAGING_MITIGATION_PROJECT', '')
 
 SUBMISSION_PROJECT=os.environ.get('SUBMISSION_PROJECT', '')
-
 
 # GCH DICOM stores are now only created in the PUB_PROJECT
 GCH_PROJECT=os.environ.get('GCH_PROJECT', '')

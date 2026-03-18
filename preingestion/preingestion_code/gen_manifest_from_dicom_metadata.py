@@ -36,6 +36,22 @@ from google.cloud import storage
 
 import pandas as pd
 
+def excluded(args, patient_id, study_id, series_id, instance_id):
+    if "excluded_patients" in args and patient_id in args.excluded_patients:
+        progresslogger.info(f'Excluded patient {patient_id}')
+        return True
+    if "excluded_studies" in args and study_id in args.excluded_studies:
+        progresslogger.info(f'Excluded study {study_id}')
+        return True
+    if "excluded_series" in args and series_id in args.excluded_series:
+        progresslogger.info(f'Excluded series {series_id}')
+        return True
+    if "excluded_instances" in args and instance_id in args.excluded_instances:
+        progresslogger.info(f'Excluded instance {instance_id}')
+        return True
+    return False
+
+
 def build_manifest(args, manifest=None):
     client = storage.Client()
     src_bucket = storage.Bucket(client, args.src_bucket)
@@ -59,7 +75,7 @@ def build_manifest(args, manifest=None):
                 for blob in page:
                     ingestion_url = f'gs://{args.src_bucket}/{blob.name}'
                     if ingestion_url not in done_instances:
-                        if not blob.name.endswith(('DICOMDIR', '.txt', '.csv', '/')) and args.inclusion_filter in blob.name:
+                        if not blob.name.endswith(('DICOMDIR', '.txt', '.csv', '/', 'DS_Store')) and args.inclusion_filter in blob.name:
                             with src_bucket.blob(blob.name).open('rb') as f:
                                 try:
                                     r = dcmread(f, specific_tags=['PatientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID'], stop_before_pixels=True)
@@ -67,10 +83,12 @@ def build_manifest(args, manifest=None):
                                     study_id = r.StudyInstanceUID
                                     series_id = r.SeriesInstanceUID
                                     instance_id = r.SOPInstanceUID
+                                    if excluded(args, patient_id, study_id, series_id, instance_id):
+                                        continue
                                     # if collection_map:
                                     #     collection_id = collection_map[patient_id]
                                     if not args.collection_id:
-                                         # If a collection_id is not provided, search the many-to-many Collection-Patient-Study
+                                        # If a collection_id is not provided, search the many-to-many Collection-Patient-Study
                                         # hierarchy for study and get its collection_id
                                         # We cannot use the Collection-Patient hierarchy because the patient_id is not unique
                                         #
@@ -96,7 +114,7 @@ def build_manifest(args, manifest=None):
                                 # blob_subname = blob.name.removeprefix(f'{args.subdir}/') if args.subdir else blob.name
                                 manifest.loc[len(manifest)] = [collection_id, patient_id, study_id, series_id, \
                                        instance_id, ingestion_url, hash]
-                                manifest.tail(1).to_csv('/mnt/disks/idc-etl/generated_partial_revision.csv', mode='a', header=False, index=False)
+                                # manifest.tail(1).to_csv('/mnt/disks/idc-etl/generated_partial_revision.csv', mode='a', header=False, index=False)
                     else:
                         progresslogger.info((f'Skipping {blob.name}'))
 
