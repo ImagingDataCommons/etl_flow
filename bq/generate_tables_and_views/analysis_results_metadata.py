@@ -32,24 +32,32 @@ import settings
 import requests
 
 analysis_results_metadata_schema = [
-    bigquery.SchemaField('ID', 'STRING', mode='REQUIRED', description='Results ID'),
-    bigquery.SchemaField('Title', 'STRING', mode='REQUIRED', description='Descriptive title'),
-    bigquery.SchemaField('source_doi','STRING', mode='NULLABLE', description='DOI that can be resolved at doi.org to a wiki page'),
+    bigquery.SchemaField('analysis_collection_name', 'STRING', mode='REQUIRED', description='Analysis result name as used externally by IDC webapp'),
+    bigquery.SchemaField('analysis_collection_id', 'STRING', mode='REQUIRED', description='Analysis result ID as used internally by IDC webapp'),
+    bigquery.SchemaField('analysis_collection_title', 'STRING', mode='REQUIRED', description='Descriptive title of this analysis result'),
+    bigquery.SchemaField('source_doi','STRING', mode='NULLABLE', description='DOI that can be resolved at doi.org to an information page'),
     bigquery.SchemaField('source_url','STRING', mode='REQUIRED', description='URL of a wiki page'),
-    bigquery.SchemaField('CancerTypes','STRING', mode='REQUIRED', description='Type(s) of cancer analyzed'),
-    bigquery.SchemaField('TumorLocations', 'STRING', mode='REQUIRED', description='Body location that was analyzed'),
-    bigquery.SchemaField('Subjects', 'INTEGER', mode='REQUIRED', description='Number of subjects whose data was analyzed'),
-    bigquery.SchemaField('Collections', 'STRING', mode='REQUIRED', description='collection_names of original data collections analyzed'),
-    bigquery.SchemaField('Modalities', 'STRING', mode='REQUIRED', description='Modalities of this analysis result'),
-    bigquery.SchemaField('Updated', 'DATE', mode='REQUIRED', description='Most recent update reported by TCIA'),
+    bigquery.SchemaField('cancer_types','STRING', mode='REQUIRED', description='Type(s) of cancer analyzed'),
+    bigquery.SchemaField('tumor_locations', 'STRING', mode='REQUIRED', description='Body location that was analyzed'),
+    bigquery.SchemaField('subjects', 'INTEGER', mode='REQUIRED', description='Number of subjects whose data was analyzed'),
+    bigquery.SchemaField('collections', 'STRING', mode='REQUIRED', description='collection_names of original data collections analyzed'),
+    bigquery.SchemaField('modalities', 'STRING', mode='REQUIRED', description='Modalities of this analysis result'),
+    bigquery.SchemaField('updated', 'DATE', mode='REQUIRED', description='Most recent update reported by TCIA'),
     bigquery.SchemaField('license_url', 'STRING', mode='REQUIRED', description='URL of license of this analysis result'),
     bigquery.SchemaField('license_long_name', 'STRING', mode='REQUIRED', description='Long name of license of this analysis result'),
     bigquery.SchemaField('license_short_name', 'STRING', mode='REQUIRED', description='Short name of license of this analysis result'),
-    bigquery.SchemaField('Description', 'STRING', mode='REQUIRED',
-                         description='Analysis result description'),
-    bigquery.SchemaField('Citation', 'STRING', mode='NULLABLE',
-                         description='Citation to be used for this source'),
-    bigquery.SchemaField('Access', 'STRING', mode='REQUIRED', description='Deprecated: Access is always Public'),
+    bigquery.SchemaField('description', 'STRING', mode='REQUIRED',
+                         description='Description of this analysis result'),
+    bigquery.SchemaField('citation', 'STRING', mode='NULLABLE',
+                         description='Citation to be used for this analysis result'),
+    # Deprecations
+    bigquery.SchemaField('ID', 'STRING', mode='REQUIRED',
+                         description='DEPRECATED: Duplicate of anlaysis_collection_name'),
+    bigquery.SchemaField('Title', 'STRING', mode='REQUIRED', description='DEPRECATED: Duplicate of analysis_collection_title'),
+    bigquery.SchemaField('CancerTypes', 'STRING', mode='REQUIRED', description='DEPRECATED: Duplicate of cancer_types'),
+    bigquery.SchemaField('TumorLocations', 'STRING', mode='REQUIRED', description='DEPRECATED: Duplicate of tumor_locations'),
+    bigquery.SchemaField('Access', 'STRING', mode='REQUIRED', description='DEPRECATED: Access is always Public'),
+
 ]
 
 

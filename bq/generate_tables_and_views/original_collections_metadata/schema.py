@@ -20,17 +20,78 @@ from google.cloud import bigquery
 data_collections_metadata_schema = [
     bigquery.SchemaField('collection_name', 'STRING', mode='REQUIRED', description='Collection name as used externally by IDC webapp'),
     bigquery.SchemaField('collection_id', 'STRING', mode='REQUIRED', description='Collection ID as used internally by IDC webapp'),
-    bigquery.SchemaField('Title', 'STRING', mode='REQUIRED', description='Collection ID as used internally by IDC webapp'),
-    bigquery.SchemaField('CancerTypes','STRING', mode='REQUIRED', description='Cancer type of this collection '),
-    bigquery.SchemaField('TumorLocations','STRING', mode='REQUIRED', description='Body location that was studied'),
-    bigquery.SchemaField('Subjects', 'INTEGER', mode='REQUIRED', description='Number of subjects in collection'),
-    bigquery.SchemaField('Species', 'STRING', mode='REQUIRED', description="Species of collection subjects"),
+    bigquery.SchemaField('collection_title', 'STRING', mode='REQUIRED', description='Descriptive title of this collection'),
+    bigquery.SchemaField('cancer_types','STRING', mode='REQUIRED', description='Cancer types in this collection '),
+    bigquery.SchemaField('tumor_locations','STRING', mode='REQUIRED', description='Tumor locations in this collection'),
+    bigquery.SchemaField('subjects', 'INTEGER', mode='REQUIRED', description='Number of subjects in this collection'),
+    bigquery.SchemaField('species', 'STRING', mode='REQUIRED', description="Species of collection subjects"),
     bigquery.SchemaField(
-        "Sources_of_original_data",
+        "sources_of_original_data",
         "RECORD",
         mode="REPEATED",
         fields=[
-            bigquery.SchemaField('ID', 'STRING', mode='NULLABLE', description='Original collection or Analysis result ID'),
+            bigquery.SchemaField('collection_name', 'STRING', mode='NULLABLE', description='collection_name of this source'),
+            bigquery.SchemaField('source_doi', 'STRING', mode='NULLABLE',
+                                 description='DOI that can be resolved at doi.org to the information page of this source'),
+            bigquery.SchemaField('source_url', 'STRING', mode='REQUIRED',
+                                 description='URL of the information page of this source'),
+            bigquery.SchemaField('modalities', 'STRING', mode='NULLABLE',
+                                 description='Enumeration of DICOM modalities of instances in this source'),
+            bigquery.SchemaField(
+                "license",
+                "RECORD",
+                fields=[
+                    bigquery.SchemaField('license_url', 'STRING', mode='REQUIRED',
+                                         description='URL of license of this (sub)collection'),
+                    bigquery.SchemaField('license_long_name', 'STRING', mode='REQUIRED',
+                                         description='Long name of license of this (sub)collection'),
+                    bigquery.SchemaField('license_short_name', 'STRING', mode='REQUIRED',
+                                         description='Short name of license of this (sub)collection')
+                ]
+            ),
+            bigquery.SchemaField('citation', 'STRING', mode='NULLABLE',
+                                 description='Citation to be used for this source'),
+        ],
+        description='Array of metadata for each original data source of instance data in this collection'
+    ),
+    bigquery.SchemaField(
+        "related_analysis_results",
+        "RECORD",
+        mode="REPEATED",
+        fields=[
+            bigquery.SchemaField('analysis_collection_name', 'STRING', mode='NULLABLE',
+                                 description='analysis_collection_name of this related analysis result'),
+            bigquery.SchemaField('source_doi', 'STRING', mode='NULLABLE',
+                                 description='DOI that can be resolved at doi.org to a information page of this source'),
+            bigquery.SchemaField('source_url', 'STRING', mode='REQUIRED',
+                                 description='URL of the information page of this source'),
+            bigquery.SchemaField('madalities', 'STRING', mode='NULLABLE',
+                                 description='Enumeration of DICOM modalities of instances from this source'),
+        ],
+        description='List of each analysis result that bears on this collections'
+    ),
+    bigquery.SchemaField('supporting_data', 'STRING', mode='NULLABLE', description='Type(s) of additional available data'),
+    bigquery.SchemaField('program', 'STRING', mode='REQUIRED', description='Program to which this collection belongs'),
+    bigquery.SchemaField('status', 'STRING', mode='NULLABLE', description='Collection status: Ongoing or Complete'),
+    bigquery.SchemaField('updated', 'DATE', mode='NULLABLE', description='Date of most recent update'),
+    bigquery.SchemaField('description', 'STRING', mode='REQUIRED', description='Description of this collection'),
+
+    # Deprecations
+    bigquery.SchemaField('Title', 'STRING', mode='REQUIRED',
+                         description='Deprecated: Duplicate of collection_title'),
+    bigquery.SchemaField('CancerTypes', 'STRING', mode='REQUIRED', description='DEPRECATED: Duplicate of cancer_types'),
+    bigquery.SchemaField('TumorLocations', 'STRING', mode='REQUIRED',
+                         description='DEPRECATED: Duplicate of tumor_locations'),
+    bigquery.SchemaField(
+        "Sources",
+        "RECORD",
+        mode="REPEATED",
+        fields=[
+            bigquery.SchemaField('ID', 'STRING', mode='NULLABLE',
+                                 description='Original collection or Analysis result ID'),
+            bigquery.SchemaField('Type', 'STRING', mode='NULLABLE',
+                                 description='Original collection or Analysis result'),
+            bigquery.SchemaField('Access', 'STRING', mode='NULLABLE', description='Limited or Public'),
             bigquery.SchemaField('source_doi', 'STRING', mode='NULLABLE',
                                  description='DOI that can be resolved at doi.org to a information page of this source'),
             bigquery.SchemaField('source_url', 'STRING', mode='REQUIRED',
@@ -51,29 +112,10 @@ data_collections_metadata_schema = [
             ),
             bigquery.SchemaField('Citation', 'STRING', mode='NULLABLE',
                                  description='Citation to be used for this source'),
-            bigquery.SchemaField('Access', 'STRING', mode='NULLABLE', description='DEPRECATED: Limited or Public'),
         ],
-        description='Array of metadata for each original data source of instance data in this collection'
+        description='DEPRECATED: Replaced by sources_of_original_data and related_analysis_results'
     ),
-    bigquery.SchemaField(
-        "related_analysis_results",
-        "RECORD",
-        mode="REPEATED",
-        fields=[
-            bigquery.SchemaField('ID', 'STRING', mode='NULLABLE',
-                                 description='Original collection or Analysis result ID'),
-            bigquery.SchemaField('source_doi', 'STRING', mode='NULLABLE',
-                                 description='DOI that can be resolved at doi.org to a information page of this source'),
-            bigquery.SchemaField('source_url', 'STRING', mode='REQUIRED',
-                                 description='URL of source information page'),
-            bigquery.SchemaField('ImageTypes', 'STRING', mode='NULLABLE',
-                                 description='Enumeration of types/modalities of instances from this source'),
-        ],
-        description='List of each analysis that bears on this collections'
-    ),
-    bigquery.SchemaField('SupportingData', 'STRING', mode='NULLABLE', description='Type(s) of addional available data'),
-    bigquery.SchemaField('Program', 'STRING', mode='REQUIRED', description='Program to which this collection belongs'),
-    bigquery.SchemaField('Status', 'STRING', mode='NULLABLE', description='Collection status: Ongoing or Complete'),
-    bigquery.SchemaField('Updated', 'DATE', mode='NULLABLE', description='Date of most recent update'),
-    bigquery.SchemaField('Description', 'STRING', mode='REQUIRED', description='Description of collection (HTML format)'),
+    bigquery.SchemaField('SupportingData', 'STRING', mode='NULLABLE',
+                         description='DEPRECATED: Duplicate of supporting_data'),
+
 ]
