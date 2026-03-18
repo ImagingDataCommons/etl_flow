@@ -101,6 +101,8 @@ def get_pathology_projects(all_projects):
             exit(1)
     return sorted(pathology_projects, key=lambda project: project['data']['project_id'])
 
+
+# Get a list of per-file metadata fpr tissue slide files in a specified project
 def get_pathology_files(project_id):
     url = f'https://api.gdc.cancer.gov/files'
     filters = {
@@ -223,7 +225,7 @@ def get_new_files(client, new_files, dst_bucket):
 
 
 def download_files_to_dst_bucket(client, project_id, files, dst_bucket):
-    existing_blobs = {blob.name.rsplit('/',1)[-1]: blob  for blob in dst_bucket.list_blobs()}
+    existing_blobs = {blob.name.rsplit('/',1)[-1]: blob  for blob in dst_bucket.list_blobs() if not blob.name.endswith('manifest.json')}
     files_needing_to_be_downloaded = []
     for file in files:
         try:
@@ -268,7 +270,7 @@ def get_gdc_version_of_file(file):
 
 def download_files(project_id, files):
     client = storage.Client()
-    bucket_name = f'{project_id.lower().replace("-", "_")}_pathology_data'
+    bucket_name = f'{project_id.lower().replace("-", "_")}_pathology_data{args.dst_bucket_suffix}'
     dst_bucket = client.bucket(bucket_name)
     new_files = []
     max_version = "1.0"
@@ -310,7 +312,10 @@ def download_files(project_id, files):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--processes', default=8)
-    parser.add_argument('--min_gdc_version', default = "37.0", help="Skip files from a previous version")
+    parser.add_argument('--min_gdc_version', default = "37.0", help="Skip files from previous versions")
+    parser.add_argument("--ignore_dones", default=False, help="If True, process project even if previously processed")
+    parser.add_argument("--projects", default=["CGCI-BLGSP"], help="List of projects to process. Process all procents if empty")
+    parser.add_argument("--dst_bucket_suffix", default='_dev', help='Suffix added to destination bucket name. Mostly for development work to avoid writing to default dest bucket')
     args = parser.parse_args()
     args.id = 0 # Default process ID
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
@@ -320,18 +325,16 @@ if __name__ == "__main__":
     # project_id = 'CDDP_EAGLE-1'
     # files = get_pathology_files(project_id)
     # download_files(project_id, files)
-    projects = []
     all_projects = get_projects()
     pathology_projects = get_pathology_projects(all_projects)
     for project in pathology_projects:
-        # We already have TCGA pathology
         project_id = project["data"]["project_id"]
-        if False:
-        # if project_id in dones:
-            progresslogger.info(f'Project {project_id} previously completed')
-        else:
-            args.min_gdc_version = "37.0" if project_id.startswith('TCGA') else "1.0"
-            if not projects or project_id in projects:
+        if args.projects==[] or project_id in args.projects:
+            # We already have TCGA pathology
+            if not args.ignore_dones and project_id in dones:
+                progresslogger.info(f'Project {project_id} previously completed')
+            else:
+                args.min_gdc_version = "37.0" if project_id.startswith('TCGA') else "1.0"
                 progresslogger.info(f'Processing project {project_id}')
                 files = get_pathology_files(project_id)
                 download_files(project_id, files)
