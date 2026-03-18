@@ -65,7 +65,7 @@
         "type": "STRING"
       },
       {
-        "description": "Collection access status: Public or Limited",
+        "description": "DEPRECATED: Collection access status: Public or Limited",
         "mode": "NULLABLE",
         "name": "access",
         "type": "STRING"
