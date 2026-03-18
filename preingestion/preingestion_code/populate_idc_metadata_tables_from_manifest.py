@@ -49,6 +49,12 @@ from google.cloud import storage
 from multiprocessing import Queue, Process
 from queue import Empty
 
+import requests
+import yaml
+from io import StringIO
+
+
+
 
 def build_instance(args, bucket, series, instance_data):
     instance_id = instance_data["SOPInstanceUID"]
@@ -344,24 +350,47 @@ def build_collections(args, sess, manifest_data, sep=','):
     return all_collection_ids
 
 
-def perform_partial_revision(sess, args, sep):
+def get_conversion_metadata_from_json(sess, collection_id, sep):
     breakpoint() # Deal with analysis results
     file_path = f"{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_original_collections_metadata.json5"
     with open(file_path) as f:
         metadata = json5.load(f)
     all_collections_metadata = pd.DataFrame(metadata)
     try:
-        collection_metadata = all_collections_metadata[all_collections_metadata["collection_name"] == args.collection_id].squeeze(axis=0).to_dict()
+        collection_metadata = all_collections_metadata[all_collections_metadata["collection_name"] == collection_id].squeeze(axis=0).to_dict()
     except Exception as exc:
-        errlogger.error(f'No entry for collection_id {args.collection_id}')
+        errlogger.error(f'No entry for collection_id {collection_id}')
         exit(1)
-    args.src_bucket = collection_metadata['source_bucket']
-    args.subdir = collection_metadata['source_subdirectory']
-    args.source_doi = collection_metadata['source_doi']
-    args.versioned_source_doi = collection_metadata['current_versioned_source_doi']
+    conversion_metadata = dict(
+        src_bucket = collection_metadata['source_bucket'],
+        subdir = collection_metadata['source_subdirectory'],
+        source_doi = collection_metadata['source_doi'],
+        versioned_source_doi = collection_metadata['current_versioned_source_doi'],
+        manifest_id = collection_metadata["manifest_id"]
+    )
+    return conversion_metadata
 
-    # Read the manifest into a data frame
-    manifest_id = collection_metadata["manifest_id"]
+
+def get_conversion_metadata_from_comet(collection_name, branch="current"):
+    collection_id = collection_name.lower().replace('-','_').replace(' ', '_')
+    file_url = f"https://raw.githubusercontent.com/ImagingDataCommons/idc-comet/{branch}/collections/original/{collection_id}.yaml"
+    response = requests.get(file_url)
+    if response.status_code == 200:
+        # Specify the local path where you want to save the file
+        collection_metadata = yaml.load(StringIO(response.text))
+    else:
+        print(f"Failed to retrieve file. Status code: {response.status_code}")
+
+def perform_partial_revision(sess, args, sep):
+    breakpoint() # Deal with analysis results
+    conversion_metadata = get_conversion_metadata_from_json(args.collection_id)
+    # conversion_metadata = get_conversion_metadata_from_comet(args.collection_id, args.comet_branch)
+    src_bucket = conversion_metadata['source_bucket'],
+    subdir = conversion_metadata['source_subdirectory'],
+    source_doi = conversion_metadata['source_doi'],
+    versioned_source_doi = conversion_metadata['current_versioned_source_doi'],
+    manifest_id = conversion_metadata["manifest_id"]
+
     if manifest_id:
         try:
             if args.subdir:
