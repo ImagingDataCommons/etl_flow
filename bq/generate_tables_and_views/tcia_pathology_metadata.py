@@ -20,7 +20,7 @@ import argparse
 import os
 import sys
 import json
-from utilities.tcia_helpers import get_all_tcia_metadata
+from utilities.tcia_helpers import get_tcia_collection_manager_data
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json
@@ -91,9 +91,9 @@ def get_aspera_hash(data):
 
 
 def gen_table(args):
-    collections = get_all_tcia_metadata("collections")
+    collections = get_tcia_collection_manager_data("collections")
     # collections = [ c for c in get_all_tcia_metadata("collections") if c['collection_page_accessibility'] == "Public"]
-    downloads = get_all_tcia_metadata("downloads")
+    downloads = get_tcia_collection_manager_data("downloads")
     pathology_downloads = {download['id']:download for download in downloads if download['download_type']=='Pathology Images'}
 
     # Add the id and slug of the parent collection to each pathology_download

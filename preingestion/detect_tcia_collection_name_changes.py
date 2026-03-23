@@ -22,7 +22,7 @@
 
 
 from idc.models import Patient, Study, Series, Collection, All_Collections
-from utilities.tcia_helpers import get_all_tcia_metadata
+from utilities.tcia_helpers import get_tcia_collection_manager_data
 from sqlalchemy import and_, or_
 from utilities.sqlalchemy_helpers import sa_session
 from utilities.logging_config import successlogger, progresslogger, errlogger
@@ -40,8 +40,8 @@ def compare_dois():
             filter(and_(or_(Series.sources == [True, False], Series.sources == [True, True]), All_Collections.access=="Public")).all()
         idc_dois = {row.source_doi.lower(): row.collection_id for row in rows if row.source_doi }
 
-        tcia_original_dois = {row['collection_doi'].lower(): row['collection_short_title'] for row in get_all_tcia_metadata(type="collections", query_param="&_fields=collection_short_title,collection_doi")}
-        tcia_analysis_dois = {row['result_doi'].lower(): row['result_short_title'] for row in get_all_tcia_metadata(type="analysis-results", query_param="&_fields=result_short_title,result_doi")}
+        tcia_original_dois = {row['collection_doi'].lower(): row['collection_short_title'] for row in get_tcia_collection_manager_data(type="collections", query_param="&_fields=collection_short_title,collection_doi")}
+        tcia_analysis_dois = {row['result_doi'].lower(): row['result_short_title'] for row in get_tcia_collection_manager_data(type="analysis-results", query_param="&_fields=result_short_title,result_doi")}
 
         for doi in idc_dois:
             if idc_dois[doi] in args.ignored:

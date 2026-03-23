@@ -25,7 +25,7 @@ import json
 import settings
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json, delete_BQ_Table
-from utilities.tcia_helpers import get_all_tcia_metadata
+from utilities.tcia_helpers import get_tcia_collection_manager_data
 from utilities.logging_config import progresslogger, errlogger
 
 LICENSE_NAME_MAP = {
@@ -128,11 +128,11 @@ ORDER BY
 def get_tcia_original_collection_licenses(client, args, tcia_sourced_subcollections):
     # Get all the collection manager collections data:
     try:
-        tcia_collection_metadata = {row['collection_short_title']:row for row in get_all_tcia_metadata('collections')}
+        tcia_collection_metadata = {row['collection_short_title']:row for row in get_tcia_collection_manager_data('collections')}
     except Exception as exc:
         pass
-    tcia_downloads_metadata = {row['id']:row for row in get_all_tcia_metadata('downloads')}
-    tcia_licese_metadata = {row['license_label']:row for row in get_all_tcia_metadata('licenses')}
+    tcia_downloads_metadata = {row['id']:row for row in get_tcia_collection_manager_data('downloads')}
+    tcia_licese_metadata = {row['license_label']:row for row in get_tcia_collection_manager_data('licenses')}
 
     tcia_licenses = []
     for collection_id, values in tcia_sourced_subcollections.items():
@@ -233,18 +233,18 @@ def get_tcia_analysis_results_licenses(client, args):
     idc_ar_dois = get_tcia_dois(client, args)
 
     # Get all the collection manager collections data
-    tcia_collection_metadata = {row['collection_short_title']: row for row in get_all_tcia_metadata('collections')}
+    tcia_collection_metadata = {row['collection_short_title']: row for row in get_tcia_collection_manager_data('collections')}
 
     # Get TCIA Collection Manager analysis-results metadata of all TCIA analysis results
-    all_tcia_analysis_results_metadata = get_all_tcia_metadata('analysis-results')
+    all_tcia_analysis_results_metadata = get_tcia_collection_manager_data('analysis-results')
     # Keep only the metadata of analysis results which IDC has
     # These are the only ARs for which we need licenses
     tcia_ar_metadata = {row['result_short_title']:row for row in all_tcia_analysis_results_metadata \
                         if row['result_doi'].lower() in idc_ar_dois}
 
     # Get all the download and license info from the collection manager.
-    tcia_downloads_metadata = {row['id']:row for row in get_all_tcia_metadata('downloads')}
-    tcia_license_metadata = {row['license_label']:row for row in get_all_tcia_metadata('licenses')}
+    tcia_downloads_metadata = {row['id']:row for row in get_tcia_collection_manager_data('downloads')}
+    tcia_license_metadata = {row['license_label']:row for row in get_tcia_collection_manager_data('licenses')}
 
     tcia_licenses = []
     # Get the license for each AR that IDC has.

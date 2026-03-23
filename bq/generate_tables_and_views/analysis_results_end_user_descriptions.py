@@ -22,7 +22,7 @@ import argparse
 import pandas as pd
 from google.cloud import bigquery
 import markdownify
-from bq.utilities import read_json_to_dataframe, dataframe_to_bq
+from bq.bq_utilities import read_json_to_dataframe, dataframe_to_bq
 
 
 # Get the descriptions of collections that are only sourced from IDC

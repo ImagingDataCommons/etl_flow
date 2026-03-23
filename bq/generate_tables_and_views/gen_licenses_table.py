@@ -25,7 +25,7 @@ import json
 import settings
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json, delete_BQ_Table
-from utilities.tcia_helpers import get_all_tcia_metadata
+from utilities.tcia_helpers import get_tcia_collection_manager_data
 from utilities.logging_config import progresslogger, errlogger
 import pandas as pd
 
@@ -61,10 +61,10 @@ licenses_schema = [
 def get_tcia_original_collection_licenses(client, args, tcia_downloads_metadata):
     # Get all the collection manager collections data:
     try:
-        tcia_collection_metadata = {row['collection_short_title']:row for row in get_all_tcia_metadata('collections')}
+        tcia_collection_metadata = {row['collection_short_title']:row for row in get_tcia_collection_manager_data('collections')}
     except Exception as exc:
         pass
-    tcia_license_metadata = {row['license_label']:row for row in get_all_tcia_metadata('licenses')}
+    tcia_license_metadata = {row['license_label']:row for row in get_tcia_collection_manager_data('licenses')}
 
     tcia_licenses = []
     for collection_name, collection_metadata in tcia_collection_metadata.items():
@@ -123,9 +123,9 @@ def get_tcia_dois(client, args):
 # These are licenses of analysis results sourced from TCIA and therefore TCIA sets the licenses
 def get_tcia_analysis_results_licenses(client, args, tcia_downloads_metadata):
     # Get TCIA Collection Manager analysis-results metadata of all TCIA analysis results
-    all_tcia_analysis_results_metadata = {row['result_short_title']: row for row in get_all_tcia_metadata('analysis-results')}
+    all_tcia_analysis_results_metadata = {row['result_short_title']: row for row in get_tcia_collection_manager_data('analysis-results')}
     # Get all the download and license info from the collection manager.
-    tcia_license_metadata = {row['license_label']:row for row in get_all_tcia_metadata('licenses')}
+    tcia_license_metadata = {row['license_label']:row for row in get_tcia_collection_manager_data('licenses')}
 
     tcia_licenses = []
     # Get the license for each AR that IDC has.
@@ -199,7 +199,7 @@ def construct_licenses_table(args):
 
     idc_collection_licenses = get_idc_collection_licences(args)
     idc_analysis_results_licenses = get_idc_analysis_results_licences(args)
-    tcia_downloads_metadata = {row['id']:row for row in get_all_tcia_metadata('downloads')}
+    tcia_downloads_metadata = {row['id']:row for row in get_tcia_collection_manager_data('downloads')}
     tcia_analysis_results_licenses = get_tcia_analysis_results_licenses(client, args, tcia_downloads_metadata)
     tcia_collection_licenses = get_tcia_original_collection_licenses(client, args, tcia_downloads_metadata)
     all_licenses = pd.concat([idc_collection_licenses, idc_analysis_results_licenses, tcia_collection_licenses, tcia_analysis_results_licenses])
