@@ -23,6 +23,24 @@ import pytz
 import argparse
 import json5
 from datetime import datetime, timedelta, timezone
+import requests
+import yaml
+
+
+def get_data_from_comet(path, branch="current"):
+    file_url = f"https://raw.githubusercontent.com/ImagingDataCommons/idc-comet/{branch}/{path}"
+    headers = {
+        "Authorization": f"token {settings.GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    response = requests.get(file_url, headers=headers)
+    if response.status_code == 200:
+        # Specify the local path where you want to save the file
+        metadata = yaml.load(StringIO(response.text), Loader=yaml.Loader)
+        return metadata["programs"]
+    else:
+        print(f"Failed to retrieve file. Status code: {response.status_code}")
+        exit(1)
 
 # Create a table from a data frame. The table will be deleted after the time limit expires
 def create_temp_table_from_df(client, table_id, schema, df, expire_in_minutes=10):
