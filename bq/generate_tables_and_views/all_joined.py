@@ -23,6 +23,9 @@ import argparse
 import settings
 from google.cloud import bigquery
 from utilities.bq_helpers import create_BQ_dataset
+from utilities.tcia_helpers import get_tcia_collection_manager_data
+import pandas as pd
+from bq.bq_utilities import create_temp_table_from_df
 
 # Flatten the version/collection/... hierarchy
 # Note that we no longer include license here as the license can change over time.
@@ -119,7 +122,16 @@ def create_all_flattened(client):
 
 
 def create_all_sources(client):
-    table_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_sources"
+    # Create a temporary table of names of all TCIA analysis results
+    tcia_analysis_result_dois= [row['result_doi'].lower() for row in get_tcia_collection_manager_data('analysis-results')]
+    df = pd.DataFrame(tcia_analysis_result_dois, columns=['source_doi'])
+    table_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.tcia_analysis_result_dois"
+    schema = [
+        bigquery.SchemaField("source_doi", "STRING")
+    ]
+    create_temp_table_from_df(client, table_id, schema, df, 60)
+
+
     query = f"""
 with basics as (
   SELECT distinct 
@@ -136,17 +148,28 @@ LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.doi_to_access` d
 ON af.source_doi = dtc.source_doi
 LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.metadata_sunset` ms
 ON af.source_doi = ms.source_doi
+),
+analysis_result_dois as (
+  SELECT DISTINCT source_doi
+  FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.tcia_analysis_result_dois`
+UNION ALL
+  SELECT DISTINCT source_doi
+  FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_metadata_idc_source`
 )
 SELECT 
-  *,
+  basics.*,
+  if(analysis_result_dois.source_doi IS NULL, False, True) analysis_result,
   if(Type='Open', 'idc-arch-open', if(Type='Cr', 'idc-arch-cr', if(Type='Defaced', 'idc-arch-defaced', if(Type='Redacted','idc-arch-redacted','idc-arch-excluded')))) dev_bucket,
   if(Type='Open', 'idc-open-data', if(Type='Cr', 'idc-open-cr', if(Type='Defaced', 'idc-open-idc1', NULL))) pub_gcs_bucket,
   if(Type='Open', 'idc-open-data', if(Type='Cr', 'idc-open-data-cr', if(Type='Defaced', 'idc-open-data-two', NULL))) pub_aws_bucket,
 FROM basics
 -- ORDER by collection_id, source_doi, dev_bucket, pub_gcs_bucket, pub_aws_bucket
-ORDER by collection_id, source_doi, pub_gcs_bucket, pub_aws_bucket
+LEFT JOIN analysis_result_dois
+ON basics.source_doi = analysis_result_dois.source_doi
+ORDER by collection_id, basics.source_doi, pub_gcs_bucket, pub_aws_bucket
 """
     # Make an API request to create the view.
+    table_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_sources"
     client.delete_table(table_id, not_found_ok=True)
     job_config = bigquery.QueryJobConfig(destination=table_id)
     query_job = client.query(query,job_config=job_config)
@@ -159,7 +182,7 @@ def create_all_joined(client):
     view = bigquery.Table(view_id)
     view.view_query = f"""
 -- SELECT af.*, ac.source, ac.Class, ac.Access, ac.metadata_sunset, ac.dev_bucket, ac.pub_gcs_bucket, ac.pub_aws_bucket
-SELECT af.*, ac.source, ac.Type, ac.Access, ac.metadata_sunset, ac.dev_bucket, ac.pub_gcs_bucket, ac.pub_aws_bucket
+SELECT af.*, ac.source, ac.Type, ac.Access, ac.metadata_sunset, ac.analysis_result, ac.dev_bucket, ac.pub_gcs_bucket, ac.pub_aws_bucket
 FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_flattened` af
 JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_sources` ac
 ON af.source_doi = ac.source_doi 

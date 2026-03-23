@@ -18,7 +18,7 @@
 # spreadsheet in Google Drive
 import settings
 import argparse
-from bq.utilities import json_file_to_bq
+from bq.bq_utilities import json_file_to_bq
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -29,5 +29,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print('args: {}'.format(args))
 
-    json_file_path = f"{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_analysis_results_metadata.json"
+    json_file_path = f"{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_analysis_results_metadata.json5"
     json_file_to_bq(args, json_file_path)

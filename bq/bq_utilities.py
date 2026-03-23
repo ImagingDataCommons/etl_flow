@@ -22,8 +22,34 @@ from datetime import datetime, timedelta
 import pytz
 import argparse
 import json5
+from datetime import datetime, timedelta, timezone
+
+# Create a table from a data frame. The table will be deleted after the time limit expires
+def create_temp_table_from_df(client, table_id, schema, df, expire_in_minutes=10):
+    table = bigquery.Table(table_id)
+
+    # Set expiration to 2 minutes from now
+    expiration_duration = timedelta(minutes=expire_in_minutes)
+    table.expires = datetime.now(timezone.utc) + expiration_duration
+    try:
+        client.create_table(table, exists_ok=True)
+        # print(f"Table {table_id} created/updated with expiration at {table.expires}")
+    except Exception as e:
+        print(f"Error setting table metadata: {e}")
+        exit(1)
+
+    job_config = bigquery.LoadJobConfig(
+        schema=schema,
+        write_disposition="WRITE_TRUNCATE"
+    )
+    # 5. Load data
+    job = client.load_table_from_dataframe(
+        df, table_id, job_config=job_config
+    )
+    job.result()  # Wait for job to complete
 
 
+# Read the file at the file path into a dataframe. The file is assumed to be JSON formatted
 def read_json_to_dataframe(file_path):
     with open(file_path) as f:
         definitions = json5.load(f)
@@ -73,33 +99,6 @@ def json_file_to_bq(args, file_path, lifetime=None):
     dataframe_to_bq(args, df, lifetime=None)
 
     return
-
-    # # Initialize the BigQuery client
-    # client = bigquery.Client()
-    #
-    # # Define the BigQuery table reference
-    # table_ref = f'{args.project}.{args.bq_dataset_id}.{args.table_id}'
-    #
-    # # Create the BigQuery table if it doesn't exist
-    # try:
-    #     client.get_table(table_ref)
-    # except:
-    #     table = bigquery.Table(table_ref)
-    #     client.create_table(table)
-    #
-    # # Write the DataFrame data to BigQuery
-    # job_config = bigquery.LoadJobConfig(write_disposition='WRITE_TRUNCATE')
-    # job = client.load_table_from_dataframe(df, table_ref, job_config=job_config)
-    # job.result()
-    #
-    # if lifetime:
-    #     table = client.get_table(table_ref)  # Get the table object
-    #     expiration_time = datetime.now(pytz.utc) + timedelta(minutes=lifetime)
-    #     table.expires = expiration_time
-    #     client.update_table(table, ["expires"])
-    #
-    # print('Data imported successfully!')
-
 
 
 if __name__ == '__main__':
