@@ -116,7 +116,7 @@ def get_patient_urls_tcia_v2(collection, patient):
 
 
 # Get a per-series list of source URLs for a patient. This routine finds series in
-# data sourced from TCIA.
+# data sourced from IDC.
 def get_patient_urls_idc(sess, collection, patient):
     try:
         query = sess.query(IDC_Series.series_instance_uid.label('SeriesInstanceUID'), \

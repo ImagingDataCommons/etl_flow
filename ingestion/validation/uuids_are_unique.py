@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Verify the TCIA DICOM hierarchy.
+# Verify that IDC generated UUIDs are unique across the hierarchy
 import argparse
 import settings
 import psycopg2

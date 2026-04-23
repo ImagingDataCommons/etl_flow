@@ -149,13 +149,14 @@ def copy_disk_to_prestaging_bucket(args, series):
         raise RuntimeError("p%s: Copy to prestage bucketfailed for series %s", args.pid, series.series_instance_uid) from exc
 
 
-def empty_bucket(bucket):
+def delete_bucket(bucket):
     try:
         src = "gs://{}/**".format(bucket)
         run(["gsutil", "-m", "-q", "rm", src])
-        progresslogger.debug("Emptied bucket %s", bucket)
+        run(["gsutil", "-q", "rb", f"gs://{bucket}"])
+        progresslogger.debug("Deleted bucket %s", bucket)
     except Exception as exc:
-        errlogger.error("Failed to empty bucket %s", bucket)
+        errlogger.error("Failed to empty or delete bucket %s", bucket)
         raise RuntimeError("Failed to empty bucket %s", bucket) from exc
 
 

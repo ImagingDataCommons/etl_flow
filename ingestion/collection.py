@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from uuid import uuid4
 from idc.models import instance_source, Version, Collection, Patient
-from ingestion.utilities.utils import accum_sources, empty_bucket, create_prestaging_bucket, is_skipped
+from ingestion.utilities.utils import accum_sources, delete_bucket, create_prestaging_bucket, is_skipped
 from ingestion.patient import clone_patient, build_patient, retire_patient
 from ingestion.all_sources import All_Sources
 from utilities.sqlalchemy_helpers import sa_session
@@ -53,27 +53,25 @@ def worker(input, output, args, access, lock):
                                   args.skipped_tcia_collections, args.skipped_idc_collections, lock)
 
         for more_args in iter(input.get, 'STOP'):
-            successlogger.info("p%s, Building patient %s/%s, %s; %s", args.pid, exc, attempt,
-                            collection.collection_id, patient.submitter_case_id, index, time.asctime())
+            index, collection_id, submitter_case_id = more_args
+            version = sess.query(Version).filter(Version.version==settings.CURRENT_VERSION).one()
+            collection = next(collection for collection in version.collections if collection.collection_id ==collection_id)
+            patient = next(patient for patient in collection.patients if patient.submitter_case_id==submitter_case_id)
+            successlogger.info("p%s, Building patient %s/%s, %s; %s", args.pid, collection.collection_id, patient.submitter_case_id, index, time.asctime())
             for attempt in range(PATIENT_TRIES):
-                time.sleep((2**attempt)-1)
-                index, collection_id, submitter_case_id = more_args
                 try:
-                    version = sess.query(Version).filter(Version.version==settings.CURRENT_VERSION).one()
-                    collection = next(collection for collection in version.collections if collection.collection_id ==collection_id)
-                    patient = next(patient for patient in collection.patients if patient.submitter_case_id==submitter_case_id)
+                    time.sleep((2**attempt)-1)
                     build_patient(sess, args, all_sources, index, version, collection, patient)
-                    successlogger.info("p%s, Built patient %s/%s, %s; %s", args.pid, exc, attempt,
-                                       collection.collection_id, patient.submitter_case_id, index, time.asctime())
+                    successlogger.info("p%s, Built patient %s/%s, %s; %s", args.pid, collection.collection_id, patient.submitter_case_id, index, time.asctime())
                     break
                 except Exception as exc:
                     errlogger.error("p%s, exception %s; reattempt %s on patient %s/%s, %s; %s", args.pid, exc, attempt, collection.collection_id, patient.submitter_case_id, index, time.asctime())
                     sess.rollback()
-
-            if attempt == PATIENT_TRIES:
-                errlogger.error("p%s, Failed to process patient: %s", args.pid, patient.submitter_case_id)
-                sess.rollback()
-
+                attempt += 1
+                if attempt == PATIENT_TRIES:
+                    errlogger.error("p%s, Failed to process patient: %s", args.pid, patient.submitter_case_id)
+                    sess.rollback()
+                    break
 
             output.put(patient.submitter_case_id)
 
@@ -95,14 +93,14 @@ def expand_collection(sess, args, all_sources, collection):
 
     # Since we are starting, delete everything from the prestaging buckets.
     if collection.revised.tcia:
-        progresslogger.info("Emptying tcia prestaging buckets")
+        progresslogger.info("Creating new tcia prestaging buckets")
+        delete_bucket(args.prestaging_tcia_bucket)
         create_prestaging_bucket(args, args.prestaging_tcia_bucket)
-        empty_bucket(args.prestaging_tcia_bucket)
         # breakpoint() # Verify that the bucket is empty
     if collection.revised.idc:
-        progresslogger.info("Emptying idc prestaging buckets")
+        progresslogger.info("Creating new idc prestaging buckets")
+        delete_bucket(args.prestaging_idc_bucket)
         create_prestaging_bucket(args, args.prestaging_idc_bucket)
-        empty_bucket(args.prestaging_idc_bucket)
         # breakpoint() # Verify that the bucket is empty
 
     # Check for duplicates
@@ -273,8 +271,10 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         enqueued_patients = []
 
         num_processes = min(args.num_processes, len(collection.patients))
+        # If the collection is sourced from TCIA, limit the number of processes to avoid overwhelming th
+        # NBIA server
         if collection.revised.tcia:
-            num_processes = min(num_processes, 8)
+            num_processes = min(num_processes, 16)
 
         # Enqueue each patient in the the task queue
         # patients = sorted(collection.patients, key=lambda patient: patient.done, reverse=True)
@@ -295,7 +295,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
             patient_index = f'{all_patients.index(patient) + 1} of {len(all_patients)}'
             if not patient.done:
                 task_queue.put((patient_index, collection.collection_id, patient.submitter_case_id))
-                enqueued_patients.append(patient.submitter_case_id)
+                # enqueued_patients.append(patient.submitter_case_id)
                 successlogger.info("  p%s: Patient %s %s enqueued", args.pid, patient.submitter_case_id,
                             patient_index)
             else:
@@ -304,16 +304,16 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
 
         # Collect the results for each patient
         try:
-            while not enqueued_patients == []:
-                # Timeout if waiting too long
-                try:
-                    results = done_queue.get(True, 60)
-                except Empty as e:
-                    pass
-                    continue
-
-                enqueued_patients.remove(results)
-                successlogger.info("  p%s: Patient %s dequeued", args.pid, results)
+            # while not enqueued_patients == []:
+            #     # Timeout if waiting too long
+            #     try:
+            #         results = done_queue.get(True, 60)
+            #     except Empty as e:
+            #         pass
+            #         continue
+            #
+            #     enqueued_patients.remove(results)
+            #     successlogger.info("  p%s: Patient %s dequeued", args.pid, results)
             # Tell child processes to stop
             for process in processes:
                 task_queue.put('STOP')

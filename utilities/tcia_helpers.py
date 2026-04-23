@@ -250,7 +250,9 @@ def get_TCIA_instance_uids_per_series(collection_id, seriesInstanceUID, server=N
         server_url = server
         headers = ''
     url = f'{server_url}/getSOPInstanceUIDs?SeriesInstanceUID={seriesInstanceUID}'
+
     results = get_url(url, headers)
+
     instance_uids = results.json() if results.content else []
     return instance_uids
 

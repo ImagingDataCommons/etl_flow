@@ -106,7 +106,7 @@ if __name__ == '__main__':
             help="GCS blob in which to save results")
     parser.add_argument('--temp_table_bqdataset', default='whc_dev', \
             help='BQ dataset of temporary table')
-    parser.add_argument('--temp_table', default=f'idc_v{version}_reindexing_manifest', \
+    parser.add_argument('--temp_table', default=f'phantom_fda_reindexing_manifest', \
             help='Temporary table in which to write query results')
     args = parser.parse_args()
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')

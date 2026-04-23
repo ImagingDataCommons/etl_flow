@@ -75,7 +75,7 @@ def build_manifest(args, manifest=None):
                 for blob in page:
                     ingestion_url = f'gs://{args.src_bucket}/{blob.name}'
                     if ingestion_url not in done_instances:
-                        if not blob.name.endswith(('DICOMDIR', '.txt', '.csv', '/', 'DS_Store')) and args.inclusion_filter in blob.name:
+                        if not blob.name.endswith(('DICOMDIR', '.txt', '.csv', '/', 'DS_Store', 'xlsx')) and args.inclusion_filter in blob.name:
                             with src_bucket.blob(blob.name).open('rb') as f:
                                 try:
                                     r = dcmread(f, specific_tags=['PatientID', 'StudyInstanceUID', 'SeriesInstanceUID', 'SOPInstanceUID'], stop_before_pixels=True)

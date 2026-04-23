@@ -155,7 +155,7 @@ def expand_study(sess, args, all_sources, version, collection, patient, study, d
             progresslogger.debug('      p%s: Series %s unchanged',  args.pid, series.series_instance_uid)
 
     for series in retired_objects:
-        breakpoint()
+        # breakpoint()
         retire_series(args, series)
         study.seriess.remove(series)
         progresslogger.info('  p%s: Series %s is retired', args.pid, series.series_instance_uid)
@@ -186,8 +186,8 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
                 successlogger.info("      p%s: Building Series %s, %s", args.pid, series.series_instance_uid,
                                    series_index)
                 build_series(sess, args, all_sources, series_index, version, collection, patient, study, series)
-                successlogger.info("      p%s: Built Series %s, %s", args.pid, series.series_instance_uid,
-                                   series_index)
+                # successlogger.info("      p%s: Built Series %s, %s", args.pid, series.series_instance_uid,
+                #                    series_index)
                 # Verify that source is consistent
                 if (series.hashes[instance_source.tcia.value] == "" and series.sources.tcia == True) or \
                         (series.hashes[instance_source.idc.value] == "" and series.sources.idc == True):

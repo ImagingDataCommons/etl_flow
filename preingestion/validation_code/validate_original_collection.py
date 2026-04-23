@@ -33,7 +33,7 @@ def validate_original_collection(args, collection_ids, ignore_if_contains=''):
         for page in iterator.pages:
             if page.num_items:
                 for blob in page:
-                    if not blob.name.endswith(('DICOMDIR', '.txt', 'csv')) and blob.size != 0 and \
+                    if not blob.name.endswith(('DICOMDIR', '.txt', '.csv', '.tsv', '/', 'DS_Store', 'xlsx')) and blob.size != 0 and \
                             ('exclusion_filter' not in args or (args.exclusion_filter == '' or args.exclusion_filter not in blob.name)):
                         blobs_in_bucket |= {f'gs://{args.src_bucket}/{blob.name}'}
 

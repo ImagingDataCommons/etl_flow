@@ -37,13 +37,14 @@ version_metadata_schema = [
 
 
 
-def gen_version_metadata_table(args):
+def gen_program_metadata_table(args):
     client = bigquery.Client(project=args.src_project)
-    rows = get_data_from_comet(args.path, branch=args.comet_branch)
-    for row in rows:
+    programs = get_data_from_comet(args.path, branch=args.comet_branch)['programs']
+
+    for row in programs:
         row["program_url"] = "None" if row["program_url"] is None else row["program_url"]
     metadata_json = '\n'.join([json.dumps(row) for row in
-                               sorted(rows, key=lambda d: d['program_name'])])
+                               sorted(programs, key=lambda d: d['program_name'])])
     try:
         job = load_BQ_from_json(client, args.dst_project, args.bqdataset_name, args.bqtable_name, metadata_json,
                             version_metadata_schema, write_disposition='WRITE_TRUNCATE')
@@ -64,4 +65,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-    gen_version_metadata_table(args)
+    gen_program_metadata_table(args)

@@ -21,7 +21,7 @@ import sys
 import json
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json, delete_BQ_Table
-from bq.generate_tables_and_views.original_collections_metadata.schema import data_collections_metadata_schema
+# from bq.generate_tables_and_views.original_collections_metadata.schema import data_collections_metadata_schema
 from utilities.tcia_helpers import get_tcia_collection_manager_data
 from utilities.logging_config import progresslogger, errlogger
 from python_settings import settings
@@ -29,10 +29,69 @@ from bq.bq_utilities import read_json_to_dataframe
 import requests
 import pandas as pd
 
+data_collections_metadata_schema = [
+    bigquery.SchemaField('collection_name', 'STRING', mode='REQUIRED', description='Collection name as used externally by IDC webapp'),
+    bigquery.SchemaField('collection_id', 'STRING', mode='REQUIRED', description='Collection ID as used internally by IDC webapp'),
+    bigquery.SchemaField('collection_title', 'STRING', mode='REQUIRED',
+                         description='Descriptive title of this collection'),
+    bigquery.SchemaField('cancer_types', 'STRING', mode='REQUIRED', description='Cancer types in this collection '),
+    bigquery.SchemaField('tumor_locations', 'STRING', mode='REQUIRED',
+                         description='Tumor locations in this collection'),
+    bigquery.SchemaField('subjects', 'INTEGER', mode='REQUIRED', description='Number of subjects in this collection'),
+    bigquery.SchemaField('species', 'STRING', mode='REQUIRED', description="Species of collection subjects"),
+    bigquery.SchemaField(
+        "sources",
+        "RECORD",
+        mode="REPEATED",
+        fields=[
+            bigquery.SchemaField('source_id', 'STRING', mode='NULLABLE', description='collection_id or analysis_result_id of this source'),
+            bigquery.SchemaField('source_type', 'STRING', mode='NULLABLE', description='"original collection" or "analysis result"'),
+            bigquery.SchemaField('source_doi', 'STRING', mode='NULLABLE',
+                                 description='DOI that can be resolved at doi.org to a information page of this source'),
+            bigquery.SchemaField('source_url', 'STRING', mode='REQUIRED',
+                                 description='URL of the information page of this sourc'),
+            bigquery.SchemaField('modalities', 'STRING', mode='NULLABLE',
+                                 description='URL of the information page of this source'),
+            bigquery.SchemaField(
+                "license",
+                "RECORD",
+                fields=[
+                    bigquery.SchemaField('license_url', 'STRING', mode='REQUIRED',
+                                         description='URL of license of this (sub)collection'),
+                    bigquery.SchemaField('license_long_name', 'STRING', mode='REQUIRED',
+                                         description='Long name of license of this (sub)collection'),
+                    bigquery.SchemaField('license_short_name', 'STRING', mode='REQUIRED',
+                                         description='Short name of license of this (sub)collection')
+                ]
+            ),
+            bigquery.SchemaField('citation', 'STRING', mode='NULLABLE',
+                                 description='Citation to be used for this source'),
+            bigquery.SchemaField('access', 'STRING', mode='NULLABLE', description='DEPRECATED: All IDC data is public'),
+            bigquery.SchemaField('ImageTypes', 'STRING', mode='NULLABLE',
+                                 description='DEPRECATED: Duplicate of modalities'),
+        ],
+        description='Array of metadata for each source of instance data in this collection'
+    ),
+    bigquery.SchemaField('supporting_data', 'STRING', mode='NULLABLE', description='Type(s) of addional available data'),
+    bigquery.SchemaField('program', 'STRING', mode='REQUIRED', description='Program to which this collection belongs'),
+    bigquery.SchemaField('status', 'STRING', mode='NULLABLE', description='Collection status: Ongoing or Complete'),
+    bigquery.SchemaField('updated', 'DATE', mode='NULLABLE', description='Date of most recent update'),
+    bigquery.SchemaField('description', 'STRING', mode='REQUIRED', description='Description of collection (HTML format)'),
+    # Deprecations
+    bigquery.SchemaField('Title', 'STRING', mode='REQUIRED',
+                         description='Deprecated: Duplicate of collection_title'),
+    bigquery.SchemaField('CancerTypes', 'STRING', mode='REQUIRED', description='DEPRECATED: Duplicate of cancer_types'),
+    bigquery.SchemaField('TumorLocations', 'STRING', mode='REQUIRED',
+                         description='DEPRECATED: Duplicate of tumor_locations'),
+    bigquery.SchemaField('SupportingData', 'STRING', mode='NULLABLE',
+                         description='DEPRECATED: Duplicate of supporting_data'),
+]
+
+
 def add_programs(client, args, collection_metadata):
     query = f"""
         SELECT *
-        FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.program`"""
+        FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection_program_map`"""
     programs = {row['collection_id'].lower(): row['program'] for row in client.query(query).result()}
     for collection_name, metadata in collection_metadata.items():
         try:
@@ -396,7 +455,7 @@ def add_ids(client, collection_metadata):
         "source_type": "original data"
     } for index, data in read_json_to_dataframe(f'{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_original_collections_metadata.json5').iterrows()}
     idc_analysis_results_metadata = {data['source_doi'].lower(): {
-        "source_id": data['ID'].lower().replace('-', '_').replace(' ', '_',),
+        "source_id": data['analysis_result_name'].lower().replace('-', '_').replace(' ', '_',),
         "source_type": "analysis result"
     } for index, data in read_json_to_dataframe(f'{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_analysis_results_metadata.json5').iterrows()}
 
@@ -443,9 +502,10 @@ def gen_collections_table(args):
 
     # Drop any collections that do not have any sources. This is probably only needed during development
     metadata = [row for row in all_metadata if len(row['sources']) > 0]
+    metadata_1 = metadata
     pass
     metadata_json = '\n'.join([json.dumps(row) for row in
-                        sorted(metadata, key=lambda d: d['collection_name'])])
+                        sorted(metadata_1, key=lambda d: d['collection_name'])])
     try:
         pass
         delete_BQ_Table(BQ_client, settings.DEV_PROJECT, settings.BQ_DEV_EXT_DATASET, args.bqtable_name)
@@ -461,7 +521,7 @@ def gen_collections_table(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
+    parser.add_argument('--bqtable_name', default='original_collections_metadata_of', help='BQ table name')
     parser.add_argument('--access', default='Public', help="Generate original_collections_metadata if True; (deprecated)generate a table of excluded collections if false (deprecated)")
     parser.add_argument('--use_cached_metadata', default=False)
     parser.add_argument('--cached_metadata_file', default='cached_included_metadata.json', help='Where to cache metadata')

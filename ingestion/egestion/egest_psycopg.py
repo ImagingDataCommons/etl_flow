@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+# WIP reimplementation of egest.py using psycopg rather than SQLAlchemy
+# to try for better performance
 # Remove a version, collection, etc. from the DB
 # This script has never been used. It needs to be tested.
 #

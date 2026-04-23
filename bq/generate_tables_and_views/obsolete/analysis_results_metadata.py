@@ -210,7 +210,7 @@ def gen_table(args):
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--bqtable_name', default='analysis_results_metadata', help='BQ table name')
+    parser.add_argument('--bqtable_name', default='analysis_results_metadata_of', help='BQ table name')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

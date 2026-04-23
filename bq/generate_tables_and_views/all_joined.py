@@ -19,6 +19,7 @@
 # into idc_v<version>_dev and idc_v<version>_pub. These tables
 # go into the former, generated tables into the latter.
 
+import sys
 import argparse
 import settings
 from google.cloud import bigquery
@@ -26,6 +27,8 @@ from utilities.bq_helpers import create_BQ_dataset
 from utilities.tcia_helpers import get_tcia_collection_manager_data
 import pandas as pd
 from bq.bq_utilities import create_temp_table_from_df
+from bq.bq_utilities import get_github_directory_contents_from_comet, \
+    get_data_from_comet
 
 # Flatten the version/collection/... hierarchy
 # Note that we no longer include license here as the license can change over time.
@@ -122,15 +125,18 @@ def create_all_flattened(client):
 
 
 def create_all_sources(client):
-    # Create a temporary table of names of all TCIA analysis results
-    tcia_analysis_result_dois= [row['result_doi'].lower() for row in get_tcia_collection_manager_data('analysis-results')]
-    df = pd.DataFrame(tcia_analysis_result_dois, columns=['source_doi'])
-    table_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.tcia_analysis_result_dois"
+    # Create a temporary table of names of all analysis results metadata
+    analysis_result_dois = []
+    analysis_files = get_github_directory_contents_from_comet("collections/analysis", args.comet_branch)
+    for analysis_file in analysis_files:
+        data = get_data_from_comet(f"collections/analysis/{analysis_file}", branch=args.comet_branch)
+        analysis_result_dois.append((data['source_doi'], data['analysis_result_id'].lower().replace('-', '_').replace(' ', '_')))
+    df = pd.DataFrame(analysis_result_dois, columns=['source_doi', 'analysis_result_id'])
+    table_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_result_dois"
     schema = [
         bigquery.SchemaField("source_doi", "STRING")
     ]
     create_temp_table_from_df(client, table_id, schema, df, 60)
-
 
     query = f"""
 with basics as (
@@ -148,24 +154,18 @@ LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.doi_to_access` d
 ON af.source_doi = dtc.source_doi
 LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.metadata_sunset` ms
 ON af.source_doi = ms.source_doi
-),
-analysis_result_dois as (
-  SELECT DISTINCT source_doi
-  FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.tcia_analysis_result_dois`
-UNION ALL
-  SELECT DISTINCT source_doi
-  FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_metadata_idc_source`
 )
 SELECT 
   basics.*,
-  if(analysis_result_dois.source_doi IS NULL, False, True) analysis_result,
+  if(ard.source_doi IS NULL, False, True) analysis_result,
+  if(ard.source_doi IS NULL, "", ard.analysis_result_id) analysis_result_id,
   if(Type='Open', 'idc-arch-open', if(Type='Cr', 'idc-arch-cr', if(Type='Defaced', 'idc-arch-defaced', if(Type='Redacted','idc-arch-redacted','idc-arch-excluded')))) dev_bucket,
   if(Type='Open', 'idc-open-data', if(Type='Cr', 'idc-open-cr', if(Type='Defaced', 'idc-open-idc1', NULL))) pub_gcs_bucket,
   if(Type='Open', 'idc-open-data', if(Type='Cr', 'idc-open-data-cr', if(Type='Defaced', 'idc-open-data-two', NULL))) pub_aws_bucket,
 FROM basics
 -- ORDER by collection_id, source_doi, dev_bucket, pub_gcs_bucket, pub_aws_bucket
-LEFT JOIN analysis_result_dois
-ON basics.source_doi = analysis_result_dois.source_doi
+LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_result_dois` ard
+ON basics.source_doi = ard.source_doi
 ORDER by collection_id, basics.source_doi, pub_gcs_bucket, pub_aws_bucket
 """
     # Make an API request to create the view.
@@ -297,14 +297,13 @@ def create_all_joined_public_and_current(client):
 
     view.view_query = f"""
     SELECT 
-        aj.*, 
-        license_url,
-        license_long_name,
-        license_short_name
+        aj.*
+--         license_url,
+--         license_long_name,
+--         license_short_name
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public` aj
-    JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.licenses` li
---     ON aj.source_doi = li.source_doi AND aj.collection_id = li.collection_name
-    ON aj.source_doi = li.source_doi
+--     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.licenses` li
+--     ON aj.source_doi = li.source_doi
     WHERE idc_version={settings.CURRENT_VERSION} 
     AND metadata_sunset = 0
     """
@@ -316,6 +315,12 @@ def create_all_joined_public_and_current(client):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--comet_branch", default='release/v24')
+
+    args = parser.parse_args()
+    print("{}".format(args), file=sys.stdout)
+
     # Create BQ datasets.
     BQ_client = bigquery.Client(project=settings.DEV_PROJECT)
     try:

@@ -67,9 +67,9 @@
    "source_doi": "10.5281/zenodo.11099004",
    "current_versioned_source_doi": "",
    "updated": "2024-08-05",
-   "license_url": "https://creativecommons.org/licenses/by/3.0/",
-   "license_long_name": "Creative Commons Attribution 3.0 International",
-   "license_short_name": "CC BY 3.0"
+   "license_url": "https://creativecommons.org/licenses/by/4.0/",
+   "license_long_name": "Creative Commons Attribution 4.0 International License",
+   "license_short_name": "CC BY 4.0"
  },
  {
    "analysis_result_name": "Pancreas-CT-SEG",

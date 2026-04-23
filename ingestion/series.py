@@ -145,8 +145,8 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
         begin = time.time()
         successlogger.debug("      p%s: Expand Series %s; %s", args.pid, series.series_instance_uid, series_index)
         if not series.expanded:
-            successlogger.info("      p%s: Expanding Series %s; %s; %s instances", args.pid,
-                               series.series_instance_uid, series_index, len(series.instances))
+            successlogger.info("      p%s: Expanding Series %s; %s", args.pid,
+                               series.series_instance_uid, series_index)
 
             failed = expand_series(sess, args, all_sources, version, collection, patient, study, series)
             if failed:

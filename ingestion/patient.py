@@ -220,5 +220,5 @@ def build_patient(sess, args, all_sources, patient_index, version, collection, p
                 duration = str(timedelta(seconds=(time.time() - begin)))
                 successlogger.info("  p%s: Built Patient %s, %s, in %s, %s", args.pid, patient.submitter_case_id, patient_index, duration, time.asctime())
     except Exception as exc:
-        errlogger.exception('  p%s build_patient failed: %s for %s', args.pid, exc, patient.submitter_case_id)
+        errlogger.error('  p%s build_patient failed: %s for %s', args.pid, exc, patient.submitter_case_id)
         raise exc

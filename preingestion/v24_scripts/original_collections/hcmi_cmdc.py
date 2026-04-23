@@ -32,7 +32,7 @@ from google.cloud import storage
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--processes', default=1)
+    parser.add_argument('--processes', default=0)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--collection_id', default='HCMI-CMDC', help='collection_name of the collection or ID of analysis result to which instances belong.')
 

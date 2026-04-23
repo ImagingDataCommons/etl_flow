@@ -28,7 +28,7 @@ def validate_sopinstanceuid_uniqueness(args):
     query = f"""
     WITH p AS (
     SELECT DISTINCT series_instance_uid, sop_instance_uid 
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` 
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` 
     ),
     d AS (SELECT sop_instance_uid, COUNT(series_instance_uid) count FROM p
     GROUP BY sop_instance_uid
@@ -53,7 +53,7 @@ def validate_seriesinstanceuid_uniqueness(args):
     query = f"""
     WITH p AS (
     SELECT DISTINCT study_instance_uid, series_instance_uid 
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` 
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` 
     ),
     d AS (SELECT series_instance_uid, COUNT(study_instance_uid) count FROM p
     GROUP BY series_instance_uid
@@ -78,7 +78,7 @@ def validate_studyinstanceuid_uniqueness(args):
     query = f"""
     WITH p AS (
     SELECT DISTINCT submitter_case_id, study_instance_uid 
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined` 
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` 
     ),
     d AS (SELECT study_instance_uid, COUNT(submitter_case_id) count FROM p
     GROUP BY study_instance_uid

@@ -14,27 +14,16 @@
 # limitations under the License.
 #
 
-backoff
-beautifulsoup4
-google-api-python-client
-google-auth-httplib2
-google-cloud-bigquery
-google-cloud-bigquery-storage
-google-cloud-core
-google-cloud-storage
-google-crc32c
-google-resumable-media
-googleapis-common-protos
-gspread
-Markdown
-oauth2client
-pandas
-psycopg2
-pyarrow
-pydicom
-python-dotenv
-python_settings
-pyYAML
-requests
-sqlalchemy==1.4.50
-sqlalchemy_utils
+from bq.bq_utilities import compare_versioned_bq_tables
+import pandas as pd
+
+if __name__ == '__main__':
+    table_name = 'original_collections_metadata'
+    df = compare_versioned_bq_tables('collection_name', table_name).dropna(axis=1, how='all')
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_colwidth', None)
+    pd.set_option('display.width', 2000)
+    print(df)
+
+    exit(0)

@@ -247,10 +247,16 @@ version_collection = Table('version_collection', Base.metadata,
                            Column('version', ForeignKey('version.version'), primary_key=True),
                            Column('collection_uuid', ForeignKey('collection.uuid'), primary_key=True))
 
-class Version(Base):
-    __tablename__ = 'version'
+class Version_dev(Base):
+    __tablename__ = 'version_dev'
     version = Column(Integer, primary_key=True, comment="Target version of revision")
     previous_version = Column(Integer, nullable=False, comment="ID of the previous version")
+    min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
+    max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
+    # revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
+    done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
+    is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
+    expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
     hashes = Column(
         CompositeType(
             'hashes',
@@ -273,7 +279,22 @@ class Version(Base):
         nullable=True,
         comment="True if this objects includes instances from the corresponding source"
     )
+    revised = Column(
+        CompositeType(
+            'sources',
+            [
+                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
+                Column('idc', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
+            ]
+        ),
+        nullable=True,
+    )
 
+
+class Version(Base):
+    __tablename__ = 'version'
+    version = Column(Integer, primary_key=True, comment="Target version of revision")
+    previous_version = Column(Integer, nullable=False, comment="ID of the previous version")
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
     max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
     # revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
@@ -563,9 +584,6 @@ class Series(Base):
     )
     source_url = Column(String, nullable=True, comment="A url to the wiki page of this series")
     excluded = Column(Boolean, default=False, comment="True if object should be excluded from auxiliary_metadata, etc.")
-    license_long_name = Column(String, comment="Long name of license.")
-    license_url = Column(String, comment="License URL of this series.")
-    license_short_name = Column(String, comment='Short name of license')
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
     versioned_source_doi = Column(String, comment='If present, a DOI to the wiki page of this version of this series')
     mitigation = Column(String, default="", comment="ID of the mitigation which redacted this object")
@@ -654,13 +672,9 @@ class IDC_Series(Base):
     source_doi = Column(String, comment='Source DOI of this series\' wiki')
     source_url = Column(String, comment='Source URL of this series\' wiki')
     analysis_result = Column(Boolean, comment='True if this series is from an analysis result, else False')
-    license_url = Column(String, comment='URL of license description')
-    license_long_name = Column(String, comment='Long name of license')
-    license_short_name = Column(String, comment='short name of license')
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
     versioned_source_doi = Column(String, comment='If present, a DOI to the wiki page of this version of this series')
     ingestion_script = Column(String, comment='Script which added this instance')
-
 
     study = relationship("IDC_Study", back_populates="seriess")
     instances = relationship("IDC_Instance", back_populates="seriess", order_by="IDC_Instance.sop_instance_uid", cascade="all, delete")

@@ -226,7 +226,7 @@ def worker(input, output, args, collection_id, source_doi, versioned_source_doi)
                         build_patient(args, bucket, collection, patient_data, source_doi, versioned_source_doi)
                     except Exception as exc:
                         raise
-                    # sess.commit()
+                    sess.commit()
                     output.put(patient_data.iloc[0]["patientID"])
                     break
                 except Exception as exc:
@@ -246,7 +246,6 @@ def build_collections(args, sess, manifest_data, sep=','):
     # Rename columns in case they are misnamed:
     manifest_data = manifest_data.rename( columns = {
         "Filename": "ingestion_url",
-        "Clinical Trial Protocol ID": "collection_id",
         "Patient ID": "patientID",
         "Study Instance UID": "StudyInstanceUID",
         "Series Instance UID": "SeriesInstanceUID",
@@ -256,10 +255,9 @@ def build_collections(args, sess, manifest_data, sep=','):
     # Remove whitespace
     manifest_data = manifest_data.map(lambda x: x.strip())
 
-    # # If a manifest is provided and there is a single collection, and no collection_id column
-    # breakpoint() # When would this ever happen?
-    # if args.manifest_id and args.collection_id and "collection_id" not in manifest_data:
-    #     manifest_data['collection_id'] = args.collection_id
+    # If a manifest is provided and there is a single collection, and no collection_id column
+    if args.manifest_id and args.collection_id and "collection_id" not in manifest_data:
+        manifest_data['collection_id'] = args.collection_id
 
     done_data = pd.DataFrame(dones, columns=['SOPInstanceUID'])
 
@@ -350,7 +348,7 @@ def build_collections(args, sess, manifest_data, sep=','):
     return all_collection_ids
 
 
-def get_conversion_metadata_from_json(sess, collection_id, sep):
+def get_conversion_metadata_from_json(collection_id):
     breakpoint() # Deal with analysis results
     file_path = f"{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_original_collections_metadata.json5"
     with open(file_path) as f:
@@ -362,8 +360,8 @@ def get_conversion_metadata_from_json(sess, collection_id, sep):
         errlogger.error(f'No entry for collection_id {collection_id}')
         exit(1)
     conversion_metadata = dict(
-        src_bucket = collection_metadata['source_bucket'],
-        subdir = collection_metadata['source_subdirectory'],
+        source_bucket = collection_metadata['source_bucket'],
+        source_subdirectory = collection_metadata['source_subdirectory'],
         source_doi = collection_metadata['source_doi'],
         versioned_source_doi = collection_metadata['current_versioned_source_doi'],
         manifest_id = collection_metadata["manifest_id"]
@@ -385,12 +383,13 @@ def perform_partial_revision(sess, args, sep):
     breakpoint() # Deal with analysis results
     conversion_metadata = get_conversion_metadata_from_json(args.collection_id)
     # conversion_metadata = get_conversion_metadata_from_comet(args.collection_id, args.comet_branch)
-    src_bucket = conversion_metadata['source_bucket'],
-    subdir = conversion_metadata['source_subdirectory'],
-    source_doi = conversion_metadata['source_doi'],
-    versioned_source_doi = conversion_metadata['current_versioned_source_doi'],
-    manifest_id = conversion_metadata["manifest_id"]
+    args.src_bucket = conversion_metadata['source_bucket']
+    args.subdir = conversion_metadata['source_subdirectory']
+    args.source_doi = conversion_metadata['source_doi']
+    args.versioned_source_doi = conversion_metadata['versioned_source_doi']
+    manifest_id = args.manifest_id = conversion_metadata["manifest_id"]
 
+    # If there is supplied manifest, use it
     if manifest_id:
         try:
             if args.subdir:
@@ -416,6 +415,7 @@ def perform_partial_revision(sess, args, sep):
                 manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/etl_generated_manifest{suffix}", sep=sep, index=False)
             else:
                 manifest_data.to_csv(f"gs://{args.src_bucket}/etl_generated_manifest{suffix}", sep=sep, index=False)
+            progresslogger.info(f'Completed manifest revision')
 
         except Exception as exc:
             manifest_data = build_manifest(args)
@@ -424,6 +424,11 @@ def perform_partial_revision(sess, args, sep):
                 manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/etl_generated_manifest{suffix}", sep=sep, index=False)
             else:
                 manifest_data.to_csv(f"gs://{args.src_bucket}/etl_generated_manifest{suffix}", sep=sep, index=False)
+            progresslogger.info(f'Completed new manifest generation')
+
+    if "stop_after_generating_manifest" in args and args.stop_after_generating_manifest:
+        exit(0)
+
     all_collection_ids = build_collections(args, sess, manifest_data, sep)
 
     return all_collection_ids
@@ -432,10 +437,10 @@ def perform_partial_revision(sess, args, sep):
 def prebuild_from_manifests(args, sep=','):
     with sa_session(echo=False) as sess:
         all_collection_ids = perform_partial_revision(sess, args, sep)
-        # sess.commit()
+        sess.commit()
 
     if args.validate:
-        if args.analysis_result:
+        if "analysis_result" in args and args.analysis_result:
             if validate_analysis_result(args) == -1:
                 exit(1)
         else:

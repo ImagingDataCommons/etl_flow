@@ -14,8 +14,8 @@
 # limitations under the License.
 #
 import time
-
-from utilities.tcia_helpers import  get_hash, get_TCIA_studies_per_patient, get_TCIA_patients_per_collection,\
+from utilities.tcia_helpers_v4 import get_hash
+from utilities.tcia_helpers import  get_TCIA_studies_per_patient, get_TCIA_patients_per_collection,\
     get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_collection_values_and_counts,\
     get_tcia_instance_hash, get_access_token
 from idc.models  import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, instance_source
@@ -43,26 +43,31 @@ class TCIA(Source):
         self.skipped_collections = skipped_collections
         self.lock = lock
 
-    def get_hash(self, request_data, access_token=None, refresh_token=None):
-        self.lock.acquire()
-        try:
-            # result = get_hash(request_data, self.access_token)
-            result = get_hash(request_data, self.access[0])
-            if result.status_code == 401:
-                # Refresh the token and try once more to get the hash
-                # errlogger.error('p%s Refreshing access token %s, refresh token %s at %s', self.pid, self.access[0], self.access[1], time.asctime(time.localtime()))
-                # self.access[0], self.access[1] = refresh_access_token(self.access[1])
-                self.access[0], self.access[1] = get_access_token()
-                # errlogger.error('p%s After refresh, token %s, refresh token %s', self.pid, self.access[0], self.access[1])
-                result = get_hash(request_data, self.access[0])
-                if result.status_code != 200:
-                    result = None
-            elif result.status_code != 200:
-                result = None
-        finally:
-            self.lock.release()
-            return result
+    # def get_hash(self, request_data, access_token=None, refresh_token=None):
+    #         self.lock.acquire()
+    #         try:
+    #             # result = get_hash(request_data, self.access_token)
+    #             result = get_hash(request_data, self.access[0])
+    #             if result.status_code == 401:
+    #                 # Refresh the token and try once more to get the hash
+    #                 # errlogger.error('p%s Refreshing access token %s, refresh token %s at %s', self.pid, self.access[0], self.access[1], time.asctime(time.localtime()))
+    #                 # self.access[0], self.access[1] = refresh_access_token(self.access[1])
+    #                 self.access[0], self.access[1] = get_access_token()
+    #                 # errlogger.error('p%s After refresh, token %s, refresh token %s', self.pid, self.access[0], self.access[1])
+    #                 result = get_hash(request_data, self.access[0])
+    #                 if result.status_code != 200:
+    #                     result = None
+    #             elif result.status_code != 200:
+    #                 result = None
+    #         finally:
+    #             self.lock.release()
+    #         return result
 
+    def get_hash(self, request_data):
+            result = get_hash(request_data)
+            if  result.status_code != 200:
+                result = None
+            return result
     ###-------------------Versions-----------------###
 
 
@@ -111,7 +116,7 @@ class TCIA(Source):
         try:
             result = self.get_hash({'Collection':collection_id, 'PatientID': submitter_case_id})
         except Exception as exc:
-            errlogger.exception('Exception %s in src_patient_hash', exc)
+            errlogger.error('Exception %s in src_patient_hash', exc)
             # raise Exception('Exception %s in src_patient_hash', exc)
             raise Exception('Exception %s in src_patient_hash', exc)
         if result:

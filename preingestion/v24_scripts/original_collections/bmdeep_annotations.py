@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
     parser.add_argument('--exclusion_filter', default='', help='Ignore blob name during validation if value is in blob name')
     parser.add_argument('--inclusion_filter', default='', help='Only include blobs having args.inclusion_filter in the blob name during validation')
-
+    parser.add_argument("--stop_after_generating_manifest", default=False, help="If true, stop after generating or revising manifest")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     args.client=storage.Client()
