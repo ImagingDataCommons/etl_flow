@@ -31,7 +31,14 @@
         "mode": "NULLABLE",
         "name": "BodyPartExamined",
         "type": "STRING"
+      },
+      {
+        "description": "Cancer types associated with the collection containing this series",
+        "mode": "NULLABLE",
+        "name": "cancer_types",
+        "type": "STRING"
       }
     ]
   }
 }
+
