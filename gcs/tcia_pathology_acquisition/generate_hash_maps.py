@@ -173,7 +173,7 @@ def main(args, download_slugs=[]):
             if args.download_slugs == [] or aspera_package_id in args.download_slugs:
                 with temp_logger(package['Download_slug']):
                     dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
-                    if package["Download_slug"] in dones and False:
+                    if package["Download_slug"] in dones:
                         progresslogger.info(f'Package {aspera_package_id} previously processed')
                     else:
                         TCIA_collection_version = package['TCIA_collection_version']
@@ -276,7 +276,7 @@ if __name__ == "__main__":
     parser.add_argument("--dst_project", default='idc-source-data', help="Project in which to create bucket")
     parser.add_argument("--google_drive_folder", default="", help="Google Drive folder ID")
     parser.add_argument("--save_result", default=True, help="Save result to a Drive file if True")
-    parser.add_argument("--download_slugs", default = ['upenn-gbm-da-path'], help="Slugs to process; all if empty")
+    parser.add_argument("--download_slugs", default = ['cptac-brca-da-path'], help="Slugs to process; all if empty")
     parser.add_argument("--manifest_file_name", default= f'manifest_{strftime("%Y%m%d_%H%M%S", gmtime())}.txt')
     parser.add_argument("--only_idc_collections", default=False, help="Only include a collection if IDC already has it")
     parser.add_argument("--skips", default=['dlbcl-morphology-da-path'], help="TCIA_collection_ids to be skipped")

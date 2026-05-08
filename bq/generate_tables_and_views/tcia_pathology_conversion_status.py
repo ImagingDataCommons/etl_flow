@@ -181,12 +181,16 @@ def main():
     # Find the collection that owns each pathology download
     for p, pdata in pathology_downloads.items():
         for c in collections:
-            if pdata['id'] in c['collection_downloads']:
-                pdata['parent_id'] = c['id']
-                pdata['parent_slug'] = c['slug']
-                pdata['parent'] = c
-                pdata['parent_version'] = c['version_number']
-                break
+            try:
+                if type(c['collection_downloads'])==list and pdata['id'] in c['collection_downloads']:
+                    pdata['parent_id'] = c['id']
+                    pdata['parent_slug'] = c['slug']
+                    pdata['parent'] = c
+                    pdata['parent_version'] = c['version_number']
+                    break
+            except Exception as exc:
+                errlogger.error(f'{exc}')
+                exit(1)
         if 'parent' not in pdata:
             print(f'Did not find parent of {pdata["slug"]}')
             pdata['parent_id'] = ""

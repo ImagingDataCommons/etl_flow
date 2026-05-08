@@ -17,46 +17,46 @@ files_and_buckets_and_tables:
 
   # For each view to install, what is the sql, json file with the schema and metadata, and table list for sql
   INSTALL_LIST:
-    - dicom_all:
-        sql: sql/dicom_all.sql
-        metadata: schema/dicom_all.json
-        table_list:
-          - {project}.{dataset}.auxiliary_metadata
-          - {project}.{dataset}.dicom_metadata
-          - {project}.{dataset}.original_collections_metadata
+#    - dicom_all:
+#        sql: sql/dicom_all.sql
+#        metadata: schema/dicom_all.json
+#        table_list:
+#          - {project}.{dataset}.auxiliary_metadata
+#          - {project}.{dataset}.dicom_metadata
+#          - {project}.{dataset}.original_collections_metadata
     - dicom_metadata_curated:
         sql: sql/dicom_metadata_curated.sql
         metadata: schema/dicom_metadata_curated.json
         table_list:
           - {project}.{dataset}.dicom_metadata
-    - dicom_metadata_curated_series_level:
-        sql: sql/dicom_metadata_curated_series_level.sql
-        metadata: schema/dicom_metadata_curated_series_level.json
-        table_list:
-          - {project}.{dataset}.dicom_metadata
-    - measurement_groups:
-       sql: sql/measurement_groups.sql
-       metadata: schema/measurement_groups.json
-       table_list:
-         - {project}.{dataset}.dicom_metadata
-    - qualitative_measurements:
-       sql: sql/qualitative_measurements.sql
-       metadata: schema/qualitative_measurements.json
-       table_list:
-         - {project}.{dataset}.measurement_groups
-    - quantitative_measurements:
-       sql: sql/quantitative_measurements.sql
-       metadata: schema/quantitative_measurements.json
-       table_list:
-         - {project}.{dataset}.measurement_groups
-         - {project}.{dataset}.measurement_groups
-         - {project}.{dataset}.measurement_groups
-    - segmentations:
-       sql: sql/segmentations.sql
-       metadata: schema/segmentations.json
-       table_list:
-         - {project}.{dataset}.dicom_metadata # Debug: idc-tcia.lidc_idri_seg_sr.lidc_idri_seg_sr
-         - {project}.{dataset}.dicom_all # Debug: idc-tcia.lidc_idri_seg_sr.lidc_idri_seg_sr
+#    - dicom_metadata_curated_series_level:
+#        sql: sql/dicom_metadata_curated_series_level.sql
+#        metadata: schema/dicom_metadata_curated_series_level.json
+#        table_list:
+#          - {project}.{dataset}.dicom_metadata
+#    - measurement_groups:
+#       sql: sql/measurement_groups.sql
+#       metadata: schema/measurement_groups.json
+#       table_list:
+#         - {project}.{dataset}.dicom_metadata
+#    - qualitative_measurements:
+#       sql: sql/qualitative_measurements.sql
+#       metadata: schema/qualitative_measurements.json
+#       table_list:
+#         - {project}.{dataset}.measurement_groups
+#    - quantitative_measurements:
+#       sql: sql/quantitative_measurements.sql
+#       metadata: schema/quantitative_measurements.json
+#       table_list:
+#         - {project}.{dataset}.measurement_groups
+#         - {project}.{dataset}.measurement_groups
+#         - {project}.{dataset}.measurement_groups
+#    - segmentations:
+#       sql: sql/segmentations.sql
+#       metadata: schema/segmentations.json
+#       table_list:
+#         - {project}.{dataset}.dicom_metadata # Debug: idc-tcia.lidc_idri_seg_sr.lidc_idri_seg_sr
+#         - {project}.{dataset}.dicom_all # Debug: idc-tcia.lidc_idri_seg_sr.lidc_idri_seg_sr
 
 steps:
   # delete existing dataset, if present:

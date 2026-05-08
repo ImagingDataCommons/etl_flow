@@ -110,21 +110,7 @@ def export_data_from_bigquery(bucket_id, dataset_name, table_name, overwrite=Fal
 
 if __name__ == "__main__":
 
-    dataset_name = settings.BQ_PDP_DATASET
-    clinical_dataset_name = f'{dataset_name}_clinical'
-
-    # Get both clinical and non clinical table names with just dataset name
-    tables_dict = get_tables(dataset_name)
-    regular_tables_list = tables_dict['regular_tables']
-    clinical_tables_list = tables_dict['clinical_tables']
-
-    bucket_id = 'bq_export_idc'
-    for table in regular_tables_list:
-        export_data_from_bigquery(bucket_id, dataset_name, table, overwrite=True)
-    for table in clinical_tables_list:
-        export_data_from_bigquery(bucket_id, clinical_dataset_name, table, overwrite=True)
-
-    # dataset_name = 'idc_current'
+    # dataset_name = settings.BQ_PDP_DATASET
     # clinical_dataset_name = f'{dataset_name}_clinical'
     #
     # # Get both clinical and non clinical table names with just dataset name
@@ -132,8 +118,22 @@ if __name__ == "__main__":
     # regular_tables_list = tables_dict['regular_tables']
     # clinical_tables_list = tables_dict['clinical_tables']
     #
-    # bucket_id = 'bq_export_idc_current'
+    # bucket_id = 'bq_export_idc'
     # for table in regular_tables_list:
     #     export_data_from_bigquery(bucket_id, dataset_name, table, overwrite=True)
     # for table in clinical_tables_list:
     #     export_data_from_bigquery(bucket_id, clinical_dataset_name, table, overwrite=True)
+
+    dataset_name = 'idc_current'
+    clinical_dataset_name = f'{dataset_name}_clinical'
+
+    # Get both clinical and non clinical table names with just dataset name
+    tables_dict = get_tables(dataset_name)
+    regular_tables_list = tables_dict['regular_tables']
+    clinical_tables_list = tables_dict['clinical_tables']
+
+    bucket_id = 'bq_export_idc_current'
+    for table in regular_tables_list:
+        export_data_from_bigquery(bucket_id, dataset_name, table, overwrite=True)
+    for table in clinical_tables_list:
+        export_data_from_bigquery(bucket_id, clinical_dataset_name, table, overwrite=True)

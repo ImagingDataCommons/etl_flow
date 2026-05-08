@@ -22,6 +22,7 @@ import settings
 from time import sleep
 from google.cloud import bigquery
 from utilities.bq_helpers import query_BQ, export_BQ_to_GCS, delete_BQ_Table
+from utilities.logging_config import progresslogger
 
 def gen_instance_manifest(args):
     BQ_client = bigquery.Client(project=args.project)
@@ -82,10 +83,10 @@ def gen_instance_manifest(args):
       """
 
     results = query_BQ(BQ_client, args.temp_table_bqdataset, args.temp_table, query, write_disposition='WRITE_TRUNCATE')
+    progresslogger.info(f'Instances: {results.total_rows}')
 
     # Export the resulting table to GCS
     results = export_BQ_to_GCS(BQ_client, args.temp_table_bqdataset, args.temp_table, args.manifest_uri)
-
     while results.state == 'RUNNING':
         sleep(1)
         pass

@@ -76,7 +76,7 @@ data_collections_metadata_schema = [
         description='Array of metadata for each source of instance data in this collection'
     ),
     bigquery.SchemaField('supporting_data', 'STRING', mode='NULLABLE', description='Type(s) of addional available data'),
-    bigquery.SchemaField('program', 'STRING', mode='REQUIRED', description='Program to which this collection belongs'),
+    bigquery.SchemaField('program_id', 'STRING', mode='REQUIRED', description='Program to which this collection belongs'),
     bigquery.SchemaField('status', 'STRING', mode='NULLABLE', description='Collection status: Ongoing or Complete'),
     bigquery.SchemaField('updated', 'DATE', mode='NULLABLE', description='Date of most recent update'),
     bigquery.SchemaField('description', 'STRING', mode='REQUIRED', description='Description of collection (HTML format)'),
@@ -88,6 +88,9 @@ data_collections_metadata_schema = [
                          description='DEPRECATED: Duplicate of tumor_locations'),
     bigquery.SchemaField('SupportingData', 'STRING', mode='NULLABLE',
                          description='DEPRECATED: Duplicate of supporting_data'),
+    bigquery.SchemaField('Program', 'STRING', mode='REQUIRED',
+                         description='DEPRECATED: Duplicate of program_id'),
+
 ]
 
 # Count the cases (patients) in each collection
@@ -216,13 +219,14 @@ def generate_collection_metadata():
                 species=', '.join(data['species']) if type(data['species'])==list else data['species'],
                 sources=[],
                 supporting_data= "" if data['supporting_data'] is None else ', '.join(data['supporting_data']),
-                program = data['program'],
+                program_id = data['program'],
                 status=data['status'],
                 updated=data['updated'],
                 description = "",
                 CancerTypes=', '.join(data['cancer_types']),
                 TumorLocations=', '.join(data['tumor_locations']),
-                SupportingData="" if data['supporting_data'] is None else ', '.join(data['supporting_data'])
+                SupportingData="" if data['supporting_data'] is None else ', '.join(data['supporting_data']),
+                Program=data['program']
             )
         except Exception as exc:
             pass
