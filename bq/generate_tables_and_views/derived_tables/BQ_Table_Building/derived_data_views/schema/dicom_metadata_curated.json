@@ -9,6 +9,12 @@
   "schema": {
     "fields": [
       {
+        "description": "DICOM SeriesInstanceUID",
+        "mode": "NULLABLE",
+        "name": "SeriesInstanceUID",
+        "type": "STRING"
+      }, 
+      {
         "description": "DICOM SOPInstanceUID",
         "mode": "NULLABLE",
         "name": "SOPInstanceUID",
