@@ -30,7 +30,7 @@ SpecimenPreparationSequence_unnested AS (
         concept_code_sequence.CodeMeaning AS ccs_cm,
         concept_code_sequence.CodingSchemeDesignator AS ccs_csd,
         concept_code_sequence.CodeValue AS ccs_val,
-      FROM `bigquery-public-data.idc_v18.dicom_all`,
+      FROM `{project}.{dataset}.dicom_all`,
       UNNEST(SpecimenDescriptionSequence[SAFE_OFFSET(0)].SpecimenPreparationSequence) as preparation_unnest_step1,
       UNNEST(preparation_unnest_step1.SpecimenPreparationStepContentItemSequence) as preparation_unnest_step2,
       UNNEST(preparation_unnest_step2.ConceptNameCodeSequence) as concept_name_code_sequence,
