@@ -19,7 +19,7 @@
 
 import pandas as pd
 from google.cloud import bigquery
-from bq.utilities import read_json_to_dataframe
+from bq.bq_utilities import read_json_to_dataframe
 from datetime import datetime, timedelta
 import pytz
 

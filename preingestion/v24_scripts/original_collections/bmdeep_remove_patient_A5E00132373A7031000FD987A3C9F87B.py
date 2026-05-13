@@ -32,7 +32,7 @@ if __name__ == '__main__':
     query = f"""
 SELECT DISTINCT sop_instance_uid
 FROM `idc-dev-etl.idc_v23_dev.all_joined_public_and_current`
-WHERE submitter_case_id = 'A5E00132373A7031000FD987A3C9F87B'
+WHERE submitter_case_id = 'A5E00132373A7031000FD987A3C9F87B' A5E00132373A7031000FD987A3C9F87Bq
     """
 
     instances = [row.sop_instance_uid for row in client.query(query).result()]

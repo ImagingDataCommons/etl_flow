@@ -173,7 +173,7 @@ def copy_some_instances(args, client, uids, n):
         progresslogger.info(f"p{args.id}: {done + n}of{len(uids) + n}")
     except Exception as exc2:
         # breakpoint()
-        errlogger.exception(f'p{args.id}: copy: exception type: {repr(exc2)}; {exc2}; row = {row}')
+        errlogger.error(f'p{args.id}: copy: exception type: {repr(exc2)}; {exc2}; row = {row}')
     return
 
 def worker(input, args):
@@ -276,7 +276,7 @@ if __name__ == '__main__':
     parser.add_argument('--client', default=storage.Client())
     parser.add_argument('--collections', default=(), help='Collections to include. If empty, include all collections')
     parser.add_argument('--bucket_project', default='nci-idc-bigquery-data', help='Project in which to build buckets')
-    parser.add_argument('--processes', default=256)
+    parser.add_argument('--processes', default=8)
     parser.add_argument('--batch', default=100)
     parser.add_argument('--dones_table_id', default='idc-dev-etl.whc_dev.step1_dones', help='BQ table from which to import dones')
     parser.add_argument('--log_dir', default=settings.LOG_DIR)

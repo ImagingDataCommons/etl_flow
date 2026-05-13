@@ -25,7 +25,7 @@ import logging
 from utilities.logging_config import errlogger
 
 logger = logging.getLogger(__name__)
-from utilities.tcia_helpers import get_internal_series_ids, series_drill_down, get_all_tcia_metadata
+from utilities.tcia_helpers import get_internal_series_ids, series_drill_down, get_tcia_collection_manager_data
 from utilities.tcia_helpers_v4 import get_TCIA_series_metadata_per_patient
 from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series
 from python_settings import settings
@@ -116,7 +116,7 @@ def get_patient_urls_tcia_v2(collection, patient):
 
 
 # Get a per-series list of source URLs for a patient. This routine finds series in
-# data sourced from TCIA.
+# data sourced from IDC.
 def get_patient_urls_idc(sess, collection, patient):
     try:
         query = sess.query(IDC_Series.series_instance_uid.label('SeriesInstanceUID'), \
@@ -202,7 +202,7 @@ def get_patient_urls_idc(sess, collection, patient):
 # data sourced from TCIA.
 def get_licenses_tcia(collection, patient, third_party="no", server=""):
     # license_types = get_license_info()
-    license_types = {l['license_url']: l['license_label'] for l in get_all_tcia_metadata(type="licenses")}
+    license_types = {l['license_url']: l['license_label'] for l in get_tcia_collection_manager_data(type="licenses")}
     series_licenses = {}
     series_metadata = get_TCIA_series_metadata_per_patient(collection, patient)
     for series in series_metadata:

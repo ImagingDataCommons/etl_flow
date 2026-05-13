@@ -250,7 +250,9 @@ def get_TCIA_instance_uids_per_series(collection_id, seriesInstanceUID, server=N
         server_url = server
         headers = ''
     url = f'{server_url}/getSOPInstanceUIDs?SeriesInstanceUID={seriesInstanceUID}'
+
     results = get_url(url, headers)
+
     instance_uids = results.json() if results.content else []
     return instance_uids
 
@@ -456,7 +458,7 @@ def get_collection_license_info():
     return licenses
 
 
-def get_all_tcia_metadata(type, query_param=''):
+def get_tcia_collection_manager_data(type, query_param=''):
     if query_param:
         url = f"https://cancerimagingarchive.net/api/v1/{type}/?per_page=100&{query_param}"
     else:
@@ -480,7 +482,7 @@ def get_all_tcia_metadata(type, query_param=''):
         print('Error accessing the API:', response.status_code)
         exit
 
-def get_all_tcia_metadata_v2(type, query_param=''):
+def et_tcia_collection_manager_data_v2(type, query_param=''):
     page = 1
     collections = []
     while True:
@@ -505,7 +507,7 @@ def get_all_tcia_metadata_v2(type, query_param=''):
 
 
 if __name__ == "__main__":
-    c = get_all_tcia_metadata_v2("collections", query_param='')
+    c = get_tcia_collection_manager_data_v2("collections", query_param='')
     pass
 
 #     access_token = get_access_token(auth_server=NLST_AUTH_URL)[0]

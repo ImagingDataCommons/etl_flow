@@ -18,16 +18,16 @@
 # spreadsheet in Google Drive
 import settings
 import argparse
-from bq.utilities import json_file_to_bq
+from bq.bq_utilities import json_file_to_bq
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--project', default='idc-dev-etl', help='BQ project')
     parser.add_argument('--bq_dataset_id', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ datasey')
-    parser.add_argument('--table_id', default='analysis_results_metadata_idc_source', help='Table name to which to copy data')
+    parser.add_argument('--table_id', default='original_collections_metadata_idc_source', help='Table name to which to copy data')
 
     args = parser.parse_args()
     print('args: {}'.format(args))
 
-    json_file_path = f"{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_analysis_results_metadata.json"
+    json_file_path = f"{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_original_collections_metadata.json5"
     json_file_to_bq(args, json_file_path)

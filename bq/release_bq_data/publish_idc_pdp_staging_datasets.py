@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Duplicate idc_vxx datasets in idc_pdp_staging to the nci-idc-bigquery-data project
+# Duplicate idc_pdp_staging.idc_vxx dataset o the nci-idc-bigquery-data.idc_vxx
 import settings
 import argparse
 import json

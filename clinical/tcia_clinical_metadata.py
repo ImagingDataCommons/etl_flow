@@ -19,10 +19,9 @@
 import argparse
 import sys
 import json
-from utilities.tcia_helpers import get_all_tcia_metadata, get_url
+from utilities.tcia_helpers import get_tcia_collection_manager_data, get_url
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json
-from bq.generate_tables_and_views.original_collections_metadata.schema import data_collections_metadata_schema
 from utilities.logging_config import errlogger
 from python_settings import settings
 
@@ -79,20 +78,20 @@ def get_raw_data():
     all_idc_collections = client.list_rows(client.get_table(f'{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_sources')).to_dataframe()
     all_idc_source_dois = all_idc_collections[['source_doi', 'Access']].copy()
     # Get all TCIA collections which we also have
-    all_tcia_collection_metadata = get_all_tcia_metadata("collections")
+    all_tcia_collection_metadata = get_tcia_collection_manager_data("collections")
     public_tcia_collections = [ c for c in all_tcia_collection_metadata if \
                                 c['collection_doi'].lower() in list(all_idc_source_dois['source_doi']) and \
                                 all_idc_source_dois[all_idc_source_dois["source_doi"] == (c['collection_doi'].lower())].iloc[0]['Access'] == "Public"
                                 ]
 
     # Get all TCIA analysis results which we also have
-    all_tcia_ar_metadata = get_all_tcia_metadata('analysis-results')
+    all_tcia_ar_metadata = get_tcia_collection_manager_data('analysis-results')
     public_analysis_results = [c for c in all_tcia_ar_metadata if \
                                c['result_doi'].lower() in list(all_idc_source_dois['source_doi']) and \
                                all_idc_source_dois[all_idc_source_dois["source_doi"] == (c['result_doi'].lower())].iloc[0]['Access'] == "Public"
                                ]
     # Get TCIA clinical downloads
-    downloads = {d['id']: d for d in get_all_tcia_metadata("downloads")}
+    downloads = {d['id']: d for d in get_tcia_collection_manager_data("downloads")}
     clinical_downloads = {id: data for id, data in downloads.items() if likely_clinical(data)}
 
     # Associate 0 or 1 collection with each clinical download

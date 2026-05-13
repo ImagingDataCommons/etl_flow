@@ -28,12 +28,19 @@ from bq.generate_tables_and_views.auxiliary_metadata_table.schema import auxilia
 
 def build_table(args):
     query = f"""
-WITH newest as (SELECT DISTINCT source_doi, CAST(SPLIT(source_doi, '.')[2] AS INT64) sd, MAX(i_rev_idc_version) newest 
+WITH newest AS
+      # Each row is an IDC DOI and the most recent IDC version of the source having that DOI
+      # Apparently not using sd, which is good
+      (SELECT DISTINCT source_doi, CAST(SPLIT(source_doi, '.')[2] AS INT64) sd, MAX(i_rev_idc_version) newest 
       FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` 
       GROUP BY source_doi, i_source
       HAVING i_source='idc'
       ORDER BY sd),
 newest_versioned_source_dois AS (
+      # Each row is a source_doi, versioned_source_doi pair
+      # For IDC, the versioned_source_doi is that of the newest i_rev_idc_version. That is, for auxiliary_metatdata,
+      # all instances get the newest versioned_source_doi of their source.
+      # For TCIA, the versioned_source_doi is ""
       (SELECT DISTINCT aj.source_doi, aj.versioned_source_doi
       FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` aj
       JOIN newest
@@ -177,6 +184,8 @@ SELECT
       submitter_case_id AS submitter_case_id,
       "Public" Access
       FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` aj
+      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.licenses` licenses
+      ON aj.source_doi = licenses.source_doi
       JOIN newest_versioned_source_dois nvsd
       ON aj.source_doi = nvsd.source_doi
       ORDER BY

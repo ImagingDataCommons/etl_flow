@@ -32,11 +32,11 @@ from google.cloud import storage
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--processes', default=1)
+    parser.add_argument('--processes', default=0)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument('--collection_id', default='UW-CIRP-Mouse-PET-CT-NSCLC', help='collection_name of the collection or ID of analysis result to which instances belong.')
 
-    parser.add_argument('--gen_hashes', default=True, help=' Generate hierarchical hashes of collection if True.')
+    parser.add_argument('--gen_hashes', default=False, help=' Generate hierarchical hashes of collection if True.')
     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
     parser.add_argument('--exclusion_filter', default='', help='Ignore blob name during validation if value is in blob name')
     parser.add_argument('--inclusion_filter', default='', help='Only include blobs having args.inclusion_filter in the blob name during validation')

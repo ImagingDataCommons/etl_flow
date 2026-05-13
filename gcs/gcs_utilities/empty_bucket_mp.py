@@ -79,7 +79,7 @@ def worker(input, args):
         try:
             delete_instances(args, client, bucket, blobs, n)
         except Exception as exc:
-            errlogger.exception('p%s Exception %s %s:%s', args.id, exc, n, n+len(blobs)-1)
+            errlogger.error('p%s Exception %s %s:%s', args.id, exc, n, n+len(blobs)-1)
             time.sleep(1)
 
 def del_all_instances(args):

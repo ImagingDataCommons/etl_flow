@@ -55,6 +55,11 @@ SELECT
   ELSE
   BodyPartExamined
 END
-  AS BodyPartExamined
+  AS BodyPartExamined,
+  IF(ARRAY_LENGTH(SPLIT(ocm.cancer_types, ',')) <=5, ocm.cancer_types, 'Various') AS cancer_types
 FROM
-  `{project}.{dataset}.dicom_metadata` AS dcm
+  `{project}.{dataset}.dicom_all` AS da
+JOIN
+  `{project}.{dataset}.original_collections_metadata` AS ocm
+ON
+  da.collection_id = ocm.collection_id

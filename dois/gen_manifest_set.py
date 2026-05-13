@@ -31,10 +31,11 @@ import settings
 def get_all_dois(idc_version):
     client = bigquery.Client()
     query = f'''
-SELECT DISTINCT aj.source_doi, aj.versioned_source_doi, aj.collection_id, arm.ID analysis_result_id
+SELECT DISTINCT aj.source_doi, aj.versioned_source_doi, aj.collection_id, a_s.analysis_result_id analysis_result_id
 FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public` aj
-LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_metadata_idc_source` arm
-ON aj.source_doi = arm.source_doi
+-- LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_results_metadata_idc_source` arm
+LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_sources` a_s
+ON aj.source_doi = a_s.source_doi
 WHERE i_source= 'idc'
 AND aj.i_rev_idc_version = {idc_version}
 order by aj.source_doi, aj.collection_id

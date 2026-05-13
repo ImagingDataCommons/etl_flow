@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     query = f"""
 SELECT DISTINCT CONCAT(se_uuid, "/", i_uuid, ".dcm") blob_name
-FROM `idc-dev-etl.idc_v23_dev.all_joined_public_and_current`
+FROM `idc-dev-etl.idc_v24_dev.all_joined_public_and_current`
 WHERE collection_id = "Phantom FDA"
 ORDER BY blob_name
     """

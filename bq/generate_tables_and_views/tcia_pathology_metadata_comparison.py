@@ -19,10 +19,10 @@
 import argparse
 import sys
 import json
-from utilities.tcia_helpers import get_all_tcia_metadata, get_url
+from utilities.tcia_helpers import get_tcia_collection_manager_data, get_url
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json
-from bq.generate_tables_and_views.original_collections_metadata.schema import data_collections_metadata_schema
+from bq.generate_tables_and_views.original_collections_metadata.gen_original_collection_metadata_comet import data_collections_metadata_schema
 from utilities.logging_config import errlogger
 import settings
 

@@ -22,37 +22,10 @@ import argparse
 import pandas as pd
 from google.cloud import bigquery
 import markdownify
-from bq.utilities import read_json_to_dataframe, dataframe_to_bq
+from bq.bq_utilities import read_json_to_dataframe, dataframe_to_bq, get_github_directory_contents_from_comet, \
+    get_data_from_comet
 import re
-
-
-# Get the descriptions of collections that are only sourced from IDC
-def get_idc_descriptions(args, schema=None):
-    # Load the Google Sheets data into a Pandas DataFrame
-
-    file_path = f'{settings.BQ_JSON_PROJECT_PATH}/idc_analysis_results_descriptions.json'
-    df = read_json_to_dataframe(file_path)
-
-    return df
-
-def convert_to_markdown(df):
-    # Convert HTML to Markdown and delete empty lines
-    for i, row in df.iterrows():
-        description = markdownify.markdownify(df.at[i, 'description'])
-        # Clean up hyperlinks
-        description = description.replace('[','').replace(']',' ')
-        # More clean up
-        description = description.replace('**','')
-
-        lines = []
-        for line in description.split('\n'):
-            if line:
-                line = line.replace('\\', '')
-                lines.append(line)
-        description = '\n'.join(lines)
-        df.at[i,'description'] = description
-
-    return df
+import markdown
 
 
 def modify_full_hyperlinks(html_text):
@@ -79,12 +52,6 @@ def modify_full_hyperlinks(html_text):
         if ".gov" in url.lower():
             return full_original
 
-        # --- Modification Logic ---
-        # Let's say we want to add a CSS class and change the text
-        new_url = f"https://myproxy.io/view?url={url}"
-        modified_content = f"EXT: {inner_content}"
-
-        # return f"{tag_start}{new_url}{quote_type}{tag_end}{modified_content}{closing_tag}"
         return f'<a  href="" url="{url}" data-toggle="modal" data-target="#external-web-warning" class="external-link">{inner_content}<i class="fa-solid fa-external-link external-link-icon" aria-hidden="true"></i></a>'
 
     # re.DOTALL allows (.*?) to match across newlines
@@ -93,30 +60,40 @@ def modify_full_hyperlinks(html_text):
     return modified_html
 
 
-def convert_hyperlinks(df):
+def convert_hyperlinks(descriptions):
+    for collection in descriptions:
+        revised_description = modify_full_hyperlinks(collection['description'])
+        collection['description'] = revised_description
 
-    for i, row in df.iterrows():
-        description = df.at[i, 'description']
-        revised_description = modify_full_hyperlinks(description)
-        df.at[i,'description'] = revised_description
+    return pd.DataFrame(descriptions)
 
-    return df
+def get_all_descriptions(path, branch):
+    collection_files = get_github_directory_contents_from_comet(path, branch=branch)
+    descriptions = []
+    for collection_file in collection_files:
+        # print(collection_file)
+        collection_data = get_data_from_comet(f"{path}/{collection_file}", branch=branch)
+        descriptions.append(
+            {
+                "collection_id": collection_data['collection_id'],
+                "description": markdown.markdown(collection_data['summary'])
+            }
+        )
+    return descriptions
 
 
 def main(args):
-    idc_descriptions = get_idc_descriptions(args)
-    # tcia_descriptions = get_tcia_descriptions(args)
-    # all_descriptions = pd.concat([idc_descriptions, tcia_descriptions], ignore_index=True)
-    all_descriptions = convert_hyperlinks(idc_descriptions)
+    all_descriptions = get_all_descriptions("collections/original", args.comet_branch)
+    converted_descriptions = convert_hyperlinks(all_descriptions)
     # markdown_descriptions = convert_to_markdown(all_descriptions)
-    dataframe_to_bq(args, all_descriptions)
+    dataframe_to_bq(args, converted_descriptions)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--project', default='idc-dev-etl', help='BQ project')
     parser.add_argument('--bq_dataset_id', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ datasey')
-    parser.add_argument('--table_id', default='analysis_results_tooltip_descriptions', help='Table name to which to copy data')
-    parser.add_argument('--columns', default=[], help='Columns in df to keep. Keep all if list is empty')
+    parser.add_argument('--table_id', default='original_collections_tooltip_descriptions', help='Table name to which to copy data')
+    parser.add_argument("--comet_branch", default = 'release/v24')
 
     args = parser.parse_args()
     print('args: {}'.format(args))

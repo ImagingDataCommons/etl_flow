@@ -30,7 +30,7 @@ errlogger = logging.getLogger('root.err')
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--version', default=10, help='Version to be deleted')
+    parser.add_argument('--version', default=24, help='Version to be deleted')
     args = parser.parse_args()
 
     sql_uri = f'postgresql+psycopg2://{settings.CLOUD_USERNAME}:{settings.CLOUD_PASSWORD}@{settings.CLOUD_HOST}:{settings.CLOUD_PORT}/{settings.CLOUD_DATABASE}'

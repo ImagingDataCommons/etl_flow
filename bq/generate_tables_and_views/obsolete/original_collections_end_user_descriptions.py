@@ -22,16 +22,48 @@ import argparse
 import pandas as pd
 from google.cloud import bigquery
 import markdownify
-from bq.utilities import read_json_to_dataframe, dataframe_to_bq
+from bq.bq_utilities import read_json_to_dataframe, dataframe_to_bq
 
 
 # Get the descriptions of collections that are only sourced from IDC
 def get_idc_descriptions(args, schema=None):
-    # Load the Google Sheets data into a Pandas DataFrame
-
-    file_path = f'{settings.BQ_JSON_PROJECT_PATH}/idc_analysis_results_descriptions.json'
+    file_path = f'{settings.BQ_JSON_PROJECT_PATH}/idc_original_collections_descriptions.json5'
     df = read_json_to_dataframe(file_path)
 
+    return df
+
+# Get TCIA's descriptions of collections we get from them. For any collection for which there is also pathology, add a
+# paragraph to TCIA's description directing to the IDC Zenodo page.
+def get_tcia_descriptions(args):
+    client = bigquery.Client()
+    query = f"""
+WITH path AS (
+    SELECT DISTINCT ajpc.collection_id, source_url, 
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` ajpc
+    JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_EXT_DATASET}.dicom_metadata` dm
+    ON ajpc.sop_instance_uid = dm.sopinstanceuid
+    WHERE dm.Modality='SM'
+)
+SELECT DISTINCT 
+    REPLACE(REPLACE(LOWER(tcd.collection_id), '-', '_'), ' ', '_') collection_id, 
+    if(path.collection_id is not NULL,
+        CONCAT(tcd.description, 
+        '<p>Please see the <a href="', path.source_url, '" target="_blank">', tcd.collection_id, ': ', ocmis.title, '</a>) wiki page to learn more about the histopathology images and to obtain any supporting metadata for this collection.</p>'),
+        tcd.description
+        ) description
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.tcia_collection_descriptions` tcd
+    RIGHT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_sources` ac
+    ON tcd.collection_id = ac.collection_name
+    LEFT JOIN path
+    ON tcd.collection_id = path.collection_id
+    LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_metadata_idc_source` ocmis
+    ON path.collection_id = ocmis.collection_name
+    WHERE ac.Access = 'Public' AND tcd.collection_id IS NOT NULL AND (ac.metadata_sunset = 0)
+    ORDER BY collection_id
+    
+    """
+
+    df = client.query_and_wait(query).to_dataframe()
     return df
 
 
@@ -55,7 +87,6 @@ def convert_to_markdown(df):
     return df
 
 def output_to_bq(df):
-
     client = bigquery.Client()
 
     if args.columns:
@@ -84,14 +115,17 @@ def output_to_bq(df):
 
 def main(args):
     idc_descriptions = get_idc_descriptions(args)
-    markdown_descriptions = convert_to_markdown(idc_descriptions)
+    tcia_descriptions = get_tcia_descriptions(args)
+    all_descriptions = pd.concat([idc_descriptions, tcia_descriptions], ignore_index=True)
+    markdown_descriptions = convert_to_markdown(all_descriptions)
     dataframe_to_bq(args, markdown_descriptions)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--project', default='idc-dev-etl', help='BQ project')
     parser.add_argument('--bq_dataset_id', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ datasey')
-    parser.add_argument('--table_id', default='analysis_results_end_user_descriptions', help='Table name to which to copy data')
+    parser.add_argument('--table_id', default='original_collections_end_user_descriptions', help='Table name to which to copy data')
+    parser.add_argument('--columns', default=[], help='Columns in df to keep. Keep all if list is empty')
 
     args = parser.parse_args()
     print('args: {}'.format(args))

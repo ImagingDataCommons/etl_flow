@@ -94,14 +94,14 @@ if __name__ == "__main__":
     # BigQuery details
     bq_project_id = "idc-dev-etl"
     bq_dataset_id = "idc_v24_dev"
-    bq_table_id = "temp_source_file_hashes"
+    bq_table_id = "study_series"
 
     # Cloud SQL PostgreSQL details
     pg_host = settings.CLOUD_HOST
     pg_database = "idc_v24"
     pg_user = settings.CLOUD_USERNAME
     pg_password = settings.CLOUD_PASSWORD
-    pg_table_name = "temp_source_file_hashes"
+    pg_table_name = "study_series"
 
     # 1. Get BigQuery schema and data
     bq_schema, bq_data = get_bigquery_schema_and_data(bq_project_id, bq_dataset_id, bq_table_id)

@@ -22,7 +22,7 @@ import argparse
 import pandas as pd
 from google.cloud import bigquery
 import markdownify
-from bq.utilities import read_json_to_dataframe, dataframe_to_bq
+from bq.bq_utilities import read_json_to_dataframe, dataframe_to_bq
 import re
 
 
@@ -30,51 +30,10 @@ import re
 def get_idc_descriptions(args, schema=None):
     # Load the Google Sheets data into a Pandas DataFrame
 
-    file_path = f'{settings.BQ_JSON_PROJECT_PATH}/idc_original_collections_descriptions.json5'
+    file_path = f'{settings.BQ_JSON_PROJECT_PATH}/idc_analysis_results_descriptions.json'
     df = read_json_to_dataframe(file_path)
 
-    # url = f'https://docs.google.com/spreadsheets/d/{args.spreadsheet_id}/gviz/tq?tqx=out:csv&sheet={args.sheet_name}'
-    #
-    # df = pd.read_csv(url)
-    # df = df.map(str)
-    # df = df.replace({'nan': None})
-
     return df
-
-# Get TCIA's descriptions of collections we get from them. For any collection for which there is also pathology, add a
-# paragraph to TCIA's description directing to the IDC Zenodo page.
-def get_tcia_descriptions(args):
-    client = bigquery.Client()
-    query = f"""
-WITH path AS (
-    SELECT DISTINCT ajpc.collection_id, source_url, 
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` ajpc
-    JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_EXT_DATASET}.dicom_metadata` dm
-    ON ajpc.sop_instance_uid = dm.sopinstanceuid
-    WHERE dm.Modality='SM'
-)
-SELECT DISTINCT 
-    REPLACE(REPLACE(LOWER(tcd.collection_id), '-', '_'), ' ', '_') collection_id, 
-    if(path.collection_id is not NULL,
-        CONCAT(tcd.description, 
-        '<p>Please see the <a href="', path.source_url, '" target="_blank">', tcd.collection_id, ': ', ocmis.title, '</a>) wiki page to learn more about the histopathology images and to obtain any supporting metadata for this collection.</p>'),
-        tcd.description
-        ) description
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.tcia_collection_descriptions` tcd
-    RIGHT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_sources` ac
-    ON tcd.collection_id = ac.collection_name
-    LEFT JOIN path
-    ON tcd.collection_id = path.collection_id
-    LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.original_collections_metadata_idc_source` ocmis
-    ON path.collection_id = ocmis.collection_name
-    WHERE ac.Access = 'Public' AND tcd.collection_id IS NOT NULL AND (ac.metadata_sunset = 0)
-    ORDER BY collection_id
-    
-    """
-
-    df = client.query_and_wait(query).to_dataframe()
-    return df
-
 
 def convert_to_markdown(df):
     # Convert HTML to Markdown and delete empty lines
@@ -146,9 +105,9 @@ def convert_hyperlinks(df):
 
 def main(args):
     idc_descriptions = get_idc_descriptions(args)
-    tcia_descriptions = get_tcia_descriptions(args)
-    all_descriptions = pd.concat([idc_descriptions, tcia_descriptions], ignore_index=True)
-    all_descriptions = convert_hyperlinks(all_descriptions)
+    # tcia_descriptions = get_tcia_descriptions(args)
+    # all_descriptions = pd.concat([idc_descriptions, tcia_descriptions], ignore_index=True)
+    all_descriptions = convert_hyperlinks(idc_descriptions)
     # markdown_descriptions = convert_to_markdown(all_descriptions)
     dataframe_to_bq(args, all_descriptions)
 
@@ -156,7 +115,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--project', default='idc-dev-etl', help='BQ project')
     parser.add_argument('--bq_dataset_id', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ datasey')
-    parser.add_argument('--table_id', default='original_collections_tooltip_descriptions', help='Table name to which to copy data')
+    parser.add_argument('--table_id', default='analysis_results_tooltip_descriptions', help='Table name to which to copy data')
     parser.add_argument('--columns', default=[], help='Columns in df to keep. Keep all if list is empty')
 
     args = parser.parse_args()

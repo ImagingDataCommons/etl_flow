@@ -59,7 +59,7 @@ def validate_UIDs_match(args):
                 errlogger.error(f'\t\t SeriesInstanceUID mismatch: API: {row.bq_series} != DICOM metadata:{row.dm_series}')
             n+=1
 
-        errlogger.error(f'NOTE: It is expected that 300 NLST instances have mismatching submitter_case_ids')
+        errlogger.error(f'NOTE: It is expected that 566 CBIS-DDSM and 300 NLST instances have mismatching submitter_case_ids')
 
 
 if __name__ == '__main__':

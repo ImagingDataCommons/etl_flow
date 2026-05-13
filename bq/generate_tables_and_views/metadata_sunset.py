@@ -18,7 +18,7 @@
 # spreadsheet in Google Drive
 import settings
 import argparse
-from bq.utilities import json_file_to_bq
+from bq.bq_utilities import json_file_to_bq
 
 
 if __name__ == '__main__':

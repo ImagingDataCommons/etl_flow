@@ -110,15 +110,16 @@ def ingest(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--num_processes', type=int, default=8, help="Number of concurrent processes")
+    parser.add_argument('--num_processes', type=int, default=16, help="Number of concurrent processes")
 
     parser.add_argument('--skipped_tcia_collections', nargs='*', \
             default=[
                 'MIDI-B-Curated-Test', 'MIDI-B-Curated-Validation', 'MIDI-B-Synthetic-Test', 'MIDI-B-Synthetic-Validation',
                 'A091105', 'ACNS0332', 'AHEP0731', 'AHOD0831', 'ARAR0331', 'AREN0532', 'AREN0533', 'AREN0534', 'CALGB50303',
                 'S0819',
-                # 'ACRIN-NSCLC-FDG-PET', 'Anti-PD-1_Lung',
+                'QIN-SARCOMA',
                 'NLST',
+                'EA1141',
                 'APOLLO-5-ESCA', 'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-PAAD', 'APOLLO-5-THYM', 'APOLLO-5-LUNG-MISC'],
             help='List of additional tcia collections to be skipped')
     parser.add_argument('--prestaging_tcia_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_tcia_', help='Copy tcia instances here before forwarding to --staging_bucket')
@@ -129,7 +130,7 @@ if __name__ == '__main__':
     parser.add_argument('--prestaging_idc_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_idc_', help='Copy idc instances here before forwarding to --staging_bucket')
     parser.add_argument('--copy_through_directory', default=f'/mnt/disks/idc-dev-etl-v{settings.CURRENT_VERSION}', \
                         help='If instance is a composite object, copy it through this directory to GCS to convert to non-composite object')
-    parser.add_argument('--stop_after_collection_summary', type=bool, default=True, \
+    parser.add_argument('--stop_after_collection_summary', type=bool, default=False, \
                         help='Stop after printing a summary of collection dispositions')
 
     args = parser.parse_args()

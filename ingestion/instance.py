@@ -25,7 +25,7 @@ from pydicom.errors import InvalidDicomError
 from idc.models import Version, Instance, IDC_Instance
 from sqlalchemy import select,delete
 from google.cloud import storage
-from utilities.tcia_helpers_v4 import  get_TCIA_instances_per_series_with_hashes
+from utilities.tcia_helpers import  get_TCIA_instances_per_series_with_hashes
 from ingestion.utilities.utils import validate_hashes, md5_hasher, copy_disk_to_gcs, copy_gcs_to_gcs
 
 # successlogger = logging.getLogger('root.success')

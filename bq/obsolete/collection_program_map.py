@@ -23,7 +23,7 @@ import pandas as pd
 
 import settings
 import argparse
-from utilities.tcia_helpers import get_all_tcia_metadata
+from utilities.tcia_helpers import get_tcia_collection_manager_data
 from google.cloud import bigquery
 
 SCHEMA = [
@@ -44,7 +44,7 @@ def gen_table(args):
     # Get a list of the program of each TCIA sourced collection
     tcia_programs = [(row['collection_short_title'].lower().replace('-', '_').replace(' ', '_'),
                       row['program'][0]) if type(row['program']) == list else "" for
-            row in get_all_tcia_metadata(type="collections", query_param="&_fields=collection_short_title,program") \
+                     row in get_tcia_collection_manager_data(type="collections", query_param="&_fields=collection_short_title,program") \
                      if row['collection_short_title'] != 'TEST-PAGE']
 
     all_programs = idc_programs
