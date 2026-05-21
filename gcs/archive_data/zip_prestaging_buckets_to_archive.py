@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# This script zips each series in a pre-staging bucket and copies the zip to a bucket in idc-archive
+# This script zips each series in a pre-staging bucket and copies the zip to a prestaging bucket in idc-archive
 # according to the data type...Open, Cr, etc.
 import argparse
 import json
@@ -26,6 +26,7 @@ from multiprocessing import Queue, Process, Lock, Condition, shared_memory
 import settings
 import sys
 from google.cloud import storage, bigquery, exceptions
+from google.api_core.exceptions import Conflict
 
 import zlib
 from stream_zip import stream_zip, NO_COMPRESSION_64, ZIP_64
@@ -36,23 +37,20 @@ import time
 from pandas import Series
 import crc32c
 import base64
-import psutil
-import os
 
 
 # Get a list of the UUIDs of the series which have not been zipped and copied to GCS.
 def get_undone_series(args: object) -> object:
     client = bigquery.Client()
 
+
     query = f"""
-    SELECT DISTINCT ajpac.collection_id, se_rev_idc_version, se_uuid, i_size, i_uuid, i_source, 
-        ajpac.access, ajpac.Type, am.gcs_bucket src_bucket, CONCAT('idc-arch-', LOWER(ajpac.Type)) dst_bucket
-    FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_public_and_current` ajpac
-    JOIN `idc-dev-etl.idc_v{args.version}_pub.auxiliary_metadata` am 
-    ON ajpac.se_uuid = am.series_uuid
-    WHERE se_redacted = False AND se_rev_idc_version = {args.version}
-    ORDER BY src_bucket, se_uuid
-"""
+        SELECT DISTINCT se_uuid, SUM(i_size) se_size, pub_gcs_bucket src_bucket, CONCAT(dev_bucket, '-prestaging') dst_bucket
+        FROM `idc-dev-etl.idc_v{args.version}_dev.all_joined_public_and_current` ajpac
+        GROUP BY se_uuid, dev_bucket, pub_gcs_bucket, se_rev_idc_version
+        HAVING se_rev_idc_version = {args.version}
+        ORDER BY src_bucket, se_uuid
+    """
 
     done_series = open(successlogger.handlers[0].baseFilename).read().splitlines()
     all_series = client.query(query).to_dataframe()
@@ -61,20 +59,6 @@ def get_undone_series(args: object) -> object:
     undone_series = undone_series.drop(columns='_merge')
     return(list(all_series['se_uuid'].unique()), undone_series)
 
-
-# Return a dataframe of the instance UUIDs in a series
-def get_instances_in_series(args: object, se_uuid: str) -> object:
-    client = bigquery.Client()
-    query = f"""
-    SELECT DISTINCT i.uuid
-    FROM `idc-dev-etl.idc_v{args.version}_dev.instance` i
-    JOIN `idc-dev-etl.idc_v{args.version}_dev.series_instance` s_i
-    ON s_i.instance_uuid = i.uuid
-    WHERE s_i.series_uuid = '{se_uuid}'
-    ORDER by uuid"""
-
-    undone_instances = client.query(query).to_dataframe()
-    return(undone_instances)
 
 def validate_zip(args, se_uuid, src_bucket, dst_bucket):
     chunk_size = pow(2,26)
@@ -160,7 +144,7 @@ def zip_worker(zip_queue, args):
             rate = round(se_size / elapsed_time / 10 ** 6, 1)
             if validate_zip(args, se_uuid, src_bucket, dst_bucket) == 0:
                 progresslogger.info(
-                    f'p{args.pid:03}:    {series_index}:{se_uuid}, {round(se_size / pow(10, 6), 2)}MB, {rate}MB/s, zip time:{round(elapsed_time, 2)}s, val time:{round((time.time()-start_time), 2)}')
+                    f'p{args.pid:03}:    {series_index}:{se_uuid}, {round(se_size / pow(10, 6), 2)}MB, {rate}MB/s, zip time:{round(elapsed_time, 2)}s, val time:{round((time.time()-start_time), 2)}s')
                 successlogger.info(se_uuid)
 
         except Exception as exc:
@@ -208,10 +192,27 @@ def main(args):
         for src_bucket in undones['src_bucket'].unique():
             src_bucket_undones = undones[undones['src_bucket'] == src_bucket]
 
-            dst_bucket = src_bucket_undones.iloc[0]['dst_bucket']
+            dst_bucket_name = src_bucket_undones.iloc[0]['dst_bucket']
+
+            # Try to create the destination bucket
+            new_bucket = dst_client.bucket(dst_bucket_name)
+            new_bucket.iam_configuration.uniform_bucket_level_access_enabled = True
+            new_bucket.versioning_enabled = False
+            try:
+                result = dst_client.create_bucket(new_bucket, location='US-CENTRAL1', project=settings.DEV_PROJECT)
+                # return(0)
+            except Conflict:
+                # Bucket exists
+                pass
+            except Exception as e:
+                # Bucket creation failed somehow
+                errlogger.error("Error creating bucket %s: %s", dst_bucket_name, e)
+                return (-1)
+
             init_index = all_series.index(src_bucket_undones.iloc[0].se_uuid)
             final_index = all_series.index(src_bucket_undones.iloc[len(src_bucket_undones)-1].se_uuid)
-            bucket_size = round(src_bucket_undones['i_size'].sum()/pow(10,9),1)
+            # bucket_size = round(src_bucket_undones['i_size'].sum()/pow(10,9),1)
+            bucket_size = round(src_bucket_undones['se_size'].sum()/pow(10,9),1)
             series_count = len(src_bucket_undones['se_uuid'].unique())
             instance_count = len(src_bucket_undones)
             doilogger.info(f'p0:     Processing {src_bucket}, {bucket_size}GB, {series_count} series, {instance_count} instances, {init_index}:{final_index}')
@@ -219,9 +220,10 @@ def main(args):
             # for _, series in src_bucket_undones.iterrows():
             for se_uuid in src_bucket_undones['se_uuid'].unique():
                 series_data = src_bucket_undones[src_bucket_undones['se_uuid'] == se_uuid]
-                series_size = series_data['i_size'].sum()
+                # series_size = series_data['i_size'].sum()
+                series_size = series_data.at[series_data.index[0],'se_size']
                 series_index = f'{init_index}:{all_series.index(se_uuid)}:{final_index}:{len(all_series)}'
-                zip_queue.put((series_index, se_uuid, src_bucket, dst_bucket, series_size))
+                zip_queue.put((series_index, se_uuid, src_bucket, dst_bucket_name, series_size))
 
             elapsed_time = time.time() - start_time
             total_gb += bucket_size
@@ -262,10 +264,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
-    parser.add_argument('--num_processes', default=24)
-    # parser.add_argument('--local_disk_dir', default='/mnt/disks/idc-etl/series_zips')
+    parser.add_argument('--num_processes', default=1)
     parser.add_argument('--dst_project', default='idc-archive', help='Project of the dst_bucket')
     args = parser.parse_args()
 
