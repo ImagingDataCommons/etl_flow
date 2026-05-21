@@ -70,8 +70,8 @@ def generate_analysis_results_metadata():
     for analysis_file in analysis_files:
         data = get_data_from_comet(f"collections/analysis/{analysis_file}", branch=args.comet_branch)
         analysis_metadata = dict(
-            analysis_result_name=data['analysis_result_id'],
-            analysis_result_id=data['analysis_result_id'].lower().replace('-', '_').replace(' ', '_'),
+            analysis_result_name=data['analysis_result_name'],
+            analysis_result_id=data['analysis_result_id'],
             analysis_result_title=data['title'],
             source_doi=data['source_doi'],
             source_url=data['source_url'],

@@ -16,7 +16,7 @@
 
 # Code from Gemini
 # Export a specified BQ table to Cloud SQL
-import settings
+
 
 # Copying a BigQuery table to Cloud SQL using Python, including schema extraction and destination table creation,
 # involves several steps: Extract BigQuery Table Schema.
@@ -24,7 +24,10 @@ import settings
 # This schema will be a list of SchemaField objects.
 
 
+import settings
 from google.cloud import bigquery
+import json
+import argparse
 
 def get_bigquery_schema_and_data(project_id, dataset_id, table_id):
     client = bigquery.Client(project=project_id)
@@ -88,6 +91,17 @@ def insert_data_into_postgresql(db_conn, table_name, data_dataframe):
     db_conn.commit()
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--version', default=settings.CURRENT_VERSION)
+    parser.add_argument('--src_bucket', default='idc-open-data')
+    parser.add_argument('--dev_bucket', default='idc-arch-open')
+    parser.add_argument('--dst_bucket', default='idc-arch-open-prestaging')
+    parser.add_argument("--num_processes", default=16)
+    parser.add_argument('--dst_project', default='idc-archive', help='Project of the dst_bucket')
+
+    args = parser.parse_args()
+    print(f'args: {json.dumps(args.__dict__, indent=2)}')
+
     import pandas as pd
     from google.cloud import bigquery
 

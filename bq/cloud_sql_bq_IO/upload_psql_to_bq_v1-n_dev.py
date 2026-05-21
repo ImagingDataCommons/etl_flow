@@ -26,7 +26,7 @@ import logging
 from logging import INFO
 import argparse
 from python_settings import settings
-from bq.bq_IO.upload_psql_to_bq import upload_to_bq
+from bq.cloud_sql_bq_IO.upload_psql_to_bq import upload_to_bq
 
 
 if __name__ == '__main__':

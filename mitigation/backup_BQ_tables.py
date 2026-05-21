@@ -51,6 +51,7 @@ if __name__ == '__main__':
         copy_dataset(args, args.table_ids, copy_views=False)
 
     for version in range(args.range[0], args.range[1] + 1):
+        break # The following should probably be PUB_PROJECT?
         args.src_project = settings.PDP_PROJECT
         args.trg_project = settings.STAGING_MITIGATION_PROJECT # Project to which tables are copied
         args.src_dataset = f'idc_v{version}'

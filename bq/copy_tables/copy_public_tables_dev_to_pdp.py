@@ -37,7 +37,7 @@ if __name__ == '__main__':
             'dicom_metadata', \
             'mutable_metadata', \
             'original_collections_metadata', \
-            'program_metadata'\
+            'program_metadata',\
             'tcga_biospecimen_rel9', 'tcga_clinical_rel9', \
             'version_metadata'
         ], help='BQ tables to be copied')

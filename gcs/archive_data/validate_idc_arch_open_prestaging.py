@@ -25,15 +25,17 @@ import settings
 
 import builtins
 builtins.APPEND_PROGRESSLOGGER = True
-from validate_archive import check_all_zips
+from revalidate_archive_prestaging_bucket import validate_prestaging_bucket
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--bucket', default='idc-arch-cr')
-    parser.add_argument('--dev_or_pub', default = 'dev', help='Validating a dev or pub bucket')
-    parser.add_argument('--batch', default=10000, help='Size of batch assigned to each process')
+    parser.add_argument('--src_bucket', default='idc-open-data')
+    parser.add_argument('--dev_bucket', default='idc-arch-open')
+    parser.add_argument('--dst_bucket', default='idc-arch-open-prestaging')
+    parser.add_argument("--num_processes", default=16)
+    parser.add_argument('--dst_project', default='idc-archive', help='Project of the dst_bucket')
 
     args = parser.parse_args()
     print(f'args: {json.dumps(args.__dict__, indent=2)}')
-    check_all_zips(args)
+    validate_prestaging_bucket(args)
