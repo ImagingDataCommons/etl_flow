@@ -27,6 +27,7 @@ from time import strftime, gmtime
 from base64 import b64decode
 import logging
 import contextlib
+from collections import defaultdict
 
 from ingestion.utilities.utils import md5_hasher
 
@@ -35,8 +36,6 @@ ASPERA_DOWNLOAD_FOLDER = '/mnt/disks/idc-etl/aspera'
 @contextlib.contextmanager
 def temp_logger(Download_slug):
 
-    # successlogger = logging.getLogger('root.success')
-    # successlogger.setLevel(INFO)
     for hdlr in successlogger.handlers[:]:
         successlogger.removeHandler(hdlr)
     os.makedirs(f'{settings.LOG_DIR}/{Download_slug}', exist_ok=True)
@@ -46,8 +45,6 @@ def temp_logger(Download_slug):
     successformatter = logging.Formatter('%(message)s')
     success_fh.setFormatter(successformatter)
 
-    # progresslogger = logging.getLogger('root.progress')
-    # progresslogger.setLevel(INFO)
     for hdlr in progresslogger.handlers[:]:
         progresslogger.removeHandler(hdlr)
     progress_fh = logging.FileHandler(f'{settings.LOG_DIR}/{Download_slug}/progress.log')
@@ -101,31 +98,30 @@ def get_conversion_source_hashes(aspera_files, sources_bucket, bucket_tag, tag, 
     for bucket in buckets:
         if dst_bucket_name  in bucket.name.lower().replace('-', '_') or \
                 bucket_tag and bucket_tag in bucket.name.lower().replace('-', '_'):
-            progresslogger.info(f'Processing bucket {bucket.name}')
+            # progresslogger.info(f'Processing bucket {bucket.name}')
             if bucket.name == 'idc-source-data-cmb':
-                prefix = f'{tag}/'
+                subfolder = f'{tag}/'
                 filter = ""
             elif bucket.name == 'cptac_pathology_source_data':
-                prefix = f'v1/{tag}/'
+                subfolder = f'v1/{tag}/'
                 filter = ""
             elif bucket.name == 'idc-source-data-cmb':
-                prefix = f'pathology-NLST_1225files/pathology-NLST_1225files/'
+                subfolder = f'pathology-NLST_1225files/pathology-NLST_1225files/'
                 filter = ""
             elif bucket.name == 'idc-source-icdc-glioma':
-                prefix = ""
+                subfolder = ""
                 filter = ""
             elif bucket.name == 'nlst_pathology_source_data':
-                prefix = ""
+                subfolder = ""
                 filter = ""
             elif bucket.name == 'idc_glioma_pathology_data':
-                prefix = ""
+                subfolder = ""
                 filter = ""
             else:
-                prefix = f'{tag}/' if tag else ""
+                subfolder = f'{tag}/' if tag else ""
                 filter = f'{aspera_package_id}/'
 
-            blobs = bucket.list_blobs(prefix=prefix)
-            # prefix = f'{tag if not tag else (tag+"/" if bucket_tag != "cptac" else "CPTAC-"+tag+"/")}'
+            blobs = bucket.list_blobs(prefix=subfolder)
             for blob in blobs:
                 if filter in blob.name:
                     if bucket.name == 'cptac_pathology_source_data':
@@ -146,7 +142,7 @@ def get_conversion_source_hashes(aspera_files, sources_bucket, bucket_tag, tag, 
                         sources[id] = \
                             {
                                 "source_url": f'{bucket.name}/{blob.name}',
-                                "hash": f'{b64decode(blob.md5_hash).hex()}'
+                                "hash": f'{b64decode(blob.md5_hash).hex()}',
                             }
                     except Exception as exc:
                         # THe blob doesn't have an md5 hash. Get it from the sums file.
@@ -156,28 +152,30 @@ def get_conversion_source_hashes(aspera_files, sources_bucket, bucket_tag, tag, 
                             sources[id] = \
                                 {
                                     "source_url": f'{bucket.name}/{blob.name}',
-                                    "hash": hash
+                                    "hash": hash,
                                 }
                         except Exception as exc:
                             errlogger.error(f'No hash found for {blob.name}')
                             return []
+
     return sources
 
-def main(args, download_slugs=[]):
+def main(args):
     aspera_package_urls = get_aspera_package_urls().sort_values(by="Download_slug")
     for _, package in aspera_package_urls.iterrows():
-        aspera_package_id = package['Download_slug']
-        if aspera_package_id in args.skips:
-            progresslogger.info(f'Skipping aspera package {aspera_package_id}')
+        aspera_download_slug = package['Download_slug']
+        if aspera_download_slug in args.skips:
+            progresslogger.info(f'Skipping aspera package {aspera_download_slug}')
         else:
-            if args.download_slugs == [] or aspera_package_id in args.download_slugs:
-                with temp_logger(package['Download_slug']):
+            if args.download_slugs == [] or aspera_download_slug in args.download_slugs:
+                with temp_logger(aspera_download_slug):
                     dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
-                    if package["Download_slug"] in dones:
-                        progresslogger.info(f'Package {aspera_package_id} previously processed')
+                    if aspera_download_slug in dones and not args.ignore_dones and not aspera_download_slug in args.download_slugs:
+                        progresslogger.info(f'Package {aspera_download_slug} previously processed')
                     else:
+                        progresslogger.info(f'Processing package {aspera_download_slug}')
                         TCIA_collection_version = package['TCIA_collection_version']
-                        IDC_collection_name = package['IDC_collection_name']
+                        TCIA_collection_name = package['TCIA_collection_name']
                         idc_collection_id = package['IDC_collection_id']
                         client = storage.Client(args.dst_project)
                         bucket_tag = bucket_collection_id(
@@ -185,39 +183,35 @@ def main(args, download_slugs=[]):
                         # Bucket name length must be 63 or less, so we truncate the collection part
                         sources_bucket = client.bucket(f"{args.dst_bucket_prefix}{bucket_tag}"[:63-len(args.dst_bucket_suffix)] +
                                                    f"{args.dst_bucket_suffix}")
-                        if IDC_collection_name in ['NLST', 'ICDC-Glioma']:
+                        if TCIA_collection_name in ['NLST', 'ICDC-Glioma']:
                             tag = ''
-                        elif IDC_collection_name.startswith('CPTAC'):
-                            tag = IDC_collection_name.split('-')[1]
-                        elif IDC_collection_name.startswith('CMB'):
-                            tag = IDC_collection_name
+                        elif TCIA_collection_name.startswith('CPTAC'):
+                            tag = TCIA_collection_name.split('-')[1]
+                        elif TCIA_collection_name.startswith('CMB'):
+                            tag = TCIA_collection_name
                         else:
                             tag = ""
                         aspera_url = package['Aspera_URL'].split('&')[0] if '&' in package['Aspera_URL'] \
                             else package['Aspera_URL']
                         aspera_id = aspera_url.rsplit('context=', 1)[1]
                         if tag:
-                            prefix = f'{tag}/v{TCIA_collection_version}/{aspera_package_id}'
+                            subfolder = f'{tag}/v{TCIA_collection_version}/{aspera_download_slug}'
                         else:
-                            prefix = f'v{TCIA_collection_version}/{aspera_package_id}'
-                        blobs = sources_bucket.list_blobs(prefix=prefix+'/', delimiter='/')
+                            subfolder = f'v{TCIA_collection_version}/{aspera_download_slug}'
+                        blobs = sources_bucket.list_blobs(prefix=subfolder+'/', delimiter='/')
                         found_hash_map = False
                         for blob in blobs:
                             if blob.name.endswith("hash.map"):
-                                progresslogger.info(f"Found hash map for {sources_bucket.name}/{prefix}")
+                                progresslogger.info(f"Found hash map for {sources_bucket.name}/{subfolder}")
                                 found_hash_map = True
                                 break
-                        # for blob in blobs:
-                        #     if blob.name.endswith(".sums") and (not blob.name.endswith("generated.sums") or not args.regen_generated_sums_file):
-                        #         progresslogger.info(f"Found sums file {sources_bucket.name}/{blob.name}")
-                        #         found_sums_file = True
-                        #         break
 
                         if found_hash_map and not args.regen_hash_maps:
                             continue
                         else:
+                            progresslogger.info(f'(Re)generating hash map for {sources_bucket.name}/{subfolder}')
                             found_sums_file = False
-                            blobs = sources_bucket.list_blobs(prefix=prefix + '/', delimiter='/')
+                            blobs = sources_bucket.list_blobs(prefix=subfolder + '/', delimiter='/')
                             # Find a sums file to use to as a source of hashes in case the actual source blobs in do not have md5 hashes
                             for blob in blobs:
                                 if blob.name.endswith(".sums"):
@@ -226,41 +220,60 @@ def main(args, download_slugs=[]):
                                     break
 
                             if found_sums_file == False:
-                                errlogger.error(f'No sums file found for {aspera_package_id}')
+                                errlogger.error(f'No sums file found for {aspera_download_slug}')
                                 continue
 
                             source_hashes = blob.download_as_text().split('\n')
 
-                            progresslogger.info(f"Did not find hash_map for {sources_bucket.name}/{prefix}")
                             if args.load_aspera_files and os.path.exists(
-                                    f"{settings.LOG_DIR}/{package['Download_slug']}/{aspera_package_id}_files.json"):
-                                with open(f"{settings.LOG_DIR}/{package['Download_slug']}/{aspera_package_id}_files.json") as f:
+                                    f"{settings.LOG_DIR}/{aspera_download_slug}/{aspera_download_slug}_files.json"):
+                                with open(f"{settings.LOG_DIR}/{aspera_download_slug}/{aspera_download_slug}_files.json") as f:
                                     aspera_files = json.load(f)
                             else:
                                 manifest_params = get_blob_metadata_from_package(args, package, args.version)
                                 aspera_files = manifest_params["aspera_files"]
-                                with open(f"{settings.LOG_DIR}/{package['Download_slug']}/{aspera_package_id}_files.json", 'w') as f:
+                                with open(f"{settings.LOG_DIR}/{aspera_download_slug}/{aspera_download_slug}_files.json", 'w') as f:
                                     json.dump(aspera_files, f)
                                 progresslogger.info(manifest_params["logger_string"])
 
-                            all_hashes = get_conversion_source_hashes(aspera_files, sources_bucket, bucket_tag, tag, aspera_package_id, source_hashes)
+                            all_hashes = get_conversion_source_hashes(aspera_files, sources_bucket, bucket_tag, tag, aspera_download_slug, source_hashes)
                             if all_hashes:
                                 package_hashes = []
                                 for aspera_file in aspera_files:
-                                    if not aspera_file["path"].endswith(".sums"):
+                                    if not aspera_file["path"].endswith(".sums") and not aspera_file["path"] == "hash.map" and not aspera_file["basename"].startswith(aspera_id[:8]):
                                         try:
-                                            # hash = all_hashes[aspera_file["path"][1:]]
-                                            hash = all_hashes[aspera_file["path"].split('/',1)[-1]]
+                                            if aspera_download_slug == 'icdc-glioma-da-path':
+                                                hash = all_hashes[aspera_file["path"].split('/')[-1]]
+                                            else:
+                                                hash = all_hashes[aspera_file["path"].split('/', 1)[-1]]
+
                                             package_hashes.append(hash)
                                             # package_hashes.append(next(hash for hash in all_hashes if aspera_file["path"][1:] == hash.split(" ")[1]))
                                         except:
                                             errlogger.error(f'No hash found for {aspera_file["path"].split("/",1)[-1]}')
-                                sum_files_blob = sources_bucket.blob(f'{prefix}/hash.map')
+
+                                sum_files_blob = sources_bucket.blob(f'{subfolder}/hash.map')
                                 sum_files_blob.upload_from_string(json.dumps(package_hashes))
-                                progresslogger.info(f"Generated sums file for {sources_bucket.name}/{prefix}")
-                                successlogger.info(aspera_package_id)
+                                progresslogger.info(f"Generated hash map for {sources_bucket.name}/{subfolder}")
+
+                                # Check for duplicates...files having the same hash
+                                grouped_data = defaultdict(list)
+                                for item in package_hashes:
+                                    field_value = item["hash"]
+                                    grouped_data[field_value].append(item)
+                                duplicates = {
+                                    key: items for key, items in grouped_data.items() if len(items) > 1
+                                }
+                                if duplicates:
+                                    duplicates.pop('no_md5_hash', None)
+                                    if duplicates:
+                                        duplicates_blob = sources_bucket.blob(f'{subfolder}/duplicate_blobs.map')
+                                        duplicates_blob.upload_from_string(json.dumps(duplicates))
+                                        errlogger.info(f"Generated duplicates map for {sources_bucket.name}/{subfolder}")
+
+                                successlogger.info(aspera_download_slug)
                             else:
-                                progresslogger.info(f'Did not generate a hash map for {aspera_package_id}')
+                                progresslogger.info(f'Did not generate a hash map for {aspera_download_slug}')
                                 continue
 
     return
@@ -276,12 +289,13 @@ if __name__ == "__main__":
     parser.add_argument("--dst_project", default='idc-source-data', help="Project in which to create bucket")
     parser.add_argument("--google_drive_folder", default="", help="Google Drive folder ID")
     parser.add_argument("--save_result", default=True, help="Save result to a Drive file if True")
-    parser.add_argument("--download_slugs", default = ['cptac-brca-da-path'], help="Slugs to process; all if empty")
+    parser.add_argument("--download_slugs", default = [], help="Slugs to process; all if empty")
     parser.add_argument("--manifest_file_name", default= f'manifest_{strftime("%Y%m%d_%H%M%S", gmtime())}.txt')
     parser.add_argument("--only_idc_collections", default=False, help="Only include a collection if IDC already has it")
-    parser.add_argument("--skips", default=['dlbcl-morphology-da-path'], help="TCIA_collection_ids to be skipped")
+    parser.add_argument("--skips", default=["tp53-precursor-lesions-da-path", "dlbcl-morphology-da-path"], help="TCIA_collection_ids to be skipped")
     parser.add_argument("--load_aspera_files", default=True)
     parser.add_argument("--regen_hash_maps", default=True, help="If true, regen existing generated.sums")
+    parser.add_argument("--ignore_dones", default=True, help="If True, ignore whether previously done")
     args = parser.parse_args()
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 

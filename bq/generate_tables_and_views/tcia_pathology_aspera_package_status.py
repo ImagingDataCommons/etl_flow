@@ -34,6 +34,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 schema = [
     bigquery.SchemaField('Download_slug', 'STRING', mode='NULLABLE', description='TCIA collection manager slug of this download'),
+    bigquery.SchemaField('TCIA_collection_name', 'STRING', mode='NULLABLE', description='Name of parent tcia collection'),
     bigquery.SchemaField('TCIA_collection_id', 'STRING', mode='NULLABLE', description='ID of parent tcia collection'),
     bigquery.SchemaField('TCIA_collection_version', 'STRING', mode='NULLABLE', description='Version of parent tcia collection'),
     bigquery.SchemaField('Download_title', 'STRING', mode='NULLABLE', description='Title of download'),
@@ -95,37 +96,37 @@ def export_to_bq(args, metadata):
 
     return
 
-def export_to_sheets(args, metadata):
-    df = pd.DataFrame(metadata)
-
-    # Define the scope
-    scope = ['https://spreadsheets.google.com/feeds',
-             'https://www.googleapis.com/auth/drive']
-
-    # Authenticate using the credentials file
-    creds = ServiceAccountCredentials.from_json_keyfile_name(
-        f'{os.getenv("HOME")}/.config/gcloud/idc-etl-processing-e691db5d4745.json', scope)
-    client = gspread.authorize(creds)
-
-    # Open the Google Sheet (by title or URL key)
-    sheets = client.open_by_key(args.sheets_key) # or client.open_by_key("your_sheet_key").sheet1
-
-    try:
-        sheet = sheets.worksheet(f"v{args.version}")
-    except:
-        sheet = sheets.add_worksheet(title=f"v{args.version}", rows=df.shape[0], cols=df.shape[1])
-    sheet.clear()
-
-    sheet.update([df.columns.values.tolist()] + df.values.tolist())
-
-    sheet.columns_auto_resize(0, df.shape[1])
-    sheet.format(["1"], {"textFormat": {"bold": True}})
-    size_col =chr(65 + df.columns.get_loc("Download_size_GB"))
-    sheet.format([size_col], {"horizontalAlignment": "RIGHT"})
-    url_col =chr(65 + df.columns.get_loc("Aspera_URL"))
-    sheet.format([url_col], {"wrapStrategy": "CLIP"})
-    gspread_formatting.set_column_width(sheet, url_col, 400)
-    print("DataFrame exported to Google Sheets successfully.")
+# def export_to_sheets(args, metadata):
+#     df = pd.DataFrame(metadata)
+#
+#     # Define the scope
+#     scope = ['https://spreadsheets.google.com/feeds',
+#              'https://www.googleapis.com/auth/drive']
+#
+#     # Authenticate using the credentials file
+#     creds = ServiceAccountCredentials.from_json_keyfile_name(
+#         f'{os.getenv("HOME")}/.config/gcloud/idc-etl-processing-e691db5d4745.json', scope)
+#     client = gspread.authorize(creds)
+#
+#     # Open the Google Sheet (by title or URL key)
+#     sheets = client.open_by_key(args.sheets_key) # or client.open_by_key("your_sheet_key").sheet1
+#
+#     try:
+#         sheet = sheets.worksheet(f"v{args.version}")
+#     except:
+#         sheet = sheets.add_worksheet(title=f"v{args.version}", rows=df.shape[0], cols=df.shape[1])
+#     sheet.clear()
+#
+#     sheet.update([df.columns.values.tolist()] + df.values.tolist())
+#
+#     sheet.columns_auto_resize(0, df.shape[1])
+#     sheet.format(["1"], {"textFormat": {"bold": True}})
+#     size_col =chr(65 + df.columns.get_loc("Download_size_GB"))
+#     sheet.format([size_col], {"horizontalAlignment": "RIGHT"})
+#     url_col =chr(65 + df.columns.get_loc("Aspera_URL"))
+#     sheet.format([url_col], {"wrapStrategy": "CLIP"})
+#     gspread_formatting.set_column_width(sheet, url_col, 400)
+#     print("DataFrame exported to Google Sheets successfully.")
 
 
 def get_idc_collections(client):
@@ -183,6 +184,7 @@ def main():
         for c in collections:
             try:
                 if type(c['collection_downloads'])==list and pdata['id'] in c['collection_downloads']:
+                    pdata['parent_name'] = c['collection_short_title']
                     pdata['parent_id'] = c['id']
                     pdata['parent_slug'] = c['slug']
                     pdata['parent'] = c
@@ -222,6 +224,7 @@ def main():
         if v["parent_slug"]:
             data = {
                 'Download_slug': p,
+                'TCIA_collection_name':v["parent_name"],
                 'TCIA_collection_id':v["parent_slug"],
                 'TCIA_collection_version': v['parent_version'],
                 'Download_title':v["download_title"],
@@ -262,7 +265,7 @@ def main():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version of the table')
-    parser.add_argument('--bqtable_name', default='tcia_pathology_conversion_status', help='BQ table name')
+    parser.add_argument('--bqtable_name', default='tcia_pathology_aspera_package_status', help='BQ table name')
     parser.add_argument('--sheets_key', default='1CcuidHbu7QbP43OxzURPuIwoZdTamg_4urYoE5z05wA', help='Google Sheets key')
     # parser.add_argument('--aspera_sheets_id', default='1XbwbN3eYJtMSGlXoiy-VETs0wUVKN9kXmR3PNW9Y8fk', help='Google Sheets key')
     # parser.add_argument('--aspera_sheet_name', default='aspera_sources', help='Google sheet name')

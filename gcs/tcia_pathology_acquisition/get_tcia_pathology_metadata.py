@@ -33,8 +33,8 @@ def get_aspera_package_urls():
     client = bigquery.Client()
     query = f"""
     SELECT *
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.tcia_pathology_conversion_status` 
---     WHERE IDC_collection_id != ""
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.tcia_pathology_aspera_package_status` 
+--     WHERE CONTAINS_SUBSTR(File_types, 'SVS')
     """
     aspera_packages = client.query(query).to_dataframe()
     aspera_packages.sort_values("IDC_collection_id", inplace=True)
@@ -260,7 +260,7 @@ def bucket_collection_id(collection_id):
             'cptac': 'cptac',
             'nlst': 'nlst',
             'icdc': 'icdc_glioma'
-        }[collection_id.split('_')[0]]
+        }[collection_id.split('_')[0].split('-')[0]]
         return bucket_collection_id
     except KeyError:
         return collection_id

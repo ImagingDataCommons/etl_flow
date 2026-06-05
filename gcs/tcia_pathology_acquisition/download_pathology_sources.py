@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# download_pathology_sources.py downloads files in Aspera packages that are not already in idc-source-data.
+# The resulting files are copied to buckets in the idc-source-data project
 import os
 import argparse
 import json
@@ -33,33 +36,40 @@ ASPERA_DOWNLOAD_FOLDER = '/mnt/disks/idc-etl/aspera'
 def copy_files_to_gcs(args, files, dst_bucket, TCIA_collection_version, slug, tag, aspera_delta):
     try:
         gcs_start = time.time()
-        file = files[0]
-        progresslogger.info(f'p{args.id}: Starting GCS transfer of {file["path"]}, {len(files)} files')
 
-        breakpoint()  # Configure gsutil so that it will not do multipart uploads
-        res = run(['gsutil', 'setprop', 'storage/parallel_composite_upload_enabled', 'False'])
+        # Configure gsutil so that it will not do multipart uploads
+        res = run(['gcloud', 'config', 'set', 'storage/parallel_composite_upload_enabled', 'False'])
 
-        if tag:
-            if tag.startswith('CMB') or tag in ('AML', 'BRCA', 'CCRCC', 'CM', 'COAD', 'GBM', 'HNSCC', 'LSCC', 'LUAD', 'OV', 'PDA', 'SAR', 'UCEC'):
-                cmmd = ' '.join(['gsutil', '-m', '-q', 'cp', f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"].rsplit("/",1)[0]}/*',
-                       f'gs://{dst_bucket.name}/{tag}/v{TCIA_collection_version}/{slug}/'])
-                res = run(['gsutil', '-m', '-q', 'cp', f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"].rsplit("/",1)[0]}/*',
-                           f'gs://{dst_bucket.name}/{tag}/v{TCIA_collection_version}/{slug}/'])
+        for file in files:
+            progresslogger.info(f'p{args.id}: Starting GCS transfer of {file["path"]}')
+            if tag:
+                if tag.startswith('CMB') or tag in ('AML', 'BRCA', 'CCRCC', 'CM', 'COAD', 'GBM', 'HNSCC', 'LSCC', 'LUAD', 'OV', 'PDA', 'SAR', 'STAD', 'UCEC'):
+                    cmmd = ' '.join(['gcloud', 'storage', '-q', 'cp',
+                                     f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"]}',
+                                     f'gs://{dst_bucket.name}/{tag}/v{TCIA_collection_version}/{slug}/'])
+                    res = run(['gcloud', 'storage', '-q', 'cp',
+                               f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"]}',
+                               f'gs://{dst_bucket.name}/{tag}/v{TCIA_collection_version}/{slug}/'], check = True)
+
+                else:
+                        cmmd = ' '.join(['gcloud', 'storage', '-q', 'cp',
+                                         f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"]}',
+                                         f'gs://{dst_bucket.name}/{tag}/v{TCIA_collection_version}/{slug}{file["path"].rsplit("/", 1)[0]}/'])
+                        res = run(['gcloud', 'storage', '-q', 'cp',
+                                   f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"]}',
+                                   f'gs://{dst_bucket.name}/{tag}/v{TCIA_collection_version}/{slug}{file["path"].rsplit("/", 1)[0]}/'], check = True)
+
             else:
-                cmmd = ' '.join(['gsutil', '-m', '-q', 'cp', f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"].rsplit("/",1)[0]}/*',
-                       f'gs://{dst_bucket.name}/{tag}/v{TCIA_collection_version}/{slug}{file["path"].rsplit("/",1)[0]}/'])
-                res = run(['gsutil', '-m', '-q', 'cp', f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"].rsplit("/",1)[0]}/*',
-                           f'gs://{dst_bucket.name}/{tag}/v{TCIA_collection_version}/{slug}{file["path"].rsplit("/",1)[0]}/'])
-        else:
-            cmmd = ' '.join(['gsutil', '-m', '-q', 'cp', f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"].rsplit("/",1)[0]}/*',
-                       f'gs://{dst_bucket.name}/v{TCIA_collection_version}/{slug}{file["path"].rsplit("/",1)[0]}'])
-            res = run(['gsutil', '-m', '-q', 'cp', f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"].rsplit("/",1)[0]}/*',
-                       f'gs://{dst_bucket.name}/v{TCIA_collection_version}/{slug}{file["path"].rsplit("/",1)[0]}'])
+                cmmd = ' '.join(['gcloud', 'storage', '-q', 'cp',
+                                 f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"]}',
+                                 f'gs://{dst_bucket.name}/v{TCIA_collection_version}/{slug}{file["path"].rsplit("/", 1)[0]}/'])
+                res = run(['gcloud', 'storage', '-q', 'cp',
+                           f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"]}',
+                           f'gs://{dst_bucket.name}/v{TCIA_collection_version}/{slug}{file["path"].rsplit("/", 1)[0]}/'], check = True)
+            if res.stderr is not None:
+                errlogger.error(f'p{args.id}: Copy to GCS failed: {tag}/v{TCIA_collection_version}/{file["path"]}, {res.stderr}')
+                return
         gcs_delta = time.time() - gcs_start
-
-        if res.stderr is not None:
-            errlogger.error(f'p{args.id}: Copy to GCS failed: {tag}/v{TCIA_collection_version}/{file["path"]}, {res.stderr}')
-            return
 
         files_size = sum(os.path.getsize(f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}{file["path"]}') for file in files)
     except Exception as exc:
@@ -102,7 +112,7 @@ def worker(input, args, aspera_url, dst_bucket, TCIA_collection_version, slug, t
             errlogger.error(f'p{args.id}: worker, exception type: {repr(exc3)} exception {exc3}')
     return
 
-# Get a list of the files already in idc-source-data for a particular collections/bucket
+# Get a list of the files already in idc-source-data for a particular collection/bucket
 def get_conversion_source_names(IDC_collection_name, dst_bucket, bucket_tag):
     storage_client = storage.Client(project='idc-source-data')
     buckets = storage_client.list_buckets()
@@ -113,27 +123,28 @@ def get_conversion_source_names(IDC_collection_name, dst_bucket, bucket_tag):
         if dst_bucket_name in bucket.name.lower().replace('-', '_') or \
                 bucket_tag and bucket_tag in bucket.name.lower().replace('-', '_'):
             if bucket.name in ('cmb_pathology_data', 'idc-source-data-cmb'):
-                prefix = f'{IDC_collection_name}/'
+                subfolder = f'{IDC_collection_name}/'
             elif bucket.name == 'cptac_pathology_data':
-                prefix = f'{IDC_collection_name.split("-")[1]}/'
+                subfolder = f'{IDC_collection_name.split("-")[1]}/'
             elif bucket.name == 'cptac_pathology_source_data':
-                prefix = f'v1/{IDC_collection_name.split("-")[1]}/'
+                subfolder = f'v1/{IDC_collection_name.split("-")[1]}/'
             else:
-                prefix = ""
+                subfolder = ""
 
             progresslogger.debug(f'Adding bucket {bucket.name}')
-            blobs = bucket.list_blobs(prefix=prefix)
+            blobs = bucket.list_blobs(prefix=subfolder)
             for blob in blobs:
                 sources.append(f"{bucket.name}/{blob.name}")
 
     # conversion_source_names = set(name.replace('/', '_').replace('-', '_') for name in sources)
     return sources
 
-# Download files from an aspera package that are not already in idc-source-data
+# Download files that are not already in idc-source-data from an aspera package
 def download_from_aspera(args, aspera_files, dones, aspera_url, bucket_tag, \
                          TCIA_collection_version, IDC_collection_name, slug, tag, dst_bucket):
     if not dst_bucket.exists():
         dst_bucket.create(location='us-central1')
+    # Get the names of existing source files for the collection of this package
     source_names = get_conversion_source_names(IDC_collection_name, dst_bucket, bucket_tag)
     num_processes = min(args.processes, len(aspera_files))
     processes = []
@@ -199,7 +210,7 @@ def download_from_aspera(args, aspera_files, dones, aspera_url, bucket_tag, \
                     files.append(file)
                     file_count += 1
                 else:
-                    # task_queue.put((aspera_files_paths_dict[file['path'][1:]]))
+                    # Get here if file_count==max_files or the first level subdirectory changes with the next file
                     task_queue.put(files)
                     file_count = 1
                     file_path = file["path"].rsplit('/', 1)[0]
@@ -219,8 +230,6 @@ def download_from_aspera(args, aspera_files, dones, aspera_url, bucket_tag, \
 @contextlib.contextmanager
 def temp_logger(Download_slug):
 
-    # successlogger = logging.getLogger('root.success')
-    # successlogger.setLevel(INFO)
     for hdlr in successlogger.handlers[:]:
         successlogger.removeHandler(hdlr)
     os.makedirs(f'{settings.LOG_DIR}/{Download_slug}', exist_ok=True)
@@ -230,8 +239,6 @@ def temp_logger(Download_slug):
     successformatter = logging.Formatter('%(message)s')
     success_fh.setFormatter(successformatter)
 
-    # progresslogger = logging.getLogger('root.progress')
-    # progresslogger.setLevel(INFO)
     for hdlr in progresslogger.handlers[:]:
         progresslogger.removeHandler(hdlr)
     progress_fh = logging.FileHandler(f'{settings.LOG_DIR}/{Download_slug}/progress.log')
@@ -279,6 +286,7 @@ def main(args, download_slugs=[]):
     for _, package in aspera_package_urls.iterrows():
         with temp_logger(package['Download_slug']):
             TCIA_collection_version = package['TCIA_collection_version']
+            TCIA_collection_name = package['TCIA_collection_name']
             IDC_collection_name = package['IDC_collection_name']
             idc_collection_id = package['IDC_collection_id']
             client = storage.Client(args.dst_project)
@@ -287,58 +295,63 @@ def main(args, download_slugs=[]):
             # Bucket name length must be 63 or less, so we truncate the collection part
             dst_bucket = client.bucket(f"{args.dst_bucket_prefix}{bucket_tag}"[:63-len(args.dst_bucket_suffix)] +
                                        f"{args.dst_bucket_suffix}")
-            if IDC_collection_name.startswith('CPTAC'):
-                tag = IDC_collection_name.split('-')[1]
-            elif IDC_collection_name.startswith('CMB'):
-                tag = IDC_collection_name
+            if TCIA_collection_name.startswith('CPTAC'):
+                tag = TCIA_collection_name.split('-')[1]
+            elif TCIA_collection_name.startswith('CMB'):
+                tag = TCIA_collection_name
             else:
                 tag = ""
-            slug = package['Download_slug']
+            aspera_download_slug = package['Download_slug']
             aspera_url = package['Aspera_URL'].split('&')[0] if '&' in package['Aspera_URL'] \
                 else package['Aspera_URL']
             aspera_id = aspera_url.rsplit('context=', 1)[1]
             if tag:
-                aspera_blob_id = f'{tag}/v{TCIA_collection_version}/{slug}/{aspera_id}'
+                aspera_blob_id = f'{tag}/v{TCIA_collection_version}/{aspera_download_slug}/{aspera_id}'
             else:
-                aspera_blob_id = f'v{TCIA_collection_version}/{slug}/{aspera_id}'
+                aspera_blob_id = f'v{TCIA_collection_version}/{aspera_download_slug}/{aspera_id}'
             aspera_id_blob = dst_bucket.blob(aspera_blob_id)
-            if aspera_id_blob.exists() and slug not in args.download_slugs:
-                progresslogger.info(f'Aspera package {slug} is up to date')
+
+            # If we already have this Aspera ID in this TCIA version, then we are done.
+            # Note that an Aspera package in a new TCIA version might well be unchanged and thus have the same Aspera ID
+            if aspera_id_blob.exists() and aspera_download_slug not in args.download_slugs:
+                progresslogger.info(f'Aspera package {aspera_download_slug} is up to date')
             else:
                 if package["TCIA_collection_id"] in args.skip:
                     progresslogger.info(f'Skipping {package["Download_slug"]} in args.skips')
                 else:
                     dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
-                    if slug not in dones or slug in args.download_slugs:
+                    if aspera_download_slug in dones and not args.ignore_dones and not aspera_download_slug in args.download_slugs :
+                        aspera_id_blob.upload_from_string('')
+                        progresslogger.info(f'Aspera package {package["Download_slug"]} previously processed')
+                    else:
                         if idc_collection_id or args.only_idc_collections==False:
-                            progresslogger.info(f'Processing {slug}')
-                            if args.load_aspera_files and os.path.exists(f"{settings.LOG_DIR}/{package['Download_slug']}/{slug}_files.json"):
-                                with open(f"{settings.LOG_DIR}/{package['Download_slug']}/{slug}_files.json") as f:
+                            progresslogger.info(f'Processing {aspera_download_slug}')
+
+                            # If a json listing the files in this package exists on disk:
+                            if args.load_aspera_files and os.path.exists(f"{settings.LOG_DIR}/{package['Download_slug']}/{aspera_download_slug}_files.json"):
+                                with open(f"{settings.LOG_DIR}/{package['Download_slug']}/{aspera_download_slug}_files.json") as f:
                                     aspera_files = json.load(f)
                             else:
                                 manifest_params = get_blob_metadata_from_package(args, package, args.version)
                                 aspera_files = manifest_params["aspera_files"]
-                                with open(f"{settings.LOG_DIR}/{package['Download_slug']}/{slug}_files.json", 'w') as f:
+                                with open(f"{settings.LOG_DIR}/{package['Download_slug']}/{aspera_download_slug}_files.json", 'w') as f:
                                     json.dump(aspera_files, f)
                                 progresslogger.info(manifest_params["logger_string"])
                             download_from_aspera(
                                 args, aspera_files, dones,
                                 aspera_url, bucket_tag,
-                                TCIA_collection_version, IDC_collection_name, slug, tag, dst_bucket)
+                                TCIA_collection_version, TCIA_collection_name, aspera_download_slug, tag, dst_bucket)
                             with open(errlogger.handlers[0].baseFilename) as f:
                                 errors = f.read().splitlines()
                             if errors:
                                 progresslogger.info(f'Non-zero errors.')
                             else:
                                 # Create an empty blob that uses the Aspera URL as a name
-                                # This can be compared to the Aspera URL in future exections of this script
+                                # This can be compared to the Aspera URL in future executions of this script
                                 # Existence of a matching blob should mean that the source data is up to date
                                 aspera_id_blob.upload_from_string('')
                         else:
                             progresslogger.info(f'Skipping TCIA collection {package["TCIA_collection_id"]}')
-                    else:
-                        aspera_id_blob.upload_from_string('')
-                        progresslogger.info(f'Aspera package {package["Download_slug"]} previously processed')
     return
 
 if __name__ == "__main__":
@@ -352,11 +365,11 @@ if __name__ == "__main__":
     parser.add_argument("--dst_project", default='idc-source-data', help="Project in which to create bucket")
     parser.add_argument("--google_drive_folder", default="", help="Google Drive folder ID")
     parser.add_argument("--save_result", default=True, help="Save result to a Drive file if True")
-    parser.add_argument("--download_slugs", default = ['cptac-ov-da-path'], help="Slugs to process; all if empty")
+    parser.add_argument("--download_slugs", default = ['hungarian-colorectal-screening-da-path-2'], help="Slugs to process; all if empty")
     parser.add_argument("--manifest_file_name", default= f'manifest_{strftime("%Y%m%d_%H%M%S", gmtime())}.txt')
     parser.add_argument("--only_idc_collections", default=False, help="Only include a collection if IDC already has it")
-    parser.add_argument("--skip", default=[], help="TCIA_collection_ids to be skipped")
-    parser.add_argument("--load_aspera_files", default=True)
+    parser.add_argument("--skip", default=["tp53-precursor-lesions"], help="TCIA_collection_ids to be skipped")
+    parser.add_argument("--load_aspera_files", default=False)
     args = parser.parse_args()
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
