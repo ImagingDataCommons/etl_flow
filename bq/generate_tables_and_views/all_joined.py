@@ -291,6 +291,51 @@ def create_idc_all_joined(client):
     return view
 
 
+def create_pre_all_joined_collections(client):
+    view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.pre_all_joined_collections"
+    view = bigquery.Table(view_id)
+    view.view_query = f"""
+    SELECT 
+     c.collection_name,
+     c.collection_id,
+     c.hash c_hash,
+     p.patientID, 
+     p.hash p_hash,
+     st.StudyInstanceUID, 
+     st.hash st_hash,
+     se.SeriesInstanceUID, 
+     se.hash se_hash, 
+     se.excluded se_excluded,
+     source_doi,
+     source_url,
+     versioned_source_doi,
+     CONCAT('https://doi.org/', versioned_source_doi) versioned_source_url,
+     analysis_result, 
+     SOPInstanceUID, 
+     i.hash i_hash, 
+     ingestion_url,
+     size,
+     i.excluded i_excluded, 
+     idc_version,
+     mitigation,
+     source_file_hash
+    FROM `idc-dev-etl.idc_v0_dev.pre_collection` c
+     JOIN `idc-dev-etl.idc_v0_dev.pre_patient` p
+     ON c.collection_id = p.collection_id
+     JOIN `idc-dev-etl.idc_v0_dev.pre_study` st
+     ON p.collection_id = st.collection_id AND p.patientID = st.patientID
+     JOIN `idc-dev-etl.idc_v0_dev.pre_series` se
+     ON st.StudyInstanceUID = se.StudyInstanceUID
+     JOIN `idc-dev-etl.idc_v0_dev.pre_instance` i
+     ON se.SeriesInstanceUID = i.SeriesInstanceUID
+   """
+    # Make an API request to create the view.
+    client.delete_table(view_id, not_found_ok=True)
+    view = client.create_table(view, exists_ok=True)
+    print(f"Created {view.table_type}: {str(view.reference)}")
+    return view
+
+
 def create_all_joined_public_and_current(client):
     view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current"
     view = bigquery.Table(view_id)
@@ -329,15 +374,17 @@ if __name__ == '__main__':
         # Presume the dataset already exists
         pass
 
-    create_all_flattened(BQ_client)
-    create_all_sources(BQ_client)
-    create_all_joined(BQ_client)
-    create_all_joined_public(BQ_client)
-    create_all_joined_public_and_current(BQ_client)
-    create_all_joined_limited(BQ_client)
-    create_all_joined_excluded(BQ_client)
-    create_idc_all_joined(BQ_client)
+    # create_all_flattened(BQ_client)
+    # create_all_sources(BQ_client)
+    # create_all_joined(BQ_client)
+    # create_all_joined_public(BQ_client)
+    # create_all_joined_public_and_current(BQ_client)
+    # create_all_joined_limited(BQ_client)
+    # create_all_joined_excluded(BQ_client)
+    # create_idc_all_joined(BQ_client)
+    # create_pre_all_joined_sources(BQ_client)
 
+    create_pre_all_joined_collections(BQ_client)
 
 
 

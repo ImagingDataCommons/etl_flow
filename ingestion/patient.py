@@ -107,12 +107,8 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
         new_study.uuid = str(uuid4())
         new_study.min_timestamp = datetime.utcnow()
         new_study.study_instances = 0
-        new_study.revised = studies[study]
-        # The following line can probably be deleted because
-        # an object's sources are computed hierarchically after
-        # building all the children.
-        new_study.source = studies[study]
-        new_study.hashes = ("","","")
+        new_study.revised = True
+        new_study.hash = ""
         new_study.max_timestamp = new_study.min_timestamp
         new_study.init_idc_version=settings.CURRENT_VERSION
         new_study.rev_idc_version=settings.CURRENT_VERSION
@@ -124,17 +120,19 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
         progresslogger.debug  ('    p%s: Study %s is new',  args.pid, new_study.study_instance_uid)
 
     for study in existing_objects:
-        idc_hashes = study.hashes
+        idc_hash = study.hash
 
         # Get the hash from each source that is not skipped
         # The hash of a source is "" if the source is skipped, or the source does not have
         # the object
-        src_hashes = all_sources.src_study_hashes(patient, study, skipped)
+        src_hash = all_sources.src_study_hash(patient, study, skipped)
         # A source is revised if the idc hashes[source] and the source hash differ and the source is not skipped
-        revised = [(x != y) and not z for x, y, z in \
-                   zip(idc_hashes[:-1], src_hashes, skipped)]
+        # revised = [(x != y) and not z for x, y, z in \
+        #            zip(idc_hashes[:-1], src_hashes, skipped)]
+        revised = idc_hash != src_hash and not skipped
+
         # If any source is revised, then the object is revised.
-        if any(revised):
+        if revised:
             rev_study = clone_study(study, str(uuid4()))
             # rev_study.revised = True
             rev_study.min_timestamp = datetime.utcnow()
@@ -142,11 +140,7 @@ def expand_patient(sess, args, all_sources, version, collection, patient):
             rev_study.is_new = False
             rev_study.expanded = False
             rev_study.revised = revised
-            rev_study.hashes = study.hashes
-            # The following line can probably be deleted because
-            # an object's sources are computed hierarchically after
-            # building all the children.
-            rev_study.sources = studies[study.study_instance_uid]
+            rev_study.hash = study.hash
             rev_study.rev_idc_version = settings.CURRENT_VERSION
             patient.studies.append(rev_study)
             progresslogger.info  ('    p%s: Study %s is revised',  args.pid, rev_study.study_instance_uid)
@@ -204,15 +198,17 @@ def build_patient(sess, args, all_sources, patient_index, version, collection, p
             patient.max_timestamp = max([study.max_timestamp for study in patient.studies if study.max_timestamp != None])
 
              # Get a list of what DB thinks are the patient's hashes
-            idc_hashes = all_sources.idc_patient_hashes(patient)
-            patient.hashes = idc_hashes
+            idc_hash = all_sources.idc_patient_hash(patient)
+            patient.hash = idc_hash
             patient.sources = accum_sources(patient, patient.studies)
 
             skipped = is_skipped(args.skipped_collections, collection.collection_id)
-            src_hashes = all_sources.src_patient_hashes(collection, patient, skipped)
-            revised = [(x != y) and  not z for x, y, z in \
-                    zip(idc_hashes[:-1], src_hashes, skipped)]
-            if any(revised):
+            src_hash = all_sources.src_patient_hash(collection, patient, skipped)
+            # revised = [(x != y) and  not z for x, y, z in \
+            #         zip(idc_hashes[:-1], src_hashes, skipped)]
+
+            mismatch = idc_hash != src_hash and not skipped
+            if mismatch:
                 errlogger.error(Exception('Hash match failed for patient %s', patient.submitter_case_id))
             else:
                 patient.done = True

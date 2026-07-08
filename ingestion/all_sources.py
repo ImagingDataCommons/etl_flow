@@ -19,7 +19,7 @@ from uuid import uuid4
 from idc.models  import Collection_id_map, instance_source
 from ingestion.utilities.utils import to_webapp, get_merkle_hash
 from google.cloud import bigquery
-from ingestion.sources import TCIA, IDC
+from ingestion.sources import IDC
 from utilities.logging_config import successlogger, progresslogger, errlogger, rootlogger
 # rootlogger = logging.getLogger('root')
 # errlogger = logging.getLogger('root.err')
@@ -27,31 +27,36 @@ from utilities.logging_config import successlogger, progresslogger, errlogger, r
 
 class All_Sources:
 
-    def __init__(self, pid, sess, version, access, skipped_tcia_collections, skipped_idc_collections, lock):
+    def __init__(self, pid, sess, version, access, skipped_collections):
         self.sess = sess
         self.idc_version = version
         self.client = bigquery.Client()
         self.sources = {}
         try:
-            self.sources[instance_source.tcia] = TCIA(pid, sess, access, skipped_tcia_collections, lock)
-            self.sources[instance_source.idc] = IDC(sess, skipped_idc_collections)
+            # self.sources[instance_source.tcia] = TCIA(pid, sess, access, skipped_tcia_collections, lock)
+            self.sources[instance_source.idc] = IDC(sess, skipped_collections)
         except Exception as exc:
             print(exc)
 
     ###-------------------Versions-----------------###
 
-    def idc_version_hashes(self, version):
-        childrens_hashes = [object.hashes for object in version.collections]
+    # def idc_version_hashes(self, version):
+    #     childrens_hashes = [object.hashes for object in version.collections]
+    #     # parent_hashes = [get_merkle_hash([childrens_hashes[source.value] for source in instance_source])]
+    #     parent_hashes = [get_merkle_hash([row[source.value] for row in childrens_hashes]) if set(
+    #         [row[source.value] for row in childrens_hashes]) != set(['']) else '' for source in instance_source]
+    #     return parent_hashes
+    def idc_version_hash(self, version):
+        childrens_hashes = [object.hash for object in version.collections]
         # parent_hashes = [get_merkle_hash([childrens_hashes[source.value] for source in instance_source])]
-        parent_hashes = [get_merkle_hash([row[source.value] for row in childrens_hashes]) if set(
-            [row[source.value] for row in childrens_hashes]) != set(['']) else '' for source in instance_source]
-        return parent_hashes
+        parent_hash = get_merkle_hash([hash for hash in childrens_hashes])
+        return parent_hash
 
     ###-------------------Collections-----------------###
 
     # Get the collections from all sources
     def collections(self):
-        collections = {}
+        collections = []
         for source in instance_source:
             if source.name != 'all_sources':# Ideally, we would only collect collections from a source
                 # we know that the version is revised in that source.
@@ -59,40 +64,41 @@ class All_Sources:
                 # have to assume that the version is revised in all sources.
                 objects = self.sources[source].collections()
                 for object in objects:
-                    if not object in collections:
-                        collections[object] = [False, False]
-                    collections[object][source.value] = True
-
-        # Get a map from collection IDs to idc_collection_ids
-        map = {row.collection_id: row.idc_collection_id for row in self.sess.query(Collection_id_map).all()}
+                    collections.append(object)
+        # Get a map from collection IDs to idc_collection_names
+        map = {row.collection_name: row.idc_collection_uuid for row in self.sess.query(Collection_id_map).all()}
 
         # Now generate entries for new collection IDs
         # First look for IDs that are like those already in the map
         for collection in collections:
             if not collection in map:
-                # First check whether their is already a collection id that is the same except for case
-                for collection_id in map:
-                    if collection.lower == collection_id.lower:
-                        print(f'Collection id change: {collection_id } to {collection}')
-                        row = Collection_id_map(collection_id=collection, idc_collection_id=map[collection_id])
+                breakpoint()
+                # First check whether there is already a collection id that is the same except for case
+                found_in_map = False
+                for collection_name in map:
+                    if collection.lower == collection_name.lower:
+                        print(f'Collection id change: {collection_name } to {collection}')
+                        row = Collection_id_map(collection_name=collection, idc_collection_uuid=map[collection_name])
                         self.sess.add(row)
-                        map[collection] = map[collection_id]
+                        map[collection]['collection_id'] = map[collection_name]['collection_id']
+                        found_in_map = True
                         break
-                # If we didn't find a similar collection id, assume this is a new collection
-                tcia_api_collection_id = collection if collections[collection][instance_source.tcia.value] else None
-                # print(f'New collection {collection}')
-                idc_collection_id = str(uuid4())
-                row = Collection_id_map(collection_id=collection, idc_collection_id=idc_collection_id,\
-                        tcia_api_collection_id=tcia_api_collection_id, idc_webapp_collection_id=to_webapp(collection))
+                if found_in_map:
+                    continue
+                # We did not find an entry in the map, so add a new entry to the collection_id_map table
+                idc_collection_uuid = str(uuid4())
+                row = Collection_id_map(collection_name=collection, idc_collection_uuid=idc_collection_uuid,\
+                        collection_id=to_webapp(collection))
                 self.sess.add(row)
-                map[collection] = idc_collection_id
+                # Also add to the map dictionary
+                map[collection] = idc_collection_uuid
 
-        # Now we restructure collection_metadata so that it is indexed by the idc_collection_id
+        # Now we restructure collection_metadata so that it is indexed by the collection_name
         # Note that it only includes those collection ids returned by the sources
         collection_metadata = {
             map[collection]: {
-                'collection_id': collection,
-                'sources': collections[collection]
+                'collection_name': collection,
+                # 'sources': collections[collection]
             } for collection in collections
         }
 
@@ -101,27 +107,30 @@ class All_Sources:
         return collection_metadata
 
     # Get objects per-source hashes from DB
-    def idc_collection_hashes(self, collection):
-        childrens_hashes = [object.hashes for object in collection.patients]
-        # parent_hashes = [get_merkle_hash([childrens_hashes[source.value] for source in instance_source])]
-        parent_hashes = [get_merkle_hash([row[source.value] for row in childrens_hashes]) if set(
-            [row[source.value] for row in childrens_hashes]) != set(['']) else '' for source in instance_source]
-        return parent_hashes
+    # def idc_collection_hashes(self, collection):
+    #     childrens_hashes = [object.hashes for object in collection.patients]
+    #     # parent_hashes = [get_merkle_hash([childrens_hashes[source.value] for source in instance_source])]
+    #     parent_hashes = [get_merkle_hash([row[source.value] for row in childrens_hashes]) if set(
+    #         [row[source.value] for row in childrens_hashes]) != set(['']) else '' for source in instance_source]
+    #     return parent_hashes
 
+    def idc_collection_hash(self, collection):
+        childrens_hashes = [object.hash for object in collection.patients]
+        # parent_hashes = [get_merkle_hash([childrens_hashes[source.value] for source in instance_source])]
+        parent_hash = get_merkle_hash([hash for hash in childrens_hashes])
+        return parent_hash
 
     # Compute object's hashes according to sources
-    def src_collection_hashes(self, collection_id, skipped_sources):
-        collection_hashes = ['','']
-        for source in self.sources:
-            if skipped_sources[source.value]:
-                collection_hashes[source.value] = ""
-            else:
-                collection_hashes[source.value] = self.sources[source].src_collection_hash(collection_id)
-        return collection_hashes
+    def src_collection_hash(self, collection_name, skipped_sources):
+        if skipped_sources:
+            collection_hash = ""
+        else:
+            collection_hash = self.sources[instance_source.idc].src_collection_hash(collection_name)
+        return collection_hash
 
 
     # Compute collection hashes from its child hashes according to sources
-    def src_collection_hashes_from_patient_hashes(self, collection_id, submitter_case_ids, skipped_sources, sources):
+    def src_collection_hashes_from_patient_hashes(self, collection_name, submitter_case_ids, skipped_sources, sources):
         collection_hashes = ['','']
         for source in self.sources:
             if skipped_sources[source.value] or not sources[source.value]:
@@ -129,26 +138,31 @@ class All_Sources:
             else:
                 hashes = []
                 for submitter_case_id in submitter_case_ids:
-                    hashes.append(self.sources[source].src_patient_hash(collection_id, submitter_case_id))
+                    hashes.append(self.sources[source].src_patient_hash(collection_name, submitter_case_id))
                 collection_hashes[source.value] = get_merkle_hash(hashes)
         return collection_hashes
 
     ###-------------------Patients-----------------###
 
     # Get the patients in some collection from all sources
-    def patients(self, collection, skipped_sources):
-        patients = {}
-        for source in instance_source:
-            if source.name != 'all_sources':# Ideally, we would only collect collections from a source
-                # Only collect from a source if the source is not skipped
-                if skipped_sources[source.value]:
-                    patient_ids = []
-                else:
-                    patient_ids = self.sources[source].patients(collection)
-                for patient_id in patient_ids:
-                    if not patient_id in patients:
-                        patients[patient_id] = [False, False]
-                    patients[patient_id][source.value] = True
+    def patients(self, collection, skipped):
+        # patients = {}
+        # for source in instance_source:
+        #     if source.name != 'all_sources':# Ideally, we would only collect collections from a source
+        #         # Only collect from a source if the source is not skipped
+        #         if skipped_sources[source.value]:
+        #             patient_ids = []
+        #         else:
+        #             patient_ids = self.sources[source].patients(collection)
+        #         for patient_id in patient_ids:
+        #             if not patient_id in patients:
+        #                 patients[patient_id] = [False, False]
+        #             patients[patient_id][source.value] = True
+
+        if skipped:
+            patients = []
+        else:
+            patients = self.sources[instance_source.idc].patients(collection)
 
         # Make a copy for subsequent access by other sources functions
         self.patient_metadata = patients
@@ -156,27 +170,39 @@ class All_Sources:
 
 
     # Get objects per-source hashes from DB
-    def idc_patient_hashes(self, patient):
-        childrens_hashes = [object.hashes for object in patient.studies]
-        parent_hashes = [get_merkle_hash([row[source.value] for row in childrens_hashes]) if set(
-            [row[source.value] for row in childrens_hashes]) != set(['']) else '' for source in instance_source]
-        return parent_hashes
+    # def idc_patient_hashes(self, patient):
+    #     childrens_hashes = [object.hashes for object in patient.studies]
+    #     parent_hashes = [get_merkle_hash([row[source.value] for row in childrens_hashes]) if set(
+    #         [row[source.value] for row in childrens_hashes]) != set(['']) else '' for source in instance_source]
+    #     return parent_hashes
 
+    def idc_patient_hash(self, patient):
+        childrens_hashes = [object.hash for object in patient.studies]
+        # parent_hashes = [get_merkle_hash([childrens_hashes[source.value] for source in instance_source])]
+        parent_hash = get_merkle_hash([hash for hash in childrens_hashes])
+        return parent_hash
 
-    def src_patient_hashes(self, collection, patient, skipped_sources):
-        patient_hashes = ['','']
-        if collection.hashes is None:
-            collection.hashes = ("", "", "")
-        for source in self.sources:
-            if skipped_sources[source.value]:
-                patient_hashes[source.value] = ""
-            elif not collection.revised[source.value]:
-                # If the sources' collection was not revised, then the patient's hash is unchanged
-                patient_hashes[source.value] = patient.hashes[source.value]
-            else:
-                patient_hashes[source.value] = self.sources[source].src_patient_hash(collection.collection_id,
-                                                                             patient.submitter_case_id)
-        return patient_hashes
+    def src_patient_hashes(self, collection, patient, skipped):
+        # patient_hashes = ['','']
+        # if collection.hashes is None:
+        #     collection.hashes = ("", "", "")
+        # for source in self.sources:
+        #     if skipped_sources[source.value]:
+        #         patient_hashes[source.value] = ""
+        #     elif not collection.revised[source.value]:
+        #         # If the sources' collection was not revised, then the patient's hash is unchanged
+        #         patient_hashes[source.value] = patient.hashes[source.value]
+        #     else:
+        #         patient_hashes[source.value] = self.sources[source].src_patient_hash(collection.collection_name,
+        #                                                                      patient.submitter_case_id)
+        # return patient_hashes
+
+        if skipped:
+            patient_hash = ""
+        else:
+            patient_hash = self.sources[instance_source.idc].src_patient_hash(collection.collection_name,
+                                 patient.patientid)
+
 
 
     # Get the DOIs of all series in a patient
@@ -185,7 +211,7 @@ class All_Sources:
         for source in self.sources:
             if not skipped_sources[source.value] and patient.revised[source.value]:
                 patient_dois =  patient_dois | \
-                        self.sources[source].get_patient_dois(collection.collection_id, patient.submitter_case_id)
+                        self.sources[source].get_patient_dois(collection.collection_name, patient.submitter_case_id)
         return patient_dois
 
 
@@ -200,11 +226,12 @@ class All_Sources:
 
     # Get the licenses data of all series in a patient
     def get_patient_licenses(self, collection, patient, skipped_sources):
+        breakpoint()
         patient_licenses = {}
         for source in self.sources:
             if not skipped_sources[source.value] and patient.revised[source.value]:
                 patient_licenses = patient_licenses | \
-                       self.sources[source].get_patient_licenses(collection.collection_id, patient.submitter_case_id)
+                       self.sources[source].get_patient_licenses(collection.collection_name, patient.submitter_case_id)
         return patient_licenses
 
     ###-------------------Studies-----------------###
@@ -232,12 +259,18 @@ class All_Sources:
 
 
     # Get objects per-source hashes from DB
-    def idc_study_hashes(self, study):
-        childrens_hashes = [object.hashes for object in study.seriess]
-        parent_hashes = [get_merkle_hash([row[source.value] for row in childrens_hashes]) if set(
-            [row[source.value] for row in childrens_hashes]) != set(['']) else '' for source in instance_source]
-        return parent_hashes
+    # def idc_study_hashes(self, study):
+    #     childrens_hashes = [object.hashes for object in study.seriess]
+    #     parent_hashes = [get_merkle_hash([row[source.value] for row in childrens_hashes]) if set(
+    #         [row[source.value] for row in childrens_hashes]) != set(['']) else '' for source in instance_source]
+    #     return parent_hashes
 
+
+    def idc_study_hash(self, study):
+        childrens_hashes = [object.hash for object in study.seriess]
+        # parent_hashes = [get_merkle_hash([childrens_hashes[source.value] for source in instance_source])]
+        parent_hash = get_merkle_hash([hash  for hash in childrens_hashes])
+        return parent_hash
 
     def src_study_hashes(self, patient, study, skipped_sources):
         study_hashes = ['','']
@@ -277,25 +310,31 @@ class All_Sources:
 
 
     # Get object's per-source hashes from DB
-    def idc_series_hashes(self, series):
-        objects = series.instances
+    # def idc_series_hashes(self, series):
+    #     objects = series.instances
+    #
+    #     # Get the source of one instance
+    #     source = objects[0].source
+    #     # All instances must have the same source
+    #     try:
+    #         assert set([source])== set(object.source for object in objects)
+    #     except:
+    #         errlogger.error(
+    #             f'Instance in series {series.series_instance_uid} have invalid or inconsistent source')
+    #         breakpoint()
+    #         exit(-1)
+    #     series_hashes = ['', '', '']
+    #     # By definition, the all_sources hash equals the hash of the source
+    #     series_hashes[instance_source.all_sources.value] = \
+    #         series_hashes[source.value] = \
+    #         get_merkle_hash([object.hash for object in objects])
+    #     return series_hashes
 
-        # Get the source of one instance
-        source = objects[0].source
-        # All instances must have the same source
-        try:
-            assert set([source])== set(object.source for object in objects)
-        except:
-            errlogger.error(
-                f'Instance in series {series.series_instance_uid} have invalid or inconsistent source')
-            breakpoint()
-            exit(-1)
-        series_hashes = ['', '', '']
-        # By definition, the all_sources hash equals the hash of the source
-        series_hashes[instance_source.all_sources.value] = \
-            series_hashes[source.value] = \
-            get_merkle_hash([object.hash for object in objects])
-        return series_hashes
+    def idc_series_hash(self, series):
+        childrens_hashes = [object.hash for object in series.instances]
+        # parent_hashes = [get_merkle_hash([childrens_hashes[source.value] for source in instance_source])]
+        parent_hash = get_merkle_hash([hash for hash in childrens_hashes])
+        return parent_hash
 
 
     # Compute object's hashes according to sources
@@ -363,11 +402,11 @@ class All_Sources:
 #         # Populate with tcia skips
 #         skipped_collections = []
 #         # Now add idc skips
-#         for collection_id in args.skipped_idc_collections:
-#             if collection_id in skipped_collections:
-#                 skipped_collections[collection_id][1] = True
+#         for collection_name in args.skipped_idc_collections:
+#             if collection_name in skipped_collections:
+#                 skipped_collections[collection_name][1] = True
 #             else:
-#                 skipped_collections[collection_id] = [False, True]
+#                 skipped_collections[collection_name] = [False, True]
 #         args.skipped_collections = skipped_collections
 #         all_sources = All_Sources(args.pid, sess, settings.CURRENT_VERSION, access,
 #                                   args.skipped_tcia_collections, args.skipped_idc_collections, Lock())

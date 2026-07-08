@@ -136,12 +136,8 @@ def expand_collection(sess, args, all_sources, collection):
         new_patient.submitter_case_id = patient
         new_patient.idc_case_id = str(uuid4())
         new_patient.min_timestamp = datetime.utcnow()
-        new_patient.revised = patients[patient]
-        # The following line can probably be deleted because
-        # a object's sources are computed hierarchically after
-        # building all the children.
-        new_patient.sources = patients[patient]
-        new_patient.hashes = ("","","")
+        new_patient.revised = True
+        new_patient.hash = ""
         new_patient.uuid = str(uuid4())
         new_patient.max_timestamp = new_patient.min_timestamp
         new_patient.init_idc_version=settings.CURRENT_VERSION
@@ -157,7 +153,7 @@ def expand_collection(sess, args, all_sources, collection):
     sorted_patients = sorted(existing_objects, key=lambda patient: patient.submitter_case_id)
     n = 0
     for patient in sorted_patients:
-        idc_hashes = patient.hashes
+        idc_hash = patient.hash
         # Get the patients hash from each source. If the patient is skipped for a source,
         # the hash of a source is "". If collection is not revised for a source, the patient'shash for that
         # source is unchanged. or the source that does not have
@@ -165,16 +161,17 @@ def expand_collection(sess, args, all_sources, collection):
         # src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id, skipped)
         while True:
             try:
-                src_hashes = all_sources.src_patient_hashes(collection, patient, skipped)
+                src_hash = all_sources.src_patient_hash(collection, patient, skipped)
                 break
             except Exception as exc:
                 errlogger.error(f'expand_collection: {exc}, patient: {patient.submitter_case_id}')
 
         # A source is revised the if idc hashes[source] and the source hash differ and the source is not skipped
-        revised = [(x != y) and  not z for x, y, z in \
-                zip(idc_hashes[:-1], src_hashes, skipped)]
+        # revised = [(x != y) and  not z for x, y, z in \
+        #         zip(idc_hashes[:-1], src_hashes, skipped)]
+        revised = idc_hash != src_hash and not skipped
         # If any source is revised, then the object is revised.
-        if any(revised):
+        if revised:
             # rootlogger.debug('p%s **Revising patient %s', args.pid, patient.submitter_case_id)
             # Mark when we started work on this patient
             # assert settings.CURRENT_VERSION == patients[patient.submitter_case_id]['rev_idc_version']
@@ -184,11 +181,7 @@ def expand_collection(sess, args, all_sources, collection):
             rev_patient.is_new = False
             rev_patient.expanded = False
             rev_patient.revised = revised
-            rev_patient.hashes = patient.hashes
-            # The following line can probably be deleted because
-            # a object's sources are computed hierarchically after
-            # building all the children.
-            rev_patient.sources = patients[patient.submitter_case_id]
+            rev_patient.hash = patient.hash
             rev_patient.rev_idc_version = settings.CURRENT_VERSION
             collection.patients.append(rev_patient)
             progresslogger.info('  p%s: %s:Patient %s is revised',  args.pid, n, rev_patient.submitter_case_id)
@@ -338,26 +331,24 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         collection.max_timestamp = max([patient.max_timestamp for patient in collection.patients if patient.max_timestamp != None])
         try:
             # Get IDCs vector of collection hashes from the DB
-            idc_hashes = all_sources.idc_collection_hashes(collection)
-            # Record the collection hashes
-            collection.hashes = idc_hashes
-            # The collection's sources vector is the OR of the sources vector of all its patients
-            collection.sources = accum_sources(collection, collection.patients)
+            idc_hash = all_sources.idc_collection_hash(collection)
+            # Record the collection hash
+            collection.hash = idc_hash
 
             skipped = is_skipped(args.skipped_collections, collection.collection_id)
             # Get the sources' vector of collection hashes
-            src_hashes = all_sources.src_collection_hashes(collection.collection_id, skipped)
+            src_hash = all_sources.src_collection_hash(collection.collection_id, skipped)
             # Compare hashes of unskipped sources
-            revised = [(x != y) and not z for x, y, z in \
-                       zip(idc_hashes[:-1], src_hashes, skipped)]
+            # revised = [(x != y) and not z for x, y, z in \
+            #            zip(idc_hashes[:-1], src_hashes, skipped)]
+            revised = idc_hash != src_hash and not skipped
             if any(revised):
                 # raise Exception('Hash match failed for collection %s', collection.collection_id)
                 errlogger.error('Hash match failed for collection %s', collection.collection_id)
             else:
                 # Record the collection hashes
-                collection.hashes = idc_hashes
+                collection.hash = idc_hash
                 # The collection's sources vector is the OR of the sources vector of all its patients
-                collection.sources = accum_sources(collection, collection.patients)
                 collection.done = True
                 duration = str(timedelta(seconds=(time.time() - begin)))
                 successlogger.info("Built Collection %s, %s, in %s", collection.collection_id, collection_index, duration)
@@ -367,7 +358,7 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
             errlogger.error(f'Could not validate collection hash for { collection.collection_id}: {exc}')
             # Record our hashes but don't mark as done
             # Record the collection hashes
-            collection.hashes = idc_hashes
+            collection.hash = idc_hash
             # The collection's sources vector is the OR of the sources vector of all its patients
             collection.sources = accum_sources(collection, collection.patients)
 

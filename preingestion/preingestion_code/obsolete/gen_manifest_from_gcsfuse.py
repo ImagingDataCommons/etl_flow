@@ -29,11 +29,11 @@ import argparse
 import pathlib
 import subprocess
 
-from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, Collection, Patient, Study
+from idc.models import Collection, Patient, Study
 from utilities.logging_config import successlogger, errlogger, progresslogger
 from base64 import b64decode
-from preingestion.validation_code.validate_analysis_result import validate_analysis_result
-from preingestion.validation_code.validate_original_collection import validate_original_collection
+# from preingestion.validation_code.validate_analysis_result import validate_analysis_result
+# from preingestion.validation_code.validate_original_collection import validate_original_collection
 from utilities.logging_config import progresslogger
 
 from pydicom import dcmread
@@ -49,22 +49,22 @@ def build_manifest(args):
 
     with open(args.manifest, 'w') as manifest:
 
-        manifest.write('collection_id,patientID,StudyInstanceUID,SeriesInstanceUID,SOPInstanceUID,ingestion_url,md5_hash\n');
-        collection_ids = set()
+        manifest.write('collection_name,patientID,StudyInstanceUID,SeriesInstanceUID,SOPInstanceUID,ingestion_url,md5_hash,size\n');
+        collection_names = set()
         collection_map = {}
         if 'collection_map' in args and args.collection_map:
-            # In some cases we must map patientID to collection_id
+            # In some cases we must map patientID to collection_name
             df = pd.read_csv(args.collection_map)
             for index, row in df.iterrows():
-                collection_map[row['patientID']] = row['collection_id']
-
+                collection_map[row['patientID']] = row['collection_name']
+        n=1
         with sa_session(echo=False) as sess:
             client = storage.Client()
             iterator = client.list_blobs(src_bucket, prefix=args.subdir)
             for page in iterator.pages:
                 if page.num_items:
                     for blob in page:
-                        if not blob.name.endswith(('DICOMDIR', '.txt', '.csv', '/')) and args.inclusion_filter in blob.name:
+                        if not blob.name.endswith(('.DS_Store', 'DICOMDIR', '.txt', '.csv', '/')) and args.inclusion_filter in blob.name:
                             with src_bucket.blob(blob.name).open('rb') as f:
                             # with open(f"{args.mount_point}/{blob.name}", 'rb') as f:
                                 try:
@@ -74,34 +74,37 @@ def build_manifest(args):
                                     series_id = r.SeriesInstanceUID
                                     instance_id = r.SOPInstanceUID
                                     if collection_map:
-                                        collection_id = collection_map[patient_id]
-                                    elif not args.collection_id:
-                                        # # If a collection_id is not provided, search the many-to-many Collection-Patient
-                                        # # hierarchy for patient patient_id and get its collection_id
+                                        collection_name = collection_map[patient_id]
+                                    elif not args.collection_name:
+                                        # # If a collection_name is not provided, search the many-to-many Collection-Patient
+                                        # # hierarchy for patient patient_id and get its collection_name
                                         # # This assumes that all pathology patients also are radiology patents which is not
                                         # # necessarily the case.
-                                        # collection_id = sess.query(Collection.collection_id).distinct().join(
+                                        # collection_name = sess.query(Collection.collection_name).distinct().join(
                                         #     Collection.patients). \
                                         #     filter(Patient.submitter_case_id == patient_id).one()[0]
-                                        # collection_ids = collection_ids | {collection_id}
+                                        # collection_names = collection_names | {collection_name}
 
-                                        # If a collection_id is not provided, search the many-to-many Collection-Patient-Study
-                                        # hierarchy for study and get its collection_id
+                                        # If a collection_name is not provided, search the many-to-many Collection-Patient-Study
+                                        # hierarchy for study and get its collection_name
                                         # We cannot use the Collection-Patient hierarchy because the patient_id is not unique
                                         #
-                                        collection_id = sess.query(Collection.collection_id).distinct().join(
+                                        collection_name = sess.query(Collection.collection_name).distinct().join(
                                             Collection.patients).join(Patient.studies). \
                                             filter(Study.study_instance_uid == study_id).one()[0]
-                                        collection_ids = collection_ids | {collection_id}
+                                        collection_names = collection_names | {collection_name}
 
                                     else:
-                                        collection_id = args.collection_id
+                                        collection_name = args.collection_name
                                 except Exception as exc:
                                     errlogger.error(f'pydicom failed for {blob.name}: {exc}')
                                     continue
                             hash = b64decode(blob.md5_hash).hex()
-                            manifest.write(f'{collection_id},{patient_id},{study_id},{series_id},{instance_id},{blob.name},{hash}\n')
-                            progresslogger.info(f'{collection_id},{patient_id},{study_id},{series_id},{instance_id},{blob.name},{hash}')
+                            size = blob.size
+                            manifest.write(f'{collection_name},{patient_id},{study_id},{series_id},{instance_id},{blob.name},{hash},{size}\n')
+                            progresslogger.info(f'{n}: {collection_name},{patient_id},{study_id},{series_id},{instance_id},{blob.name},{hash},{size}')
+                            n += 1
+    return
 
 
 
@@ -114,7 +117,7 @@ def build_manifest(args):
 #     parser.add_argument('--subdir', \
 #             default='v1', \
 #             help="Subdirectory of mount_point at which to start walking directory")
-#     parser.add_argument('--collection_id', default='GTEx', help='collection_name of the collection or ID of analysis result to which instances belong.')
+#     parser.add_argument('--collection_name', default='GTEx', help='collection_name of the collection or ID of analysis result to which instances belong.')
 #     parser.add_argument('--manifest', default='./gtex_generated_manifest.csv', help='Manifest file name')
 #     args = parser.parse_args()
 #     print("{}".format(args), file=sys.stdout)

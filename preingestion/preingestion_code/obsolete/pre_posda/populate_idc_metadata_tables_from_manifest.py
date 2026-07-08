@@ -30,14 +30,14 @@
 
 import settings
 import json5
-from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance
+from idc.models import Pre_Collection, Pre_Patient, Pre_Study, Pre_Series, Pre_Instance
 from utilities.logging_config import successlogger, errlogger, progresslogger
 from base64 import b64decode
 import pandas as pd
-from preingestion.validation_code.validate_analysis_result import validate_analysis_result
-from preingestion.validation_code.validate_original_collection import validate_original_collection
-from preingestion.preingestion_code.gen_hashes_sql import gen_hashes
-from preingestion.preingestion_code.gen_manifest_from_dicom_metadata import build_manifest
+# from preingestion.validation_code.validate_analysis_result import validate_analysis_result
+# from preingestion.validation_code.validate_original_collection import validate_original_collection
+# from preingestion.preingestion_code.gen_hashes_sql import gen_hashes
+from preingestion.preingestion_code.obsolete.gen_manifest_from_gcsfuse import build_manifest
 
 import time
 
@@ -77,11 +77,11 @@ def build_instance(args, bucket, series, instance_data):
         instance = next(instance for instance in series.instances if instance.sop_instance_uid == instance_id)
         progresslogger.info(f'{args.pid}\t\t\t\tInstance {blob_name} exists')
     except StopIteration:
+        # This is a new instance
         try:
-            instance = IDC_Instance()
+            instance = Pre_Instance()
             instance.sop_instance_uid = instance_id
             instance.excluded = False
-            instance.redacted = False
             instance.mitigation = ""
             series.instances.append(instance)
             progresslogger.info(f'{args.pid}\t\t\t\tInstance {blob_name} added')
@@ -117,11 +117,11 @@ def build_series(args, bucket, study, series_data, source_doi, versioned_source_
         series = next(series for series in study.seriess if series.series_instance_uid == series_id)
         progresslogger.info(f'{args.pid}\t\t\tSeries {series_id} exists')
     except StopIteration:
+        # This is a new series
         try:
-            series = IDC_Series()
+            series = Pre_Series()
             series.series_instance_uid = series_id
             series.excluded = False
-            series.redacted = False
             study.seriess.append(series)
             progresslogger.info(f'{args.pid}\t\t\tSeries {series_id} added')
         except Exception as exc1:
@@ -149,17 +149,18 @@ def build_series(args, bucket, study, series_data, source_doi, versioned_source_
     return
 
 
-def build_study(args, bucket, patient, study_data, source_doi, versioned_source_doi):
+def build_study(args, bucket, collection, patient, study_data, source_doi, versioned_source_doi):
     # study_id is the second column and same for all rows`
     study_id = study_data.iloc[0]["StudyInstanceUID"]
     try:
         study = next(study for study in patient.studies if study.study_instance_uid == study_id)
         progresslogger.info(f'{args.pid}\t\tStudy {study_id} exists')
     except StopIteration:
+        # This is a new study
         try:
-            study = IDC_Study()
+            study = Pre_Study()
+            study.collection_id = collection.collection_id
             study.study_instance_uid = study_id
-            study.redacted = False
             patient.studies.append(study)
             progresslogger.info(f'{args.pid}\t\tStudy {study_id} added')
         except Exception as exc1:
@@ -187,10 +188,10 @@ def build_patient(args, bucket, collection, patient_data, source_doi, versioned_
         patient = next(patient for patient in collection.patients if patient.submitter_case_id == patient_id)
         progresslogger.info(f'{args.pid}\tPatient {patient_id} exists')
     except StopIteration:
+        # This is a new patient
         try:
-            patient = IDC_Patient()
+            patient = Pre_Patient()
             patient.submitter_case_id = patient_id
-            patient.redacted = False
             collection.patients.append(patient)
             progresslogger.info(f'{args.pid}\tPatient {patient_id} added')
         except Exception as exc1:
@@ -202,7 +203,7 @@ def build_patient(args, bucket, collection, patient_data, source_doi, versioned_
     for study_id in study_ids:
         study_data = patient_data[patient_data["StudyInstanceUID"] == study_id]
         try:
-            build_study(args, bucket, patient, study_data, source_doi, versioned_source_doi)
+            build_study(args, bucket, collection, patient, study_data, source_doi, versioned_source_doi)
         except Exception as exc:
             raise
     hashes = [study.hash for study in patient.studies ]
@@ -216,7 +217,7 @@ def worker(input, output, args, collection_id, source_doi, versioned_source_doi)
         client = storage.Client()
         bucket = client.bucket(args.src_bucket)
         # with sa_session() as sess:
-        collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
+        collection = sess.query(Pre_Collection).filter(Pre_Collection.collection_id == collection_id).first()
         for more_args in iter(input.get, 'STOP'):
             index, patient_data = more_args
             for attempt in range(PATIENT_TRIES):
@@ -267,12 +268,11 @@ def build_collections(args, sess, manifest_data, sep=','):
 
     for collection_id in all_collection_ids:
         # Create the collection if it is not yet in the DB
-        collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
+        collection = sess.query(Pre_Collection).filter(Pre_Collection.collection_id == collection_id).first()
         if not collection:
             # The collection is not currently in the DB, so add it
-            collection = IDC_Collection()
+            collection = Pre_Collection()
             collection.collection_id = collection_id
-            collection.redacted = False
             sess.add(collection)
             # sess.commit()
             progresslogger.info(f'Collection {collection_id} added')
@@ -379,7 +379,7 @@ def get_conversion_metadata_from_comet(collection_name, branch="current"):
     else:
         print(f"Failed to retrieve file. Status code: {response.status_code}")
 
-def perform_partial_revision(sess, args, sep):
+def prebuild_from_partial_manifest(sess, args, sep):
     breakpoint() # Deal with analysis results
     conversion_metadata = get_conversion_metadata_from_json(args.collection_id)
     # conversion_metadata = get_conversion_metadata_from_comet(args.collection_id, args.comet_branch)
@@ -436,18 +436,18 @@ def perform_partial_revision(sess, args, sep):
 
 def prebuild_from_manifests(args, sep=','):
     with sa_session(echo=False) as sess:
-        all_collection_ids = perform_partial_revision(sess, args, sep)
+        all_collection_ids = prebuild_from_partial_manifest(sess, args, sep)
         sess.commit()
 
-    if args.validate:
-        if "analysis_result" in args and args.analysis_result:
-            if validate_analysis_result(args) == -1:
-                exit(1)
-        else:
-            if validate_original_collection(args, all_collection_ids) == -1:
-                exit(1)
-    if args.gen_hashes:
-        gen_hashes()
+    # if args.validate:
+    #     if "analysis_result" in args and args.analysis_result:
+    #         if validate_analysis_result(args) == -1:
+    #             exit(1)
+    #     else:
+    #         if validate_original_collection(args, all_collection_ids) == -1:
+    #             exit(1)
+    # if args.gen_hashes:
+    #     gen_hashes()
     return
 
 # if __name__ == '__main__':

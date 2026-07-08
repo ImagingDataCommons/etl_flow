@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 import pandas as pd
-import os
 import argparse
 import json
 from google.cloud  import bigquery, storage
@@ -23,13 +22,6 @@ from get_tcia_pathology_metadata import bucket_collection_id, get_aspera_package
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from utilities.bq_helpers import delete_BQ_Table
 
-from time import strftime, gmtime
-
-import os.path
-from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
 
 def gen_conversion_status(client):
     query = f"""

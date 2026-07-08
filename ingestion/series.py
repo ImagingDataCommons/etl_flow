@@ -89,7 +89,6 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
         new_instance.expanded=False
         new_instance.init_idc_version=settings.CURRENT_VERSION
         new_instance.rev_idc_version=settings.CURRENT_VERSION
-        new_instance.source = instances[instance]
         new_instance.hash = ""
         new_instance.timestamp = datetime.utcnow()
         new_instance.final_idc_version = 0
@@ -107,7 +106,6 @@ def expand_series(sess, args, all_sources, version, collection, patient, study, 
             rev_instance.is_new = False
             rev_instance.expanded = True
             rev_instance.timestamp = datetime.utcnow()
-            rev_instance.source = instances[instance.sop_instance_uid]
             rev_instance.hash = instance.hash
             rev_instance.size = 0
             rev_instance.rev_idc_version = settings.CURRENT_VERSION
@@ -172,16 +170,18 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
         if all(instance.done for instance in series.instances):
             series.max_timestamp = max(instance.timestamp for instance in series.instances)
             # Get a list of what DB thinks are the series's hashes
-            idc_hashes = all_sources.idc_series_hashes(series)
+            idc_hash = all_sources.idc_series_hashes(series)
             # # Get a list of what the sources think are the series's hashes
-            series.hashes = idc_hashes
+            series.hash = idc_hash
             series.series_instances = len(series.instances)
 
             skipped = is_skipped(args.skipped_collections, collection.collection_id)
-            src_hashes = all_sources.src_series_hashes(study, series, skipped)
-            revised = [(x != y) and not z for x, y, z in \
-                       zip(idc_hashes[:-1], src_hashes, skipped)]
-            if any(revised):
+            src_hash = all_sources.src_series_hashes(study, series, skipped)
+            # revised = [(x != y) and not z for x, y, z in \
+            #            zip(idc_hashes[:-1], src_hashes, skipped)]
+
+            mismatch = idc_hash != src_hash and not skipped
+            if mismatch:
                 errlogger.error('Hash match failed for series %s', series.series_instance_uid)
             else:
                 series.done = True

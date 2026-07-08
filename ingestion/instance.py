@@ -22,7 +22,7 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 import pydicom
 import shutil
 from pydicom.errors import InvalidDicomError
-from idc.models import Version, Instance, IDC_Instance
+from idc.models import Version, Instance, Pre_Instance
 from sqlalchemy import select,delete
 from google.cloud import storage
 from utilities.tcia_helpers import  get_TCIA_instances_per_series_with_hashes
@@ -178,8 +178,8 @@ def build_instances_idc(sess, args, collection, patient, study, series):
     # When idc is the source of instance data, the instances are already in a bucket.
     # From idc_xxx DB hierarchy, we get a table of the SOPInstanceUID, hash and GCS URL of
     # all the instances in the series
-    stmt = select(IDC_Instance.sop_instance_uid, IDC_Instance.ingestion_url, IDC_Instance.hash ). \
-        where(IDC_Instance.series_instance_uid == series.series_instance_uid)
+    stmt = select(Pre_Instance.sop_instance_uid, Pre_Instance.ingestion_url, Pre_Instance.hash ). \
+        where(Pre_Instance.series_instance_uid == series.series_instance_uid)
     result = sess.execute(stmt)
     src_instance_metadata = {i.sop_instance_uid:{'ingestion_url':i.ingestion_url, 'hash':i.hash} \
                              for i in result.fetchall()}

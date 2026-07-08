@@ -27,7 +27,7 @@ from utilities.logging_config import errlogger
 logger = logging.getLogger(__name__)
 from utilities.tcia_helpers import get_internal_series_ids, series_drill_down, get_tcia_collection_manager_data
 from utilities.tcia_helpers_v4 import get_TCIA_series_metadata_per_patient
-from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series
+from idc.models import Pre_Collection, Pre_Patient, Pre_Study, Pre_Series
 from python_settings import settings
 
 

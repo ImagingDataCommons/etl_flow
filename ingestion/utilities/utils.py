@@ -268,13 +268,19 @@ def accum_sources(parent, children):
 def list_skips(sess, skipped_collections):
     skips = [collection for collection in skipped_collections]
     client = bigquery.Client()
+#     query = f"""
+# SELECT collection_id
+# FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.doi_to_access`
+# WHERE access = 'Limited'
+# """
     query = f"""
-SELECT collection_id
-FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.doi_to_access`
-WHERE access = 'Limited'
+SELECT collection_name, string_agg(DISTINCT Access) Access 
+FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_sources`
+GROUP BY collection_name
+HAVING Access = STRING_AGG('Limited') 
 """
     collections = client.query(query).to_dataframe()
     for i, row in collections.iterrows():
-        skips.append(row.collection_id)
+        skips.append(row.collection_name)
     skips.sort()
     return skips

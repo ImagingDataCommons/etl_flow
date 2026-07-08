@@ -64,7 +64,7 @@ def egest_series(sess, series):
     series.expanded = False
     series.done = False
     series.sources = [False,False]
-    series.hashes = None
+    series.hash = None
     series.final_idc_version = 0
 
 
@@ -94,7 +94,7 @@ def egest_study(sess, study):
     study.expanded = False
     study.done = False
     study.sources = [False,False]
-    study.hashes = None
+    study.hash = None
     study.final_idc_version = 0
 
 
@@ -124,7 +124,7 @@ def egest_patient(sess, patient):
     patient.expanded = False
     patient.done = False
     patient.sources = [False,False]
-    patient.hashes = None
+    patient.hash = None
     patient.final_idc_version = 0
 
 
@@ -156,7 +156,7 @@ def egest_collection(sess, collection):
     collection.expanded = False
     collection.done = False
     collection.sources = [False,False]
-    collection.hashes = None
+    collection.hash = None
     collection.final_idc_version = 0
 
 
@@ -192,7 +192,7 @@ def egest_version(sess, version, collections_ids = []):
         version.expanded = False
         version.done = False
         version.sources = [False,False]
-        version.hashes = None
+        version.hash = None
         version.final_idc_version = 0
     else:
         for collection in version.collections:
@@ -221,7 +221,7 @@ def egest_version(sess, version, collections_ids = []):
         version.expanded = False
         version.done = False
         version.sources = [False,False]
-        version.hashes = None
+        version.hash = None
         version.final_idc_version = 0
 
 

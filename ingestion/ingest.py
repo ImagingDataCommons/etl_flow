@@ -37,33 +37,35 @@ DICOM_DIR = '/mnt/disks/idc-etl/dicom' # Directory in which to expand downloaded
 
 
 def ingest(args):
-    # Create a local working directory into which data
-    # from TCIA is copied
-    if os.path.isdir('{}'.format(args.dicom_dir)):
-        shutil.rmtree('{}'.format(args.dicom_dir))
-    os.mkdir('{}'.format(args.dicom_dir))
+    # # Create a local working directory into which data
+    # # from TCIA is copied
+    # if os.path.isdir('{}'.format(args.dicom_dir)):
+    #     shutil.rmtree('{}'.format(args.dicom_dir))
+    # os.mkdir('{}'.format(args.dicom_dir))
 
     with sa_session() as sess:
         # Get a sharable NBIA access token
         access = shared_memory.ShareableList(get_access_token())
         args.access = access
 
-        args.skipped_tcia_collections = list_skips(sess, args.skipped_tcia_collections)
+        args.skipped_collections = list_skips(sess, args.skipped_collections)
         # args.skipped_idc_collections = list_skips(sess, 'idc', args.skipped_idc_collections)
 
         # Create a table of collections for which tcia or idc ingestion or both, are to be skipped.
         # Populate with tcia skips
         skipped_collections = \
-            {collection_id:[True, False] for collection_id in args.skipped_tcia_collections}
+            args.skipped_collections
         # Now add idc skips
-        for collection_id in args.skipped_idc_collections:
-            if collection_id in skipped_collections:
-                skipped_collections[collection_id][1] = True
-            else:
-                skipped_collections[collection_id] = [False, True]
-        args.skipped_collections = skipped_collections
+        # for collection_id in args.skipped_idc_collections:
+        #     if collection_id in skipped_collections:
+        #         skipped_collections[collection_id][1] = True
+        #     else:
+        #         skipped_collections[collection_id] = [False, True]
+        # args.skipped_collections = skipped_collections
         all_sources = All_Sources(args.pid, sess, settings.CURRENT_VERSION, args.access,
-                                  args.skipped_tcia_collections, args.skipped_idc_collections, Lock())
+                      # args.skipped_tcia_collections, args.skipped_idc_collections, Lock())
+                        args.skipped_collections)
+        # all_sources = All_Sources(sess, skipped_collections)
 
         version = sess.query(Version).filter(Version.version == settings.CURRENT_VERSION).first()
         if not version:
@@ -75,7 +77,7 @@ def ingest(args):
                 version.done=False
                 version.is_new=True
                 version.revised=False
-                version.hashes = ["","",""]
+                version.hash = ["","",""]
                 version.sources = [False,False]
                 version.version = str(settings.CURRENT_VERSION)
                 version.previous_version = settings.PREVIOUS_VERSION
@@ -95,9 +97,10 @@ def ingest(args):
                     version.done = False
                     version.is_new = False
                     version.revised = False
-                    version.hashes = ("","","")
-                    version.revised = [True, True] # Assume something has changed
-                    version.sources= [False,False]
+                    # version.hashes = ("", "", "")
+                    version.hash = ""
+                    # version.revised = [True, True]  # Assume something has changed
+                    # version.sources= [False,False]
                     version.min_timestamp = datetime.utcnow()
                     version.max_timestamp = None
                     sess.commit()
@@ -112,25 +115,35 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--num_processes', type=int, default=16, help="Number of concurrent processes")
 
-    parser.add_argument('--skipped_tcia_collections', nargs='*', \
+    # parser.add_argument('--skipped_tcia_collections', nargs='*', \
+    #         default=[
+    #             'MIDI-B-Curated-Test', 'MIDI-B-Curated-Validation', 'MIDI-B-Synthetic-Test', 'MIDI-B-Synthetic-Validation',
+    #             'A091105', 'ACNS0332', 'AHEP0731', 'AHOD0831', 'ARAR0331', 'AREN0532', 'AREN0533', 'AREN0534', 'CALGB50303',
+    #             'S0819',
+    #             'QIN-SARCOMA',
+    #             'NLST',
+    #             # 'EA1141',
+    #             'APOLLO-5-ESCA', 'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-PAAD', 'APOLLO-5-THYM', 'APOLLO-5-LUNG-MISC'],
+    #         help='List of additional tcia collections to be skipped')
+    parser.add_argument('--skipped_collections', nargs='*', \
             default=[
                 'MIDI-B-Curated-Test', 'MIDI-B-Curated-Validation', 'MIDI-B-Synthetic-Test', 'MIDI-B-Synthetic-Validation',
                 'A091105', 'ACNS0332', 'AHEP0731', 'AHOD0831', 'ARAR0331', 'AREN0532', 'AREN0533', 'AREN0534', 'CALGB50303',
                 'S0819',
                 'QIN-SARCOMA',
                 'NLST',
-                'EA1141',
+                # 'EA1141',
                 'APOLLO-5-ESCA', 'APOLLO-5-LSCC', 'APOLLO-5-LUAD', 'APOLLO-5-PAAD', 'APOLLO-5-THYM', 'APOLLO-5-LUNG-MISC'],
             help='List of additional tcia collections to be skipped')
-    parser.add_argument('--prestaging_tcia_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_tcia_', help='Copy tcia instances here before forwarding to --staging_bucket')
+    # parser.add_argument('--prestaging_tcia_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_tcia_', help='Copy tcia instances here before forwarding to --staging_bucket')
 
-    parser.add_argument('--skipped_idc_collections', nargs='*',\
-            default=[], \
-                        help='List of additional idc collections to be skipped')
-    parser.add_argument('--prestaging_idc_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_idc_', help='Copy idc instances here before forwarding to --staging_bucket')
+    # parser.add_argument('--skipped_idc_collections', nargs='*',\
+    #         default=[], \
+    #                     help='List of additional idc collections to be skipped')
+    # parser.add_argument('--prestaging_idc_bucket_prefix', default=f'idc_v{settings.CURRENT_VERSION}_idc_', help='Copy idc instances here before forwarding to --staging_bucket')
     parser.add_argument('--copy_through_directory', default=f'/mnt/disks/idc-dev-etl-v{settings.CURRENT_VERSION}', \
                         help='If instance is a composite object, copy it through this directory to GCS to convert to non-composite object')
-    parser.add_argument('--stop_after_collection_summary', type=bool, default=False, \
+    parser.add_argument('--stop_after_collection_summary', type=bool, default=True, \
                         help='Stop after printing a summary of collection dispositions')
 
     args = parser.parse_args()

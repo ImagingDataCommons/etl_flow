@@ -25,9 +25,9 @@ import enum
 
 
 class instance_source(enum.Enum):
-    tcia = 0
-    idc = 1
-    all_sources = 2
+    # tcia = 0
+    idc = 0
+    # all_sources = 2
 
 Base = declarative_base()
 # sql_engine = create_engine(sql_uri, echo=True)
@@ -35,7 +35,35 @@ Base = declarative_base()
 
 # These tables define the ETL database. There is a separate DB for each IDC version.
 # Note that earlier IDC versions used a one-to-many schema.
+# Flattened idc hierarchy (idc_collection, idc_patient,...). The underlying PSQL is a view.
+class All_Data_Snapshot(Base):
+    __tablename__ = 'all_data_snapshot'
+    collection_name = Column(String, nullable=False, comment='TCIA/NBIA collection ID')
+    collection_id = Column(String, nullable=False, comment='webapp collection ID')
+    c_hash = Column(String, comment='Collection hash')
 
+    patientID = Column(String, nullable=False, unique=True, primary_key=True, comment="Submitter's patient ID")
+    p_hash = Column(String, comment='Patient hash')
+
+    StudyInstanceUID = Column(String, unique=True, primary_key=True, nullable=False)
+    st_hash = Column(String, comment='Study hash')
+
+    SeriesInstanceUID = Column(String, unique=True, primary_key=True, nullable=False)
+    se_hash = Column(String, comment='Series hash')
+    se_excluded = Column(Boolean, default=False, comment='True if this series should be excluded from ingestion')
+    source_doi = Column(String, comment='Source DOI of this series\' wiki')
+    source_url = Column(String, comment='Source URL of this series\' wiki')
+    versioned_source_doi = Column(String, comment='If present, a DOI to the wiki page of this version of this series')
+    versioned_source_url = Column(String, comment='If present, a URL to the wiki page of this version of this series')
+    analysis_result = Column(Boolean, comment='True if this series is from an analysis result, else False')
+    SOPInstanceUID = Column(String, primary_key=True, nullable=False)
+    i_hash = Column(String, comment='Instance hash')
+    gcs_url = Column(String, comment='GCS URL of instance source')
+    size = Column(BigInteger, comment='Instance size in bytes')
+    i_excluded = Column(Boolean, default=False, comment='True if this instance should be excluded from ingestion')
+    idc_version = Column(Integer, comment='IDC version when this instance was added/revised')
+    mitigation = Column(String, default="", comment="ID of the mitigation which redacted this instance")
+    source_file_hash = Column(String, default="", comment="md5 hash of the source file from which this instance was derived")
 
 # Flattened idc hierarchy (idc_collection, idc_patient,...). The underlying PSQL is a view.
 class IDC_All_Joined(Base):
@@ -78,158 +106,46 @@ class All_Joined(Base):
     __tablename__ = 'all_joined'
     idc_version = Column(Integer, nullable=False, comment="Target version of revision")
     previous_idc_version = Column(Integer, nullable=False, comment="ID of the previous version")
-    v_hashes = Column(
-        CompositeType(
-            'hashes',
-            [
-                Column('tcia', String, default="", comment="Hash of tcia data"),
-                Column('idc', String, default="", comment="Hash of idc data"),
-                Column('all_sources', String, default="", comment="Hash of all data")
-            ]
-        ),
-        comment="Source specific hierarchical hash"
-    )
-    v_sources = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False),
-                Column('idc', Boolean, default=False)
-            ]
-        ),
-        nullable=True,
-        comment="True if this objects includes instances from the corresponding source"
-    )
+    v_hash = Column(String, nullable=True, comment="Hex format MD5 hash of TCIA data at this level")
 
-    collection_id = Column(String, nullable=False, comment='TCIA/NBIA collection ID')
-    idc_collection_id = Column(String, nullable=False, comment="IDC assigned collection ID")
+    collection_name = Column(String, nullable=False, comment='TCIA/NBIA collection ID')
+    idc_collection_uuid = Column(String, nullable=False, comment="IDC assigned collection ID")
     c_uuid = Column(String, nullable=False, comment="IDC assigned UUID of a version of this object")
-    c_hashes = Column(
-        CompositeType(
-            'hashes',
-            [
-                Column('tcia', String, default="", comment="Hash of tcia data"),
-                Column('idc', String, default="", comment="Hash of tcia idc data"),
-                Column('all_sources', String, default="", comment="Hash of all data")
-            ]
-        ),
-        comment="Source specific hierarchical hash"
-    )
-    c_sources = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False),
-                Column('idc', Boolean, default=False)
-            ]
-        ),
-        nullable=True,
-        comment="True if this objects includes instances from the corresponding source"
-    )
+    c_hash = Column(String, nullable=True, comment="Hex format MD5 hash of TCIA data at this level")
     c_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     c_rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     c_final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
-    # c_redacted = Column(Boolean, default=False, comment="True if collection has been redacted")
-    # c_mitigation = Column(String, default="", comment="ID of the mitigation which redacted this collection")
 
-    submitter_case_id = Column(String, nullable=False, comment="Submitter's patient ID")
+    patientID = Column(String, nullable=False, comment="Submitter's patient ID")
     idc_case_id = Column(String, nullable=False, comment="IDC assigned patient ID")
     p_uuid = Column(String, nullable=False, comment="IDC assigned UUID of a version of this object")
-    p_hashes = Column(
-        CompositeType(
-            'hashes',
-            [
-                Column('tcia', String, default="", comment="Hash of tcia  data"),
-                Column('idc', String, default="", comment="Hash of idc data"),
-                Column('all_sources', String, default="", comment="Hash of all data")
-            ]
-        ),
-        comment="Source specific hierarchical hash"
-    )
-    p_sources = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False),
-                Column('idc', Boolean, default=False)
-            ]
-        ),
-        nullable=True,
-        comment="True if this objects includes instances from the corresponding source"
-    )
+    p_hash = Column(String, nullable=True, comment="Hex format MD5 hash of TCIA data at this level")
     p_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     p_rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     p_final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
-    # p_redacted = Column(Boolean, default=False, comment="True if instance has been patient")
-    # p_mitigation = Column(String, default="", comment="ID of the mitigation which redacted this patient")
 
-    study_instance_uid = Column(String, nullable=False, comment="DICOM StudyInstanceUID")
+    studyinstanceuid = Column(String, nullable=False, comment="DICOM StudyInstanceUID")
     st_uuid = Column(String, nullable=False, comment="IDC assigned UUID of a version of this object")
     study_instances = Column(Integer, nullable=True, comment="Instances in this study")
-    st_hashes = Column(
-        CompositeType(
-            'hashes',
-            [
-                Column('tcia', String, default="", comment="Hash of tcia data"),
-                Column('idc', String, default="", comment="Hash of idc data"),
-                Column('all_sources', String, default="", comment="Hash of all data")
-            ]
-        ),
-        comment="Source specific hierarchical hash"
-    )
-    st_sources = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False),
-                Column('idc', Boolean, default=False)
-            ]
-        ),
-        nullable=True,
-        comment="True if this objects includes instances from the corresponding source"
-    )
+    st_hash = Column(String, nullable=True, comment="Hex format MD5 hash of TCIA data at this level")
     st_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     st_rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     st_final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
-    # st_redacted = Column(Boolean, default=False, comment="True if study has been redacted")
-    # st_mitigation = Column(String, default="", comment="ID of the mitigation which redacted this study")
 
-    series_instance_uid = Column(String, nullable=False, comment="DICOM SeriesInstanceUID")
+    seriesinstanceuid = Column(String, nullable=False, comment="DICOM SeriesInstanceUID")
     se_uuid = Column(String, nullable=False, comment="IDC assigned UUID of a version of this object")
     series_instances = Column(Integer, nullable=True, comment="Instances in this series")
-    source_doi = Column(String, nullable=True, comment="A doi to the wiki page of this source of this series")
-    source_url = Column(String, nullable=True, comment="A url to the wiki page of this source of this series")
-    se_hashes = Column(
-        CompositeType(
-            'hashes',
-            [
-                Column('tcia', String, default="", comment="Hash of tcia  data"),
-                Column('idc', String, default="", comment="Hash of idc data"),
-                Column('all_sources', String, default="", comment="Hash of all data")
-            ]
-        ),
-        comment="Source specific hierarchical hash"
-    )
-    se_sources = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False),
-                Column('idc', Boolean, default=False)
-            ]
-        ),
-        nullable=True,
-        comment="True if this objects includes instances from the corresponding source"
-    )
+    source_doi = Column(String, nullable=True, comment="A doi to the wiki page of the source of this series")
+    source_url = Column(String, nullable=True, comment="A url to the wiki page of the source of this series")
+    versioned_source_doi = Column(String, nullable=True, comment="A versioned doi to the wiki page of the source of this series")
+    se_hash = Column(String, nullable=True, comment="Hex format MD5 hash of data at this level")
     se_init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     se_rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     se_final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
-    # se_redacted = Column(Boolean, default=False, comment="True if series has been redacted")
-    # se_mitigation = Column(String, default="", comment="ID of the mitigation which redacted this series")
 
-    sop_instance_uid = Column(String, nullable=False, unique=False, comment='DICOM SOPInstanceUID')
+    sopinstanceuid = Column(String, nullable=False, unique=False, comment='DICOM SOPInstanceUID')
     i_uuid = Column(String, primary_key=True, comment="IDC assigned UUID of a version of this object")
-    i_hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of TCIA data at this level")
+    i_hash = Column(String, nullable=True, comment="Hex format MD5 hash of data at this level")
     i_source = Column(String, nullable=True, comment="'tcia' or 'idc'")
     i_size = Column(BigInteger, nullable=True, comment='Instance blob size (bytes)')
     i_excluded = Column(Boolean, default=False, comment="True if instance should be excluded from auxiliary_metacata, etc.")
@@ -241,58 +157,19 @@ class All_Joined(Base):
     ingestion_url = Column(String, default="", comment="GCS URL of the blob from which this instance was ingested. Does not apply if source='tcia'")
     source_file_hash = Column(String, default="", comment="md5 hash of the source file from which this instance was derived")
 
-
-
+'''
+---------------------------------------------------------------------------------------------------------------------
+'''
 version_collection = Table('version_collection', Base.metadata,
                            Column('version', ForeignKey('version.version'), primary_key=True),
                            Column('collection_uuid', ForeignKey('collection.uuid'), primary_key=True))
 
-class Version_dev(Base):
-    __tablename__ = 'version_dev'
-    version = Column(Integer, primary_key=True, comment="Target version of revision")
-    previous_version = Column(Integer, nullable=False, comment="ID of the previous version")
-    min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
-    max_timestamp = Column(DateTime, nullable=True, comment="Time when building this object completed")
-    # revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
-    done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
-    is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
-    expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
-    hashes = Column(
-        CompositeType(
-            'hashes',
-            [
-                Column('tcia', String, default="", comment="Hash of tcia data"),
-                Column('idc', String, default="", comment="Hash of idc data"),
-                Column('all_sources', String, default="", comment="Hash of all data")
-            ]
-        ),
-        comment="Source specific hierarchical hash"
-    )
-    sources = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False),
-                Column('idc', Boolean, default=False)
-            ]
-        ),
-        nullable=True,
-        comment="True if this objects includes instances from the corresponding source"
-    )
-    revised = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
-                Column('idc', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
-            ]
-        ),
-        nullable=True,
-    )
-
-
+'''
+---------------------------------------------------------------------------------------------------------------------
+'''
 class Version(Base):
     __tablename__ = 'version'
+
     version = Column(Integer, primary_key=True, comment="Target version of revision")
     previous_version = Column(Integer, nullable=False, comment="ID of the previous version")
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
@@ -301,51 +178,29 @@ class Version(Base):
     done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
-    hashes = Column(
-        CompositeType(
-            'hashes',
-            [
-                Column('tcia', String, default="", comment="Hash of tcia data"),
-                Column('idc', String, default="", comment="Hash of idc data"),
-                Column('all_sources', String, default="", comment="Hash of all data")
-            ]
-        ),
-        comment="Source specific hierarchical hash"
-    )
-    sources = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False),
-                Column('idc', Boolean, default=False)
-            ]
-        ),
-        nullable=True,
-        comment="True if this objects includes instances from the corresponding source"
-    )
-    revised = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
-                Column('idc', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
-            ]
-        ),
-        nullable=True,
-    )
+    hash = Column(String, nullable=True, comment="Hex format MD5 hash of TCIA data at this level")
+    revised = Column(Boolean, default=False, comment="True if object is revised relative to the previous IDC version in the corresponding source")
 
     collections = relationship('Collection',
                                secondary=version_collection,
                                back_populates='versions')
 
+'''
+---------------------------------------------------------------------------------------------------------------------
+Many-to-many table between collection and patient
+'''
 collection_patient = Table('collection_patient', Base.metadata,
                            Column('collection_uuid', ForeignKey('collection.uuid'), primary_key=True),
                            Column('patient_uuid', ForeignKey('patient.uuid'), primary_key=True))
 
+'''
+---------------------------------------------------------------------------------------------------------------------
+'''
 class Collection(Base):
+
     __tablename__ = 'collection'
-    collection_id = Column(String, nullable=False, comment='TCIA/NBIA collection ID')
-    idc_collection_id = Column(String, nullable=False, comment="IDC assigned collection ID")
+    collection_name = Column(String, nullable=False, comment='TCIA/NBIA collection ID')
+    idc_collection_uuid = Column(String, nullable=False, comment="IDC assigned collection ID")
     uuid = Column(String, nullable=False, primary_key=True, comment="IDC assigned UUID of a version of this object")
 
     min_timestamp = Column(DateTime, nullable=True, comment="Time when building this object started")
@@ -357,39 +212,8 @@ class Collection(Base):
     done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
-    sources = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False),
-                Column('idc', Boolean, default=False)
-            ]
-        ),
-        nullable=True,
-        comment="True if this objects includes instances from the corresponding source"
-    )
-    hashes = Column(
-        CompositeType(
-            'hashes',
-            [
-                Column('tcia', String, default="", comment="Hash of tcia data"),
-                Column('idc', String, default="", comment="Hash of idc data"),
-                Column('all_sources', String, default="", comment="Hash of all data")
-            ]
-        ),
-        nullable=True,
-        comment="Source specific hierarchical hash"
-    )
-    revised = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
-                Column('idc', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
-            ]
-        ),
-        nullable=True,
-    )
+    hash = Column(String, nullable=True, comment="Hex format MD5 hash of TCIA data at this level")
+    revised = Column(Boolean, default=False, comment="True if object is revised relative to the previous IDC version in the corresponding source")
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
     mitigation = Column(String, default="", comment="ID of the mitigation which redacted this object")
 
@@ -401,14 +225,21 @@ class Collection(Base):
                                secondary=collection_patient,
                                back_populates='collections')
 
-
+'''
+---------------------------------------------------------------------------------------------------------------------
+Many-to-many table between patient and study
+'''
 patient_study = Table('patient_study', Base.metadata,
                            Column('patient_uuid', ForeignKey('patient.uuid'), primary_key=True),
                            Column('study_uuid', ForeignKey('study.uuid'), primary_key=True))
 
+'''
+---------------------------------------------------------------------------------------------------------------------
+'''
 class Patient(Base):
     __tablename__ = 'patient'
-    submitter_case_id = Column(String, nullable=False, comment="Submitter's patient ID")
+
+    patientid = Column(String, nullable=False, comment="Submitter's patient ID")
     idc_case_id = Column(String, nullable=False, comment="IDC assigned patient ID")
     uuid = Column(String, nullable=False, primary_key=True, comment="IDC assigned UUID of a version of this object")
 
@@ -421,39 +252,8 @@ class Patient(Base):
     done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
-    sources = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False),
-                Column('idc', Boolean, default=False)
-            ]
-        ),
-        nullable=True,
-        comment="True if this objects includes instances from the corresponding source"
-    )
-    hashes = Column(
-        CompositeType(
-            'hashes',
-            [
-                Column('tcia', String, default="", comment="Hash of tcia data"),
-                Column('idc', String, default="", comment="Hash of tcia data"),
-                Column('all_sources', String, default="", comment="Hash of all data")
-            ]
-        ),
-        nullable=True,
-        comment="Source specific hierarchical hash"
-    )
-    revised = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
-                Column('idc', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
-            ]
-        ),
-        nullable=True,
-    )
+    hash = Column(String, nullable=True, comment="Hex format MD5 hash of TCIA data at this level")
+    revised = Column(Boolean, default=False, comment="True if object is revised relative to the previous IDC version in the corresponding source")
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
     mitigation = Column(String, default="", comment="ID of the mitigation which redacted this object")
 
@@ -464,15 +264,21 @@ class Patient(Base):
                             secondary=patient_study,
                             back_populates='patients')
 
-
+'''
+---------------------------------------------------------------------------------------------------------------------
+Many-to-many table between study and series
+'''
 study_series = Table('study_series', Base.metadata,
                       Column('study_uuid', ForeignKey('study.uuid'), primary_key=True),
                       Column('series_uuid', ForeignKey('series.uuid'), primary_key=True))
 
-
+'''
+---------------------------------------------------------------------------------------------------------------------
+'''
 class Study(Base):
     __tablename__ = 'study'
-    study_instance_uid = Column(String, nullable=False, comment="DICOM StudyInstanceUID")
+
+    studyinstanceuid = Column(String, nullable=False, comment="DICOM StudyInstanceUID")
     uuid = Column(String, nullable=False, unique=True, primary_key=True, comment="IDC assigned UUID of a version of this object")
     study_instances = Column(Integer, nullable=True, comment="Instances in this study")
 
@@ -485,39 +291,8 @@ class Study(Base):
     done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
-    sources = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False),
-                Column('idc', Boolean, default=False)
-            ]
-        ),
-        nullable=True,
-        comment="True if this objects includes instances from the corresponding source"
-    )
-    hashes = Column(
-        CompositeType(
-            'hashes',
-            [
-                Column('tcia', String, default="", comment="Hash of tcia data"),
-                Column('idc', String, default="", comment="Hash of idc data"),
-                Column('all_sources', String, default="", comment="Hash of all data")
-            ]
-        ),
-        nullable=True,
-        comment="Source specific hierarchical hash"
-    )
-    revised = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
-                Column('idc', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
-            ]
-        ),
-        nullable=True,
-    )
+    hash = Column(String, nullable=True, comment="Hex format MD5 hash of TCIA data at this level")
+    revised = Column(Boolean, default=False, comment="True if object is revised relative to the previous IDC version in the corresponding source")
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
     mitigation = Column(String, default="", comment="ID of the mitigation which redacted this object")
 
@@ -528,14 +303,21 @@ class Study(Base):
                            secondary=study_series,
                            back_populates='studies')
 
-
+'''
+---------------------------------------------------------------------------------------------------------------------
+Many-to-many table between series and instance
+'''
 series_instance = Table('series_instance', Base.metadata,
                      Column('series_uuid', ForeignKey('series.uuid'), primary_key=True),
                      Column('instance_uuid', ForeignKey('instance.uuid'), primary_key=True))
 
+'''
+---------------------------------------------------------------------------------------------------------------------
+'''
 class Series(Base):
     __tablename__ = 'series'
-    series_instance_uid = Column(String, nullable=False, comment="DICOM SeriesInstanceUID")
+
+    seriesnstanceuid = Column(String, nullable=False, comment="DICOM SeriesInstanceUID")
     uuid = Column(String, primary_key=True, comment="IDC assigned UUID of a version of this object")
     series_instances = Column(Integer, nullable=True, comment="Instances in this series")
     source_doi = Column(String, nullable=True, comment="A DOI to the wiki page of this series")
@@ -549,39 +331,8 @@ class Series(Base):
     done = Column(Boolean, default=False, comment="Set to True if this object has been processed")
     is_new = Column(Boolean, default=False, comment="True if this object is new in this version")
     expanded = Column(Boolean, default=False, comment="True if the next lower level has been populated")
-    sources = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False),
-                Column('idc', Boolean, default=False)
-            ]
-        ),
-        nullable=True,
-        comment="True if this objects includes instances from the corresponding source"
-    )
-    hashes = Column(
-        CompositeType(
-            'hashes',
-            [
-                Column('tcia', String, default="", comment="Hash of tcia data"),
-                Column('idc', String, default="", comment="Hash of idc data"),
-                Column('all_sources', String, default="", comment="Hash of all data")
-            ]
-        ),
-        nullable=True,
-        comment="Source specific hierarchical hash"
-    )
-    revised = Column(
-        CompositeType(
-            'sources',
-            [
-                Column('tcia', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source"),
-                Column('idc', Boolean, default=False, comment="True his object is revised relative to the previous IDC version in the corresponding source")
-            ]
-        ),
-        nullable=True,
-    )
+    hash = Column(String, nullable=True, comment="Hex format MD5 hash of TCIA data at this level")
+    revised = Column(Boolean, default=False, comment="True if object is revised relative to the previous IDC version in the corresponding source")
     source_url = Column(String, nullable=True, comment="A url to the wiki page of this series")
     excluded = Column(Boolean, default=False, comment="True if object should be excluded from auxiliary_metadata, etc.")
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
@@ -596,11 +347,15 @@ class Series(Base):
                           secondary=series_instance,
                           back_populates='seriess')
 
+'''
+---------------------------------------------------------------------------------------------------------------------
+'''
 class Instance(Base):
     __tablename__ = 'instance'
-    sop_instance_uid = Column(String, nullable=False, comment='DICOM SOPInstanceUID')
+
+    sopinstanceuid = Column(String, nullable=False, comment='DICOM SOPInstanceUID')
     uuid = Column(String, primary_key=True, comment="IDC assigned UUID of a version of this object")
-    hash = Column(String, nullable=True, comment="Hierarchical hex format MD5 hash of TCIA data at this level")
+    hash = Column(String, nullable=True, comment="Hex format MD5 hash of TCIA data at this level")
     size = Column(BigInteger, nullable=True, comment='Instance blob size (bytes)')
 
     revised = Column(Boolean, default=False, comment="If True, this object is revised relative to the previous IDC version")
@@ -610,7 +365,7 @@ class Instance(Base):
     init_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this object")
     rev_idc_version = Column(Integer, nullable=False, comment="Initial IDC version of this version of this object")
     final_idc_version = Column(Integer, default=0, comment="Final IDC version of this version of this object")
-    source = Column(Enum(instance_source), nullable=True, comment='Source of this object; "tcia", "idc"')
+    # source = Column(Enum(instance_source), nullable=True, comment='Source of this object; "tcia", "idc"')
     timestamp = Column(DateTime, nullable=True, comment="Time when this object was last built")
     # Excluded instances are somehow invalid, but are included in the DB to maintain the hash
     excluded = Column(Boolean, default=False, comment="True if object should be excluded from auxiliary_metadata, etc.")
@@ -623,79 +378,122 @@ class Instance(Base):
                           secondary=series_instance,
                           back_populates='instances')
 
-# Table that includes all IDC sourced collections.
-# This is a snapshot of what should be the current/next IDC version
-class IDC_Collection(Base):
-    __tablename__ = 'idc_collection'
-    collection_id = Column(String, unique=True, primary_key=True, comment='NBIA collection ID')
-    hash = Column(String, comment='Collection hash')
-    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+'''
+---------------------------------------------------------------------------------------------------------------------
+Table that includes all collections. A source is either an original_data_source or an analysis_result_source
+This is a snapshot of what should be the current/next IDC version
+'''
+class Pre_Collection(Base):
+    __tablename__ = 'pre_collection'
 
-    # vers = relationship("IDC_Version", back_populates="collections")
-    patients = relationship("IDC_Patient", back_populates="collection", order_by="IDC_Patient.submitter_case_id", cascade="all, delete")
+    collection_name = Column(String, primary_key=True, comment='collection name')
+    collection_id = Column(String, unique=True, comment='collection ID')
+    hash = Column(String, comment='Source hash')
 
+    patients = relationship("Pre_Patient", back_populates="collection", order_by="Pre_Patient.patientid", cascade="all, delete")
 
-# Table that includes all IDC sourced patients.
-# This is a snapshot of what should be the current/next IDC version
-class IDC_Patient(Base):
-    __tablename__ = 'idc_patient'
-    submitter_case_id = Column(String, nullable=False, unique=True, primary_key=True, comment="Submitter's patient ID")
-    collection_id = Column(ForeignKey('idc_collection.collection_id'), comment="Containing object")
+'''
+---------------------------------------------------------------------------------------------------------------------
+Table of pre-ingestion patient metadata.
+This is a snapshot of what should be in the current/next version
+'''
+class Pre_Patient(Base):
+    __tablename__ = 'pre_patient'
+
+    patientid = Column(String, primary_key=True, comment="Patient ID")
+    collection_name = Column(String, primary_key=True, comment="Containing object")
     hash = Column(String, comment='Patient hash')
-    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
 
-    collection = relationship("IDC_Collection", back_populates="patients")
-    studies = relationship("IDC_Study", back_populates="patient", order_by="IDC_Study.study_instance_uid", cascade="all, delete")
+    # Composite Foreign Key Constraint pointing to pre_collection
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['collection_name'],
+            ['pre_collection.collection_name'],
+            ondelete='CASCADE'
+        ),
+    )
 
+    # Relationships
+    collection = relationship("Pre_Collection", back_populates="patients")
+    studies = relationship(
+        "Pre_Study",
+        back_populates="patient",
+        order_by="Pre_Study.studyinstanceuid",
+        cascade="all, delete"
+    )
 
-# Table that includes all IDC sourced studies.
-# This is a snapshot of what should be the current/next IDC version
-class IDC_Study(Base):
-    __tablename__ = 'idc_study'
-    study_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-    submitter_case_id = Column(ForeignKey('idc_patient.submitter_case_id'), comment="Submitter's patient ID")
-    hash = Column(String, comment='Study hash')
-    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
+'''
+---------------------------------------------------------------------------------------------------------------------
+Table of pre-ingestion study metadata.
+This is a snapshot of what should be the current/next version
+'''
+class Pre_Study(Base):
+    __tablename__ = 'pre_study'
 
-    patient = relationship("IDC_Patient", back_populates="studies")
-    seriess = relationship("IDC_Series", back_populates="study", order_by="IDC_Series.series_instance_uid", cascade="all, delete")
+    studyinstanceuid = Column(String, primary_key=True, nullable=False)
+    collection_name = Column(String,  nullable=False, comment="Containing object")
+    patientid = Column(String, nullable=False, comment="Containing object")
+    hash = Column(String, nullable=False, comment='Study hash')
 
+    # Composite Foreign Key Constraint pointing to pre_patient's composite primary key
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['collection_name', 'patientid'],
+            ['pre_patient.collection_name', 'pre_patient.patientid'],
+            ondelete='CASCADE'
+        ),
+    )
 
-# Table that includes all IDC sourced series.
-# This is a snapshot of what should be the current/next IDC version
-class IDC_Series(Base):
-    __tablename__ = 'idc_series'
-    series_instance_uid = Column(String, unique=True, primary_key=True, nullable=False)
-    study_instance_uid = Column(ForeignKey('idc_study.study_instance_uid'), comment="Containing object")
+    # Relationships
+    patient = relationship("Pre_Patient", back_populates="studies")
+    seriess = relationship(
+        "Pre_Series",
+        back_populates="study",
+        order_by="Pre_Series.seriesinstanceuid",
+        cascade="all, delete"
+    )
+    # # collection = relationship("Pre_Patient", back_populates="collections")
+    # patient = relationship("Pre_Patient", back_populates="studies")
+    # seriess = relationship("Pre_Series", back_populates="study", order_by="Pre_Series.seriesinstanceuid", cascade="all, delete")
+
+'''
+---------------------------------------------------------------------------------------------------------------------
+Table that pre-ingestion series metadata.
+This is a snapshot of what should be the current/next version
+'''
+class Pre_Series(Base):
+    __tablename__ = 'pre_series'
+    seriesinstanceuid = Column(String, unique=True, primary_key=True, nullable=False)
+    studyinstanceuid = Column(ForeignKey('pre_study.studyinstanceuid'), comment="Containing object")
     hash = Column(String, comment='Series hash')
     excluded = Column(Boolean, default=False, comment='True if this series should be excluded from ingestion')
     source_doi = Column(String, comment='Source DOI of this series\' wiki')
     source_url = Column(String, comment='Source URL of this series\' wiki')
+    versioned_source_doi = Column(String, comment='Versioned source DOI of this series\' wiki')
+    versioned_source_url = Column(String, comment='Versioned source URL of this series\' wiki')
     analysis_result = Column(Boolean, comment='True if this series is from an analysis result, else False')
-    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
-    versioned_source_doi = Column(String, comment='If present, a DOI to the wiki page of this version of this series')
-    ingestion_script = Column(String, comment='Script which added this instance')
 
-    study = relationship("IDC_Study", back_populates="seriess")
-    instances = relationship("IDC_Instance", back_populates="seriess", order_by="IDC_Instance.sop_instance_uid", cascade="all, delete")
+    study = relationship("Pre_Study", back_populates="seriess")
+    instances = relationship("Pre_Instance", back_populates="seriess", order_by="Pre_Instance.sopinstanceuid", cascade="all, delete")
 
-
-# Table that includes all IDC sourced instances.
-# This is a snapshot of what should be the current/next IDC version
-class IDC_Instance(Base):
-    __tablename__ = 'idc_instance'
-    sop_instance_uid = Column(String, primary_key=True, nullable=False)
-    series_instance_uid = Column(ForeignKey('idc_series.series_instance_uid'), comment="Containing object")
+'''
+---------------------------------------------------------------------------------------------------------------------
+Table that pre-ingestion instance metadata.
+This is a snapshot of what should be the current/next version
+'''
+class Pre_Instance(Base):
+    __tablename__ = 'pre_instance'
+    sopinstanceuid = Column(String, primary_key=True, nullable=False)
+    seriesinstanceuid = Column(ForeignKey('pre_series.seriesinstanceuid'), comment="Containing object")
     hash = Column(String, comment='Instance hash')
     ingestion_url = Column(String, comment='GCS URL of instance source')
     size = Column(BigInteger, comment='Instance size in bytes')
     excluded = Column(Boolean, default=False, comment='True if this instance should be excluded from ingestion')
     idc_version = Column(Integer, comment='IDC version when this instance was added/revised')
-    redacted = Column(Boolean, default=False, comment="True if object has been redacted")
     mitigation = Column(String, default="", comment="ID of the mitigation which redacted this instance")
     source_file_hash = Column(String, default="", comment="md5 hash of the source file from which this instance was derived")
 
-    seriess = relationship("IDC_Series", back_populates="instances")
+    seriess = relationship("Pre_Series", back_populates="instances")
 
 
 class All_Collections(Base):
@@ -719,13 +517,13 @@ class All_Collections(Base):
 # In that case, the IDC generated idc_collection_id binds those tcia_api_collection_ids.
 class Collection_id_map(Base):
     __tablename__ = 'collection_id_map'
-    tcia_api_collection_id = Column(String, primary_key=True, \
-                    comment="Collection ID used by TCIA")
-    idc_collection_id = Column(String, primary_key=True,
+    # tcia_api_collection_id = Column(String, primary_key=True, \
+    #                 comment="Collection ID used by TCIA")
+    idc_collection_uuid = Column(String, primary_key=True,
                    comment="IDC assigned collection ID (UUID4)")
-    idc_webapp_collection_id = Column(String, primary_key=True, \
-                  comment="Collection ID used by IDC webapp")
     collection_id = Column(String, primary_key=True, \
+                  comment="Collection ID used by IDC webapp")
+    collection_name = Column(String, primary_key=True, \
                    comment="Collection ID used for ETL")
 
 # This table is populated with metadata for collections that are not sourced from TCIA.

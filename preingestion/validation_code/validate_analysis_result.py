@@ -16,7 +16,6 @@
 
 # Validate that the IDC DB contains the instances of some analysis result
 
-from idc.models import Base, IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, Collection, Patient
 from utilities.logging_config import successlogger, errlogger, progresslogger
 from python_settings import settings
 
