@@ -482,7 +482,7 @@ def get_tcia_collection_manager_data(type, query_param=''):
         print('Error accessing the API:', response.status_code)
         exit
 
-def et_tcia_collection_manager_data_v2(type, query_param=''):
+def get_tcia_collection_manager_data_v2(type, query_param=''):
     page = 1
     collections = []
     while True:

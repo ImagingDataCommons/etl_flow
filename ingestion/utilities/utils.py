@@ -84,7 +84,7 @@ def get_merkle_hash(hashes):
             breakpoint()
         return hash
     else:
-        ""
+        return ""
 
 # Validate that instances were received correctly from TCIA
 def validate_hashes(args, collection, patient, study, series, hashes):
@@ -131,15 +131,17 @@ def validate_series_in_gcs(args, collection, patient, study, series):
 
 # Copy the series instances downloaded from TCIA/NBIA from disk to the prestaging bucket
 def copy_disk_to_prestaging_bucket(args, series):
-    #Do the copy as a subprocess in order to use the gsutil -m option
+    #Do the copy as a subprocess in order to suppress parallel composite uploads
     try:
         # Copy the series to GCS
         src = f'{args.dicom_dir}/{series.uuid}'
         dst = f'gs://{args.prestaging_tcia_bucket}'
-        # breakpoint() # Check if -J parameter is still broken
-        result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
-        # result = run(["gcloud", "storage", "--quiet", "cp", "--recursive", src, dst], check=True,
-        #              stdout=DEVNULL, stderr=STDOUT)
+        breakpoint() # Check if -J parameter is still broken
+        # result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
+
+        cmmd = f"CLOUDSDK_STORAGE_PARALLEL_COMPOSITE_UPLOAD_ENABLED=False gcloud storage -q cp -r {src} {dst}"
+        result = run(cmmd, shell=True, check=True)
+
         if result.returncode :
             errlogger.error('p%s: \tcopy_disk_to_prestaging_bucket failed for series %s', args.pid, series.series_instance_uid)
             raise RuntimeError('p%s: copy_disk_to_prestaging_bucket failed for series %s', args.pid, series.series_instance_uid)
@@ -152,8 +154,11 @@ def copy_disk_to_prestaging_bucket(args, series):
 def delete_bucket(bucket):
     try:
         src = "gs://{}/**".format(bucket)
-        run(["gsutil", "-m", "-q", "rm", src])
-        run(["gsutil", "-q", "rb", f"gs://{bucket}"])
+        # run(["gsutil", "-m", "-q", "rm", src])
+        # run(["gsutil", "-q", "rb", f"gs://{bucket}"])
+        breakpoint()
+        run(["gcloud", "storage", "-q", "rm", src])
+        run(["gcloud", "storage", "-q", "rm", f"gs://{bucket}"])
         progresslogger.debug("Deleted bucket %s", bucket)
     except Exception as exc:
         errlogger.error("Failed to empty or delete bucket %s", bucket)
@@ -199,18 +204,25 @@ def copy_disk_to_gcs(args, collection, patient, study, series):
 def copy_composite_blob_to_noncomposite_blob(args, src_blob, dst_blob):
     # We need to copy a composite blob such that the resulting blob is a noncomposite blob
     # For this purpose, we copy to a local file and then to the destination
-    #Do the copy as a subprocess in order to use the gsutil -m option
+    #Do the copy as a subprocess in order to suppress parallel composite uploads
     try:
         # Copy the blob to disk
         src = f'gs://{src_blob.bucket.name}/{src_blob.name}'
         dst = f'{args.copy_through_directory}/{src_blob.name}'
-        result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
+        # result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
+        breakpoint()
+        cmmd = f"CLOUDSDK_STORAGE_PARALLEL_COMPOSITE_UPLOAD_ENABLED=False gcloud storage -q cp -r {src} {dst}"
+        result = run(cmmd, shell=True, check=True)
+
         if result.returncode :
             errlogger.error('p%s: \tcopy_disk_to_prestaging_bucket copy to file failed for %s', args.pid, src_blob.name)
             raise RuntimeError('p%s: opy_disk_to_prestaging_bucket copy to file failed for %s', args.pid, src_blob.name)
         src = dst
         dst = f'gs://{dst_blob.bucket.name}/{dst_blob.name}'
-        result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
+        # result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
+        breakpoint()
+        cmmd = f"CLOUDSDK_STORAGE_PARALLEL_COMPOSITE_UPLOAD_ENABLED=False gcloud storage -q cp -r {src} {dst}"
+        result = run(cmmd, shell=True, check=True)
         if result.returncode :
             errlogger.error('p%s: \tcopy_disk_to_prestaging_bucket copy to gcs failed for %s', args.pid, dst_blob.name)
             raise RuntimeError('p%s: \tcopy_disk_to_prestaging_bucket copy to gcs failed for %s', args.pid, dst_blob.name)

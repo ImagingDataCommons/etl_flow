@@ -58,7 +58,8 @@ def get_found_blobs_in_bucket(args, found_blobs_file):
     bucket = client.bucket(args.bucket['bucket_id'])
 
     with open(found_blobs_file, 'w') as f:
-        result = subprocess.run(['gsutil', '-m', 'ls', f'gs://{args.bucket["bucket_id"]}/**'], stdout=f)
+        # result = subprocess.run(['gsutil', '-m', 'ls', f'gs://{args.bucket["bucket_id"]}/**'], stdout=f)
+        result = subprocess.run(['gcloud', 'storage', 'ls', f'gs://{args.bucket["bucket_id"]}/**'], stdout=f)
     # found_blobs = [row.replace(f'gs://{args.bucket["bucket_id"]}/', '') for row in set(open(args.found_blobs).read().splitlines())]
     found_blobs = [row.split('/',3)[-1] for row in set(open(found_blobs_file).read().splitlines())]
     found_blobs.sort()
@@ -97,7 +98,7 @@ def check_all_instances_mp(args, found_blobs_file):
             errlogger.error(blob)
         errlogger.error(f"Commands to populate missing blobs in bucket:")
         for blob in expected_blobs - found_blobs:
-            errlogger.error((f'gsutil cp {expected_blob_data[blob]} gs://{args.bucket["bucket_id"]}/{blob}'))
+            errlogger.error((f'gcloud storage cp {expected_blob_data[blob]} gs://{args.bucket["bucket_id"]}/{blob}'))
 
     return
 

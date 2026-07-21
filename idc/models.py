@@ -317,7 +317,7 @@ series_instance = Table('series_instance', Base.metadata,
 class Series(Base):
     __tablename__ = 'series'
 
-    seriesnstanceuid = Column(String, nullable=False, comment="DICOM SeriesInstanceUID")
+    seriesinstanceuid = Column(String, nullable=False, comment="DICOM SeriesInstanceUID")
     uuid = Column(String, primary_key=True, comment="IDC assigned UUID of a version of this object")
     series_instances = Column(Integer, nullable=True, comment="Instances in this series")
     source_doi = Column(String, nullable=True, comment="A DOI to the wiki page of this series")

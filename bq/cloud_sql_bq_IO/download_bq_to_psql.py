@@ -212,11 +212,11 @@ if __name__ == "__main__":
     # Table to copy from
     parser.add_argument("--bq_project_id", default="idc-dev-etl")
     parser.add_argument("--bq_dataset_id", default="idc_v0_dev")
-    parser.add_argument("--bq_table_id", default="all_data_snapshot")
+    parser.add_argument("--bq_table_id", default="all_sources")
 
     # Cloud SQL table to copy to
     parser.add_argument("--pg_database", default="idc_v0")
-    parser.add_argument("--pg_table_name", default="all_data_snapshot")
+    parser.add_argument("--pg_table_name", default="all_sources")
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

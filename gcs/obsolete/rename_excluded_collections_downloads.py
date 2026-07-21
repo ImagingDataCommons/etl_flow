@@ -133,9 +133,10 @@ if __name__ == '__main__':
         # Copy the series to GCS
         src = f'{download_path}/*/*/*/*/*'
         dst = f'gs://{bucket_name}/'
-        # breakpoint() # Check if -J parameter is still broken
-        cmmd = f"gsutil -m -q  cp -r {src} {dst}"
-        # result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
+        breakpoint()
+        # cmmd = f"gsutil -m -q  cp -r {src} {dst}"
+        cmmd = f"CLOUDSDK_STORAGE_PARALLEL_COMPOSITE_UPLOAD_ENABLED=False gcloud storage -q cp  -r {src} {dst}"
+
         result = run(cmmd, shell=True, check=True)
         if result.returncode:
             errlogger.error('copy_disk_to_prestaging_bucket failed')
