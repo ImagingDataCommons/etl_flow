@@ -22,8 +22,9 @@ import json
 from google.cloud  import storage
 import settings
 from get_tcia_pathology_metadata import bucket_collection_id, get_blob_metadata_from_package, get_aspera_package_urls, \
-    download_files_from_aspera
+    download_files_from_aspera, download_aspera_package
 from utilities.logging_config import successlogger, progresslogger, errlogger
+from ingestion.utilities.utils import get_merkle_hash
 from time import strftime, gmtime
 from multiprocessing import Process, Queue
 import time
@@ -228,30 +229,30 @@ def download_from_aspera(args, aspera_files, dones, aspera_url, bucket_tag, \
     return
 
 @contextlib.contextmanager
-def temp_logger(Download_slug):
+def temp_logger(aspera_url_hash):
 
     for hdlr in successlogger.handlers[:]:
         successlogger.removeHandler(hdlr)
-    os.makedirs(f'{settings.LOG_DIR}/{Download_slug}', exist_ok=True)
+    os.makedirs(f'{settings.LOG_DIR}/{aspera_url_hash}', exist_ok=True)
 
-    success_fh = logging.FileHandler(f'{settings.LOG_DIR}/{Download_slug}/success.log')
+    success_fh = logging.FileHandler(f'{settings.LOG_DIR}/{aspera_url_hash}/success.log')
     successlogger.addHandler(success_fh)
     successformatter = logging.Formatter('%(message)s')
     success_fh.setFormatter(successformatter)
 
     for hdlr in progresslogger.handlers[:]:
         progresslogger.removeHandler(hdlr)
-    progress_fh = logging.FileHandler(f'{settings.LOG_DIR}/{Download_slug}/progress.log')
+    progress_fh = logging.FileHandler(f'{settings.LOG_DIR}/{aspera_url_hash}/progress.log')
     progresslogger.addHandler(progress_fh)
     successformatter = logging.Formatter('%(message)s')
     progress_fh.setFormatter(successformatter)
 
     # Always empty the error file
-    with open(f'{settings.LOG_DIR}/{Download_slug}/error.log', 'w') as f:
+    with open(f'{settings.LOG_DIR}/{aspera_url_hash}/error.log', 'w') as f:
         pass
     for hdlr in errlogger.handlers[:]:
         errlogger.removeHandler(hdlr)
-    err_fh = logging.FileHandler(f'{settings.LOG_DIR}/{Download_slug}/error.log')
+    err_fh = logging.FileHandler(f'{settings.LOG_DIR}/{aspera_url_hash}/error.log')
     errformatter = logging.Formatter('%(levelname)s:err:%(message)s')
     errlogger.addHandler(err_fh)
     err_fh.setFormatter(errformatter)
@@ -284,7 +285,9 @@ def temp_logger(Download_slug):
 def main(args, download_slugs=[]):
     aspera_package_urls = get_aspera_package_urls().sort_values(by="Download_slug")
     for _, package in aspera_package_urls.iterrows():
-        with temp_logger(package['Download_slug']):
+        aspera_url_hash = f"{package['Download_slug']}-{get_merkle_hash([package['Aspera_URL']])}"
+        # with temp_logger(package['Download_slug']):
+        with temp_logger(aspera_url_hash):
             TCIA_collection_version = package['TCIA_collection_version']
             TCIA_collection_name = package['TCIA_collection_name']
             IDC_collection_name = package['IDC_collection_name']
@@ -326,15 +329,15 @@ def main(args, download_slugs=[]):
                     else:
                         if idc_collection_id or args.only_idc_collections==False:
                             progresslogger.info(f'Processing {aspera_download_slug}')
-
-                            # If a json listing the files in this package exists on disk:
-                            if args.load_aspera_files and os.path.exists(f"{settings.LOG_DIR}/{package['Download_slug']}/{aspera_download_slug}_files.json"):
-                                with open(f"{settings.LOG_DIR}/{package['Download_slug']}/{aspera_download_slug}_files.json") as f:
+                            # download_aspera_package(args, aspera_url, aspera_url_hash, TCIA_collection_version, tag )
+                            # If a json listing of the files in this package exists on disk:
+                            if args.load_aspera_files and os.path.exists(f"{settings.LOG_DIR}/{aspera_url_hash}/{aspera_download_slug}_files.json"):
+                                with open(f"{settings.LOG_DIR}/{aspera_url_hash}/{aspera_download_slug}_files.json") as f:
                                     aspera_files = json.load(f)
                             else:
                                 manifest_params = get_blob_metadata_from_package(args, package, args.version)
                                 aspera_files = manifest_params["aspera_files"]
-                                with open(f"{settings.LOG_DIR}/{package['Download_slug']}/{aspera_download_slug}_files.json", 'w') as f:
+                                with open(f"{settings.LOG_DIR}/{aspera_url_hash}/{aspera_download_slug}_files.json", 'w') as f:
                                     json.dump(aspera_files, f)
                                 progresslogger.info(manifest_params["logger_string"])
                             download_from_aspera(
@@ -358,17 +361,17 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", default=settings.CURRENT_VERSION-1)
-    parser.add_argument('--processes', default=1)
+    parser.add_argument('--processes', default=32)
     parser.add_argument('--mode', default='download')
     parser.add_argument("--dst_bucket_prefix", default="", help="dst_bucket ID prefix")
     parser.add_argument("--dst_bucket_suffix", default="_pathology_data", help="dst_bucket ID suffix")
     parser.add_argument("--dst_project", default='idc-source-data', help="Project in which to create bucket")
     parser.add_argument("--google_drive_folder", default="", help="Google Drive folder ID")
     parser.add_argument("--save_result", default=True, help="Save result to a Drive file if True")
-    parser.add_argument("--download_slugs", default = ['hungarian-colorectal-screening-da-path-2'], help="Slugs to process; all if empty")
+    parser.add_argument("--download_slugs", default = [], help="Slugs to process; all if empty")
     parser.add_argument("--manifest_file_name", default= f'manifest_{strftime("%Y%m%d_%H%M%S", gmtime())}.txt')
     parser.add_argument("--only_idc_collections", default=False, help="Only include a collection if IDC already has it")
-    parser.add_argument("--skip", default=["tp53-precursor-lesions"], help="TCIA_collection_ids to be skipped")
+    parser.add_argument("--skip", default=["hungarian-colorectal-screening"], help="TCIA_collection_ids to be skipped")
     parser.add_argument("--load_aspera_files", default=False)
     args = parser.parse_args()
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')

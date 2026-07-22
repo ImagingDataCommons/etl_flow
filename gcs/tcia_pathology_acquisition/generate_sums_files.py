@@ -20,6 +20,7 @@ import json
 from google.cloud  import storage
 import settings
 from get_tcia_pathology_metadata import bucket_collection_id, get_blob_metadata_from_package, get_aspera_package_urls
+from ingestion.utilities.utils import get_merkle_hash
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from time import strftime, gmtime
 from base64 import b64decode
@@ -115,11 +116,12 @@ def main(args):
     aspera_package_urls = get_aspera_package_urls().sort_values(by="Download_slug")
     for _, package in aspera_package_urls.iterrows():
         aspera_download_slug = package['Download_slug']
+        aspera_url_hash = f"{aspera_download_slug}-{get_merkle_hash([aspera_download_slug])}"
         if aspera_download_slug in args.skips:
             progresslogger.info(f'Skipping download slug {aspera_download_slug}')
             continue
         if args.download_slugs == [] or aspera_download_slug in args.download_slugs:
-            with temp_logger(aspera_download_slug):
+            with temp_logger(aspera_url_hash):
                 dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
                 if aspera_download_slug in dones and not args.ignore_dones and not aspera_download_slug in args.download_slugs:
                     progresslogger.info(f'Package {aspera_download_slug} previously processed')
@@ -168,13 +170,13 @@ def main(args):
                     else:
                         progresslogger.info(f"Generating sums file for {dst_bucket.name}/{subfolder}")
                         if args.load_aspera_files and os.path.exists(
-                                f"{settings.LOG_DIR}/{aspera_download_slug}/{aspera_download_slug}_files.json"):
-                            with open(f"{settings.LOG_DIR}/{aspera_download_slug}/{aspera_download_slug}_files.json") as f:
+                                f"{settings.LOG_DIR}/{aspera_url_hash}/{aspera_download_slug}_files.json"):
+                            with open(f"{settings.LOG_DIR}/{aspera_url_hash}/{aspera_download_slug}_files.json") as f:
                                 aspera_files = json.load(f)
                         else:
                             manifest_params = get_blob_metadata_from_package(args, package, args.version)
                             aspera_files = manifest_params["aspera_files"]
-                            with open(f"{settings.LOG_DIR}/{aspera_download_slug}/{aspera_download_slug}_files.json", 'w') as f:
+                            with open(f"{settings.LOG_DIR}/{aspera_url_hash}/{aspera_download_slug}_files.json", 'w') as f:
                                 json.dump(aspera_files, f)
                             progresslogger.info(manifest_params["logger_string"])
                         target_bucket = client.bucket(args.alternate_dst_bucket) if 'alternate_dst_bucket' in args and args.alternate_dst_bucket else dst_bucket
@@ -216,15 +218,15 @@ if __name__ == "__main__":
     parser.add_argument("--dst_project", default='idc-source-data', help="Project in which to create bucket")
     parser.add_argument("--google_drive_folder", default="", help="Google Drive folder ID")
     parser.add_argument("--save_result", default=True, help="Save result to a Drive file if True")
-    parser.add_argument("--download_slugs", default = ["nlst-da-path"], help="Slugs to process; all if empty")
+    parser.add_argument("--download_slugs", default = [], help="Slugs to process; all if empty")
     parser.add_argument("--manifest_file_name", default= f'manifest_{strftime("%Y%m%d_%H%M%S", gmtime())}.txt')
     parser.add_argument("--only_idc_collections", default=False, help="Only include a collection if IDC already has it")
-    parser.add_argument("--skips", default=["tp53-precursor-lesions-da-path"], help="Aspera slug of packages to be skipped")
-    parser.add_argument("--load_aspera_files", default=True)
-    parser.add_argument("--regen_generated_sums_file", default=True, help="If true, regen existing generated.sums")
+    parser.add_argument("--skips", default=['hungarian-colorectal-screening-da-path','hungarian-colorectal-screening-da-path-2'], help="Aspera slug of packages to be skipped")
+    parser.add_argument("--load_aspera_files", default=False)
+    parser.add_argument("--regen_generated_sums_file", default=False, help="If true, regen existing generated.sums")
     parser.add_argument('--alternate_dst_bucket', default='', help="Alternate bucket to access for md5 hashes. Intended for when instances in the the actually bucket do not have md5 hashes.")
     parser.add_argument('--use_null_tag', default=False, help="Use '' as the bucket tag. Intended for when instances in the the actual bucket do not have md5 hashes.")
-    parser.add_argument("--ignore_dones", default=True, help="If True, ignore whether previously done")
+    parser.add_argument("--ignore_dones", default=False, help="If True, ignore whether previously done")
     args = parser.parse_args()
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 

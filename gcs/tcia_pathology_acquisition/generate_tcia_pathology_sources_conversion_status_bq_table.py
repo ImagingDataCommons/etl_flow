@@ -151,7 +151,7 @@ if __name__ == "__main__":
     parser.add_argument("--dst_project", default='idc-source-data', help="Project in which to create bucket")
     parser.add_argument("--download_slugs", default = [], help="Slugs to process; all if empty")
     parser.add_argument("--only_idc_collections", default=False, help="Only include a collection if IDC already has it")
-    parser.add_argument("--skip", default=["tp53-precursor-lesions-da-path"], help="TCIA_collection_ids to be skipped")
+    parser.add_argument("--skip", default=[], help="TCIA_collection_ids to be skipped")
     args = parser.parse_args()
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
