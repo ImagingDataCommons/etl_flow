@@ -1076,7 +1076,7 @@
             [
                 {
                     "filenm": "Abdomen_v9 Mar 2023.xlsx",
-                    "patientIdIdx": 1,
+                    "patientIdCol": "Case",
                     "headrows": [0, 1],
                     "archive": [
                         "Clinical-data-Mar-2023.zip"
@@ -1086,7 +1086,17 @@
             [
                 {
                     "filenm": "Chest_v9 Mar 2023.xlsx",
-                    "patientIdIdx": 1,
+                    "patientIdCol": "Case",
+                    "headrows": [0, 1],
+                    "archive": [
+                        "Clinical-data-Mar-2023.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "Neuro_v9 Mar 2023.xlsx",
+                    "patientIdCol": "Case",
                     "headrows": [0, 1],
                     "archive": [
                         "Clinical-data-Mar-2023.zip"
@@ -1100,6 +1110,9 @@
             },
             {
                 "chest_v9": "clinical"
+            },
+            {
+                "neuro_v9": "clinical"
             }
         ],
         "case_id": "same",
