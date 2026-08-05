@@ -34,6 +34,7 @@ clinical_data_schema = [
     bigquery.SchemaField('parent_id', 'STRING', mode='NULLABLE', description='Collection manager id of this parent object'),
     bigquery.SchemaField('parent_slug', 'STRING', mode='NULLABLE', description='Collection manager of this parent object'),
     bigquery.SchemaField('parent_doi', 'STRING', mode='NULLABLE', description='Collection manager doi of parent object'),
+    bigquery.SchemaField('parent_short_title', 'STRING', mode='NULLABLE', description='Collection manager short title of parent object'),
     bigquery.SchemaField('parent_browse_title', 'STRING', mode='NULLABLE', description='Collection manager browse title of parent object'),
     bigquery.SchemaField('date_updated', 'DATE', mode='NULLABLE', description='?'),
     bigquery.SchemaField('download_title', 'STRING', mode='NULLABLE', description='Download title'),
@@ -101,6 +102,7 @@ def get_raw_data():
                 clinical_downloads[id]['collection_id'] = collection['id']
                 clinical_downloads[id]['collection_slug'] = collection['slug']
                 clinical_downloads[id]['collection_doi'] = collection['collection_doi']
+                clinical_downloads[id]['collection_short_title'] = collection['collection_short_title']
                 clinical_downloads[id]['collection_browse_title'] = collection['collection_browse_title']
 
     # Associate 0 or more analysis result with each clinical download
@@ -110,6 +112,7 @@ def get_raw_data():
                 clinical_downloads[id]['result_id'] = result['id']
                 clinical_downloads[id]['result_slug'] = result['slug']
                 clinical_downloads[id]['result_doi'] = result['result_doi']
+                clinical_downloads[id]['result_short_title'] = result['result_short_title']
                 clinical_downloads[id]['result_browse_title'] = result['result_browse_title']
 
     clinical_data = []
@@ -123,6 +126,7 @@ def get_raw_data():
                 parent_id = data["collection_id"],
                 parent_slug = data["collection_slug"],
                 parent_doi = data['collection_doi'],
+                parent_short_title=data['collection_short_title'],
                 parent_browse_title=data['collection_browse_title'],
                 date_updated = data["date_updated"],
                 download_title = str(data["download_title"]),
@@ -144,6 +148,7 @@ def get_raw_data():
                     parent_id = data["result_id"],
                     parent_slug = data["result_slug"],
                     parent_doi = data["result_doi"],
+                    parent_short_title=data['result_short_title'],
                     parent_browse_title=data['result_browse_title'],
                     date_updated = data["date_updated"],
                     download_title = str(data["download_title"]),

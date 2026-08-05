@@ -40,42 +40,39 @@ def create_all_flattened(client):
     v.previous_version AS previous_idc_version,
     v.min_timestamp AS v_min_timestamp,
     v.max_timestamp AS v_max_timestamp,
-    v.hashes AS v_hashes,
-    v.sources AS v_sources,
-    c.collection_id,
-    c.idc_collection_id,
+    v.hash AS v_hashes,
+    c.collection_name,
+    REPLACE( REPLACE( LOWER(c.collection_name), '-', '_'), ' ', '_') collection_id,
+    c.idc_collection_uuid,
     c.uuid AS c_uuid,
     c.min_timestamp AS c_min_timestamp,
     c.max_timestamp AS c_max_timestamp,
-    c.hashes AS c_hashes,
-    c.sources AS c_sources,
+    c.hash AS c_hash,
     c.init_idc_version AS c_init_idc_version,
     c.rev_idc_version AS c_rev_idc_version,
     c.final_idc_version AS c_final_idc_version,
     c.redacted AS c_redacted,
-    p.submitter_case_id,
+    p.patientid,
     p.idc_case_id,
     p.uuid AS p_uuid,
     p.min_timestamp AS p_min_timestamp,
     p.max_timestamp AS p_max_timestamp,
-    p.hashes AS p_hashes,
-    p.sources AS p_sources,
+    p.hash AS p_hash,
     p.init_idc_version AS p_init_idc_version,
     p.rev_idc_version AS p_rev_idc_version,
     p.final_idc_version AS p_final_idc_version,
     p.redacted AS p_redacted,
-    st.study_instance_uid,
+    st.studyinstanceuid,
     st.uuid AS st_uuid,
     st.min_timestamp AS st_min_timestamp,
     st.max_timestamp AS st_max_timestamp,
     st.study_instances,
-    st.hashes AS st_hashes,
-    st.sources AS st_sources,
+    st.hash AS st_hash,
     st.init_idc_version AS st_init_idc_version,
     st.rev_idc_version AS st_rev_idc_version,
     st.final_idc_version AS st_final_idc_version,
     st.redacted AS st_redacted,
-    se.series_instance_uid,
+    se.seriesinstanceuid,
     se.uuid AS se_uuid,
     se.min_timestamp AS se_min_timestamp,
     se.max_timestamp AS se_max_timestamp,
@@ -84,18 +81,16 @@ def create_all_flattened(client):
     se.source_url,
     se.versioned_source_doi,
     CONCAT('https://doi.org/', se.versioned_source_doi) versioned_source_url,
-    se.hashes AS se_hashes,
-    se.sources AS se_sources,
+    se.hash AS se_hash,
     se.init_idc_version AS se_init_idc_version,
     se.rev_idc_version AS se_rev_idc_version,
     se.final_idc_version AS se_final_idc_version,
     se.excluded se_excluded,
     se.redacted AS se_redacted,
-    i.sop_instance_uid,
+    i.sopinstanceuid,
     i.uuid AS i_uuid,
     i.timestamp as i_timestamp,
     i.hash AS i_hash,
-    i.source AS i_source,
     i.size AS i_size,
     i.excluded AS i_excluded,
     i.init_idc_version AS i_init_idc_version,
@@ -140,15 +135,14 @@ def create_all_sources(client):
 
     query = f"""
 with basics as (
-  SELECT distinct 
-  af.collection_id collection_name,
-  REPLACE( REPLACE( LOWER(af.collection_id), '-', '_'), ' ', '_') collection_id, 
+SELECT DISTINCT 
+  af.collection_name,
+  af.collection_id, 
   af.source_doi, 
   af.source_url, 
-  i_source source,
-  if(not dtc.type is null, dtc.type, 'Open') Type,
-  if(not dtc.access is NULL, dtc.access, 'Public') Access,
-  if(ms.metadata_sunset is NULL, 0, CAST(ms.metadata_sunset AS INT64)) metadata_sunset
+  IF(not dtc.type is null, dtc.type, 'Open') Type,
+  IF(not dtc.access is NULL, dtc.access, 'Public') Access,
+  IF(ms.metadata_sunset is NULL, 0, CAST(ms.metadata_sunset AS INT64)) metadata_sunset
 FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_flattened` af
 LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.doi_to_access` dtc
 ON af.source_doi = dtc.source_doi
@@ -163,10 +157,10 @@ SELECT
   if(Type='Open', 'idc-open-data', if(Type='Cr', 'idc-open-cr', if(Type='Defaced', 'idc-open-idc1', NULL))) pub_gcs_bucket,
   if(Type='Open', 'idc-open-data', if(Type='Cr', 'idc-open-data-cr', if(Type='Defaced', 'idc-open-data-two', NULL))) pub_aws_bucket,
 FROM basics
--- ORDER by collection_id, source_doi, dev_bucket, pub_gcs_bucket, pub_aws_bucket
+-- ORDER by collection_name, source_doi, dev_bucket, pub_gcs_bucket, pub_aws_bucket
 LEFT JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.analysis_result_dois` ard
 ON basics.source_doi = ard.source_doi
-ORDER by collection_id, basics.source_doi, pub_gcs_bucket, pub_aws_bucket
+ORDER by collection_name, basics.source_doi, pub_gcs_bucket, pub_aws_bucket
 """
     # Make an API request to create the view.
     table_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_sources"
@@ -182,11 +176,11 @@ def create_all_joined(client):
     view = bigquery.Table(view_id)
     view.view_query = f"""
 -- SELECT af.*, ac.source, ac.Class, ac.Access, ac.metadata_sunset, ac.dev_bucket, ac.pub_gcs_bucket, ac.pub_aws_bucket
-SELECT af.*, ac.source, ac.Type, ac.Access, ac.metadata_sunset, ac.analysis_result, ac.dev_bucket, ac.pub_gcs_bucket, ac.pub_aws_bucket
+SELECT af.*, ac.Type, ac.Access, ac.metadata_sunset, ac.analysis_result, ac.dev_bucket, ac.pub_gcs_bucket, ac.pub_aws_bucket
 FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_flattened` af
 JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_sources` ac
 ON af.source_doi = ac.source_doi 
-WHERE af.collection_id=ac.collection_name
+WHERE af.collection_name=ac.collection_name
 
   """
     # Make an API request to create the view.
@@ -243,46 +237,42 @@ def create_all_joined_excluded(client):
     print(f"Created {view.table_type}: {str(view.reference)}")
     return view
 
-def create_idc_all_joined(client):
-    view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_all_joined"
+def create_pre_all_joined(client):
+    view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.pre_all_joined"
     view = bigquery.Table(view_id)
     view.view_query = f"""
     SELECT 
-     c.collection_id, 
+     c.collection_name, 
+     REPLACE( REPLACE( LOWER(c.collection_name), '-', '_'), ' ', '_') collection_id,
      c.hash c_hash,
-     c.redacted c_redacted,
-     p.submitter_case_id, 
+     p.patientid, 
      p.hash p_hash,
-     p.redacted p_redacted,
-     st.study_instance_uid, 
+     st.studyinstanceuid, 
      st.hash st_hash,
-     st.redacted st_redacted,
-     se.series_instance_uid, 
+     se.seriesinstanceuid, 
      se.hash se_hash, 
      se.excluded se_excluded,
-     se.redacted se_redacted, 
      source_doi, 
      source_url,
      versioned_source_doi,
      CONCAT('https://doi.org/', versioned_source_doi) versioned_source_url,
      analysis_result, 
-     sop_instance_uid, 
+     sopinstanceuid, 
      i.hash i_hash, 
      ingestion_url,
      size,
      i.excluded i_excluded, 
      idc_version,
-     i.redacted i_redacted,
      mitigation
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_collection` c
-     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_patient` p
-     ON c.collection_id = p.collection_id
-     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_study` st
-     ON p.submitter_case_id = st.submitter_case_id
-     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_series` se
-     ON st.study_instance_uid = se.study_instance_uid
-     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.idc_instance` i
-     ON se.series_instance_uid = i.series_instance_uid
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.pre_collection` c
+     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.pre_patient` p
+     ON c.collection_name = p.collection_name
+     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.pre_study` st
+     ON p.patientid = st.patientid
+     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.pre_series` se
+     ON st.studyinstanceuid = se.studyinstanceuid
+     JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.pre_instance` i
+     ON se.seriesinstanceuid = i.seriesinstanceuid
    """
     # Make an API request to create the view.
     client.delete_table(view_id, not_found_ok=True)
@@ -291,49 +281,49 @@ def create_idc_all_joined(client):
     return view
 
 
-def create_pre_all_joined_collections(client):
-    view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.pre_all_joined_collections"
-    view = bigquery.Table(view_id)
-    view.view_query = f"""
-    SELECT 
-     c.collection_name,
-     c.collection_id,
-     c.hash c_hash,
-     p.patientID, 
-     p.hash p_hash,
-     st.StudyInstanceUID, 
-     st.hash st_hash,
-     se.SeriesInstanceUID, 
-     se.hash se_hash, 
-     se.excluded se_excluded,
-     source_doi,
-     source_url,
-     versioned_source_doi,
-     CONCAT('https://doi.org/', versioned_source_doi) versioned_source_url,
-     analysis_result, 
-     SOPInstanceUID, 
-     i.hash i_hash, 
-     ingestion_url,
-     size,
-     i.excluded i_excluded, 
-     idc_version,
-     mitigation,
-     source_file_hash
-    FROM `idc-dev-etl.idc_v0_dev.pre_collection` c
-     JOIN `idc-dev-etl.idc_v0_dev.pre_patient` p
-     ON c.collection_id = p.collection_id
-     JOIN `idc-dev-etl.idc_v0_dev.pre_study` st
-     ON p.collection_id = st.collection_id AND p.patientID = st.patientID
-     JOIN `idc-dev-etl.idc_v0_dev.pre_series` se
-     ON st.StudyInstanceUID = se.StudyInstanceUID
-     JOIN `idc-dev-etl.idc_v0_dev.pre_instance` i
-     ON se.SeriesInstanceUID = i.SeriesInstanceUID
-   """
-    # Make an API request to create the view.
-    client.delete_table(view_id, not_found_ok=True)
-    view = client.create_table(view, exists_ok=True)
-    print(f"Created {view.table_type}: {str(view.reference)}")
-    return view
+# def create_pre_all_joined_collections(client):
+#     view_id = f"{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.pre_all_joined_collections"
+#     view = bigquery.Table(view_id)
+#     view.view_query = f"""
+#     SELECT
+#      c.collection_name,
+#      c.collection_name,
+#      c.hash c_hash,
+#      p.patientID,
+#      p.hash p_hash,
+#      st.StudyInstanceUID,
+#      st.hash st_hash,
+#      se.SeriesInstanceUID,
+#      se.hash se_hash,
+#      se.excluded se_excluded,
+#      source_doi,
+#      source_url,
+#      versioned_source_doi,
+#      CONCAT('https://doi.org/', versioned_source_doi) versioned_source_url,
+#      analysis_result,
+#      SOPInstanceUID,
+#      i.hash i_hash,
+#      ingestion_url,
+#      size,
+#      i.excluded i_excluded,
+#      idc_version,
+#      mitigation,
+#      source_file_hash
+#      FROM `idc-dev-etl.idc_v0_dev.pre_collection` c
+#      JOIN `idc-dev-etl.idc_v0_dev.pre_patient` p
+#      ON c.collection_name = p.collection_name
+#      JOIN `idc-dev-etl.idc_v0_dev.pre_study` st
+#      ON p.collection_name = st.collection_name AND p.patientID = st.patientID
+#      JOIN `idc-dev-etl.idc_v0_dev.pre_series` se
+#      ON st.StudyInstanceUID = se.StudyInstanceUID
+#      JOIN `idc-dev-etl.idc_v0_dev.pre_instance` i
+#      ON se.SeriesInstanceUID = i.SeriesInstanceUID
+#    """
+#     # Make an API request to create the view.
+#     client.delete_table(view_id, not_found_ok=True)
+#     view = client.create_table(view, exists_ok=True)
+#     print(f"Created {view.table_type}: {str(view.reference)}")
+#     return view
 
 
 def create_all_joined_public_and_current(client):
@@ -374,17 +364,17 @@ if __name__ == '__main__':
         # Presume the dataset already exists
         pass
 
-    # create_all_flattened(BQ_client)
-    # create_all_sources(BQ_client)
-    # create_all_joined(BQ_client)
-    # create_all_joined_public(BQ_client)
-    # create_all_joined_public_and_current(BQ_client)
-    # create_all_joined_limited(BQ_client)
-    # create_all_joined_excluded(BQ_client)
-    # create_idc_all_joined(BQ_client)
+    create_all_flattened(BQ_client)
+    create_all_sources(BQ_client)
+    create_all_joined(BQ_client)
+    create_all_joined_public(BQ_client)
+    create_all_joined_public_and_current(BQ_client)
+    create_all_joined_limited(BQ_client)
+    create_all_joined_excluded(BQ_client)
+    create_pre_all_joined(BQ_client)
     # create_pre_all_joined_sources(BQ_client)
 
-    create_pre_all_joined_collections(BQ_client)
+    # create_pre_all_joined_collections(BQ_client)
 
 
 

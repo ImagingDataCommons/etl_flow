@@ -193,13 +193,25 @@ def copy_table(dataset_id, table_name, lst, src_table_id, id_col, intIds):
 # with a list of patient IDs for each collection
 def get_ids(program,collection):
   client = bigquery.Client(project=DEFAULT_PROJECT)
-  query = "select distinct t1.collection_id, PatientID from "+IDC_COLLECTION_ID_SRC+" t1,"+IDC_PATIENT_ID_SRC+" t2 where "
-  if (program is not None):
-    query = query + "Program = '"+ program +"' and "
-  if (collection is not None):
-    query = query + "t1.collection_id = '" + collection + "' and "
-  query = query + "t1.collection_id = t2.collection_id "\
-          "order by t1.collection_id, PatientID"
+  # query = "select distinct t1.collection_id, PatientID from "+IDC_COLLECTION_ID_SRC+" t1,"+IDC_PATIENT_ID_SRC+" t2 where "
+  # if (program is not None):
+  #   query = query + "Program = '"+ program +"' and "
+  # if (collection is not None):
+  #   query = query + "t1.collection_id = '" + collection + "' and "
+  # query = query + "t1.collection_id = t2.collection_id " \
+  #                 "order by t1.collection_id, PatientID"
+
+  if program is not None:
+    where_clause = f"WHERE STARTS_WITH(collection_id, '{program.lower()}')"
+  else:
+    where_clause = ''
+  query = f"""
+  SELECT DISTINCT collection_id, patientid PatientID
+  FROM `{etl_settings.DEV_PROJECT}.idc_v{etl_settings.CURRENT_VERSION}_dev.all_joined_public_and_current`
+  {where_clause}
+  ORDER BY collection_id, patientid 
+  """
+
   progresslogger.info(query)
   job = client.query(query)
   program_Dic={}

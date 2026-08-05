@@ -1055,6 +1055,7 @@
         "tcia": "yes",
         "idc_id": "ispy1"
     },
+
     "ispy2": {
         "notes": "one xlsx file with clinical data",
         "srcs": [
@@ -1069,44 +1070,57 @@
         "tcia": "yes",
         "idc_id": "ispy2"
     },
+
     "ldct_and_projection_data": {
         "notes": "several xlsx files distinguished by ",
-        "uzip": "Clinical-data-Mar-2023.zip",
+        "uzip": "LDCT-and-Projection-Data_CR_HeadChestAbdomen_v4.zip",
         "srcs": [
             [
                 {
-                    "filenm": "Abdomen_v9 Mar 2023.xlsx",
+                    "filenm": "CR_Abdomen_v4 2026_07_21/Abdomen_v11 2026.xlsx",
                     "patientIdIdx": 1,
                     "headrows": [0, 1],
                     "archive": [
-                        "Clinical-data-Mar-2023.zip"
+                        "LDCT-and-Projection-Data_CR_HeadChestAbdomen_v4.zip"
                     ]
                 }
             ],
             [
                 {
-                    "filenm": "Chest_v9 Mar 2023.xlsx",
+                    "filenm": "CR_Chest_v4 2026_07_21/Chest_v11 2026.xlsx",
                     "patientIdIdx": 1,
                     "headrows": [0, 1],
                     "archive": [
-                        "Clinical-data-Mar-2023.zip"
+                        "LDCT-and-Projection-Data_CR_HeadChestAbdomen_v4.zip"
+                    ]
+                }
+            ],
+            [
+                {
+                    "filenm": "CR_Head_v4 2026_07_21/Neuro_v11 2026.xlsx",
+                    "patientIdIdx": 1,
+                    "headrows": [0, 1],
+                    "archive": [
+                        "LDCT-and-Projection-Data_CR_HeadChestAbdomen_v4.zip"
                     ]
                 }
             ]
         ],
         "tabletypes": [
             {
-                "abdomen_v9": "clinical"
+                "abdomen_v11": "clinical"
             },
             {
-                "chest_v9": "clinical"
+                "chest_v11": "clinical"
+            },
+            {
+                "head_v11": "clinical"
             }
         ],
         "case_id": "same",
         "tcia": "yes",
         "idc_id": "ldct_and_projection_data"
     },
-
     "lidc_idri": {
         "notes": "",
         "alternate": [
