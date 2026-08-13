@@ -1071,48 +1071,51 @@
     },
     "ldct_and_projection_data": {
         "notes": "several xlsx files distinguished by ",
-        "uzip": "Clinical-data-Mar-2023.zip",
+        "uzip": "LDCT-and-Projection-Data_CR_HeadChestAbdomen_v4.zip",
+        "archive": [
+            "LDCT-and-Projection-Data_CR_HeadChestAbdomen_v4.zip"
+        ],
         "srcs": [
             [
                 {
-                    "filenm": "Abdomen_v9 Mar 2023.xlsx",
-                    "patientIdCol": "Case",
+                    "filenm": "CR_Abdomen_v4 2026_07_21/Abdomen_v11 2026.xlsx",
+                    "patientIdCol": "abdomen_case",
                     "headrows": [0, 1],
                     "archive": [
-                        "Clinical-data-Mar-2023.zip"
+                        "CR_Abdomen_v4 2026_07_21.zip"
                     ]
                 }
             ],
             [
                 {
-                    "filenm": "Chest_v9 Mar 2023.xlsx",
-                    "patientIdCol": "Case",
+                    "filenm": "CR_Chest_v4 2026_07_21/Chest_v11 2026.xlsx",
+                    "patientIdCol": "chest_case",
                     "headrows": [0, 1],
                     "archive": [
-                        "Clinical-data-Mar-2023.zip"
+                        "CR_Chest_v4 2026_07_21.zip"
                     ]
                 }
             ],
             [
                 {
-                    "filenm": "Neuro_v9 Mar 2023.xlsx",
-                    "patientIdCol": "Case",
+                    "filenm": "CR_Head_v4 2026_07_21/Neuro_v11 2026.xlsx",
+                    "patientIdCol": "head_case",
                     "headrows": [0, 1],
                     "archive": [
-                        "Clinical-data-Mar-2023.zip"
+                        "CR_Head_v4 2026_07_21.zip"
                     ]
                 }
             ]
         ],
         "tabletypes": [
             {
-                "abdomen_v9": "clinical"
+                "abdomen_v11": "clinical"
             },
             {
-                "chest_v9": "clinical"
+                "chest_v11": "clinical"
             },
             {
-                "neuro_v9": "clinical"
+                "head_v11": "clinical"
             }
         ],
         "case_id": "same",

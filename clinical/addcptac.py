@@ -195,7 +195,7 @@ def get_ids(program,collection):
   client = bigquery.Client(project=DEFAULT_PROJECT)
   query = "select distinct t1.collection_id, PatientID from "+IDC_COLLECTION_ID_SRC+" t1,"+IDC_PATIENT_ID_SRC+" t2 where "
   if (program is not None):
-    query = query + "Program = '"+ program +"' and "
+    query = query + "LOWER(Program) = LOWER('" + program + "') and "
   if (collection is not None):
     query = query + "t1.collection_id = '" + collection + "' and "
   query = query + "t1.collection_id = t2.collection_id "\
