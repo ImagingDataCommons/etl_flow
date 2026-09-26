@@ -36,6 +36,12 @@ Base = declarative_base()
 # These tables define the ETL database. There is a separate DB for each IDC version.
 # Note that earlier IDC versions used a one-to-many schema.
 
+# This table maps a source_doi to the has of the most recent manifest against which the corresponding
+# original_source or analysis_result was revised
+class Manifest_Hash_Map(Base):
+    __tablename__ = 'manifest_hash_map'
+    source_doi = Column(String, primary_key=True, comment='source_doi of original_source or analysis result')
+    manifest_hash = Column(String, nullable=True, comment='md5 hash of most recent manifest')
 
 # Flattened idc hierarchy (idc_collection, idc_patient,...). The underlying PSQL is a view.
 class IDC_All_Joined(Base):
@@ -693,6 +699,7 @@ class IDC_Instance(Base):
     idc_version = Column(Integer, comment='IDC version when this instance was added/revised')
     redacted = Column(Boolean, default=False, comment="True if object has been redacted")
     mitigation = Column(String, default="", comment="ID of the mitigation which redacted this instance")
+    source_file_url = Column(String, comment="GCS URL of the file from which series was derived")
     source_file_hash = Column(String, default="", comment="md5 hash of the source file from which this instance was derived")
 
     seriess = relationship("IDC_Series", back_populates="instances")

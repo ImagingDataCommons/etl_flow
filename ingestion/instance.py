@@ -26,7 +26,7 @@ from idc.models import Version, Instance, IDC_Instance
 from sqlalchemy import select,delete
 from google.cloud import storage
 from utilities.tcia_helpers import  get_TCIA_instances_per_series_with_hashes
-from ingestion.utilities.utils import validate_hashes, md5_hasher, copy_disk_to_gcs, copy_gcs_to_gcs
+from ingestion.utilities.utils import validate_hashes, md5_hasher, copy_disk_to_gcs, copy_gcs_to_gcs, validate_hash_string
 
 # successlogger = logging.getLogger('root.success')
 # progresslogger = logging.getLogger('root.progress')
@@ -55,7 +55,7 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
         # It will write the zip to a file dicom/<series_instance_uid>.zip in the
         # working directory, and expand the zip to directory dicom/<series_instance_uid>
         hashes = get_TCIA_instances_per_series_with_hashes(args.dicom_dir, series)
-        # Validate that the files on disk have the expected hashes.
+        # Validate that the files on disk have the hash in manifest from the zip
         if not validate_hashes(args, collection, patient, study, series, hashes):
             # If validation fails, return. None of the instances will have the done bit set to True
             return
@@ -96,13 +96,13 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
                     return
 
             instance = instances[SOPInstanceUID]
-            # # If an instance is already done, don't need to do anything more
-            # if instance.done:
-            #     # Delete file. We already have it.
-            #     os.remove("{}/{}/{}".format(args.dicom_dir, series.uuid, dcm))
-            #     progresslogger.debug("      p%s: Instance %s previously done, ", args.pid, series.uuid)
-            #
-            #     continue
+            # If an instance is already done, don't need to do anything more
+            if instance.done:
+                # Delete file. We already have it.
+                os.remove("{}/{}/{}".format(args.dicom_dir, series.uuid, dcm))
+                progresslogger.debug("      p%s: Instance %s previously done, ", args.pid, series.uuid)
+
+                continue
 
             # Validate that DICOM IDs match what we are expecting
             try:
@@ -138,7 +138,8 @@ def build_instances_tcia(sess, args, collection, patient, study, series):
             os.rename(file_name, blob_name)
 
             instance.hash = md5_hasher(blob_name)
-            if len(instance.hash) != 32:
+            # if len(instance.hash) != 32:
+            if not validate_hash_string(instance.hash):
                 breakpoint()
                 errlogger.error("       p%s: Hash failed for %s/%s/%s/%s/%s", args.pid,
                     collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid, SOPInstanceUID)
@@ -190,6 +191,13 @@ def build_instances_idc(sess, args, collection, patient, study, series):
         if not instance.done:
             # Copy the instance and validate the hash
             instance.hash = src_instance_metadata[instance.sop_instance_uid]['hash']
+            if not validate_hash_string(instance.hash):
+                breakpoint()
+                errlogger.error("       p%s: Hash failed for %s/%s/%s/%s/%s", args.pid,
+                    collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid, instance.sop_instance_uid)
+                # Return without marking all instances done. This will be prevent the series from being done.
+                return
+
             instance.size = copy_gcs_to_gcs(args, client, args.prestaging_idc_bucket,
                             series, instance, src_instance_metadata[instance.sop_instance_uid]['ingestion_url'])
             if instance.size == 0:

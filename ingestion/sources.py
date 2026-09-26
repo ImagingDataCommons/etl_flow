@@ -14,10 +14,10 @@
 # limitations under the License.
 #
 import time
-from utilities.tcia_helpers_v4 import get_hash
+from utilities.tcia_helpers import get_hash, get_tcia_instance_hash
 from utilities.tcia_helpers import  get_TCIA_studies_per_patient, get_TCIA_patients_per_collection,\
     get_TCIA_series_per_study, get_TCIA_instance_uids_per_series, get_collection_values_and_counts,\
-    get_tcia_instance_hash, get_access_token
+    get_access_token
 from idc.models  import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance, instance_source
 from sqlalchemy import select
 from ingestion.utilities.get_collection_dois_urls_licenses import get_patient_dois_idc, \
@@ -197,30 +197,61 @@ class TCIA(Source):
         except Exception as exc:
             errlogger.error('Exception %s in src_instance_hash', exc)
             raise Exception('Exception %s in src_instance_hash', exc)
-        if result:
+        if result is not None:
             return result.content.decode()
         else:
             errlogger.info('get_hash failed for instance %s', sop_instance_uid)
             raise Exception('get_hash failed for instance %s', sop_instance_uid)
 
+    # def get_instance_hash(self, sop_instance_uid, access_token=None, refresh_token=None):
+    #     self.lock.acquire()
+    #     try:
+    #         # result = get_instance_hash(sop_instance_uid, self.access_token)
+    #         result = get_tcia_instance_hash(sop_instance_uid, self.access[0])
+    #         if result.status_code == 401:
+    #             # # Refresh the token and try once more to get the hash
+    #             # self.access_token, self.refresh_token = refresh_access_token(self.refresh_token)
+    #             # Get a new access token
+    #             self.access_token, self.refresh_token = get_access_token()
+    #             result = get_tcia_instance_hash(sop_instance_uid, self.access_token)
+    #             if result.status_code != 200:
+    #                 result = None
+    #         elif result.status_code != 200:
+    #             result = None
+    #     finally:
+    #         self.lock.release()
+    #         return result
+
+
     def get_instance_hash(self, sop_instance_uid, access_token=None, refresh_token=None):
-        self.lock.acquire()
-        try:
-            # result = get_instance_hash(sop_instance_uid, self.access_token)
-            result = get_tcia_instance_hash(sop_instance_uid, self.access[0])
-            if result.status_code == 401:
-                # # Refresh the token and try once more to get the hash
-                # self.access_token, self.refresh_token = refresh_access_token(self.refresh_token)
-                # Get a new access token
-                self.access_token, self.refresh_token = get_access_token()
-                result = get_tcia_instance_hash(sop_instance_uid, self.access_token)
-                if result.status_code != 200:
-                    result = None
-            elif result.status_code != 200:
-                result = None
-        finally:
-            self.lock.release()
-            return result
+        # self.lock.acquire()
+        # result = get_instance_hash(sop_instance_uid, self.access_token)
+        MAXTRIES = 5
+        tries = 0
+        while True:
+            try:
+                result = get_tcia_instance_hash(sop_instance_uid, self.access[0])
+                if result.status_code == 200:
+                    return result
+                elif result.status_code == 500:
+                    tries += 1
+                    if tries == MAXTRIES:
+                        errlogger.error(
+                            f'Failed to get hash for instance {sop_instance_uid} ')
+                        return None
+                    time.sleep(pow(2, tries))
+                else:
+                    errlogger.error(f'Unhandled status_code {result.status_code} getting hash for instance {sop_instance_uid} ')
+                    exit(1)
+            except Exception as exc:
+                tries += 1
+                if tries == MAXTRIES:
+                    errlogger.error(f'Error {exc} getting instance hash for instance {sop_instance_uid}; try {tries} ')
+                    raise exc;
+                time.sleep(pow(2,tries))
+
+
+
 
 
 class IDC(Source):

@@ -1,0 +1,93 @@
+#
+# Copyright 2015-2021, Institute for Systems Biology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Populate the DB with data for the next IDC version
+
+import os
+import sys
+import argparse
+import logging
+from logging import DEBUG, INFO
+from datetime import datetime, timedelta
+import shutil
+from multiprocessing import Lock, shared_memory
+from idc.models import Base, Version, Collection
+from utilities.tcia_helpers import get_access_token
+from utilities.sqlalchemy_helpers import sa_session
+from utilities.logging_config import successlogger, errlogger, progresslogger, rootlogger
+from ingestion.utilities.utils import list_skips
+from ingestion.version import clone_version, build_version
+from python_settings import settings
+from ingestion.all_sources import All_Sources
+
+DICOM_DIR = '/mnt/disks/idc-etl/dicom' # Directory in which to expand downloaded zip files')
+
+
+def ingest(args):
+    # Create a local working directory into which data
+    # from TCIA is copied
+    if os.path.isdir('{}'.format(args.dicom_dir)):
+        shutil.rmtree('{}'.format(args.dicom_dir))
+    os.mkdir('{}'.format(args.dicom_dir))
+
+    with sa_session() as sess:
+        # Get a sharable NBIA access token
+        access = shared_memory.ShareableList(get_access_token())
+        args.access = access
+
+        args.skipped_tcia_collections = list_skips(sess, args.skipped_tcia_collections)
+        # args.skipped_idc_collections = list_skips(sess, 'idc', args.skipped_idc_collections)
+
+        # Create a table of collections for which tcia or idc ingestion or both, are to be skipped.
+        # Populate with tcia skips
+        skipped_collections = \
+            {collection_id:[True, False] for collection_id in args.skipped_tcia_collections}
+        # Now add idc skips
+        for collection_id in args.skipped_idc_collections:
+            if collection_id in skipped_collections:
+                skipped_collections[collection_id][1] = True
+            else:
+                skipped_collections[collection_id] = [False, True]
+        args.skipped_collections = skipped_collections
+        all_sources = All_Sources(args.pid, sess, settings.CURRENT_VERSION, args.access,
+                                  args.skipped_tcia_collections, args.skipped_idc_collections, Lock())
+
+        version = sess.query(Version).filter(Version.version == settings.CURRENT_VERSION).first()
+        collection = next(collection for collection in version.collections if collection.collection_id ==args.collection)
+        for patient in collection.patients:
+            for study in patient.studies:
+                for series in study.series:
+                    src_idc_hashes = all_sources.src_series_hashes(self, study, series, skipped_sources)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--num_processes', type=int, default=16, help="Number of concurrent processes")
+
+    parser.add_argument('--collection', default='EA1141', help='Collection to validate')
+
+
+    args = parser.parse_args()
+    args.pid = 0 # Default process ID
+    args.dicom_dir = DICOM_DIR
+
+    print("{}".format(args), file=sys.stdout)
+
+    rootlogger.setLevel(INFO)
+    successlogger.setLevel(INFO)
+    progresslogger.setLevel(INFO)
+
+    ingest(args)

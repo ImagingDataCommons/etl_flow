@@ -25,9 +25,8 @@ from utilities.sqlalchemy_helpers import sa_session
 from utilities.logging_config import successlogger, errlogger, progresslogger
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--collection_ids', default='BoneMarrowWSI-PediatricLeukemia', help='Collection to be egested')
+    parser.add_argument('--collection_ids', default='EA1141', help='Collection to be egested')
     args = parser.parse_args()
 
     with sa_session(False) as sess:

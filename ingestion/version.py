@@ -16,6 +16,7 @@
 
 import time
 from datetime import datetime, timedelta
+from utilities.tcia_helpers import set_nlst_servers, restore_default_servers
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from uuid import uuid4
 from idc.models import instance_source, Version, Collection
@@ -81,17 +82,28 @@ def expand_version(sess, args, all_sources, version):
             progresslogger.info(f'p%s: Excluding collection {idc_objects[idc_object].collection_id}. Skipped in all sources.')
             idc_objects.pop(idc_object)
 
+    # if args.collection:
+    #     idc_objects = {key:data for key, data in idc_objects.items() if data.collection_id == args.collection}
+
     # Collections that are not previously known about by any source.
     new_objects = sorted( [id for id in collections \
                            if id not in idc_objects])
+
     # An object in IDC will continue to exist if any non-skipped source has the object or IDC's object has a
     # skipped source. I.E. if an object has a skipped source then, we can't ask the source about it so assume
     # it exists.
     existing_objects = [obj for id, obj in idc_objects.items() if \
         id in collections or any([a and b for a, b in zip(obj.sources, is_skipped(args.skipped_collections, id))])]
+
     # Collections that are no longer known about by any source
     retired_objects = [obj for id, obj in idc_objects.items() \
        if not obj in existing_objects]
+
+    if args.collection:
+        collection_id = next( id for id, data in collections.items() if  data['collection_id'] == args.collection )
+        new_objects = [id for id in new_objects if collection_id in new_objects]
+        existing_objects = [data for data in existing_objects if data.collection_id == args.collection]
+        retired_objects = [data for data in retired_objects if data.collection_id == args.collection]
 
     for idc_collection_id in sorted(new_objects,
             key=lambda idc_collection_id: collections[idc_collection_id]['collection_id']):
@@ -119,7 +131,7 @@ def expand_version(sess, args, all_sources, version):
         progresslogger.info('p%s: Collection %s is new', args.pid, new_collection.collection_id)
 
     for collection in existing_objects:
-        print(f"Check {collection.collection_id} for revisions")
+        # print(f"Check {collection.collection_id} for revisions")
         # if not collection.collection_id in skipped:
         idc_hashes = collection.hashes
         if collection.collection_id in args.skipped_collections:
@@ -235,8 +247,12 @@ def build_version(sess, args, all_sources, version):
         collection_index = f'{idc_collections.index(collection) + 1} of {len(idc_collections)}'
         if not collection.done:
             progresslogger.info(f'Building collection {collection.collection_id}')
-            build_collection(sess, args, all_sources, collection_index, version, collection)
-            pass
+            try:
+                if collection.collection_id == "NLST":
+                    set_nlst_servers()
+                build_collection(sess, args, all_sources, collection_index, version, collection)
+            finally:
+                restore_default_servers()
         else:
             progresslogger.info("p%s: Collection %s, %s, previously built", args.pid, collection.collection_id, collection_index)
 

@@ -59,7 +59,8 @@ def egest_series(sess, series):
                     Instance.final_idc_version == settings.PREVIOUS_VERSION).first()
                 prev_instance.final_idc_version = 0
                 # series.instances.append(prev_instance)
-        progresslogger.info('        Removed instance %s from series %s', instance.sop_instance_uid,
+        else:
+            progresslogger.info('        Removed instance %s from series %s', instance.sop_instance_uid,
                        series.series_instance_uid)
     series.expanded = False
     series.done = False
@@ -75,6 +76,8 @@ def egest_study(sess, study):
     while study.seriess:
         series = study.seriess[0]
         study.seriess.remove(series)
+        progresslogger.info('      Removed series %s from study %s', series.series_instance_uid,
+                            study.study_instance_uid)
         # If the version of the series was new in this version, delete it
         if study.rev_idc_version == series.rev_idc_version :
             egest_series(sess, series)
@@ -90,7 +93,6 @@ def egest_study(sess, study):
                     Series.final_idc_version == settings.PREVIOUS_VERSION).first()
                 prev_series.final_idc_version = 0
                 # study.seriess.append(prev_series)
-        progresslogger.info('      Removed series %s from study %s', series.series_instance_uid, study.study_instance_uid)
     study.expanded = False
     study.done = False
     study.sources = [False,False]
@@ -120,7 +122,8 @@ def egest_patient(sess, patient):
                     Study.final_idc_version == settings.PREVIOUS_VERSION).first()
                 prev_study.final_idc_version = 0
                 # patient.studies.append(prev_study)
-        progresslogger.info('    Removed study %s from patient %s', study.study_instance_uid, patient.submitter_case_id)
+        else:
+            progresslogger.info('    Removed study %s from patient %s', study.study_instance_uid, patient.submitter_case_id)
     patient.expanded = False
     patient.done = False
     patient.sources = [False,False]
@@ -152,7 +155,8 @@ def egest_collection(sess, collection):
                 # breakpoint()
                 ### Why are we doing the following? Isn't prev_patient a child of some previous version of collection?
                 # collection.patients.append(prev_patient)
-        progresslogger.info('  Removed patient %s from collection %s', patient.submitter_case_id, collection.collection_id)
+        else:
+            progresslogger.info('  Removed patient %s from collection %s', patient.submitter_case_id, collection.collection_id)
     collection.expanded = False
     collection.done = False
     collection.sources = [False,False]
@@ -187,7 +191,8 @@ def egest_version(sess, version, collections_ids = []):
                     ### Why are we doing the following? Isn't prev_collection a child of some previous version of version?
                     ### Seems doing this will prevent deleting the version unless it can somehow cascade.
                     version.collections.append(prev_collection)
-            progresslogger.info('  Removed collection %s from version %s', collection.collection_id, version.version)
+            else:
+                progresslogger.info('  Removed collection %s from version %s', collection.collection_id, version.version)
 
         version.expanded = False
         version.done = False
@@ -196,9 +201,9 @@ def egest_version(sess, version, collections_ids = []):
         version.final_idc_version = 0
     else:
         for collection in version.collections:
-            version.collections.remove(collection)
+            # version.collections.remove(collection)
             if collection.collection_id in collections_ids:
-            # If the version of the collection was new in this version, delete it
+                # If the collection was revised in this version, delete it
                 if version.version == collection.rev_idc_version :
                     egest_collection(sess, collection)
                     sess.delete(collection)
@@ -216,7 +221,7 @@ def egest_version(sess, version, collections_ids = []):
                         ### Why are we doing the following? Isn't prev_collection a child of some previous version of version?
                         ### Seems doing this will prevent deleting the version unless it can somehow cascade.
                         version.collections.append(prev_collection)
-                progresslogger.info('  Removed collection %s from version %s', collection.collection_id, version.version)
+                    progresslogger.info('  Removed collection %s revision from version %s', collection.collection_id, version.version)
 
         version.expanded = False
         version.done = False

@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from uuid import uuid4
 from idc.models import instance_source, Version, Collection, Patient
-from ingestion.utilities.utils import accum_sources, delete_bucket, create_prestaging_bucket, is_skipped
+from ingestion.utilities.utils import accum_sources, delete_bucket, create_prestaging_bucket, is_skipped, validate_idc_hash_vector
 from ingestion.patient import clone_patient, build_patient, retire_patient
 from ingestion.all_sources import All_Sources
 from utilities.sqlalchemy_helpers import sa_session
@@ -158,8 +158,9 @@ def expand_collection(sess, args, all_sources, collection):
     n = 0
     for patient in sorted_patients:
         idc_hashes = patient.hashes
+
         # Get the patients hash from each source. If the patient is skipped for a source,
-        # the hash of a source is "". If collection is not revised for a source, the patient'shash for that
+        # the hash of a source is "". If collection is not revised for a source, the patient's hash for that
         # source is unchanged. or the source that does not have
         # the object
         # src_hashes = all_sources.src_patient_hashes(collection.collection_id, patient.submitter_case_id, skipped)
@@ -170,7 +171,7 @@ def expand_collection(sess, args, all_sources, collection):
             except Exception as exc:
                 errlogger.error(f'expand_collection: {exc}, patient: {patient.submitter_case_id}')
 
-        # A source is revised the if idc hashes[source] and the source hash differ and the source is not skipped
+        # A source is revised if idc_hashes and the source hash differ and the source is not skipped
         revised = [(x != y) and  not z for x, y, z in \
                 zip(idc_hashes[:-1], src_hashes, skipped)]
         # If any source is revised, then the object is revised.
@@ -339,6 +340,13 @@ def build_collection(sess, args, all_sources, collection_index, version, collect
         try:
             # Get IDCs vector of collection hashes from the DB
             idc_hashes = all_sources.idc_collection_hashes(collection)
+            if not validate_idc_hash_vector(idc_hashes):
+                breakpoint()
+                errlogger.error("       p%s: Hash failed for %s/%s/%s/%s/%s", args.pid,
+                    collection.collection_id)
+                # Return without marking all instances done. This will be prevent the series from being done.
+                return
+
             # Record the collection hashes
             collection.hashes = idc_hashes
             # The collection's sources vector is the OR of the sources vector of all its patients
