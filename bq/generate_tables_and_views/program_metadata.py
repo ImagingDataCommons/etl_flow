@@ -60,7 +60,7 @@ if __name__ == '__main__':
     parser.add_argument('--dst_project', default='idc-dev-etl')
     parser.add_argument('--bqdataset_name', default=f'idc_v{settings.CURRENT_VERSION}_pub', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default=f'program_metadata', help='BQ table name')
-    parser.add_argument('--comet_branch', default='release/v24', help="idc_comet github branch")
+    parser.add_argument('--comet_branch', default=f'release/v{settings.CURRENT_VERSION}', help="idc_comet github branch")
     parser.add_argument("--path", default="vocabularies/programs.yaml", help="Path from branch to file")
 
     args = parser.parse_args()

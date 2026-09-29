@@ -106,6 +106,7 @@ if __name__ == "__main__":
     from google.cloud import bigquery
 
     # BigQuery details
+    breakpoint()
     bq_project_id = "idc-dev-etl"
     bq_dataset_id = "idc_v24_dev"
     bq_table_id = "study_series"

@@ -316,7 +316,7 @@ def create_all_joined_public_and_current(client):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--comet_branch", default='release/v24')
+    parser.add_argument("--comet_branch", default=f'release/v{settings.CURRENT_VERSION}')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

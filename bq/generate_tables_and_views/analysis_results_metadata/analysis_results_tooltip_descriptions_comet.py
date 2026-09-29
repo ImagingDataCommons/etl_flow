@@ -94,7 +94,7 @@ if __name__ == '__main__':
     parser.add_argument('--bq_dataset_id', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ datasey')
     parser.add_argument('--table_id', default='analysis_results_tooltip_descriptions', help='Table name to which to copy data')
     parser.add_argument('--columns', default=[], help='Columns in df to keep. Keep all if list is empty')
-    parser.add_argument("--comet_branch", default = 'release/v24')
+    parser.add_argument("--comet_branch", default = f'release/v{settings.CURRENT_VERSION}')
 
     args = parser.parse_args()
     print('args: {}'.format(args))

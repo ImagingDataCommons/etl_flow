@@ -57,7 +57,7 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='idc-dev-etl', help='BQ project')
     parser.add_argument('--bq_dataset_id', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ datasey')
     parser.add_argument('--table_id', default='collection_program_map', help='Table name to which to copy data')
-    parser.add_argument("--comet_branch", default = 'release/v24')
+    parser.add_argument("--comet_branch", default = f'release/v{settings.CURRENT_VERSION}')
 
     args = parser.parse_args()
     print('args: {}'.format(args))

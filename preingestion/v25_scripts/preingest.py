@@ -220,6 +220,7 @@ def preingest_original_data_sources(args, existing_hashes):
         progresslogger.info(f'Ingesting from manifest {args.extended_manifest_url}')
         manifest = pd.read_csv(args.extended_manifest_url,
                                sep=',', header=0)
+
         preingest_source(args, manifest)
     else:
         collection_files = get_github_directory_contents_from_comet("collections/original", args.comet_branch)
@@ -283,9 +284,16 @@ def preingest_original_data_sources(args, existing_hashes):
 def preingest_analysis_results(args, existing_hashes):
     if args.extended_manifest_url:
         progresslogger.info(f'Ingesting from manifest {args.extended_manifest_url}')
+
         manifest = pd.read_csv(args.extended_manifest_url,
                                sep=',', header=0)
-        preingest_source(args, manifest)
+        manifest_data = {
+            "source_doi": args.source_doi,
+            "manifest_url": manifest["url"],
+            "md5_hash": manifest["hash"],
+            "idc_version": args.version
+        }
+        preingest_source(args, manifest, manifest_data)
     else:
         analysis_results_files = get_github_directory_contents_from_comet("collections/analysis", args.comet_branch)
         for analysis_result in analysis_results_files:
@@ -348,8 +356,9 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
     parser.add_argument("--comet_branch", default='release/v25')
     parser.add_argument("--extended_manifest_url",
-            default="", \
+            default="gs://j2kfixup/images/etl_validated_627eda2332f59a01119b5ceaec5717e2-hcmi_cmdc.csv", \
                         help='Process this manifest if not null')
+    parser.add_argument("--source_doi", default='10.5281/zenodo.17381396')
     parser.add_argument("--skipped_extended_manifests", default=[], \
                         help='Skip processing these manifests')
 

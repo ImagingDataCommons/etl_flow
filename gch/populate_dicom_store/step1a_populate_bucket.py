@@ -111,8 +111,112 @@ def build_dones_table(args):
     )
     return table.num_rows
 
+
+# Delete retired instance from bucket
+def delete_instances(args, client, uids, n):
+    try:
+        done = 0
+        dst_bucket = client.bucket(args.import_bucket_name)
+        for row in uids:
+            dst_blob_id = row['dst_blob_id']
+            BUCKET_TRIES = 10
+            for i in range(BUCKET_TRIES):
+                dst_blob = dst_bucket.blob(dst_blob_id)
+                try:
+                    dst_blob.delete()
+                    successlogger.info(f'{dst_blob_id}')
+                    break
+                except TooManyRequests as exc0:
+                    errlogger.warning(
+                        f"p{args.id}: Blob: Too many requests: {repr(exc0)};  {exc0}")
+                    sleep(1)
+                except ServiceUnavailable as exc0:
+                    errlogger.warning(
+                        f"p{args.id}: Blob: Service unavailable: {repr(exc0)};  {exc0}")
+                    sleep(1)
+                except NotFound as exc:
+                    errlogger.error(
+                        f"p{args.id}: Blob: Source blob {row['bucket']}/{dst_blob_id} not found")
+                    break
+            if i == BUCKET_TRIES:
+                errlogger.error(
+                    f"p{args.id}: Failed to create bucket)")
+
+            done += 1
+        progresslogger.info(f"p{args.id}: {done + n}of{len(uids) + n}")
+    except Exception as exc2:
+        # breakpoint()
+        errlogger.error(f'p{args.id}: copy: exception type: {repr(exc2)}; {exc2}; row = {row}')
+    return
+
+def deleter(input, args):
+    client = storage.Client()
+    for uids, n in iter(input.get, 'STOP'):
+        try:
+            delete_instances(args, client, uids, n)
+        except Exception as exc3:
+            # breakpoint()
+            errlogger.error(f'p{args.id}: worker, exception type: {repr(exc3)} exception {exc3}')
+    return
+
+def remove_deleted_blobs(args):
+    client = bigquery.Client()
+    dones = build_dones_table(args)
+    query = f"""
+WITH
+  deleted_instances AS (
+    SELECT DISTINCT CONCAT(se_uuid, '/', i_uuid, '.dcm') dst_blob_id
+    FROM `{settings.DEV_PROJECT}.idc_v{args.version}_dev.all_joined_public`
+    WHERE se_final_idc_version = {args.version -1 } 
+    ORDER BY dst_blob_id
+  )
+    SELECT deleted_instances.dst_blob_id
+    FROM deleted_instances
+    LEFT JOIN {args.dones_table_id} dones
+    ON deleted_instances.dst_blob_id = dones.blob_id
+    WHERE dones.blob_id IS Null
+    ORDER BY blob_id 
+    """
+
+    query_job = client.query(query)
+    result = query_job.result()
+    destination = query_job.destination
+    destination = client.get_table(destination)
+
+    progresslogger.info(f'p{0}: {dones} of {dones+destination.num_rows} completed')
+
+    num_processes = args.processes
+    processes = []
+    task_queue = Queue()
+    # Start worker processes
+    for process in range(num_processes):
+        args.id = process + 1
+        processes.append(
+            Process(group=None, target=deleter, args=(task_queue, args)))
+        processes[-1].start()
+
+    # Populate the staging bucket
+    n = dones
+    for page in client.list_rows(destination, page_size=args.batch).pages:
+        uuids = [{'dst_blob_id':row.dst_blob_id} \
+            for row in page]
+        if uuids:
+            task_queue.put((uuids,n))
+        n += args.batch
+
+    # Tell child processes to stop
+    for i in range(num_processes):
+        task_queue.put('STOP')
+
+    # Wait for process to terminate
+    for process in processes:
+        progresslogger.info(f'Joining process: {process.name}, {process.is_alive()}')
+        process.join()
+
+
+
 # Populate a bucket with instances to be inserted in the DICOM store
-def copy_some_instances(args, client, uids, n):
+def add_instances(args, client, uids, n):
     try:
         done = 0
         dst_bucket = client.bucket(args.import_bucket_name)
@@ -177,54 +281,21 @@ def copy_some_instances(args, client, uids, n):
         errlogger.error(f'p{args.id}: copy: exception type: {repr(exc2)}; {exc2}; row = {row}')
     return
 
-def worker(input, args):
+
+def adder(input, args):
     client = storage.Client()
     for uids, n in iter(input.get, 'STOP'):
         try:
-            copy_some_instances(args, client, uids, n)
+            add_instances(args, client, uids, n)
         except Exception as exc3:
             # breakpoint()
             errlogger.error(f'p{args.id}: worker, exception type: {repr(exc3)} exception {exc3}')
     return
 
 
-def populate_import_buckets(args):
+def add_new_revised_blobs(args):
     client = bigquery.Client()
     dones = build_dones_table(args)
-
-
-
-    # query = f"""
-    # WITH alls AS (
-    #     SELECT
-    #       CONCAT(se_uuid, '/', i_uuid, '.dcm') blob_id,
-    #     # If this series is new/revised in this version and we
-    #     # have not merged new instances into dev buckets
-    #     IF(se_rev_idc_version = {args.version} and not {args.merged},
-    #         # We use the premerge url prefix
-    #         CONCAT('idc_v', {args.version},
-    #             '_',
-    #             i_source,
-    #             '_',
-    #             REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_')
-    #             ),
-    #
-    #     #else
-    #         # This instance is not new so use the public GCS bucket
-    #         pub_gcs_bucket) bucket
-    #     FROM
-    #       `{settings.DEV_PROJECT}.idc_v{args.version}_dev.all_joined_public_and_current`
-    #     WHERE pub_gcs_bucket = '{args.pub_gcs_bucket}'
-    #     {f"AND collection_id IN {args.collections}" if args.collections else ""}
-    # )
-    # SELECT alls.*
-    # FROM alls
-    # LEFT JOIN {args.dones_table_id} dones
-    # ON alls.blob_id = dones.blob_id
-    # WHERE dones.blob_id IS Null
-    # ORDER BY blob_id
-    # """
-
 
     query = f"""
 WITH
@@ -246,10 +317,11 @@ WITH
     FROM `{settings.DEV_PROJECT}.idc_v{args.version}_dev.all_joined_public_and_current` ajpc
     LEFT JOIN previous_se_uuid psu
       ON ajpc.i_uuid = psu.i_uuid
+    WHERE se_rev_idc_version = {args.version}
   ),
   alls AS (
         SELECT
-         IF(se_rev_idc_version = {args.version}  and not {args.merged},
+         IF(not {args.merged},
             # The instance is unchanged but its series has changed so the blob must be copied from the previous blob
             # but renamed
             IF(i_rev_idc_version <> {args.version} ,
@@ -258,12 +330,12 @@ WITH
                 CONCAT(se_uuid, '/', i_uuid, '.dcm')), 
         #else
             CONCAT(se_uuid, '/', i_uuid, '.dcm')) src_blob_id,
-        
+
          CONCAT(se_uuid, '/', i_uuid, '.dcm') dst_blob_id,
-        
+
         # If this series and instance are new/revised in this version and we 
         # have not merged new instances into dev buckets, then it should be copied from a staging bucket
-        IF(se_rev_idc_version = {args.version} and i_rev_idc_version = {args.version} and not {args.merged},
+        IF(i_rev_idc_version = {args.version} and not {args.merged},
             # We use the premerge url prefix
             CONCAT('idc_v', {args.version}, 
                 '_',
@@ -293,7 +365,7 @@ WITH
     destination = query_job.destination
     destination = client.get_table(destination)
 
-    progresslogger.info(f'p{0}: {dones} of {dones+destination.num_rows} completed')
+    progresslogger.info(f'p{0}: {dones} of {dones + destination.num_rows} completed')
 
     num_processes = args.processes
     processes = []
@@ -302,16 +374,16 @@ WITH
     for process in range(num_processes):
         args.id = process + 1
         processes.append(
-            Process(group=None, target=worker, args=(task_queue, args)))
+            Process(group=None, target=adder, args=(task_queue, args)))
         processes[-1].start()
 
     # Populate the staging bucket
     n = dones
     for page in client.list_rows(destination, page_size=args.batch).pages:
-        uuids = [{'src_blob_id':row.src_blob_id, 'dst_blob_id':row.dst_blob_id, 'bucket':row.bucket} \
-            for row in page]
+        uuids = [{'src_blob_id': row.src_blob_id, 'dst_blob_id': row.dst_blob_id, 'bucket': row.bucket} \
+                 for row in page]
         if uuids:
-            task_queue.put((uuids,n))
+            task_queue.put((uuids, n))
         n += args.batch
 
     # Tell child processes to stop
@@ -326,14 +398,16 @@ WITH
 
 def populate_buckets(args):
     for suffix in [
-        'idc-open-idc1',
-        'idc-open-cr',
+        # 'idc-open-idc1',
+        # 'idc-open-cr',
         'idc-open-data'
     ]:
         args.pub_gcs_bucket = suffix
-        args.import_bucket_name = f'dicom_store_import_v{args.version}_{suffix}'
-        create_import_bucket(args)
-        populate_import_buckets(args)
+        # args.import_bucket_name = f'dicom_store_import_v{args.version}_{suffix}'
+        args.import_bucket_name = f'dicom_store_import_v24_{suffix}'
+        # create_import_bucket(args)
+        # remove_deleted_blobs(args)
+        add_new_revised_blobs(args)
 
 if __name__ == '__main__':
     version = settings.CURRENT_VERSION
@@ -342,7 +416,7 @@ if __name__ == '__main__':
     parser.add_argument('--client', default=storage.Client())
     parser.add_argument('--collections', default=(), help='Collections to include. If empty, include all collections')
     parser.add_argument('--bucket_project', default='nci-idc-bigquery-data', help='Project in which to build buckets')
-    parser.add_argument('--processes', default=16)
+    parser.add_argument('--processes', default=512)
     parser.add_argument('--batch', default=100)
     parser.add_argument('--dones_table_id', default='idc-dev-etl.whc_dev.step1_dones', help='BQ table from which to import dones')
     parser.add_argument('--log_dir', default=settings.LOG_DIR)

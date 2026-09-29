@@ -210,9 +210,9 @@ def build_instances_idc(sess, args, collection, patient, study, series):
             assert instance.ingestion_url is not None and instance.ingestion_url != ""
             total_size += instance.size
             instance.done = True
-    progresslogger.debug("        p%s: Series %s: instances: %s, gigabytes: %.2f, rate: %.2fMB/s",
+            progresslogger.debug("        p%s: Series %s: instances: %s, gigabytes: %.2f, rate: %.2fMB/s",
                      args.pid, series.series_instance_uid,
                      len(series.instances),
                      total_size/(2**30),
                      (total_size/(time.time() - start))/(2**20)
-                     )
+                         )

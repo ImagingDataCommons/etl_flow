@@ -236,6 +236,7 @@ def expand_collection(sess, args, all_sources, collection):
         progresslogger.info(patient.submitter_case_id)
 
     collection.expanded = True
+
     sess.commit()
     return
 

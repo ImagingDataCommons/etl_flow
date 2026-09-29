@@ -16,19 +16,15 @@
 #
 
 import argparse
-import os
+import settings
 import sys
 import json
 from google.cloud import bigquery
 from utilities.bq_helpers import load_BQ_from_json, delete_BQ_Table
 from bq.bq_utilities import dataframe_to_bq, get_github_directory_contents_from_comet, \
     get_data_from_comet
-from utilities.tcia_helpers import get_tcia_collection_manager_data
 from utilities.logging_config import progresslogger, errlogger
 from python_settings import settings
-from bq.bq_utilities import read_json_to_dataframe
-import requests
-import pandas as pd
 
 data_collections_metadata_schema = [
     bigquery.SchemaField('collection_name', 'STRING', mode='REQUIRED', description='Collection name as used externally by IDC webapp'),
@@ -69,6 +65,20 @@ data_collections_metadata_schema = [
             ),
             bigquery.SchemaField('citation', 'STRING', mode='NULLABLE',
                                  description='Citation to be used for this source'),
+            bigquery.SchemaField(
+                "provenance",
+                "RECORD",
+                fields=[
+                    bigquery.SchemaField('data_contributor', 'STRING', mode='REQUIRED',
+                                         description='Party that prepared and published this DICOM component to IDC'),
+                    bigquery.SchemaField('source_data_provider', 'STRING', mode='REQUIRED',
+                                         description='Party that gave the source material to the contributor — upstream of data_contributor, not a repeat of it. UNKNOWN when an upstream exists but is not recorded'),
+                    bigquery.SchemaField('deidentification_party', 'STRING', mode='REQUIRED',
+                                         description='Party that performed de-identification. NOT_APPLICABLE where there is no identifiable human subject data: analysis results, synthetic/phantom data, and non-human subjects'),
+                    bigquery.SchemaField('dicom_conversion_by', 'STRING', mode='REQUIRED',
+                                         description='Party that produced the DICOM representation. NOT_APPLICABLE when the data was already DICOM; NOT_DOCUMENTED when a conversion happened but the converting party is not recorded')
+                ]
+            ),
             bigquery.SchemaField('Access', 'STRING', mode='NULLABLE', description='DEPRECATED: All IDC data is public'),
             bigquery.SchemaField('ImageTypes', 'STRING', mode='NULLABLE',
                                  description='DEPRECATED: Duplicate of modalities'),
@@ -186,7 +196,7 @@ def add_analysis_results_sources(client, all_collections_metadata):
             collection_metadata['sources'].append(
                 dict(
                     source_id=source['analysis_result_id'].lower().replace('-', '_').replace(' ', '_'),
-                    source_title=source['title'],
+                    source_title=source['analysis_result_title'],
                     source_type='analysis_result',
                     source_doi=source['source_doi'],
                     source_url=source['source_url'],
@@ -245,6 +255,12 @@ def generate_collection_metadata():
                         license_short_name = source['license']['short_name']
                     ),
                     citation = source['citation'],
+                    provenance = dict(
+                        data_contributor = source['provenance']['data_contributor'],
+                        source_data_provider = source['provenance']['source_data_provider'],
+                        deidentification_party = source['provenance']['deidentification_party'],
+                        dicom_conversion_by = source['provenance']['dicom_conversion_by']
+                    ),
                     Access = 'Public',
                     ImageTypes = ''
                 )
@@ -304,7 +320,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--bqtable_name', default='original_collections_metadata', help='BQ table name')
-    parser.add_argument("--comet_branch", default = 'release/v24')
+    parser.add_argument("--comet_branch", default = f'release/v{settings.CURRENT_VERSION}')
     parser.add_argument('--use_cached_metadata', default=False)
     parser.add_argument('--cached_metadata_file', default='cached_included_metadata.json', help='Where to cache metadata')
 
