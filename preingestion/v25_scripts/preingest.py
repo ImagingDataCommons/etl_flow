@@ -354,16 +354,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--processes', default=0)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument("--comet_branch", default='release/v25')
+    parser.add_argument("--comet_branch", default=f'release/v{settings.CURRENT_VERSION}')
     parser.add_argument("--extended_manifest_url",
-            default="gs://j2kfixup/images/etl_validated_627eda2332f59a01119b5ceaec5717e2-hcmi_cmdc.csv", \
+            default="", \
                         help='Process this manifest if not null')
-    parser.add_argument("--source_doi", default='10.5281/zenodo.17381396')
+    parser.add_argument("--source_doi", default='', help="source_doi of the source of the --extended_manifest_url")
     parser.add_argument("--skipped_extended_manifests", default=[], \
                         help='Skip processing these manifests')
-
-    parser.add_argument('--gen_hashes', default=False, help=' Generate hierarchical hashes of collection if True.')
-    parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

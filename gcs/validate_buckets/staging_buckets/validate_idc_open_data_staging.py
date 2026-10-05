@@ -21,81 +21,71 @@ Validate that th idc-open-pdp-staging bucket holds the correct set of instance b
 import argparse
 import json
 import settings
-
+import pandas as pd
+from base64 import b64decode
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from google.cloud import storage, bigquery
 
 def get_expected_blobs_in_bucket(args):
     client = bigquery.Client()
     query = f"""
-    SELECT distinct CONCAT(series_uuid, '/', instance_uuid,'.dcm') as blob_name
+    SELECT distinct CONCAT(series_uuid, '/', instance_uuid,'.dcm') as blob_name, instance_hash AS md5_hash
     FROM `{settings.PDP_PROJECT}.idc_v{settings.CURRENT_VERSION}.auxiliary_metadata` 
-    WHERE instance_revised_idc_version = {settings.CURRENT_VERSION}
-    AND split(gcs_url,'/')[offset(2)] = 'idc-open-data'
+    WHERE series_revised_idc_version = {settings.CURRENT_VERSION}
+--    AND split(gcs_url,'/')[offset(2)] = 'idc-open-data'
+    AND gcs_bucket = 'idc-open-data'
     """
-    query_job = client.query(query)  # Make an API request.
-    query_job.result()  # Wait for the query to complete.
 
-    # Get the destination table for the query results.
-    # All queries write to a destination table. If a destination table is not
-    # specified, the BigQuery populates it with a reference to a temporary
-    # anonymous table after the query completes.
-    destination = query_job.destination
-    destination = client.get_table(destination)
-    with open(args.expected_blobs, 'w') as f:
-        for page in client.list_rows(destination, page_size=args.batch).pages:
-            rows = [f'{row["blob_name"]}\n' for row in page]
-            f.write(''.join(rows))
+    df = bigquery.Client().query(query).to_dataframe()
+    df.to_csv(args.expected_blobs, index=False)
 
-
-# def get_found_blobs_in_bucket(args):
-#     client = storage.Client()
-#     bucket = client.bucket(args.bucket)
-#     page_token = ""
-#     # iterator = client.list_blobs(bucket, page_token=page_token, max_results=args.batch)
-#     iterator = client.list_blobs(bucket, versions=False, page_token=page_token, page_size=args.batch)
-#     with open(args.found_blobs, 'w') as f:
-#         for page in iterator.pages:
-#             blobs = [f'{blob.name}\n' for blob in page]
-#             f.write(''.join(blobs))
 
 
 def get_found_blobs_in_bucket(args):
     client = storage.Client()
     bucket = client.bucket(args.bucket)
-    page_token = ""
-    # iterator = client.list_blobs(bucket, page_token=page_token, max_results=args.batch)
-    with open(args.found_blobs, 'w') as f:
-        series_iterator = client.list_blobs(bucket, versions=False, page_token=page_token, page_size=args.batch, \
-                                            prefix='', delimiter='/')
-        for page in series_iterator.pages:
-            for prefix in page.prefixes:
-                instance_iterator = client.list_blobs(bucket, versions=False, page_token=page_token, page_size=args.batch, \
-                                         prefix=prefix)
-                for page in instance_iterator.pages:
-                    blobs = [f'{blob.name}\n' for blob in page]
-                    f.write(''.join(blobs))
+    blobs = bucket.list_blobs()
+    data = []
+    for blob in blobs:
+        data.append({
+            'blob_name': blob.name,
+            'md5_hash': b64decode(blob.md5_hash).hex() if blob.md5_hash else ""
+        })
+    df = pd.DataFrame(data)
+    df.to_csv(args.found_blobs, index=False)
 
 
 def check_all_instances(args):
     try:
-        expected_blobs = set(open(args.expected_blobs).read().splitlines())
+        expected_data = pd.read_csv(args.expected_blobs)
     except:
         get_expected_blobs_in_bucket(args)
-        expected_blobs = set(open(args.expected_blobs).read().splitlines())
-        # json.dump(psql_blobs, open(args.blob_names), 'w')
+        expected_data = pd.read_csv(args.expected_blobs)
 
     try:
-        found_blobs = set(open(args.found_blobs).read().splitlines())
+        found_data = pd.read_csv(args.found_blobs)
     except:
         get_found_blobs_in_bucket(args)
-        found_blobs = set(open(args.found_blobs).read().splitlines())
-        # json.dump(psql_blobs, open(args.blob_names), 'w')
+        found_data = pd.read_csv(args.found_blobs)
 
-    if found_blobs == expected_blobs:
+    not_expected= expected_data[~expected_data['blob_name'].isin(found_data['blob_name'])]
+    not_found = found_data[~found_data['blob_name'].isin(expected_data['blob_name'])]
+
+    if len(not_found):
+        errlogger.error(f"Expected blobs were not found in bucket {args.bucket}")
+    if len(not_expected):
+        errlogger.error(f"Found blobs were not expected in bucket {args.bucket}")
+    if len(not_found) == 0 and len(not_expected) == 0:
         successlogger.info(f"Bucket {args.bucket} has the correct set of blobs")
-    else:
-        errlogger.error(f"Bucket {args.bucket} does not have the correct set of blobs")
+        # We now test whether the hashes match
+        merged = pd.merge(expected_data, found_data, on="blob_name", how="inner")
+        non_matching_hashes = merged[merged['md5_hash_x'] != merged['md5_hash_y']]
+        non_null_non_matching_hashes = non_matching_hashes.dropna(subset=['md5_hash_y'])
+        if len(non_matching_hashes):
+            progresslogger.info(f'There are {len(non_matching_hashes)} non-matching hashes')
+            progresslogger.info(f'{len(non_null_non_matching_hashes)} of these are not Nulls')
+
+
 
     return
 

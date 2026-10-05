@@ -3,7 +3,7 @@ import json
 from os import listdir
 from os.path import isfile, join, splitext
 import sys
-from clinical.addcptac import addTables, CPTAC_SRC, TCGA_SRC, TCGA_REC_SRC, HTAN_SRCS, HTAN_TABLES
+from addcptac import addTables, CPTAC_SRC, TCGA_SRC, TCGA_REC_SRC, HTAN_SRCS, HTAN_TABLES
 from python_settings import settings
 
 from utilities.logging_config import successlogger, progresslogger, errlogger, warninglogger
@@ -308,15 +308,18 @@ def load_all(project, dataset, version, last_dataset, last_version, srcfiles):
 
     create_meta_summary(project, dataset)
     create_meta_table(project, dataset)
-    filenm = "./json/clin_" + CURRENT_VERSION + "/" + CURRENT_VERSION + "_table_metadata.json"
+    # filenm = "./json/clin_" + CURRENT_VERSION + "/" + CURRENT_VERSION + "_table_metadata.json"
+    filenm = "../json/clin_" + CURRENT_VERSION + "/" + CURRENT_VERSION + "_table_metadata.json"
     load_meta_summary(project, dataset, bqSrcMetaTbl, filenm)
 
     # filenm = "./clinical/json/clin_" + CURRENT_VERSION + "/" + CURRENT_VERSION + "_column_metadata.json"
-    filenm = "./json/clin_" + CURRENT_VERSION + "/" + CURRENT_VERSION + "_column_metadata.json"
+    # filenm = "./json/clin_" + CURRENT_VERSION + "/" + CURRENT_VERSION + "_column_metadata.json"
+    filenm = "../json/clin_" + CURRENT_VERSION + "/" + CURRENT_VERSION + "_column_metadata.json"
     load_meta(project, dataset, filenm, bqSrcMetaCol)
 
     # dirnm="./clinical/json/clin_"+CURRENT_VERSION
-    dirnm = "./json/clin_" + CURRENT_VERSION
+    # dirnm = "./json/clin_" + CURRENT_VERSION
+    dirnm = "../json/clin_" + CURRENT_VERSION
     load_clin_files(project, dataset, dirnm, srcfiles)
 
 

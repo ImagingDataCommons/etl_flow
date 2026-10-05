@@ -120,23 +120,13 @@ FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.manifest_hash_map`
     return df
 
 
-def add_manifest_to_manifest_hash_map(source_doi, manifest_url, md5_hash, idc_version):
-    client = bigquery.Client()
-    query = f"""
-INSERT INTO `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.manifest_hash_map` VALUES
-({source_doi}, {manifest_url}, {md5_hash}, {idc_version})
-    """
-
-    result= client.query(query)
-    return
-
-
 def get_client():
     if not hasattr(_thread_local, "client"):
         _thread_local.client = storage.Client()
     return _thread_local.client
 
 
+# Compute the md5 hash of a blob by streaming the blob contents from GCS.
 def streaming_md5_hasher(bucket_name, blob_name, chunk_size=pow(2, 30)):
     client = get_client()
     blob = client.bucket(bucket_name).blob(blob_name)
@@ -152,7 +142,7 @@ def streaming_md5_hasher(bucket_name, blob_name, chunk_size=pow(2, 30)):
     return md5_hasher.hexdigest()
 
 
-# Compute hashes of all composite blobs
+# Compute hashes of all composite blobs; these are blobs for which the md5 hash is not available.
 def get_computed_hashes(blob_names, bucket_name, max_workers= 2 * os.cpu_count()):
     results = {}
     errors = {}
@@ -173,7 +163,7 @@ def get_computed_hashes(blob_names, bucket_name, max_workers= 2 * os.cpu_count()
 
     return results, errors
 
-
+# Get various metadata from/about a single blob
 def get_metadata_from_a_file(bucket_name, blob_name, chunk_size=pow(2, 30)):
     client = get_client()
     blob = client.bucket(bucket_name).blob(blob_name)
@@ -201,9 +191,10 @@ def get_metadata_from_a_file(bucket_name, blob_name, chunk_size=pow(2, 30)):
                 "SOPInstanceUID": instance_id, "instance_hash": hash, "size": blob.size}
 
 
+# Get various metadata from the DICOM files in a source. This includes UIDs, size, hash when available
+# In the case of a deletion, there is no corresponding DICOM file
 def get_dicom_metadata_from_files(manifest, src_bucket, src_subdir, max_workers=2 * os.cpu_count()):
-    # Get various metadata from the DICOM files. This includes UIDs, size, hash when available
-    # In the case of a deletion, there is no corresponding DICOM file
+
     blob_names = {}
     for row in manifest.itertuples():
         if row.operation != "deletion":
@@ -294,7 +285,7 @@ def get_dicom_metadata_from_files(manifest, src_bucket, src_subdir, max_workers=
     return manifest
 
 
-# Validate and cleanup a manifest, and add DICOM ids extracted from the DICOM blobs
+# Cleanup and validate, and add DICOM ids extracted from the DICOM blobs
 def cleanup_and_validate_manifest(src_bucket_id, current_dicom_ids, src_subdir, manifest_id, versioned_source_doi, collection_name_id_pairs):
     try:
         if src_subdir:
@@ -363,7 +354,7 @@ def cleanup_and_validate_manifest(src_bucket_id, current_dicom_ids, src_subdir, 
 
     return manifest
 
-# Get the DICOM UIDs and other values from of instances in a source for the current (last released) IDC version
+# Get the DICOM UIDs and other values of instances in a source, for the current (last released) IDC version
 def get_current_dicom_ids(collection_ids, source_doi):
     client = bigquery.Client()
     query = f"""
@@ -388,6 +379,7 @@ def generate_manifest(args, collection_ids, src_bucket_id, src_subdir, manifest_
     return
 
 
+# Generate an extended manifest for an original source
 def generate_original_sources_manifests(args, existing_hashes, collection_name_id_pairs):
     collection_files = get_github_directory_contents_from_comet("collections/original", args.comet_branch)
     for collection_file in collection_files:
@@ -429,6 +421,7 @@ def generate_original_sources_manifests(args, existing_hashes, collection_name_i
     return
 
 
+# Generate an extended manifest for an analysis result
 def generate_analysis_results_manifests(args, existing_hashes, collection_name_id_pairs):
 
     analysis_results_files = get_github_directory_contents_from_comet("collections/analysis", args.comet_branch)
@@ -492,14 +485,10 @@ FROM `{settings.DEV_PROJECT}.idc_v{settings.PREVIOUS_VERSION}_dev.all_sources`
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--processes', default=0)
     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument("--comet_branch", default='release/v25')
-    parser.add_argument('--regen', default=True, help='If True, regenerate a manifest even is previously generated')
-    parser.add_argument('--validate_hashes', default=False, help='If True, validate manifest instance_hash when GCS does not have md5' )
-
-    parser.add_argument('--gen_hashes', default=False, help=' Generate hierarchical hashes of collection if True.')
-    parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
+    parser.add_argument("--comet_branch", default=f'release/v{settings.CURRENT_VERSION}')
+    parser.add_argument('--regen', default=False, help='If True, regenerate a manifest even is previously generated')
+    parser.add_argument('--validate_hashes', default=True, help='If True, validate manifest instance_hash when GCS does not have md5' )
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
@@ -507,6 +496,7 @@ if __name__ == '__main__':
 
     # Get a dataframe of previously processed manifest hashes
     existing_hashes = get_previous_manifest_hashes()
+
     collection_name_id_pairs = get_collection_name_id_pairs()
     generate_original_sources_manifests(args,existing_hashes, collection_name_id_pairs)
     generate_analysis_results_manifests(args,existing_hashes, collection_name_id_pairs)

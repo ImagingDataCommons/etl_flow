@@ -50,7 +50,21 @@ newest_versioned_source_dois AS (
       (SELECT DISTINCT aj.source_doi, "" versioned_source_doi 
       FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.all_joined_public_and_current` aj
       WHERE i_source='tcia')
-)
+),
+ revised_instances AS (
+    SELECT se_uuid, i_uuid
+    FROM `{settings.DEV_PROJECT}.idc_v{args.version}_dev.all_joined_public_and_current`
+    WHERE se_rev_idc_version = {args.version} AND i_rev_idc_version <> {args.version}
+    ORDER BY collection_id
+  ),
+  previous_se_uuid AS (
+    SELECT DISTINCT ajp.se_uuid previous_se_uuid, ajp.i_uuid
+    FROM `{settings.DEV_PROJECT}.idc_v{args.version}_dev.all_joined_public` ajp
+    JOIN revised_instances
+      ON ajp.i_uuid = revised_instances.i_uuid
+    WHERE se_final_idc_version = {args.version - 1}
+  )
+
 SELECT 
       collection_id as collection_name,
       REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_') AS collection_id,
@@ -74,17 +88,28 @@ SELECT
       st_final_idc_version AS study_final_idc_version,
     --
       series_instance_uid AS SeriesInstanceUID,
-      se_uuid AS series_uuid,
+      # se_uuid AS series_uuid,
+      IF(se_rev_idc_version = {settings.CURRENT_VERSION} and i_rev_idc_version <> {settings.CURRENT_VERSION} and not False,
+                previous_se_uuid,
+            #else
+                se_uuid) AS series_uuid,
+
+      # series_gcs_url
+      # In the premerge case, in the event that some, but not all, instances in
+      # a series are added|revised|deleted, there are will be new blobs corresponding to the unchanged instances. These
+      # will have the new uuid of the revised series. However, there are not, at this stage, actual blobs with the new blob
+      # name: <new_series_uuid>/<current_instance_uuid>.dcm. For each such unrevised instance we use the public bucket and
+      # se_uuid of the blob which the new blob replaces.
+      # Note, for these unrevised blobs, trying to use the just gs://<se_uuid/\* to get all instances
+      # in the series will not get the revised instances.
       CONCAT('gs://',
         # If we are generating series_gcs_url for the public auxiliary_metadata table 
         if('{args.target}' = 'pub', 
---             if( i_source='tcia', aj.pub_gcs_tcia_url, aj.pub_gcs_idc_url), 
             pub_gcs_bucket,
         #else 
-            # We are generating the dev auxiliary_metadata
             # If this series is new in this version and we 
             # have not merged new instances into dev buckets
-            if(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+            if(se_rev_idc_version = {settings.CURRENT_VERSION} and i_rev_idc_version = {args.version} and not {args.merged},
                 # We use the premerge url prefix
                 CONCAT('idc_v', {settings.CURRENT_VERSION}, 
                     '_',
@@ -95,11 +120,16 @@ SELECT
     
             #else
                  # This series is not new so use the public bucket prefix. The dev bucket is archived.
---                  if( i_source='tcia', aj.dev_tcia_url, aj.dev_idc_url)
                 pub_gcs_bucket
                 )
             ), 
-        '/', se_uuid, '/') AS series_gcs_url,
+        '/', 
+        # If the instance is unchanged but its series has changed  we use the se_uuid of the previous version
+        IF(se_rev_idc_version = {args.version} and i_rev_idc_version <> {args.version} and not {args.merged},
+                previous_se_uuid,
+            #else
+                se_uuid),
+         '/') AS series_gcs_url,
       
       # There are no dev S3 buckets, so populate the aws_series_url 
       # the same for both dev and pub versions of auxiliary_metadata
@@ -116,60 +146,116 @@ SELECT
       se_final_idc_version AS series_final_idc_version,
     --
       sop_instance_uid AS SOPInstanceUID,
-      i_uuid AS instance_uuid,
+      aj.i_uuid AS instance_uuid,
+      
+    
+#       CONCAT('gs://',
+#         # If we are generating gcs_url for the public auxiliary_metadata table 
+#         if('{args.target}' = 'pub', 
+#             pub_gcs_bucket,
+#         #else 
+#             # We are generating the dev auxiliary_metadata
+#             # If this instance is new in this version and we 
+#             # have not merged new instances into dev buckets
+#             # the blob is new if the containing series is new,
+#             # but the instance may not be new.
+#             if(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+#                 # We use the premerge url prefix
+#                 CONCAT('idc_v', {settings.CURRENT_VERSION}, 
+#                     '_',
+#                     i_source,
+#                     '_',
+#                     REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_')
+#                     ),  
+#             #else
+#                  # This instance is not new so use the pub bucket prefix; the dev bucket is archived
+#                 pub_gcs_bucket
+#                 )
+#             ), 
+#         '/', se_uuid, '/', aj.i_uuid, '.dcm') as gcs_url,
+
+      # gcs_url
       CONCAT('gs://',
-        # If we are generating gcs_url for the public auxiliary_metadata table 
+        # If we are generating series_gcs_url for the public auxiliary_metadata table 
         if('{args.target}' = 'pub', 
---             if( i_source='tcia', aj.pub_gcs_tcia_url, aj.pub_gcs_idc_url), 
             pub_gcs_bucket,
         #else 
-            # We are generating the dev auxiliary_metadata
-            # If this instance is new in this version and we 
+            # If this series is new in this version and we 
             # have not merged new instances into dev buckets
-            # Note that this about blobs, and thus,because of hierarchical naming,
-            # the blob is new if the containing series is new.
-            if(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+            if(se_rev_idc_version = {settings.CURRENT_VERSION} and i_rev_idc_version = {args.version} and not {args.merged},
                 # We use the premerge url prefix
                 CONCAT('idc_v', {settings.CURRENT_VERSION}, 
                     '_',
                     i_source,
                     '_',
                     REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_')
-                    ),  
+                    ),
+    
             #else
-                 # This instance is not new so use the pub bucket prefix; the dev bucket is archived
---                  if( i_source='tcia', aj.dev_tcia_url, aj.dev_idc_url)
+                 # This series is not new so use the public bucket prefix. The dev bucket is archived.
                 pub_gcs_bucket
                 )
             ), 
-        '/', se_uuid, '/', i_uuid, '.dcm') as gcs_url,
+            '/', 
+        # If the instance is unchanged but its series has changed  we use the se_uuid of the previous version
+        IF(se_rev_idc_version = {args.version} and i_rev_idc_version <> {args.version} and not {args.merged},
+                previous_se_uuid,
+            #else
+                se_uuid),
+         '/', aj.i_uuid, '.dcm') AS gcs_url,
       
-    # If we are generating gcs_bucket for the public auxiliary_metadata table 
-    if('{args.target}' = 'pub', 
-        pub_gcs_bucket, 
-    #else 
-        # We are generating the dev auxiliary_metadata
-        # If this series is new in this version and we 
-        # have not merged new instances into dev buckets
-        if(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
-            # We use the premerge url prefix
-            CONCAT('idc_v', {settings.CURRENT_VERSION}, 
-                '_',
-                i_source,
-                '_',
-                REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_')
-                ),
-        #else
-             # This instance is not new so use the public bucket prefix; the dev bucket is archived
-            pub_gcs_bucket
-            )
-        ) as gcs_bucket,
+    # gcs_bucket
+    # # If we are generating gcs_bucket for the public auxiliary_metadata table 
+    # if('{args.target}' = 'pub', 
+    #     pub_gcs_bucket, 
+    # #else 
+    #     # We are generating the dev auxiliary_metadata
+    #     # If this series is new in this version and we 
+    #     # have not merged new instances into dev buckets
+    #     if(se_rev_idc_version = {settings.CURRENT_VERSION} and not {args.merged},
+    #         # We use the premerge url prefix
+    #         CONCAT('idc_v', {settings.CURRENT_VERSION}, 
+    #             '_',
+    #             i_source,
+    #             '_',
+    #             REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_')
+    #             ),
+    #     #else
+    #          # This instance is not new so use the public bucket prefix; the dev bucket is archived
+    #         pub_gcs_bucket
+    #         )
+    #     ) as gcs_bucket,
+      
+      
+        # gcs_bucket
+        # If we are generating series_gcs_url for the public auxiliary_metadata table 
+        if('{args.target}' = 'pub', 
+            pub_gcs_bucket,
+        #else 
+            # If this series is new in this version and we 
+            # have not merged new instances into dev buckets
+            if(se_rev_idc_version = {settings.CURRENT_VERSION} and i_rev_idc_version = {args.version} and not {args.merged},
+                # We use the premerge url prefix
+                CONCAT('idc_v', {settings.CURRENT_VERSION}, 
+                    '_',
+                    i_source,
+                    '_',
+                    REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_')
+                    ),
+    
+            #else
+                 # This series is not new so use the public bucket prefix.
+                 pub_gcs_bucket
+                 )
+            ) as gcs_bucket,
+
+      
       
       # There are no dev S3 buckets, so populate the aws_url 
       # the same for both dev and pub versions of auxiliary_metadata
       CONCAT('s3://',
         pub_aws_bucket,
-            '/', se_uuid, '/', i_uuid, '.dcm') as aws_url,
+            '/', se_uuid, '/', aj.i_uuid, '.dcm') as aws_url,
       # There are no dev S3 buckets, so populate the aws_bucket 
       # the same for both dev and pub versions of auxiliary_metadata
       pub_aws_bucket aws_bucket,
@@ -188,6 +274,8 @@ SELECT
       ON aj.source_doi = licenses.source_doi
       JOIN newest_versioned_source_dois nvsd
       ON aj.source_doi = nvsd.source_doi
+      LEFT JOIN previous_se_uuid psu
+      ON aj.i_uuid = psu.i_uuid
       ORDER BY
         collection_name, submitter_case_id
 """

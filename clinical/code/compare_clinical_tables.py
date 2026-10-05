@@ -32,12 +32,12 @@ def compare_tables(args):
 
     new_tables = current_tables - previous_tables
     progresslogger.info("\n***New tables")
-    for table_id in new_tables:
+    for table_id in sorted(list(new_tables)):
         progresslogger.info(f'\t{table_id}')
 
     dropped_tables =  previous_tables - current_tables
     progresslogger.info("\n***dropped tables")
-    for table_id in dropped_tables:
+    for table_id in sorted(list(dropped_tables)):
         progresslogger.info(f'\t{table_id}')
 
     progresslogger.info("\n***Revised tables")

@@ -841,6 +841,26 @@
         "tcia": "yes",
         "idc_id": "ea1141"
     },
+    "fdg_pet_ct_lesions": {
+        "notes": "One csv file of clinical data",
+        "srcs": [
+            [
+                {
+                    "filenm": "Clinical-Metadata-FDG-PET_CT-Lesions.csv",
+                    "patientIdCol": "subject_id"
+                }
+            ]
+        ],
+        "tabletypes": [
+            {
+                "clinical": "clinical data"
+            }
+        ],
+        "case_id": "same",
+        "tcia": "yes",
+        "idc_id": "fdg_pt_ct_lesions"
+
+    },
     "hcc_tace_seg": {
         "notes": "one xlsx file with clinical data and a glossary",
         "srcs": [

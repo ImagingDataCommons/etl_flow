@@ -53,11 +53,12 @@ def copy_some_blobs(args, client, urls, n, dones):
     done = 0
     copied = 0
     for blob in urls:
-        blob_name = '/'.join(blob['dev_url'].split('/')[3:])
-        if not blob_name in dones:
+        dev_blob_name = '/'.join(blob['dev_url'].split('/')[3:])
+        pub_blob_name = '/'.join(blob['pub_url'].split('/')[3:])
+        if not pub_blob_name in dones:
             dev_bucket_name=blob['dev_url'].split('/')[2]
             dev_bucket = client.bucket(dev_bucket_name)
-            dev_blob = dev_bucket.blob(blob_name)
+            dev_blob = dev_bucket.blob(dev_blob_name)
             pub_bucket_name = blob['pub_url'].split('/')[2]
 
             # We don't copy directly to the public buckets.
@@ -72,7 +73,7 @@ def copy_some_blobs(args, client, urls, n, dones):
                 errlogger.error(f'Unrecognized destination bucket name: {pub_bucket_name}')
                 exit
             pub_bucket = client.bucket(pub_bucket_name)
-            pub_blob = pub_bucket.blob(blob_name)
+            pub_blob = pub_bucket.blob(pub_blob_name)
             for attempt in range(3):
                 try:
                     rewrite_token = False
@@ -82,14 +83,14 @@ def copy_some_blobs(args, client, urls, n, dones):
                         )
                         if not rewrite_token:
                             break
-                    successlogger.info('%s', blob_name)
-                    progresslogger.info(f'p{args.id}: {done+n}of{len(urls)+n}: {dev_bucket_name}/{blob_name} --> {pub_bucket_name}/{blob_name}')
+                    successlogger.info('%s', pub_blob_name)
+                    progresslogger.info(f'p{args.id}: {done+n}of{len(urls)+n}: {dev_bucket_name}/{dev_blob_name} --> {pub_bucket_name}/{pub_blob_name}')
                     break
                 except Exception as exc:
-                    errlogger.error('p%s: Blob: %s, attempt: %s;  %s', args.id, blob_name, attempt, exc)
+                    errlogger.error('p%s: Blob: %s, attempt: %s;  %s', args.id, pub_blob_name, attempt, exc)
                     time.sleep(5)
             if range == 0:
-                errlogger.error('p%s: Blob: %s, copy failed; {exc}', args.id, blob_name, exc)
+                errlogger.error('p%s: Blob: %s, copy failed; {exc}', args.id, pub_blob_name, exc)
 
         done += 1
     if copied == 0:
@@ -152,7 +153,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Version to work on')
     parser.add_argument('--batch', default=1000)
-    parser.add_argument('--processes', default=32)
+    parser.add_argument('--processes', default=64)
     args = parser.parse_args()
     args.id = 0 # Default process ID
 

@@ -192,40 +192,6 @@ def populate_import_buckets(args):
     client = bigquery.Client()
     dones = build_dones_table(args)
 
-
-
-    # query = f"""
-    # WITH alls AS (
-    #     SELECT
-    #       CONCAT(se_uuid, '/', i_uuid, '.dcm') blob_id,
-    #     # If this series is new/revised in this version and we
-    #     # have not merged new instances into dev buckets
-    #     IF(se_rev_idc_version = {args.version} and not {args.merged},
-    #         # We use the premerge url prefix
-    #         CONCAT('idc_v', {args.version},
-    #             '_',
-    #             i_source,
-    #             '_',
-    #             REPLACE(REPLACE(LOWER(collection_id),'-','_'), ' ','_')
-    #             ),
-    #
-    #     #else
-    #         # This instance is not new so use the public GCS bucket
-    #         pub_gcs_bucket) bucket
-    #     FROM
-    #       `{settings.DEV_PROJECT}.idc_v{args.version}_dev.all_joined_public_and_current`
-    #     WHERE pub_gcs_bucket = '{args.pub_gcs_bucket}'
-    #     {f"AND collection_id IN {args.collections}" if args.collections else ""}
-    # )
-    # SELECT alls.*
-    # FROM alls
-    # LEFT JOIN {args.dones_table_id} dones
-    # ON alls.blob_id = dones.blob_id
-    # WHERE dones.blob_id IS Null
-    # ORDER BY blob_id
-    # """
-
-
     query = f"""
 WITH
   revised_instances AS (
