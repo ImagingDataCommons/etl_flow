@@ -14,7 +14,11 @@ WITH
           `{project}.{dataset}.dicom_metadata`
         WHERE
           # more reliable than Modality = "SEG"
-          SOPClassUID = "1.2.840.10008.5.1.4.1.1.66.4"
+          # 66.4 - Segmentation Storage (BINARY/FRACTIONAL)
+          # 66.7 - Label Map Segmentation Storage (LABELMAP)
+          SOPClassUID IN (
+            "1.2.840.10008.5.1.4.1.1.66.4",
+            "1.2.840.10008.5.1.4.1.1.66.7")
       )
     SELECT
       PatientID,
@@ -90,7 +94,9 @@ WITH
       `{project}.{dataset}.dicom_all`
     WHERE
       Modality = "SEG"
-      AND SOPClassUID = "1.2.840.10008.5.1.4.1.1.66.4"
+      AND SOPClassUID IN (
+        "1.2.840.10008.5.1.4.1.1.66.4",
+        "1.2.840.10008.5.1.4.1.1.66.7")
   ),
   coalesced_ref AS (
     SELECT
