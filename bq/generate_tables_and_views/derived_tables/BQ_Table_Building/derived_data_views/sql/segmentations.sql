@@ -9,12 +9,17 @@ WITH
           SOPInstanceUID,
           FrameOfReferenceUID,
           SegmentSequence,
-          SegmentationType
+          SegmentationType,
+          PixelPaddingValue
         FROM
           `{project}.{dataset}.dicom_metadata`
         WHERE
           # more reliable than Modality = "SEG"
-          SOPClassUID = "1.2.840.10008.5.1.4.1.1.66.4"
+          # 66.4 - Segmentation Storage (BINARY/FRACTIONAL)
+          # 66.7 - Label Map Segmentation Storage (LABELMAP)
+          SOPClassUID IN (
+            "1.2.840.10008.5.1.4.1.1.66.4",
+            "1.2.840.10008.5.1.4.1.1.66.7")
       )
     SELECT
       PatientID,
@@ -76,6 +81,15 @@ WITH
       segs
     CROSS JOIN
       UNNEST(SegmentSequence) AS unnested
+    WHERE
+      # exclude the background segment of labelmap segmentations, identified
+      # by the segment number being the same as the pixel padding value
+      # (COALESCE keeps the segment when any of the values is NULL)
+      COALESCE(
+        NOT (
+          SegmentationType = "LABELMAP"
+          AND unnested.SegmentNumber = PixelPaddingValue),
+        TRUE)
   ),
   sampled_sops AS (
     SELECT
@@ -90,7 +104,9 @@ WITH
       `{project}.{dataset}.dicom_all`
     WHERE
       Modality = "SEG"
-      AND SOPClassUID = "1.2.840.10008.5.1.4.1.1.66.4"
+      AND SOPClassUID IN (
+        "1.2.840.10008.5.1.4.1.1.66.4",
+        "1.2.840.10008.5.1.4.1.1.66.7")
   ),
   coalesced_ref AS (
     SELECT
