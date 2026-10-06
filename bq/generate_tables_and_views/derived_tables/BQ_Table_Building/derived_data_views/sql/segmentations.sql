@@ -9,7 +9,8 @@ WITH
           SOPInstanceUID,
           FrameOfReferenceUID,
           SegmentSequence,
-          SegmentationType
+          SegmentationType,
+          PixelPaddingValue
         FROM
           `{project}.{dataset}.dicom_metadata`
         WHERE
@@ -80,6 +81,15 @@ WITH
       segs
     CROSS JOIN
       UNNEST(SegmentSequence) AS unnested
+    WHERE
+      # exclude the background segment of labelmap segmentations, identified
+      # by the segment number being the same as the pixel padding value
+      # (COALESCE keeps the segment when any of the values is NULL)
+      COALESCE(
+        NOT (
+          SegmentationType = "LABELMAP"
+          AND unnested.SegmentNumber = PixelPaddingValue),
+        TRUE)
   ),
   sampled_sops AS (
     SELECT
