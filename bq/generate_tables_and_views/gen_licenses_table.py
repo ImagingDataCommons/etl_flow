@@ -30,9 +30,9 @@ import pandas as pd
 def construct_license_table_from_comet(args):
     client = bigquery.Client()
     licenses = []
-    collection_file_names = get_github_directory_contents_from_comet("collections/original", branch="release/v24")
+    collection_file_names = get_github_directory_contents_from_comet("collections/original", branch=args.comet_branch)
     for collection_file_name in collection_file_names:
-        collection_data = get_data_from_comet(f"collections/original/{collection_file_name}", branch="release/v24")
+        collection_data = get_data_from_comet(f"collections/original/{collection_file_name}", branch=args.comet_branch)
         for source in collection_data['sources']:
             licenses.append( dict(
                 source_doi = source['concept_doi'] if 'concept_doi' in source else source['source_doi'],
@@ -43,9 +43,9 @@ def construct_license_table_from_comet(args):
                 license_short_name = source['license']['short_name']
             )
         )
-    analysis_files_names = get_github_directory_contents_from_comet("collections/analysis", branch="release/v24")
+    analysis_files_names = get_github_directory_contents_from_comet("collections/analysis", branch=args.comet_branch)
     for analysis_file_name in analysis_files_names:
-        analysis_data = get_data_from_comet(f"collections/analysis/{analysis_file_name}", branch="release/v24")
+        analysis_data = get_data_from_comet(f"collections/analysis/{analysis_file_name}", branch=args.comet_branch)
         licenses.append( dict(
             source_doi = analysis_data['source_doi'],
             source_name = analysis_data['analysis_result_id'],
@@ -84,6 +84,7 @@ if __name__ == '__main__':
     parser.add_argument('--project', default=f'{settings.DEV_PROJECT}')
     parser.add_argument('--bqdataset_name', default=f'idc_v{settings.CURRENT_VERSION}_dev', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default=f'licenses', help='BQ table name')
+    parser.add_argument("--comet_branch", default = f'release/v{settings.CURRENT_VERSION}')
     args = parser.parse_args()
 
     print("{}".format(args), file=sys.stdout)

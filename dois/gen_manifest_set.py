@@ -95,4 +95,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
 
+    # Deal with the case that there are only deletions, not just additions/revisions
+    # This would seem require to changing line 40 above to
+    # AND (aj.i_rev_idc_version = {idc_version} OR aj.i_final_idc_version = {idc_version-1}
+    breakpoint()
     gen_all_manifests(args)

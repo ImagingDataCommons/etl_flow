@@ -117,12 +117,13 @@ def copy_some_instances(args, client, uids, n):
         done = 0
         dst_bucket = client.bucket(args.import_bucket_name)
         for row in uids:
-            blob_id = row['blob_id']
+            src_blob_id = row['src_blob_id']
+            dst_blob_id = row['dst_blob_id']
             BUCKET_TRIES = 10
             for i in range(BUCKET_TRIES):
                 try:
                     src_bucket = client.bucket(row['bucket'])
-                    src_blob = src_bucket.blob(blob_id)
+                    src_blob = src_bucket.blob(src_blob_id)
                     break
                 except AttributeError as exc:
                     errlogger.warning(
@@ -141,7 +142,7 @@ def copy_some_instances(args, client, uids, n):
                     f"p{args.id}: Failed to create bucket)")
                 break
 
-            dst_blob = dst_bucket.blob(blob_id)
+            dst_blob = dst_bucket.blob(dst_blob_id)
             rewrite_token = False
             while True:
                 try:
@@ -149,7 +150,7 @@ def copy_some_instances(args, client, uids, n):
                         src_blob, token=rewrite_token
                     )
                     if not rewrite_token:
-                        successlogger.info(f'{blob_id}')
+                        successlogger.info(f'{dst_blob_id}')
                         break
                 except AttributeError as exc:
                     errlogger.warning(
@@ -165,7 +166,7 @@ def copy_some_instances(args, client, uids, n):
                     sleep(1)
                 except NotFound as exc:
                     errlogger.error(
-                        f"p{args.id}: Blob: Source blob {row['bucket']}/{blob_id} not found")
+                        f"p{args.id}: Blob: Source blob {row['bucket']}/{src_blob_id} not found")
                     break
 
                     break
@@ -192,12 +193,43 @@ def populate_import_buckets(args):
     dones = build_dones_table(args)
 
     query = f"""
-    WITH alls AS (
+WITH
+  revised_instances AS (
+    SELECT se_uuid, i_uuid
+    FROM `{settings.DEV_PROJECT}.idc_v{args.version}_dev.all_joined_public_and_current`
+    WHERE se_rev_idc_version = {args.version} AND i_rev_idc_version <> {args.version}
+    ORDER BY collection_id
+  ),
+  previous_se_uuid AS (
+    SELECT DISTINCT ajp.se_uuid, ajp.i_uuid
+    FROM `{settings.DEV_PROJECT}.idc_v{args.version}_dev.all_joined_public` ajp
+    JOIN revised_instances
+      ON ajp.i_uuid = revised_instances.i_uuid
+    WHERE se_final_idc_version = {args.version - 1}
+  ),
+  all_instances AS (
+    SELECT ajpc.*, psu.se_uuid previous_se_uuid
+    FROM `{settings.DEV_PROJECT}.idc_v{args.version}_dev.all_joined_public_and_current` ajpc
+    LEFT JOIN previous_se_uuid psu
+      ON ajpc.i_uuid = psu.i_uuid
+  ),
+  alls AS (
         SELECT
-          CONCAT(se_uuid, '/', i_uuid, '.dcm') blob_id,
-        # If this series is new/revised in this version and we 
-        # have not merged new instances into dev buckets
-        IF(se_rev_idc_version = {args.version} and not {args.merged},
+         IF(se_rev_idc_version = {args.version}  and not {args.merged},
+            # The instance is unchanged but its series has changed so the blob must be copied from the previous blob
+            # but renamed
+            IF(i_rev_idc_version <> {args.version} ,
+                CONCAT(previous_se_uuid, '/', i_uuid, '.dcm') ,
+            #else
+                CONCAT(se_uuid, '/', i_uuid, '.dcm')), 
+        #else
+            CONCAT(se_uuid, '/', i_uuid, '.dcm')) src_blob_id,
+        
+         CONCAT(se_uuid, '/', i_uuid, '.dcm') dst_blob_id,
+        
+        # If this series and instance are new/revised in this version and we 
+        # have not merged new instances into dev buckets, then it should be copied from a staging bucket
+        IF(se_rev_idc_version = {args.version} and i_rev_idc_version = {args.version} and not {args.merged},
             # We use the premerge url prefix
             CONCAT('idc_v', {args.version}, 
                 '_',
@@ -210,14 +242,14 @@ def populate_import_buckets(args):
             # This instance is not new so use the public GCS bucket
             pub_gcs_bucket) bucket
         FROM
-          `{settings.DEV_PROJECT}.idc_v{args.version}_dev.all_joined_public_and_current`
+          all_instances
         WHERE pub_gcs_bucket = '{args.pub_gcs_bucket}'
         {f"AND collection_id IN {args.collections}" if args.collections else ""}
     )
     SELECT alls.*
     FROM alls
     LEFT JOIN {args.dones_table_id} dones
-    ON alls.blob_id = dones.blob_id
+    ON alls.dst_blob_id = dones.blob_id
     WHERE dones.blob_id IS Null
     ORDER BY blob_id 
     """
@@ -242,7 +274,7 @@ def populate_import_buckets(args):
     # Populate the staging bucket
     n = dones
     for page in client.list_rows(destination, page_size=args.batch).pages:
-        uuids = [{'blob_id':row.blob_id, 'bucket':row.bucket} \
+        uuids = [{'src_blob_id':row.src_blob_id, 'dst_blob_id':row.dst_blob_id, 'bucket':row.bucket} \
             for row in page]
         if uuids:
             task_queue.put((uuids,n))
@@ -276,7 +308,7 @@ if __name__ == '__main__':
     parser.add_argument('--client', default=storage.Client())
     parser.add_argument('--collections', default=(), help='Collections to include. If empty, include all collections')
     parser.add_argument('--bucket_project', default='nci-idc-bigquery-data', help='Project in which to build buckets')
-    parser.add_argument('--processes', default=8)
+    parser.add_argument('--processes', default=16)
     parser.add_argument('--batch', default=100)
     parser.add_argument('--dones_table_id', default='idc-dev-etl.whc_dev.step1_dones', help='BQ table from which to import dones')
     parser.add_argument('--log_dir', default=settings.LOG_DIR)

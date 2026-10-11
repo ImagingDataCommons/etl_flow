@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from uuid import uuid4
 from idc.models import Patient, Study
-from ingestion.utilities.utils import accum_sources, get_merkle_hash, is_skipped
+from ingestion.utilities.utils import accum_sources, get_merkle_hash, is_skipped, validate_idc_hash_vector
 from ingestion.study import clone_study, build_study, retire_study
 from python_settings import settings
 
@@ -205,6 +205,12 @@ def build_patient(sess, args, all_sources, patient_index, version, collection, p
 
              # Get a list of what DB thinks are the patient's hashes
             idc_hashes = all_sources.idc_patient_hashes(patient)
+            if not validate_idc_hash_vector(idc_hashes):
+                breakpoint()
+                errlogger.error("       p%s: Hash failed for %s/%s/%s/%s/%s", args.pid,
+                    collection.collection_id, patient.submitter_case_id)
+                # Return without marking all instances done. This will be prevent the series from being done.
+                return
             patient.hashes = idc_hashes
             patient.sources = accum_sources(patient, patient.studies)
 

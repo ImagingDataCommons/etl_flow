@@ -16,6 +16,7 @@
 
 import shutil
 import os
+import re
 import hashlib
 from base64 import b64decode
 # import logging
@@ -45,7 +46,7 @@ def to_webapp(collection_id):
     return collection_id.lower().replace('-','_').replace(' ','_')
 
 
-def streaming_md5_hasher(blob, chunk_size = pow(2,30)):
+def streaming_md5_hasher(blob, chunk_size = pow(2,20)):
     md5_hasher = hashlib.md5()
     with blob.open(mode="rb") as f:
         i = 0
@@ -105,7 +106,7 @@ def rollback_copy_to_prestaging_bucket(client, args, series):
     for instance in series.instances:
         try:
             results = bucket.blob(f'{series.uuid}/{instance.uuid}.dcm').delete()
-        except:
+        except Exception as exc:
             errlogger.error('p%s: Failed to delete blob %s/%s.dcm during validation rollback',args.pid, series.uuid, instance.uuid)
             raise
 
@@ -117,11 +118,11 @@ def validate_series_in_gcs(args, collection, patient, study, series):
     bucket = client.get_bucket(args.prestaging_tcia_bucket)
     try:
         for instance in series.instances:
-            blob = bucket.blob(f'{series.uuid}/{instance.uuid}.dcm')
-            blob.reload()
-            assert instance.hash == b64decode(blob.md5_hash).hex()
-            assert instance.size == blob.size
-
+            if not instance.done:
+                blob = bucket.blob(f'{series.uuid}/{instance.uuid}.dcm')
+                blob.reload()
+                assert instance.hash == b64decode(blob.md5_hash).hex()
+                assert instance.size == blob.size
     except Exception as exc:
         rollback_copy_to_prestaging_bucket(client, args, series)
         errlogger.error('p%s: GCS validation failed for %s/%s/%s/%s/%s',
@@ -137,9 +138,8 @@ def copy_disk_to_prestaging_bucket(args, series):
         src = f'{args.dicom_dir}/{series.uuid}'
         dst = f'gs://{args.prestaging_tcia_bucket}'
         # breakpoint() # Check if -J parameter is still broken
-        result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
-        # result = run(["gcloud", "storage", "--quiet", "cp", "--recursive", src, dst], check=True,
-        #              stdout=DEVNULL, stderr=STDOUT)
+        # result = run(["gsutil", "-m", "-q", "cp", "-r", src, dst], check=True)
+        result = run(["gcloud", "--quiet", "storage", "cp", "--recursive", src, dst, '--no-user-output-enabled'], check=True)
         if result.returncode :
             errlogger.error('p%s: \tcopy_disk_to_prestaging_bucket failed for series %s', args.pid, series.series_instance_uid)
             raise RuntimeError('p%s: copy_disk_to_prestaging_bucket failed for series %s', args.pid, series.series_instance_uid)
@@ -152,8 +152,8 @@ def copy_disk_to_prestaging_bucket(args, series):
 def delete_bucket(bucket):
     try:
         src = "gs://{}/**".format(bucket)
-        run(["gsutil", "-m", "-q", "rm", src])
-        run(["gsutil", "-q", "rb", f"gs://{bucket}"])
+        run(["gcloud", "storage", "rm", "-R", "-q", "rm", src])
+        # run(["gsutil", "-q", "rb", f"gs://{bucket}"])
         progresslogger.debug("Deleted bucket %s", bucket)
     except Exception as exc:
         errlogger.error("Failed to empty or delete bucket %s", bucket)
@@ -278,3 +278,17 @@ WHERE access = 'Limited'
         skips.append(row.collection_id)
     skips.sort()
     return skips
+
+
+def validate_hash_string(s, expected_length=32):
+    """
+    Verifies that a string matches an exact length and contains only hex characters (0-9, a-f, A-F).
+    """
+    # {length} specifies the exact number of characters required
+    pattern = rf"^[0-9a-fA-F]{{{expected_length}}}$"
+
+    # re.fullmatch checks if the whole string matches the pattern
+    return s == "" or bool(re.fullmatch(pattern, s))
+
+def validate_idc_hash_vector(hash):
+    return validate_hash_string(hash[0]) & validate_hash_string(hash[1]) & validate_hash_string(hash[2])

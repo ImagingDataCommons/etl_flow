@@ -27,9 +27,11 @@
 #
 # The script walks the directory hierarchy from a specified subdirectory of the
 # gcsfuse mount point
-
+import os
+import sys
 import settings
 import json5
+from google.cloud import bigquery
 from idc.models import IDC_Collection, IDC_Patient, IDC_Study, IDC_Series, IDC_Instance
 from utilities.logging_config import successlogger, errlogger, progresslogger
 from base64 import b64decode
@@ -41,7 +43,12 @@ from preingestion.preingestion_code.gen_manifest_from_dicom_metadata import buil
 
 import time
 
-from ingestion.utilities.utils import get_merkle_hash, streaming_md5_hasher
+import argparse
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import hashlib
+from ingestion.utilities.utils import get_merkle_hash #, streaming_md5_hasher
+import threading
+import multiprocessing as mp
 
 from utilities.sqlalchemy_helpers import sa_session
 from google.cloud import storage
@@ -49,11 +56,199 @@ from google.cloud import storage
 from multiprocessing import Queue, Process
 from queue import Empty
 
-import requests
-import yaml
-from io import StringIO
+from pydicom import dcmread
 
 
+_thread_local = threading.local()
+
+
+def get_client():
+    if not hasattr(_thread_local, "client"):
+        _thread_local.client = storage.Client()
+    return _thread_local.client
+
+
+# def get_client():
+#     global _client
+#     if _client is None:
+#         _client = storage.Client()
+#     return _client
+
+def streaming_md5_hasher(bucket_name, blob_name, chunk_size=pow(2, 20)):
+    client = get_client()
+    blob = client.bucket(bucket_name).blob(blob_name)
+    md5_hasher = hashlib.md5()
+    with blob.open(mode="rb", chunk_size=chunk_size) as f:
+        i = 0
+        while True:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+            md5_hasher.update(chunk)
+
+    return md5_hasher.hexdigest()
+
+
+# Compute hashes of all composite blobs
+def get_computed_hashes(blob_names, bucket_name, max_workers=2 * 2 * os.cpu_count()):
+    results = {}
+    errors = {}
+    max_workers = min(len(blob_names), max_workers)
+    ctx = mp.get_context("spawn")  # fresh interpreter per child, no inherited thread/lock state
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        #    with ProcessPoolExecutor(max_workers=max_workers, mp_context=ctx) as executor:
+        future_to_name = {
+            executor.submit(streaming_md5_hasher, bucket_name, name): name
+            for name in blob_names
+        }
+        for future in as_completed(future_to_name):
+            name = future_to_name[future]
+            try:
+                results[name] = future.result()
+            except Exception as e:
+                errors[name] = str(e)
+
+    return results, errors
+
+
+def get_metadata_from_a_file(bucket_name, blob_name, chunk_size=pow(2, 30)):
+    client = get_client()
+    blob = client.bucket(bucket_name).blob(blob_name)
+    with blob.open('rb') as f:
+        try:
+            r = dcmread(f, specific_tags=['PatientID', 'StudyInstanceUID', 'SeriesInstanceUID',
+                                          'SOPInstanceUID'], stop_before_pixels=True)
+            patient_id = r.PatientID
+            study_id = r.StudyInstanceUID
+            series_id = r.SeriesInstanceUID
+            instance_id = r.SOPInstanceUID
+        except Exception as exc:
+            errlogger.error(f'pydicom failed for {blob.name}: {exc}')
+            exit(1)
+        try:
+            hash = b64decode(blob.md5_hash).hex()
+        except TypeError:
+            hash = ""
+
+        # progresslogger.info(f'Got {blob.name} metadata')
+        # blob_subname = blob.name.removeprefix(f'{args.subdir}/') if args.subdir else blob.name
+
+        return {"blob_name": blob_name, "PatientID": patient_id, "StudyInstanceUID": study_id,
+                "SeriesInstanceUID": series_id,
+                "SOPInstanceUID": instance_id, "instance_hash": hash, "size": blob.size}
+
+
+def get_dicom_metadata_from_files(manifest, src_bucket, src_subdir, max_workers=2 * os.cpu_count()):
+    blob_names = {}
+    for row in manifest.itertuples():
+        if row.relative_gcs_url.startswith('/'):
+            blob_names[row.relative_gcs_url[1:]] = row.relative_gcs_url
+        elif row.relative_gcs_url.startswith('./'):
+            if src_subdir:
+                # Remove leading "."
+                blob_names[f'{src_subdir}{row.relative_gcs_url[1:]}'] = row.relative_gcs_url
+            else:
+                # Remove leading "./"
+                blob_names[f'{row.relative_gcs_url[2:]}'] = row.relative_gcs_url
+
+        else:
+            errlogger.error(f'Invalid relative_gcs_url: {row.relative_gcs_url}')
+            exit(1)
+
+    results = {}
+    errors = {}
+    ctx = mp.get_context("spawn")
+    max_workers = min(len(blob_names), max_workers)
+    # with ProcessPoolExecutor(max_workers=max_workers, mp_context=ctx) as executor:
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        future_to_name = {
+            executor.submit(get_metadata_from_a_file, src_bucket, blob_name): relative_gcs_url
+            for blob_name, relative_gcs_url in blob_names.items()
+        }
+        for future in as_completed(future_to_name):
+            name = future_to_name[future]
+            try:
+                results[name] = future.result()
+            except Exception as e:
+                errors[name] = str(e)
+    if errors != {}:
+        errlogger.error(f'Errors while getting blob metadata: {errors}')
+        exit(1)
+
+    progresslogger.info(f'Got metadata for {len(results)} blobs')
+
+    missing_hashes = []
+
+    for relative_gcs_url, metadata in results.items():
+        for id, datum in metadata.items():
+            mask = manifest["relative_gcs_url"] == relative_gcs_url
+            if id in ["SOPInstanceUID"]:
+                if datum != manifest.loc[mask, id].item():
+                    errlogger.error(
+                        f'{id} mismatch for {relative_gcs_url}: Manifest: {manifest.loc[mask, id].item()}, DICOM: {datum}')
+                    exit(1)
+            elif id == "instance_hash":
+                if datum == "":
+                    # Couldn't get the hash from the blob metadata. Will need to compute it
+                    missing_hashes.append(relative_gcs_url)
+                else:
+                    if datum != manifest.loc[mask, id].item():
+                        errlogger.error(
+                            f'instance_hash mismatch for {relative_gcs_url}: Manifest: {manifest.loc[mask, id].item()}, DICOM: {datum}')
+                        exit(1)
+            else:
+                manifest.loc[mask, id] = datum
+
+    stream_hash_blob_names = {metadata['blob_name']: metadata['size'] for relative_gcs_url, metadata in results.items()
+                              if metadata['instance_hash'] == ""}
+    progresslogger.info(
+        f'Computing {len(stream_hash_blob_names)} hashes')
+    start = time.time()
+    results, errors = get_computed_hashes(stream_hash_blob_names, src_bucket)
+    elapsed = time.time() - start
+    bytes = sum(size for blob_name, size in stream_hash_blob_names.items())
+    rate = bytes / elapsed
+    progresslogger.info(
+        f'Computed {len(stream_hash_blob_names)} hashes: Elapsed: {elapsed} sec, Total size: {bytes / pow(10, 9)} GB, Ingestion BW: {rate / pow(10, 9)}  GB/s')
+
+    for blob_name, hash in results.items():
+        if manifest.loc[manifest['blob_name'] == blob_name, 'instance_hash'].item() != hash:
+            errlogger.error(f'Hash validation error for {blob_name}')
+            exit(1)
+
+    return manifest
+
+
+# Validate and cleanup a manifest, and add DICOM ids extracted from the DICOM blobs
+def cleanup_and_validate_manifest(src_bucket_id, src_subdir, manifest_id):
+    try:
+        if src_subdir:
+            manifest = pd.read_csv(f"gs://{src_bucket_id}/{src_subdir}/{manifest_id}", sep=',', header=0)
+        else:
+            manifest = pd.read_csv(f"gs://{src_bucket_id}/{manifest_id}", sep=',', header=0)
+    except Exception as exc:
+        errlogger.error(f'Failed to read manifest: {exc}')
+        exit(-1)
+
+    # Convert NaNs to ""
+    manifest = manifest.fillna('')
+
+    # Remove whitespace
+    manifest = manifest.map(lambda x: x.strip())
+
+    if "blob_name" not in manifest.columns:
+        manifest["blob_name"] = ""
+    if "StudyInstanceUID" not in manifest.columns:
+        manifest["StudyInstanceUID"] = ""
+    if "SeriesInstanceUID" not in manifest.columns:
+        manifest["SeriesInstanceUID"] = ""
+    if "size" not in manifest.columns:
+        manifest['size'] = 0
+
+    missing_hashes = []
+
+    # Add DICOM IDs to the manifest
+    manifest = get_dicom_metadata_from_files(manifest, src_bucket_id, src_subdir)
 
 
 def build_instance(args, bucket, series, instance_data):
@@ -211,10 +406,10 @@ def build_patient(args, bucket, collection, patient_data, source_doi, versioned_
 
 
 PATIENT_TRIES=5
-def worker(input, output, args, collection_id, source_doi, versioned_source_doi):
+def worker(input, output, args, collection_id, src_bucket_id, source_doi, versioned_source_doi):
     with sa_session() as sess:
         client = storage.Client()
-        bucket = client.bucket(args.src_bucket)
+        bucket = client.bucket(src_bucket_id)
         # with sa_session() as sess:
         collection = sess.query(IDC_Collection).filter(IDC_Collection.collection_id == collection_id).first()
         for more_args in iter(input.get, 'STOP'):
@@ -238,27 +433,14 @@ def worker(input, output, args, collection_id, source_doi, versioned_source_doi)
                 errlogger.error("p%s, Failed to process patient: %s", args.pid, patient_data.iloc[0]["patientID"])
                 sess.rollback()
 
-def build_collections(args, sess, manifest_data, sep=','):
+
+
+
+
+def process_additions_and_replacements(args, sess, manifest_data, source_doi, versioned_source_doi):
     client = storage.Client()
 
     dones = open(successlogger.handlers[0].baseFilename).read().splitlines()
-
-    # Rename columns in case they are misnamed:
-    manifest_data = manifest_data.rename( columns = {
-        "Filename": "ingestion_url",
-        "Patient ID": "patientID",
-        "Study Instance UID": "StudyInstanceUID",
-        "Series Instance UID": "SeriesInstanceUID",
-        "SOP Instance UID": "SOPInstanceUID"
-        }
-    )
-    # Remove whitespace
-    manifest_data = manifest_data.map(lambda x: x.strip())
-
-    # If a manifest is provided and there is a single collection, and no collection_id column
-    if args.manifest_id and args.collection_id and "collection_id" not in manifest_data:
-        manifest_data['collection_id'] = args.collection_id
-
     done_data = pd.DataFrame(dones, columns=['SOPInstanceUID'])
 
     all_collection_ids = sorted(manifest_data['collection_id'].unique())
@@ -287,12 +469,12 @@ def build_collections(args, sess, manifest_data, sep=','):
 
         args.pid = 0
         if args.processes == 0:
-            bucket = client.bucket(args.src_bucket)
+            bucket = client.bucket(args.src_bucket_id)
             for patient_id in patient_in_collection_ids:
                 # Data for this patient
                 patient_data = collection_data[collection_data['patientID'] == patient_id]
                 patient_index = f'{all_patient_ids.index(patient_id) + 1} of {len(all_patient_ids)}'
-                build_patient(args, bucket, collection, patient_data, args.source_doi, args.versioned_source_doi)
+                build_patient(args, bucket, collection, patient_data, source_doi, versioned_source_doi)
         else:
             processes = []
             # Create queues
@@ -348,97 +530,39 @@ def build_collections(args, sess, manifest_data, sep=','):
     return all_collection_ids
 
 
-def get_conversion_metadata_from_json(collection_id):
-    breakpoint() # Deal with analysis results
-    file_path = f"{settings.PROJECT_PATH}/bq/generate_tables_and_views/table_generation_jsons/idc_original_collections_metadata.json5"
-    with open(file_path) as f:
-        metadata = json5.load(f)
-    all_collections_metadata = pd.DataFrame(metadata)
-    try:
-        collection_metadata = all_collections_metadata[all_collections_metadata["collection_name"] == collection_id].squeeze(axis=0).to_dict()
-    except Exception as exc:
-        errlogger.error(f'No entry for collection_id {collection_id}')
-        exit(1)
-    conversion_metadata = dict(
-        source_bucket = collection_metadata['source_bucket'],
-        source_subdirectory = collection_metadata['source_subdirectory'],
-        source_doi = collection_metadata['source_doi'],
-        versioned_source_doi = collection_metadata['current_versioned_source_doi'],
-        manifest_id = collection_metadata["manifest_id"]
-    )
-    return conversion_metadata
 
+def process_deletions(args, sess, manifest):
+    return manifest
 
-def get_conversion_metadata_from_comet(collection_name, branch="current"):
-    collection_id = collection_name.lower().replace('-','_').replace(' ', '_')
-    file_url = f"https://raw.githubusercontent.com/ImagingDataCommons/idc-comet/{branch}/collections/original/{collection_id}.yaml"
-    response = requests.get(file_url)
-    if response.status_code == 200:
-        # Specify the local path where you want to save the file
-        collection_metadata = yaml.load(StringIO(response.text))
-    else:
-        print(f"Failed to retrieve file. Status code: {response.status_code}")
+def get_current_dicom_ids(collection_ids):
+    client = bigquery.Client()
+    query = f"""
+SELECT collection_id, patientID, StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID, source_doi
+FROM `{settings.DEV_PROJECT}.idc_v{settings.PREVIOUS_VERSION}_pub.dicom_all`
+WHERE collection_id in {collection_ids}
+ORDER BY collection_id, patientID, StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID
+    """
 
-def perform_partial_revision(sess, args, sep):
-    breakpoint() # Deal with analysis results
-    conversion_metadata = get_conversion_metadata_from_json(args.collection_id)
-    # conversion_metadata = get_conversion_metadata_from_comet(args.collection_id, args.comet_branch)
-    args.src_bucket = conversion_metadata['source_bucket']
-    args.subdir = conversion_metadata['source_subdirectory']
-    args.source_doi = conversion_metadata['source_doi']
-    args.versioned_source_doi = conversion_metadata['versioned_source_doi']
-    manifest_id = args.manifest_id = conversion_metadata["manifest_id"]
+    current_ids = client.query(query).to_dataframe()
+    return current_ids
 
-    # If there is supplied manifest, use it
-    if manifest_id:
-        try:
-            if args.subdir:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/{manifest_id}", sep=sep, header=0)
-            else:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{manifest_id}", sep=sep, header=0)
-        except Exception as exc:
-            errlogger.error(f'Failed to read manifest: {exc}')
-            exit(-1)
-    else:
-        suffix = '.csv' if sep == ',' else '.tsv'
-        try:
-            # If no manifest is provided, first see if we've already generated one
-            if args.subdir:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/{args.subdir}/etl_generated_manifest{suffix}", sep=sep,
-                                            header=0)
-            else:
-                manifest_data = pd.read_csv(f"gs://{args.src_bucket}/etl_generated_manifest{suffix}", sep=sep, header=0)
-            manifest_data = build_manifest(args, manifest_data)
-
-            # Save the manifest to the bucket in case manifest was extended
-            if args.subdir:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/etl_generated_manifest{suffix}", sep=sep, index=False)
-            else:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/etl_generated_manifest{suffix}", sep=sep, index=False)
-            progresslogger.info(f'Completed manifest revision')
-
-        except Exception as exc:
-            manifest_data = build_manifest(args)
-            # Save the manifest to the bucket in case we need to rerun
-            if args.subdir:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/{args.subdir}/etl_generated_manifest{suffix}", sep=sep, index=False)
-            else:
-                manifest_data.to_csv(f"gs://{args.src_bucket}/etl_generated_manifest{suffix}", sep=sep, index=False)
-            progresslogger.info(f'Completed new manifest generation')
-
-    if "stop_after_generating_manifest" in args and args.stop_after_generating_manifest:
-        exit(0)
-
-    all_collection_ids = build_collections(args, sess, manifest_data, sep)
-
-    return all_collection_ids
-
-
-def prebuild_from_manifests(args, sep=','):
+def prebuild_from_manifest(args, collection_ids, src_bucket_id, src_subdir, manifest_id, source_doi, versioned_source_doi, manifest_hash):
     with sa_session(echo=False) as sess:
-        all_collection_ids = perform_partial_revision(sess, args, sep)
-        sess.commit()
+        current_dicom_ids = get_current_dicom_ids(collection_ids)
+        manifest = cleanup_and_validate_manifest(src_bucket_id, src_subdir, manifest_id)
+        validated_manifest_path = f'gs://{src_bucket_id}/{src_subdir}/etl_validated_{manifest_hash}-{manifest_id}' if src_subdir else \
+            f'gs://{src_bucket_id}/etl_validated_{manifest_hash}-{manifest_id}'
+        manifest.to_csv(validated_manifest_path, index=False)
 
+        process_deletions(args, sess, manifest)
+        process_additions_and_replacements(args, sess, manifest)
+
+        # manifest_data = process_deletions(args, sess, manifest_data)
+        # manifest_data = process_additions_and_revisions(args, sess, src_bucket_id, src_subdir, manifest_data, source_doi, versioned_source_doi)
+
+        # sess.commit()
+
+    all_collection_ids = []
     if args.validate:
         if "analysis_result" in args and args.analysis_result:
             if validate_analysis_result(args) == -1:
@@ -448,23 +572,20 @@ def prebuild_from_manifests(args, sep=','):
                 exit(1)
     if args.gen_hashes:
         gen_hashes()
+
+
     return
 
 # if __name__ == '__main__':
 #
 #     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-#     parser.add_argument('--version', default=settings.CURRENT_VERSION)
-#     parser.add_argument('--src_bucket', default='dac-vhm-dst', help='Bucket containing WSI instances')
-#     parser.add_argument('--metadata_table', default='./manifest.csv', help='csv table of study, series, SOPInstanceUID, filepath')
-#     parser.add_argument('--collection_id', default='NLM_visible_human_project', help='idc_webapp_collection id of the collection or ID of analysis result to which instances belong.')
-#     parser.add_argument('--source_dois', default={}, help='Dict of source DOIs indexed by collection_id')
-#     parser.add_argument('--versioned_source_dois', default={}, help='Dict of versioned source DOIs indexed by collection_id')
-#     parser.add_argument('--source_url', default='https://www.nlm.nih.gov/research/visible/visible_human.html',\
-#                         help='Info page URL')
-#     parser.add_argument('--license', default = {"license_url": 'https://www.nlm.nih.gov/databases/download/terms_and_conditions.html',\
-#             "license_long_name": "National Library of Medicine Terms and Conditions; May 21, 2019", \
-#             "license_short_name": "National Library of Medicine Terms and Conditions; May 21, 2019"})
-#     parser.add_argument('--third_party', type=bool, default=False, help='True if from a third party analysis result')
+#     parser.add_argument('--src_bucket_id', default='j2kfixup', help='Bucket containing WSI instances')
+#     parser.add_argument('--src_subdir', default='images', help='Bucket containing WSI instances')
+#     parser.add_argument('--manifest_id', default='identifiers_catch.txt', help='Bucket containing WSI instances')
+#
+#     parser.add_argument('--source_doi', default="")
+#     parser.add_argument('--versioned_source_doi', default="")
+#
 #     parser.add_argument('--validate', type=bool, default=True, help='True if validation is to be performed')
 #     parser.add_argument('--gen_hashes', type=bool, default=True, help='True if hashes are to be generated')
 #
@@ -472,5 +593,8 @@ def prebuild_from_manifests(args, sep=','):
 #     print("{}".format(args), file=sys.stdout)
 #     args.client=storage.Client()
 #
-#     prebuild(args)
-
+#
+#
+#
+#     prebuild_from_manifest(args, args.src_bucket_id, args.src_subdir, args.manifest_id, args.source_doi, args.versioned_source_doi, sep='\t')
+#

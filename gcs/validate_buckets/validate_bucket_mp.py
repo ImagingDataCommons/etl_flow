@@ -190,8 +190,20 @@ def check_all_instances_mp(args, max_version=settings.CURRENT_VERSION):
     else:
         progresslogger.info(f'Already have found blobs')
 
-    expected_blobs = get_expected_blobs_in_bucket(args, max_version)
+    found_blobs = set(open(args.found_blobs).read().splitlines())
+    if args.find_blobs:
+        progresslogger.info(f'Getting found blobs')
+        get_found_blobs_in_bucket(args, found_series)
+        found_blobs = set(open(args.found_blobs).read().splitlines())
+    else:
+        try:
+            found_blobs = set(open(args.found_blobs).read().splitlines())
+        except:
+            progresslogger.info(f'Getting found blobs')
+            get_found_blobs_in_bucket(args, found_series)
+            found_blobs = set(open(args.found_blobs).read().splitlines())
 
+    expected_blobs = get_expected_blobs_in_bucket(args, max_version)
 
     if found_blobs == expected_blobs:
         successlogger.info(f"Bucket {args.bucket} has the correct set of blobs")

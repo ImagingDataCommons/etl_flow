@@ -39,23 +39,54 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 TIMEOUT=10.0
 CHUNK_SIZE=1024*1024
 
-TCIA_URL = 'https://services.cancerimagingarchive.net/services/v4/TCIA/query'
-NBIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services'
-NBIA_V1_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v1'
-NBIA_V2_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v2'
-# NBIA_AUTH_URL = "https://public.cancerimagingarchive.net/nbia-api/oauth/token"
-NBIA_AUTH_URL = "https://services.cancerimagingarchive.net/nbia-api/oauth/token"
-NBIA_DEV_URL = 'https://public-dev.cancerimagingarchive.net/nbia-api/services'
-NBIA_DEV_AUTH_URL = "https://public-dev.cancerimagingarchive.net/nbia-api/oauth/token"
+# TCIA_URL = 'https://services.cancerimagingarchive.net/services/v4/TCIA/query'
+DEFAULT_NBIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services'
+DEFAULT_NBIA_V1_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v1'
+DEFAULT_NBIA_V2_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v2'
+DEFAULT_NBIA_AUTH_URL = "https://services.cancerimagingarchive.net/nbia-api/oauth/token"
+
 NLST_URL = 'https://nlst.cancerimagingarchive.net/nbia-api/services'
 NLST_V1_URL = 'https://nlst.cancerimagingarchive.net/nbia-api/services/v1'
 NLST_V2_URL = 'https://nlst.cancerimagingarchive.net/nbia-api/services/v2'
 NLST_AUTH_URL = 'https://nlst.cancerimagingarchive.net/nbia-api/oauth/token'
 
+NBIA_URL = DEFAULT_NBIA_URL
+NBIA_V1_URL = DEFAULT_NBIA_V1_URL
+NBIA_V2_URL = DEFAULT_NBIA_V2_URL
+NBIA_AUTH_URL = DEFAULT_NBIA_AUTH_URL
 
-# @backoff.on_exception(backoff.expo,
-#                       requests.exceptions.RequestException,
-#                       max_tries=3)
+def set_nlst_servers():
+    global NBIA_URL
+    global NBIA_V1_URL
+    global NBIA_V2_URL
+    global NBIA_AUTH_URL
+    global NLST_URL
+    global NLST_V1_URL
+    global NLST_V2_URL
+    global NLST_AUTH_URL
+
+    NBIA_URL = NLST_URL
+    NBIA_V1_URL = NLST_V1_URL
+    NBIA_V2_URL = NLST_V2_URL
+    NBIA_AUTH_URL = NLST_AUTH_URL
+    return
+
+def restore_default_servers():
+    global NBIA_URL
+    global NBIA_V1_URL
+    global NBIA_V2_URL
+    global NBIA_AUTH_URL
+    global DEFAULT_NBIA_URL
+    global DEFAULT_NBIA_V1_URL
+    global DEFAULT_NBIA_V2_URL
+    global DEFAULT_NBIA_AUTH_URL
+    NBIA_URL = DEFAULT_NBIA_URL
+    NBIA_V1_URL = DEFAULT_NBIA_V1_URL
+    NBIA_V2_URL = DEFAULT_NBIA_V2_URL
+    NBIA_AUTH_URL = DEFAULT_NBIA_AUTH_URL
+    return
+
+
 def get_url(url, headers="", timeout=TIMEOUT):  # , headers):
     try:
         result =  requests.get(url, headers=headers, timeout=timeout)  # , headers=headers)
@@ -124,7 +155,7 @@ def get_hash(request_data, access_token=None):
             Authorization=f'Bearer {access_token}'
         )
         url = f"{NBIA_URL}/getMD5Hierarchy"
-        result = requests.post(url, headers=headers, data=request_data)
+        result = requests.post(url, headers=headers, data=request_data, timeout=TIMEOUT)
         if result.status_code == 200:
             break
         else:
@@ -482,7 +513,7 @@ def get_tcia_collection_manager_data(type, query_param=''):
         print('Error accessing the API:', response.status_code)
         exit
 
-def et_tcia_collection_manager_data_v2(type, query_param=''):
+def get_tcia_collection_manager_data_v2(type, query_param=''):
     page = 1
     collections = []
     while True:

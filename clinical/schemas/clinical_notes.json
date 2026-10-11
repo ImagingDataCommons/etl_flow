@@ -1,0 +1,203 @@
+{
+    "title": "clinical notes (work in progress)",
+    "type": "object",
+    "properties": {
+        "collections": {
+            "type": "array",
+            "items": {
+                "$ref": "#/$defs/collection"
+            },
+            "minItems": 1,
+            "description": "Data provenance / source information"
+        }
+    },
+    "$defs": {
+        "collection": {
+            "type": "object",
+            "collection_id": {
+                "type": "string",
+                "description": "Collection ID",
+                "properties": {
+                    "notes": {
+                        "type": "string",
+                        "minLength": 1,
+                        "descrption": "Informal description of the collection"
+                    },
+                    "case_id": {
+                        "type": "string",
+                        "description": "reference to a map used in parser to transform the source's patientids to idc patientids"
+                    },
+                    "dicts": {
+                        "type": "array",
+                        "description": "dict is a 1d array of dictionary sources. There is a separate source for each table. This is optional as many collections do not have data dictionaries",
+                        "items": {
+                            "dict source": {
+                                "type": "object",
+                                "description": "dictionary source",
+                                "properties": {
+                                    "filenm": {
+                                        "type": "string",
+                                        "description": "file name of dictionary source"
+                                    },
+                                    "sheet": {
+                                        "type": "integer",
+                                        "description": "sheet number for the (xlsx) dictionary"
+                                    },
+                                    "use": {
+                                        "type": "boolean",
+                                        "description": "dictionary used if set to ‘true’"
+                                    },
+                                    "nohead": {
+                                        "type": "boolean",
+                                        "description": "There is no header row when set to 'true'"
+                                    },
+                                    "form": {
+                                        "type": "string",
+                                        "description": "parser used to parse the given data dictionary"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "dictfile": {
+                        "type": "string",
+                        "description": "location of a data dictionary. Only used for collections parsed using the ‘acrin’ parser"
+                    },
+                    "idc_id": {
+                        "type": "string",
+                        "description": "idc collection id. identical to the collection_id, as opposed to collection_name. e.g. tcga_brca not TCGA-BRCA. No longer needed?"
+                    },
+                    "spec": {
+                        "type": "string",
+                        "description": "Indicates a special parser module to be used instead of the standard module. The only current use appears to be ‘acrin’, whence the ‘acrin’ parser is used to parse zip files with spreadsheets for several of the acrin collections (.acrin_contralateral_breast_mr,  acrin_flt_breast)"
+                    },
+                    "srcs": {
+                        "type": "array",
+                        "description": "When pulling from a downloaded spreadsheet (e.g. xlsx) or CSV file, srcs is a 2d array. The outer array corresponds to the different tables created for different types of data. The inner array corresponds to different sources (i.e. different files, or different sheets in the same file). This occurs if the patients were organized in different batches. The files within an inner array are merged into a single BQ table.",
+                         "items": {
+                            "type": "array",
+                            "items": {
+                                "anyOf": [
+                                    {"$ref": "#/$defs/file_source"},
+                                    {"$ref": "#/$defs/bq_source"}
+                                ]
+                            }
+                        }
+                   },
+                    "srcs2": {
+                        "type": "array,",
+                        "description": "2D array of sourcs files/tables. Used for a collection that has tables sourced from both ISB-CGC BQ tables as well as analysis results",
+                        "items": {
+                            "type": "array",
+                            "items": {
+                                "anyOf": [
+                                    {"$ref": "#/$defs/file_source"},
+                                    {"$ref": "#/$defs/bq_source"}
+                                ]
+                            }
+                        }
+                   },
+                    "tcia": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "enum": [
+                            null,
+                            "yes"
+                        ],
+                        "description": "Unless the spec key is present, tcia key must be present with a value of ‘yes’ or this collection is ignored. Could be deprecated with a slight code change"
+                    },
+                    "tcia_api": {
+                        "type": "string",
+                        "description": "tcia_api_collection_id. Optional - Sometimes used to refactor the patientIds in the data files to the form used  by idc"
+                    },
+                    "udir": {
+                        "type": "array",
+                        "description": "array of names of directories created after opening the archives",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "uzip": {
+                        "type": "array",
+                        "description": "array of zip files that must be opened to extract",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "file_source": {
+            "type": "object",
+            "description": "A file_source describes a file that is the source of a table",
+            "item": {
+                "filenm": {
+                    "type": "string",
+                    "description": "name of a file containing this batch of source data"
+                },
+                "ar_file": {
+                    "type": "string",
+                    "description": "‘yes’ to indicate this is an analysis result file; default is ‘no’. Corresponding table name will not be prefixed with collection_id",
+                    "oneOf": [
+                        "yes",
+                        "no"
+                    ]
+                },
+                "filterRows": {
+                    "type": "string",
+                    "description": "The id of a collection. If specified, exclude rows from other collections(?)"
+                },
+                "sheet": {
+                    "type": "integer",
+                    "description": "Optional (xlsx) sheet number of source data"
+                },
+                "patientIdIdx": {
+                    "type": "integer",
+                    "description": "O-based index value of the column of patient IDs. Default is 0"
+                },
+                "patientIdCol": {
+                    "type": "string",
+                    "description": "ID of the  column of patient IDs. The code expects a lowered string with '-' and ' ' replaced by '_'"
+                },
+                "patientIdCol": {
+                    "type": "integer",
+                    "description": "?"
+                },
+                "headrows": {
+                    "type": "array",
+                    "description": "optional array of rows defining the data header. Default is the first row",
+                    "items": {"type": "string"}
+                },
+               "skipCols": {
+                    "type": "array",
+                    "description": "optional array of columns to skip, 0 base",
+                    "items": {"type": "string"}
+                },
+               "skipRows": {
+                    "type": "array",
+                    "description": "optional array of rows to skip, 0-based",
+                    "items": {"type": "string"}
+                },
+               "maxRow": {
+                    "type": "integer",
+                    "description": "optional integer value of last row to ingest"
+                }
+            }
+        },
+        "bq_source": {
+            "type": "object",
+            "description": A BQ source describes a BQ table
+            "table": {
+                "type": "string",
+                "description": "name of bigquery table to pull data from",
+            },
+            "patientIdCol": {
+                "type": "string",
+                "description": "column name of patient id"
+            },
+            "case_id": "reference to a map used in parser to transform the source patientids to idc patientids"
+        }
+    }
+}

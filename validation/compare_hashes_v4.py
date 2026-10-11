@@ -45,7 +45,7 @@ from sqlalchemy_utils import register_composites
 
 # Get a list of instance md5 hashes from NBIA
 def get_instance_hashes(series_instance_uid, collection_id):
-    zip_file = io.BytesIO(get_images_with_md5_hash(series_instance_uid).content)
+    zip_file = io.BytesIO(get_images_with_md5_hash(collection_id, series_instance_uid).content)
     zipfile_obj = zipfile.ZipFile(zip_file)
     try:
         md5_hashes = [row.decode().split(',')  for row in zipfile_obj.open("md5hashes.csv").read().splitlines()[1:]]
@@ -254,8 +254,8 @@ def compare_collection_hashes(sess, args):
     #                         sess.query(All_Collections.tcia_api_collection_id).\
     #                         filter(All_Collections.dev_tcia_url=='idc-dev-redacted')]
     included_collections = [collection.tcia_api_collection_id for collection in
-                            sess.query(All_Collections.tcia_api_collection_id). \
-                                filter(All_Collections.dev_tcia_url.in_(('idc-dev-open', 'idc-dev-cr', 'idc-dev-defaced')))]
+                            sess.query(All_Collections.collection_name). \
+                                filter(All_Collections.dev_bucket.in_(('idc-dev-open', 'idc-dev-cr', 'idc-dev-defaced')))]
 
     if args.collections == []:
         collections = [collection for collection in all_collections if
@@ -330,7 +330,7 @@ if __name__ == '__main__':
     # err_fh.setFormatter(errformatter)
     #
     # version = settings.CURRENT_VERSION
-    version = 23
+    version = 25
 
     parser = argparse.ArgumentParser()
     # parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
@@ -338,12 +338,12 @@ if __name__ == '__main__':
     parser.add_argument('--suffix', default="")
     parser.add_argument('--stop_expansion', default="Pa", help="Level at which to stop expansion")
     parser.add_argument('--stop', default=False, help='Stop expansion if no hash returned by NBIA')
-    parser.add_argument('--expand_all', default=True, help="Expand regardless of whether hashes match.")
+    parser.add_argument('--expand_all', default=False, help="Expand regardless of whether hashes match.")
     parser.add_argument('--ignore_differing_patient_counts', default=True)
-    parser.add_argument('--only_mismatches', default=False, help='Only log mismatching hashes')
+    parser.add_argument('--only_mismatches', default=True, help='Only log mismatching hashes')
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
                         help='Levels at which to log')
-    parser.add_argument('--collections', default=['NLST'], \
+    parser.add_argument('--collections', default=['EA1141'], \
                         help='List of collections to compare. If empty, compare all collections')
     parser.add_argument('--patients', default = [],
                         help='List of patients to compare. If empty, compare all patients')

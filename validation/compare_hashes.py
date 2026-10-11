@@ -69,7 +69,6 @@ def get_instance_hashes(series_instance_uid, collection_id, access_token):
 
 def compare_instance_hashes(access_token, refresh_token, cur, args, collection, patient, study, series):
     idc_instances = series.instances
-    a = get_TCIA_instances_per_series_with_hashes_nlst("/mnt/disks/aspera", series, access_token)
 
     nbia_instances, zipfile_obj = get_instance_hashes(series.series_instance_uid, collection.collection_id, access_token)
 
@@ -146,7 +145,7 @@ def compare_series_hashes(access_token, refresh_token, cur, args, collection, pa
             if 'series' in args.log_level:
                 if not args.only_mismatches or idc_hash != nbia_hash:
                     progresslogger.info('se:            %-32s IDC: %s, NBIA: %s; %s' , \
-                        study.study_instance_uid, series.series_instance_uid, nbia_hash, idc_hash==nbia_hash)
+                        study.study_instance_uid, idc_hash, nbia_hash, idc_hash==nbia_hash)
             if not args.stop_expansion == 'series':
                 if idc_hash != nbia_hash or args.expand_all:
                     if args.stop and (nbia_hash == 'd41d8cd98f00b204e9800998ecf8427e' or nbia_hash == ""):
@@ -380,7 +379,7 @@ if __name__ == '__main__':
     # err_fh.setFormatter(errformatter)
     #
     # version = settings.CURRENT_VERSION
-    version = 23
+    version = 25
 
     parser = argparse.ArgumentParser()
     # parser.add_argument('--db', default=f'idc_v{version}', help='Database to compare against')
@@ -388,14 +387,14 @@ if __name__ == '__main__':
     parser.add_argument('--suffix', default="")
     parser.add_argument('--stop_expansion', default="Pa", help="Level at which to stop expansion")
     parser.add_argument('--stop', default=False, help='Stop expansion if no hash returned by NBIA')
-    parser.add_argument('--expand_all', default=False, help="Expand regardless of whether hashes match.")
+    parser.add_argument('--expand_all', default=True, help="Expand regardless of whether hashes match.")
     parser.add_argument('--ignore_differing_patient_counts', default=True)
     parser.add_argument('--only_mismatches', default=False, help='Only log mismatching hashes')
     parser.add_argument('--log_level', default=("collection, patient, study, series, instance"),
                         help='Levels at which to log')
-    parser.add_argument('--collections', default=['NLST'], \
+    parser.add_argument('--collections', default=['EA1141'], \
                         help='List of collections to compare. If empty, compare all collections')
-    parser.add_argument('--patients', default = ['126153', '215303'],
+    parser.add_argument('--patients', default = [],
                         help='List of patients to compare. If empty, compare all patients')
     parser.add_argument('--studies', default = [],
                         help='List of studies to compare. If empty, compare all studies')

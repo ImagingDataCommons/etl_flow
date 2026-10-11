@@ -20,7 +20,7 @@ from utilities.logging_config import successlogger, progresslogger, errlogger
 from uuid import uuid4
 from idc.models import Series, Instance, instance_source
 from ingestion.instance import clone_instance, build_instances_idc, build_instances_tcia
-from ingestion.utilities.utils import is_skipped
+from ingestion.utilities.utils import is_skipped, validate_idc_hash_vector
 from python_settings import settings
 
 
@@ -153,7 +153,7 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
                 return
             successlogger.info("      p%s: Expanded Series %s; %s; %s instances, expand time: %s", args.pid, series.series_instance_uid, series_index, len(series.instances), time.time()-begin)
         else:
-            successlogger.info("      p%s: Previously Expanded Series %s; %s; %s instances", args.pid,
+            successlogger.info("      p%s: Previously Expanded Series %s; %s", args.pid,
                                series.series_instance_uid, series_index)
 
         try:
@@ -173,6 +173,13 @@ def build_series(sess, args, all_sources, series_index, version, collection, pat
             series.max_timestamp = max(instance.timestamp for instance in series.instances)
             # Get a list of what DB thinks are the series's hashes
             idc_hashes = all_sources.idc_series_hashes(series)
+            if not validate_idc_hash_vector(idc_hashes):
+                breakpoint()
+                errlogger.error("       p%s: Hash failed for %s/%s/%s/%s/%s", args.pid,
+                    collection.collection_id, patient.submitter_case_id, study.study_instance_uid, series.series_instance_uid)
+                # Return without marking all instances done. This will be prevent the series from being done.
+                return
+
             # # Get a list of what the sources think are the series's hashes
             series.hashes = idc_hashes
             series.series_instances = len(series.instances)

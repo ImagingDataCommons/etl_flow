@@ -32,11 +32,11 @@ from gcs.validate_buckets.validate_bucket_mp import check_all_instances_mp
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=f'{settings.CURRENT_VERSION}')
-    parser.add_argument('--processes', default=1)
+    parser.add_argument('--processes', default=256)
     parser.add_argument('--bucket', default='idc-open-idc1')
     parser.add_argument('--dev_or_pub', default = 'pub', help='Validating a dev or pub bucket')
     parser.add_argument('--found_blobs', default=f'{settings.LOG_DIR}/success.log', help='List of blobs names found in bucket')
-    parser.add_argument('--batch', default=10000, help='Size of batch assigned to each process')
+    parser.add_argument('--batch', default=100, help='Size of batch assigned to each process')
     # parser.add_argument('--log_dir', default=f'/mnt/disks/idc-etl/logs/validate_open_buckets')
 
     args = parser.parse_args()

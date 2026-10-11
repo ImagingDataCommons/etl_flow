@@ -7,14 +7,14 @@ import re
 import sys
 from os import path, listdir, mkdir
 import zipfile
-import clinical.acrin_forms
+import acrin_forms
 import shutil
 from pathlib import Path
 import hashlib
 import pytz
 from datetime import datetime
 import os
-from clinical.utils import getHist, read_clin_file, parseIspyDic, parseAMBLDic, formatForBQ
+from utils import getHist, read_clin_file, parseIspyDic, parseAMBLDic, formatForBQ
 from docx2python import docx2python
 import openpyxl
 # import copy.deepcopy
@@ -29,9 +29,11 @@ import logging
 progresslogger.setLevel(logging.DEBUG)
 
 # ORIGINAL_SRCS_PATH='./clinical/downloads/downloads_'+str(settings.CURRENT_VERSION)+'/'
-ORIGINAL_SRCS_PATH = './downloads/downloads_' + str(settings.CURRENT_VERSION) + '/'
+# ORIGINAL_SRCS_PATH = './downloads/downloads_' + str(settings.CURRENT_VERSION) + '/'
+ORIGINAL_SRCS_PATH = '../downloads/downloads_' + str(settings.CURRENT_VERSION) + '/'
 # NOTES_PATH = './clinical/'
-NOTES_PATH = './'
+# NOTES_PATH = './'
+NOTES_PATH = '../'
 DEFAULT_SUFFIX = 'clinical'
 DEFAULT_DESCRIPTION = 'clinical data'
 
@@ -41,14 +43,16 @@ CURRENT_VERSION = 'idc_v' + str(settings.CURRENT_VERSION)
 LAST_VERSION = 'idc_v' + str(settings.PREVIOUS_VERSION)
 LAST_DATASET = 'idc_v' + str(settings.PREVIOUS_VERSION) + '_clinical'
 # DESTINATION_FOLDER='./clinical/json/clin_idc_v'+str(settings.CURRENT_VERSION)+'/'
-DESTINATION_FOLDER = './json/clin_idc_v' + str(settings.CURRENT_VERSION) + '/'
+# DESTINATION_FOLDER = './json/clin_idc_v' + str(settings.CURRENT_VERSION) + '/'
+DESTINATION_FOLDER = '../json/clin_idc_v' + str(settings.CURRENT_VERSION) + '/'
 SOURCE_BATCH_COL = 'source_batch'
 SOURCE_BATCH_LABEL = 'idc_provenance_source_batch'
 DICOM_COL = 'dicom_patient_id'
 DICOM_LABEL = 'idc_provenance_dicom_patient_id'
 DATASET_PATH = 'bigquery-public-data.' + DEFAULT_DATASET
 # ARCHIVE_FOLDER = './clinical/archive/'
-ARCHIVE_FOLDER = './archive/'
+# ARCHIVE_FOLDER = './archive/'
+ARCHIVE_FOLDER = '../archive/'
 
 
 def get_md5(filenm):
@@ -702,7 +706,8 @@ def parse_acrin_collection(clinJson, coll):
         dictFile = npath + '/' + dictFile
         if 'dictfile' in clinJson[coll]:
             dictFile = curDir + '/' + clinJson[coll]['dictfile']
-        parser = clinical.acrin_forms.DictionaryReader(dictFile, formFile)
+        # parser = clinical.acrin_forms.DictionaryReader(dictFile, formFile)
+        parser = acrin_forms.DictionaryReader(dictFile, formFile)
         parser.parse_dictionaries()
         dict_names = parser.get_dictionary_names()
         for form_id in dict_names:

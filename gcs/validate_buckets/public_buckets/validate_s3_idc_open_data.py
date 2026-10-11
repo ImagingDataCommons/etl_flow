@@ -31,7 +31,7 @@ from gcs.validate_buckets.validate_s3_bucket_mp import check_all_instances_mp
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=f'{settings.CURRENT_VERSION}')
-    parser.add_argument('--processes', default=32)
+    parser.add_argument('--processes', default=256)
     parser.add_argument('--bucket', default='idc-open-data', help='Bucket to be validated')
     parser.add_argument('--dev_or_pub', default = 'pub', help='Validating a dev or pub bucket')
     parser.add_argument('--expected_blobs', default=f'{settings.LOG_DIR}/expected_blobs.txt', help='List of blobs names expected to be in above collections')

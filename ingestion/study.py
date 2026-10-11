@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from uuid import uuid4
 from idc.models import Study, Series, instance_source
-from ingestion.utilities.utils import accum_sources, get_merkle_hash, is_skipped
+from ingestion.utilities.utils import accum_sources, get_merkle_hash, is_skipped, validate_idc_hash_vector
 from ingestion.series import clone_series, build_series, retire_series
 
 from python_settings import settings
@@ -199,6 +199,13 @@ def build_study(sess, args, all_sources, study_index, version, collection, patie
             study.max_timestamp = max([series.max_timestamp for series in study.seriess if series.max_timestamp != None])
             # Get a list of what DB thinks are the study's hashes
             idc_hashes = all_sources.idc_study_hashes(study)
+            if not validate_idc_hash_vector(idc_hashes):
+                breakpoint()
+                errlogger.error("       p%s: Hash failed for %s/%s/%s/%s/%s", args.pid,
+                    collection.collection_id, patient.submitter_case_id, study.study_instance_uid)
+                # Return without marking all instances done. This will be prevent the series from being done.
+                return
+
             study.hashes = idc_hashes
             study.sources = accum_sources(study, study.seriess)
             study.study_instances = sum([series.series_instances for series in study.seriess])

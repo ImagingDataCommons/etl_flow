@@ -18,6 +18,7 @@ import json
 import os
 from io import StringIO
 from subprocess import run
+from pathlib import Path
 
 import settings
 from utilities.logging_config import progresslogger, errlogger
@@ -33,61 +34,64 @@ def get_aspera_package_urls():
     client = bigquery.Client()
     query = f"""
     SELECT *
-    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.tcia_pathology_conversion_status` 
---     WHERE IDC_collection_id != ""
+    FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.tcia_pathology_aspera_package_status` 
+--     WHERE CONTAINS_SUBSTR(File_types, 'SVS')
     """
     aspera_packages = client.query(query).to_dataframe()
     aspera_packages.sort_values("IDC_collection_id", inplace=True)
     return aspera_packages
 
 
-def download_aspera_package(args, aspera_url, slug, TCIA_collection_version="", tag="", \
-                               json_params=""):
+def download_aspera_package(args, aspera_url, slug, TCIA_collection_version="", tag=""):
     # Download the file to disk
     args_id = args.id if 'id' in args else 0
     progresslogger.info(f'p{args_id}: Starting aspera download of {slug} ')
 
-    try:
-        MAX_TRIES = 6
-        tries = MAX_TRIES
-        aspera_start = time.time()
-        cmmd = ' '.join(["ascli",
-                         # "--log-level=debug",
-                         "--progress-bar=no",
-                         "--format=json",
-                         f'--to-folder={ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}',
-                         "faspex5",
-                         "packages",
-                         "receive",
-                         "--query=@json:'{\"recursive\": true}'",
-                         f"--url={aspera_url}"])
-        while True:
-            res = run(cmmd, capture_output=True, shell=True)
+    folder = f'{ASPERA_DOWNLOAD_FOLDER}/{slug}/p{args.id}'
+    if Path(folder).is_dir():
+        progresslogger.info(f'Folder {folder} exists')
+    else:
+        try:
+            MAX_TRIES = 6
+            tries = MAX_TRIES
+            aspera_start = time.time()
+            cmmd = ' '.join(["ascli",
+                             # "--log-level=debug",
+                             "--progress-bar=no",
+                             "--format=json",
+                             f'--to-folder={folder}',
+                             "faspex5",
+                             "packages",
+                             "receive",
+                             "--query=@json:'{\"recursive\": true}'",
+                             f"--url={aspera_url}"])
+            while True:
+                res = run(cmmd, capture_output=True, shell=True)
 
-            aspera_delta = time.time() - aspera_start
-            if res.stderr:
-                if tries:
-                    tries -= 1
-                    progresslogger.info(
-                            f'p{args.id}: Aspera download failure {MAX_TRIES-tries}: {tag}/v{TCIA_collection_version}, stderr: {res.stderr}')
-                    time.sleep(pow(2, MAX_TRIES - tries))
-                    continue
-                else:
-                    errlogger.error(
-                            f'p{args.id}: Aspera download failed: {tag}/v{TCIA_collection_version}, stderr: {res.stderr}')
-                    errlogger.error(f'p{args.id}: cmmd: {cmmd}')
+                aspera_delta = time.time() - aspera_start
+                if res.stderr:
+                    if tries:
+                        tries -= 1
+                        progresslogger.info(
+                                f'p{args.id}: Aspera download failure {MAX_TRIES-tries}: {tag}/v{TCIA_collection_version}, stderr: {res.stderr}')
+                        time.sleep(pow(2, MAX_TRIES - tries))
+                        continue
+                    else:
+                        errlogger.error(
+                                f'p{args.id}: Aspera download failed: {tag}/v{TCIA_collection_version}, stderr: {res.stderr}')
+                        errlogger.error(f'p{args.id}: cmmd: {cmmd}')
+                        return 0
+
                     return 0
+                else:
+                    progresslogger.info(f'p{args_id}: Completed aspera download')
+                    return aspera_delta
 
-                return 0
-            else:
-                progresslogger.info(f'p{args_id}: Completed aspera download')
-                return aspera_delta
-
-    except Exception as exc:
-        errlogger.error(
-            f'p{args_id}: Aspera download failed: {tag}/v{TCIA_collection_version}, {exc}')
-        errlogger.error(f'cmmd: {cmmd}')
-        return 0
+        except Exception as exc:
+            errlogger.error(
+                f'p{args_id}: Aspera download failed: {tag}/v{TCIA_collection_version}, {exc}')
+            errlogger.error(f'cmmd: {cmmd}')
+            return 0
 
 def download_files_from_aspera(args, aspera_url, files, slug, TCIA_collection_version="", tag="", \
                                json_params=""):
@@ -260,7 +264,7 @@ def bucket_collection_id(collection_id):
             'cptac': 'cptac',
             'nlst': 'nlst',
             'icdc': 'icdc_glioma'
-        }[collection_id.split('_')[0]]
+        }[collection_id.split('_')[0].split('-')[0]]
         return bucket_collection_id
     except KeyError:
         return collection_id

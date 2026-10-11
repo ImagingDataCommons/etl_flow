@@ -24,7 +24,7 @@ from utilities.logging_config import successlogger,errlogger
 def validate_dicom_metadata_counts():
     client = bigquery.Client()
     query = f"""
-    SELECT DISTINCT ajc.collection_id, ajc.series_instance_uid, ajc.se_uuid, ajc.sop_instance_uid, ajc,i_uuid, dm.SOPInstanceUID
+    SELECT DISTINCT ajc.collection_id, ajc.series_instance_uid, ajc.sop_instance_uid, dm.SeriesInstanceUID, dm.SOPInstanceUID
     FROM `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_dev.all_joined_public_and_current` ajc
     FULL OUTER JOIN `idc-dev-etl.idc_v{settings.CURRENT_VERSION}_pub.dicom_metadata` dm
     ON ajc.sop_instance_uid = dm.sopinstanceuid
@@ -37,9 +37,11 @@ def validate_dicom_metadata_counts():
         return 0
     else:
         errlogger.error("Error; SOPInstanceUIDs do not match expected set")
-        errlogger.error("collection_id   series_instance_uid   se_uuid   sop_instance_uid    i_uuid  SOPInstanceUID")
+        print("ajc_collection_id   ajc_series_instance_uid   ajc_sop_instance_uid   md_series_instance_uid   md_sop_instance_uid ")
+        i=1
         for row in results:
-            print(row.collection_id, row.series_instance_uid, row.sop_instance_uid, row.SOPInstanceUID, row.se_uuid, row.i_uuid )
+            print(i, row.collection_id, row.series_instance_uid, row.sop_instance_uid, row.SeriesInstanceUID, row.SOPInstanceUID )
+            i += 1
         return -1
 
 

@@ -53,6 +53,20 @@ analysis_results_metadata_schema = [
                          description='Description of this analysis result'),
     bigquery.SchemaField('citation', 'STRING', mode='NULLABLE',
                          description='Citation to be used for this analysis result'),
+    bigquery.SchemaField(
+        "provenance",
+        "RECORD",
+        fields=[
+            bigquery.SchemaField('data_contributor', 'STRING', mode='REQUIRED',
+                                 description='Party that prepared and published this DICOM component to IDC'),
+            bigquery.SchemaField('source_data_provider', 'STRING', mode='REQUIRED',
+                                 description='Party that gave the source material to the contributor — upstream of data_contributor, not a repeat of it. UNKNOWN when an upstream exists but is not recorded'),
+            bigquery.SchemaField('deidentification_party', 'STRING', mode='REQUIRED',
+                                 description='Party that performed de-identification. NOT_APPLICABLE where there is no identifiable human subject data: analysis results, synthetic/phantom data, and non-human subjects'),
+            bigquery.SchemaField('dicom_conversion_by', 'STRING', mode='REQUIRED',
+                                 description='Party that produced the DICOM representation. NOT_APPLICABLE when the data was already DICOM; NOT_DOCUMENTED when a conversion happened but the converting party is not recorded')
+        ]
+    ),
     # Deprecations
     bigquery.SchemaField('ID', 'STRING', mode='REQUIRED',
                          description='DEPRECATED: Duplicate of analysis_result_name'),
@@ -72,7 +86,7 @@ def generate_analysis_results_metadata():
         analysis_metadata = dict(
             analysis_result_name=data['analysis_result_name'],
             analysis_result_id=data['analysis_result_id'],
-            analysis_result_title=data['title'],
+            analysis_result_title=data['analysis_result_title'],
             source_doi=data['source_doi'],
             source_url=data['source_url'],
             cancer_types=', '.join(data['cancer_types']),
@@ -86,8 +100,14 @@ def generate_analysis_results_metadata():
             license_short_name=data['license']['short_name'],
             description="",
             citation=data['citation'],
+            provenance=dict(
+                data_contributor=data['provenance']['data_contributor'],
+                source_data_provider=data['provenance']['source_data_provider'],
+                deidentification_party=data['provenance']['deidentification_party'],
+                dicom_conversion_by=data['provenance']['dicom_conversion_by']
+            ),
             ID=data['analysis_result_id'],
-            Title=data['title'],
+            Title=data['analysis_result_title'],
             CancerTypes=', '.join(data['cancer_types']),
             TumorLocations=', '.join(data['tumor_locations']),
             Access="Public"
@@ -199,7 +219,7 @@ def gen_table(args):
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
     parser.add_argument('--bqtable_name', default='analysis_results_metadata', help='BQ table name')
-    parser.add_argument("--comet_branch", default = 'release/v24')
+    parser.add_argument("--comet_branch", default = f'release/v{settings.CURRENT_VERSION}')
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)

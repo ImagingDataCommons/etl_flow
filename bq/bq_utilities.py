@@ -184,7 +184,7 @@ if __name__ == '__main__':
     parser.add_argument('--table_id', default='zen', help='Table name to which to copy data')
     args = parser.parse_args()
 
-    r = get_github_directory_contents_from_comet("collections/original", branch="release/v24")
+    r = get_github_directory_contents_from_comet("collections/original", branch=f"release/v{settings.CURRENT_VERSION}")
     table_name = 'analysis_results_metadata'
     df = compare_versioned_bq_tables(table_name).dropna(axis=1, how='all')
     pd.set_option('display.max_rows', None)
