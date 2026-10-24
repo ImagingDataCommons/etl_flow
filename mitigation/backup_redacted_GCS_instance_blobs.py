@@ -18,8 +18,10 @@
 import settings
 import argparse
 import json
+from google.api_core.exceptions import Conflict, TooManyRequests, ServiceUnavailable, NotFound
 from google.cloud import bigquery, storage
 from utilities.logging_config import successlogger, progresslogger, errlogger
+from time import sleep
 
 def get_redactions(args):
     client = bigquery.Client()
@@ -57,7 +59,7 @@ def backup_redactions(args):
                     break
             except AttributeError as exc:
                 errlogger.warning(
-                    f"p{args.id}: Trying to create bucket: {exc}; attempt {i}\n")
+                    f"p{args.id}: Trying to create bucket: {exc}")
                 sleep(1)
             except TooManyRequests as exc0:
                 errlogger.warning(
@@ -69,11 +71,11 @@ def backup_redactions(args):
                 sleep(1)
             except NotFound as exc:
                 errlogger.error(
-                    f"p{args.id}: Blob: Source blob {row['bucket']}/{blob_id} not found")
+                    f"Blob: Source blob {client.bucket(instance['pub_gcs_bucket'])}/{instance['blob_name']} not found")
                 break
 
                 break
-        successlogger.info(instance['blob_name'] + ' copied to ' + args.trg_bucket)
+        # successlogger.info(instance['blob_name'] + ' copied to ' + args.trg_bucket)
 
     pass
 
