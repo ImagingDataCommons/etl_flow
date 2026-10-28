@@ -1,0 +1,65 @@
+#
+# Copyright 2015-2021, Institute for Systems Biology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#
+# Copyright 2015-2021, Institute for Systems Biology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# This script generates the public idc_current dataset, which is comprised of a copy every table and view in
+# the idc_vX dataset corresponding to the current IDC data version.
+
+import argparse
+import sys
+import settings
+from bq.copy_tables.copy_dataset import copy_dataset
+
+
+if __name__ == '__main__':
+    version = settings.CURRENT_VERSION
+    parser = argparse.ArgumentParser()
+    # parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Current IDC version')
+    parser.add_argument('--version', default=version, help='Current IDC version')
+    parser.add_argument('--src_project', default=settings.AH_PROJECT)
+    parser.add_argument('--trg_project', default=settings.AH_PROJECT)
+    parser.add_argument('--src_dataset', default=f'idc_v{version}', help='BQ dataset name')
+    parser.add_argument('--trg_dataset', default=f'idc_current', help='Clinical dataset name')
+    parser.add_argument('--table_ids', default={"auxiliary_metadata": "TABLE",
+                    "dicom_all": "TABLE",
+                    "dicom_metadata": "TABLE",
+                    "dicom_metadata_curated": "TABLE",
+                    "dicom_pivot": "TABLE",
+                    "measurement_groups": "TABLE",
+                    "mutable_metadata": "TABLE",
+                    "original_collections_metadata": "TABLE",
+                    "qualitative_measurements": "TABLE",
+                    "quantitative_measurements": "TABLE",
+                    "segmentations": "TABLE"}, help="Copy all tables/views unless this is non-empty. Entries should be like table_name: 'TABLE' or view_name: 'VIEW'")
+
+    args = parser.parse_args()
+    print("{}".format(args), file=sys.stdout)
+    copy_dataset(args, table_ids=args.table_ids)

@@ -41,41 +41,46 @@ def get_redactions(args):
 def backup_redactions(args):
     client = storage.Client()
     instances = get_redactions(args)
+    dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
 
     for instance in instances:
         src_bucket = client.bucket(instance['pub_gcs_bucket'])
         src_blob = src_bucket.blob(f'{instance["blob_name"]}')
         trg_bucket = client.bucket(args.trg_bucket)
 
-        dst_blob = trg_bucket.blob(instance["blob_name"])
-        rewrite_token = False
-        while True:
-            try:
-                rewrite_token, bytes_rewritten, total_bytes = dst_blob.rewrite(
-                    src_blob, token=rewrite_token
-                )
-                if not rewrite_token:
-                    successlogger.info(f'{instance["blob_name"]}')
+        if f'{instance["blob_name"]}' not in dones:
+            dst_blob = trg_bucket.blob(instance["blob_name"])
+            rewrite_token = False
+            while True:
+                try:
+                    rewrite_token, bytes_rewritten, total_bytes = dst_blob.rewrite(
+                        src_blob, token=rewrite_token
+                    )
+                    if not rewrite_token:
+                        successlogger.info(f'{instance["blob_name"]}')
+                        break
+                except AttributeError as exc:
+                    errlogger.warning(
+                        f"p{args.id}: Trying to create bucket: {exc}")
+                    sleep(1)
+                except TooManyRequests as exc0:
+                    errlogger.warning(
+                        f"p{args.id}: Blob: Too many requests: {repr(exc0)};  {exc0}")
+                    sleep(1)
+                except ServiceUnavailable as exc0:
+                    errlogger.warning(
+                        f"p{args.id}: Blob: Service unavailable: {repr(exc0)};  {exc0}")
+                    sleep(1)
+                except NotFound as exc:
+                    errlogger.error(
+                        f"Blob: Source blob {client.bucket(instance['pub_gcs_bucket'])}/{instance['blob_name']} not found")
                     break
-            except AttributeError as exc:
-                errlogger.warning(
-                    f"p{args.id}: Trying to create bucket: {exc}")
-                sleep(1)
-            except TooManyRequests as exc0:
-                errlogger.warning(
-                    f"p{args.id}: Blob: Too many requests: {repr(exc0)};  {exc0}")
-                sleep(1)
-            except ServiceUnavailable as exc0:
-                errlogger.warning(
-                    f"p{args.id}: Blob: Service unavailable: {repr(exc0)};  {exc0}")
-                sleep(1)
-            except NotFound as exc:
-                errlogger.error(
-                    f"Blob: Source blob {client.bucket(instance['pub_gcs_bucket'])}/{instance['blob_name']} not found")
-                break
-
-                break
-        # successlogger.info(instance['blob_name'] + ' copied to ' + args.trg_bucket)
+                except Exception as exc:
+                    errlogger.error(
+                        f"Error {exc} on blob {client.bucket(instance['pub_gcs_bucket'])}/{instance['blob_name']}")
+                    sleep(1)
+        else:
+            progresslogger.info(f'{instance["blob_name"]} previously backed up')
 
     pass
 

@@ -61,6 +61,23 @@ def validate_redactions(args):
 
     return
 
+def get_bucket_names():
+    client = bigquery.Client()
+
+    query = f"""
+    SELECT DISTINCT pub_aws_bucket bucket_name
+    FROM `{settings.DEV_MITIGATION_PROJECT}.m{settings.MITIGATION_VERSION}.redactions`
+    """
+
+    try:
+        results = [dict(row) for row in client.query(query).result()]
+    except Exception as exc:
+        errlogger.error(f'Error querying redactions table: {exc} ')
+        exit(-1)
+
+    return results
+
+
 if __name__ == '__main__':
     # (sys.argv)
     parser = argparse.ArgumentParser()

@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# This script generates the idc_current dataset, which is comprised of a view of every table and view in
+# This script generates the public idc_current dataset, which is comprised of a copy every table and view in
 # the idc_vX dataset corresponding to the current IDC data version.
 
 import argparse

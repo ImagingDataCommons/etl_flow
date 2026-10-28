@@ -103,7 +103,7 @@ def get_found_series_in_bucket(args):
 def get_found_blobs_in_bucket(args, found_series):
     client = storage.Client()
     bucket = client.bucket(args.bucket)
-    progresslogger.info(f'Finding blobs in bucket')
+    # progresslogger.info(f'Finding blobs in bucket')
 
     done_series = open(f'{progresslogger.handlers[0].baseFilename}').read().splitlines()
 

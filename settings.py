@@ -24,7 +24,7 @@ PREVIOUS_VERSION=24
 
 # IF MITIGATION_VERSION is not 0, logging will be to m<MITIGATION_VERSION) rather than v<CURRENT_VERSION>
 # For normal ETL purposes it should be 0
-MITIGATION_VERSION=4
+MITIGATION_VERSION=0
 
 SECURE_LOCAL_PATH = os.environ.get('SECURE_LOCAL_PATH', '')
 LOG_PATH = os.environ.get('LOG_PATH','/mnt/disks/idc-etl/logs')
@@ -149,19 +149,6 @@ AH_EXCHANGE_LOCATION = os.environ.get('AH_EXCHANGE_LOCATION', '')
 ZENODO_ACCESS_TOKEN = os.environ.get('ZENODO_ACCESS_TOKEN', '')
 
 CREDENTIALS_PATH = os.environ.get("CREDENTIALS_PATH")
-
-AWS_ADMIN_ID = os.environ.get('AWS_ADMIN_ID', '')
-os.putenv('AWS_ACCESS_KEY_ID', AWS_ADMIN_ID)
-AWS_ADMIN_SECRET = os.environ.get('AWS_ADMIN_SECRET', '')
-os.putenv('AWS_SECRET_ACCESS_KEY', AWS_ADMIN_SECRET)
-
-AWS_ID = os.environ.get('AWS_ID', '')
-os.putenv('AWS_ACCESS_KEY_ID', AWS_ID)
-AWS_SECRET = os.environ.get('AWS_SECRET', '')
-os.putenv('AWS_SECRET_ACCESS_KEY', AWS_SECRET)
-
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
 
 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
 

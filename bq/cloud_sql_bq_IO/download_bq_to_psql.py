@@ -26,8 +26,9 @@
 
 import settings
 from google.cloud import bigquery
-import json
-import argparse
+import pandas as pd
+from google.cloud import bigquery
+import psycopg2
 
 def get_bigquery_schema_and_data(project_id, dataset_id, table_id):
     client = bigquery.Client(project=project_id)
@@ -59,7 +60,6 @@ def bigquery_type_to_postgresql_type(bigquery_type):
     }
     return type_map.get(bigquery_type, "TEXT") # Default to TEXT for unknown types
 
-import psycopg2
 
 def create_postgresql_table(db_conn, table_name, schema):
     columns_sql = []
@@ -91,20 +91,6 @@ def insert_data_into_postgresql(db_conn, table_name, data_dataframe):
     db_conn.commit()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=settings.CURRENT_VERSION)
-    parser.add_argument('--src_bucket', default='idc-open-data')
-    parser.add_argument('--dev_bucket', default='idc-arch-open')
-    parser.add_argument('--dst_bucket', default='idc-arch-open-prestaging')
-    parser.add_argument("--num_processes", default=16)
-    parser.add_argument('--dst_project', default='idc-archive', help='Project of the dst_bucket')
-
-    args = parser.parse_args()
-    print(f'args: {json.dumps(args.__dict__, indent=2)}')
-
-    import pandas as pd
-    from google.cloud import bigquery
-
     # BigQuery details
     breakpoint()
     bq_project_id = "idc-dev-etl"

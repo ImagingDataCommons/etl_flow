@@ -31,7 +31,7 @@ def get_redactions(version):
     client = bigquery.Client()
     query = f"""
     SELECT DISTINCT ingestion_url
-    FROM `{settings.DEV_PROJECT}.mitigation.redactions`
+    FROM `{settings.DEV_PROJECT}.m{settings.MITIGATION_VERSION}.redactions`
     """
 
     try:

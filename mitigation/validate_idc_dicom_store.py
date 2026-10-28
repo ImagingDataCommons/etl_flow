@@ -53,7 +53,7 @@ def get_redactions(args):
     client = bigquery.Client()
     query = f"""
     SELECT DISTINCT study_instance_uid, series_instance_uid, sop_instance_uid
-    FROM `{settings.DEV_PROJECT}.mitigation.redactions`
+    FROM `{settings.DEV_MITIGATION_PROJECT}.m{settings.MITIGATION_VERSION}.redactions`
     WHERE i_rev_idc_version <= {args.version}
     AND ({args.version} <= i_final_idc_version OR i_final_idc_version = 0)
     """
@@ -86,11 +86,13 @@ def validate_redactions(args):
             validate_redaction(dicomweb_session, instance['study_instance_uid'], instance['series_instance_uid'], instance['sop_instance_uid'])
             successlogger.info(instance['sop_instance_uid'])
 
+    return
+
 
 if __name__ == '__main__':
     # (sys.argv)
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default=18, help='Current version')
+    parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Current version')
     args = parser.parse_args()
     breakpoint() # This script has not been tested in an event in which data needed to be removed from current store.
     validate_redactions(args)
