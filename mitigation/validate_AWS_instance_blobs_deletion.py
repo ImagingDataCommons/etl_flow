@@ -15,6 +15,8 @@
 #
 
 from google.cloud import bigquery, storage
+from requests import session
+
 from utilities.logging_config import successlogger, progresslogger, errlogger
 import settings
 import argparse
@@ -26,7 +28,7 @@ def get_redactions(args):
 
     query = f"""
     SELECT DISTINCT dev_bucket, pub_aws_bucket, CONCAT(se_uuid, '/', i_uuid, '.dcm') as blob_name
-    FROM `{settings.DEV_MITIGATION_PROJECT}.mitigation.redactions`
+    FROM `{settings.DEV_MITIGATION_PROJECT}.m{settings.MITIGATION_VERSION}.redactions`
     """
 
     try:
@@ -39,21 +41,24 @@ def get_redactions(args):
 
 
 def validate_redactions(args):
-    s3 = boto3.client('s3')
-    # Get list of previously deleted blobs
+    session = boto3.Session(profile_name='sandbox-mfa')
+    s3 = session.client('s3')    # Get list of previously deleted blobs
     dones = set(open(f'{successlogger.handlers[0].baseFilename}').read().splitlines())
     instances = get_redactions(args)
     for instance in instances:
-        try:
-            s3.head_object(Bucket=instance['pub_aws_bucket'], Key=instance["blob_name"])
-            errlogger.error(f'{instance["pub_aws_bucket"]}/{instance["blob_name"]} still exists')
-        except ClientError as e:
-            if e.response['Error']['Code'] == '404':
-                successlogger.info(f'{instance["pub_aws_bucket"]}/{instance["blob_name"]}')
-            else:
-                # Handle other potential errors (e.g., permissions)
-                errlogger.error(f"An error occurred: {e}")
-                return False
+        if f'{instance["pub_aws_bucket"]}/{instance["blob_name"]}' not in dones:
+            try:
+                s3.head_object(Bucket=instance['pub_aws_bucket'], Key=instance["blob_name"])
+                errlogger.error(f'{instance["pub_aws_bucket"]}/{instance["blob_name"]} still exists')
+            except ClientError as e:
+                if e.response['Error']['Code'] == '404':
+                    successlogger.info(f'{instance["pub_aws_bucket"]}/{instance["blob_name"]}')
+                else:
+                    # Handle other potential errors (e.g., permissions)
+                    errlogger.error(f"An error occurred: {e}")
+                    return False
+        else:
+            progresslogger.info(f'{instance["pub_aws_bucket"]}/{instance["blob_name"]} previously validated')
 
 if __name__ == '__main__':
     # (sys.argv)

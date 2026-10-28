@@ -16,7 +16,7 @@
 
 # Mark instances, series, etc. as redacted in PSQL tables that
 # document all ingested IDC.
-#
+# These are internal tables, so we do not delete data, we just mark it as deprecated
 
 import argparse
 import settings
@@ -39,13 +39,12 @@ SET
     mitigation = '{mitigation_id}'
 FROM (
     SELECT
-        DISTINCT i.uuid uuid
-    FROM instance AS i
-    JOIN {mitigation_id} AS d
-    ON i.uuid=d.i_uuid 
-    WHERE (d.i_final_idc_version <= {idc_version} 
-    OR (d.i_rev_idc_version <= {idc_version} 
-    AND ({idc_version} <= d.i_final_idc_version OR d.i_final_idc_version = 0)))
+        DISTINCT i_uuid uuid
+    FROM {mitigation_id}
+    -- ON i.uuid=d.i_uuid 
+    -- WHERE (d.i_final_idc_version <= {idc_version} 
+    -- OR (d.i_rev_idc_version <= {idc_version} 
+    -- AND ({idc_version} <= d.i_final_idc_version OR d.i_final_idc_version = 0)))
     ) redactions
 WHERE i.uuid = redactions.uuid
 
@@ -86,24 +85,30 @@ FROM (
         -- If all children are redacted, then the parent is redacted
         bool_and({child_alias}.redacted) as redacted,
         if(bool_and({child_alias}.redacted),
-            -- If all children are redacted, then the parent is redacted and its hashes are all null
+        -- If all children are redacted, then the parent is redacted and its hashes are all null
+        -- then
             CAST(ROW(
                 '', 
                 '', 
                 '') AS hashes),
+        -- else
             -- Otherwise we separately aggregate the 'tcia', 'idc' and 'all' hash of each child. If a child is redacted,
             -- its hashes are aggregated as NULLs 
             if(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hash) ,'') IS NULL,
+            -- then
                 CAST(ROW(
                     '', 
                     '', 
                     '') AS hashes),
+            -- else
                 if({child_alias}.source='tcia',
+                -- then
                      CAST(ROW(
                         encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hash) ,'')), 'base64'), 'hex'),
                         '',
                         encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hash) ,'')), 'base64'), 'hex') 
                         ) AS hashes),
+                -- else 
                     CAST(ROW(
                         '',
                         encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hash) ,'')), 'base64'), 'hex'),
@@ -224,7 +229,7 @@ WHERE {parent_alias}.{'uuid' if parent != 'version' else 'version'}=redactions.p
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
-    parser.add_argument('--mitigation_id', default='m2', help='ID of this mitigation event')
+    parser.add_argument('--mitigation_id', default=f'm{settings.MITIGATION_VERSION}', help='ID of this mitigation event')
     args = parser.parse_args()
 
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
@@ -233,8 +238,8 @@ if __name__ == "__main__":
 
         idc_version = args.version
         progresslogger.info(f'Revising version {idc_version}')
-        deprecate_instance(sess, idc_version, mitigation_id=args.mitigation_id)
-        progresslogger.info(f'\nRevised instance')
+        # deprecate_instance(sess, idc_version, mitigation_id=args.mitigation_id)
+        # progresslogger.info(f'\nRevised instance')
         deprecate_series(sess, idc_version, mitigation_id=args.mitigation_id, parent="series", child="instance",
                         parent_alias="se", child_alias="i", \
                         parent_id="series_instance_uid", child_id="sop_instance_uid")

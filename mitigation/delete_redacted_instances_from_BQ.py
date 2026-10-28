@@ -21,20 +21,34 @@ import argparse
 import json
 from utilities.logging_config import successlogger, progresslogger, errlogger
 from google.cloud import bigquery
+from mitigation_utilities import get_version_range
 
 
 def delete_instances(args, tables_ids, version):
     client = bigquery.Client()
 
     for table in tables_ids:
+
         if table == 'mutable_metadata':
             query = f"""
 DELETE FROM `{args.trg_project}.{args.trg_dataset}.{table}`
 WHERE crdc_instance_uuid IN (
 SELECT DISTINCT i_uuid
-FROM `{args.dev_project}.mitigation.{args.redactions_table}`
+FROM `{args.dev_project}.m{settings.MITIGATION_VERSION}.{args.redactions_table}`
 WHERE i_rev_idc_version <= {version}
 AND ({version} <= i_final_idc_version OR i_final_idc_version=0)
+)
+"""
+        elif table == 'original_collections_metadata':
+            query = f"""
+DELETE FROM `{args.trg_project}.{args.trg_dataset}.{table}`
+WHERE 
+{'tcia_api_collection_id' if version <=15 else 'collection_name'}  
+IN (
+SELECT DISTINCT collection_id
+FROM `idc-dev-etl.{settings.BQ_DEV_INT_DATASET}.all_flattened`
+WHERE idc_version = {version}
+AND c_mitigation = 'm{settings.MITIGATION_VERSION}'
 )
 """
         else:
@@ -42,7 +56,7 @@ AND ({version} <= i_final_idc_version OR i_final_idc_version=0)
 DELETE FROM `{args.trg_project}.{args.trg_dataset}.{table}`
 WHERE SOPInstanceUID IN (
 SELECT DISTINCT sop_instance_uid as SOPInstanceUID
-FROM `{args.dev_project}.mitigation.{args.redactions_table}`
+FROM `{args.dev_project}.m{settings.MITIGATION_VERSION}.{args.redactions_table}`
 WHERE i_rev_idc_version <= {version}
 AND ({version} <= i_final_idc_version OR i_final_idc_version=0)
 )
@@ -58,14 +72,14 @@ AND ({version} <= i_final_idc_version OR i_final_idc_version=0)
     return
 
 if __name__ == '__main__':
-    # (sys.argv)
+    version_range = get_version_range()
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--dev_project', default=settings.DEV_MITIGATION_PROJECT, help="Project containing mitigation dataset")
     parser.add_argument('--redactions_table', default='redactions', help='ID of this mitigation event')
-    parser.add_argument('--range', default = [2,18], help='Inclusive range of versions over which to delete redacted instances')
     args = parser.parse_args()
 
+    args.range = version_range
     progresslogger.info(f'args: {json.dumps(args.__dict__, indent=2)}')
 
     for project in (settings.DEV_PROJECT, settings.PDP_PROJECT):
@@ -76,6 +90,7 @@ if __name__ == '__main__':
                     "auxiliary_metadata": "TABLE",
                     "dicom_derived_all": "TABLE",
                     "dicom_metadata": "TABLE",
+                    "original_collections_metadata": "TABLE"
                 }
 
 
@@ -84,6 +99,7 @@ if __name__ == '__main__':
                     "auxiliary_metadata": "TABLE",
                     "dicom_derived_all": "TABLE",
                     "dicom_metadata": "TABLE",
+                    "original_collections_metadata": "TABLE"
                 }
 
             elif version == 10:
@@ -96,6 +112,7 @@ if __name__ == '__main__':
                         "dicom_metadata": "TABLE",
                         "dicom_metadata_curated": "TABLE",
                         "measurement_groups": "TABLE",
+                        "original_collections_metadata": "TABLE",
                         "qualitative_measurements": "TABLE",
                         "quantitative_measurements": "TABLE",
                         "segmentations": "TABLE",
@@ -108,6 +125,7 @@ if __name__ == '__main__':
                         "dicom_metadata": "TABLE",
                         "dicom_metadata_curated": "TABLE",
                         "measurement_groups": "TABLE",
+                        "original_collections_metadata": "TABLE",
                         "qualitative_measurements": "TABLE",
                         "quantitative_measurements": "TABLE",
                         "segmentations": "TABLE",
@@ -121,6 +139,7 @@ if __name__ == '__main__':
                     "dicom_metadata": "TABLE",
                     "dicom_metadata_curated": "TABLE",
                     "measurement_groups": "TABLE",
+                    "original_collections_metadata": "TABLE",
                     "qualitative_measurements": "TABLE",
                     "quantitative_measurements": "TABLE",
                     "segmentations": "TABLE",
@@ -134,6 +153,7 @@ if __name__ == '__main__':
                     "dicom_metadata": "TABLE",
                     "dicom_metadata_curated": "TABLE",
                     "measurement_groups": "TABLE",
+                    "original_collections_metadata": "TABLE",
                     "qualitative_measurements": "TABLE",
                     "quantitative_measurements": "TABLE",
                     "segmentations": "TABLE",
@@ -148,6 +168,7 @@ if __name__ == '__main__':
                         "dicom_metadata": "TABLE",
                         "dicom_metadata_curated": "TABLE",
                         "measurement_groups": "TABLE",
+                        "original_collections_metadata": "TABLE",
                         "qualitative_measurements": "TABLE",
                         "quantitative_measurements": "TABLE",
                         "quantitative_pivot": "TABLE",
@@ -161,6 +182,7 @@ if __name__ == '__main__':
                         "dicom_metadata": "TABLE",
                         "dicom_metadata_curated": "TABLE",
                         "measurement_groups": "TABLE",
+                        "original_collections_metadata": "TABLE",
                         "qualitative_measurements": "TABLE",
                         "quantitative_measurements": "TABLE",
                         "segmentations": "TABLE",
@@ -175,6 +197,7 @@ if __name__ == '__main__':
                     "dicom_metadata_curated": "TABLE",
                     "measurement_groups": "TABLE",
                     "mutable_metadata": "TABLE",
+                    "original_collections_metadata": "TABLE",
                     "qualitative_measurements": "TABLE",
                     "quantitative_measurements": "TABLE",
                     "segmentations": "TABLE",
@@ -189,6 +212,7 @@ if __name__ == '__main__':
                     "dicom_metadata_curated": "TABLE",
                     "measurement_groups": "TABLE",
                     "mutable_metadata": "TABLE",
+                    "original_collections_metadata": "TABLE",
                     "qualitative_measurements": "TABLE",
                     "quantitative_measurements": "TABLE",
                     "segmentations": "TABLE",
@@ -196,7 +220,7 @@ if __name__ == '__main__':
                 if project == settings.PDP_PROJECT:
                     table_ids.update({"dicom_derived_all": "TABLE"})
 
-            elif version in (17,18):
+            elif version in range(17,25+1):
                 table_ids = {
                     "auxiliary_metadata": "TABLE",
                     "dicom_all": "TABLE",
@@ -205,6 +229,7 @@ if __name__ == '__main__':
                     "dicom_pivot": "TABLE",
                     "measurement_groups": "TABLE",
                     "mutable_metadata": "TABLE",
+                    "original_collections_metadata": "TABLE",
                     "qualitative_measurements": "TABLE",
                     "quantitative_measurements": "TABLE",
                     "segmentations": "TABLE",

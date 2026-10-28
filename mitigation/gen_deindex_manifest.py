@@ -38,7 +38,7 @@ def gen_deindex_manifest(args):
           CONCAT('gs://', pub_gcs_bucket,'/', se_uuid, '/', i_uuid, '.dcm', ', s3://', pub_aws_bucket, '/', se_uuid, '/', i_uuid, '.dcm')
         ) urls
       FROM
-        `{settings.DEV_MITIGATION_PROJECT}.mitigation.redactions`    
+        `{settings.DEV_MITIGATION_PROJECT}.m{settings.MITIGATION_VERSION}.redactions`    
     )
     SELECT
       CONCAT('dg.4DFC/',i_uuid) GUID,

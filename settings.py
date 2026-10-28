@@ -150,19 +150,6 @@ ZENODO_ACCESS_TOKEN = os.environ.get('ZENODO_ACCESS_TOKEN', '')
 
 CREDENTIALS_PATH = os.environ.get("CREDENTIALS_PATH")
 
-AWS_ADMIN_ID = os.environ.get('AWS_ADMIN_ID', '')
-os.putenv('AWS_ACCESS_KEY_ID', AWS_ADMIN_ID)
-AWS_ADMIN_SECRET = os.environ.get('AWS_ADMIN_SECRET', '')
-os.putenv('AWS_SECRET_ACCESS_KEY', AWS_ADMIN_SECRET)
-
-AWS_ID = os.environ.get('AWS_ID', '')
-os.putenv('AWS_ACCESS_KEY_ID', AWS_ID)
-AWS_SECRET = os.environ.get('AWS_SECRET', '')
-os.putenv('AWS_SECRET_ACCESS_KEY', AWS_SECRET)
-
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
-
 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
 
 pass
