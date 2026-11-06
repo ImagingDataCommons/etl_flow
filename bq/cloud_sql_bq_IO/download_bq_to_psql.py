@@ -92,7 +92,6 @@ def insert_data_into_postgresql(db_conn, table_name, data_dataframe):
 
 if __name__ == "__main__":
     # BigQuery details
-    breakpoint()
     bq_project_id = "idc-dev-etl"
     bq_dataset_id = "idc_v24_dev"
     bq_table_id = "study_series"

@@ -32,7 +32,6 @@ from google.cloud import bigquery
 
 if __name__ == "__main__":
     # BigQuery details
-    breakpoint()
     bq_project_id = "idc-dev-mitigation"
     bq_dataset_id = f'm{settings.MITIGATION_VERSION}'
     bq_table_id = "redactions"

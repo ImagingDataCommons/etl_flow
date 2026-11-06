@@ -50,7 +50,6 @@ def deprecate_instance(sess, idc_version, mitigation_id):
     FROM {mitigation_id} AS d
     WHERE i.sop_instance_uid=d.sop_instance_uid 
     """
-    breakpoint() # This path
     try:
         result = sess.execute(query)
     except Exception as exc:
@@ -100,7 +99,6 @@ WHERE {parent_alias}.{parent_id}=redactions.parent_id
 
 
 if __name__ == "__main__":
-    breakpoint() # This script has never been executed. SQL is suspect. What if redactions apply only to previous version?
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='IDC version number')
     parser.add_argument('--mitigation_id', default='m1', help='ID of this mitigation event')
@@ -110,6 +108,7 @@ if __name__ == "__main__":
 
     with sa_session(echo=True) as sess:
     
+        breakpoint() # idc_versions should not be hardcoded?
         idc_version = 19
         progresslogger.info(f'Revising version {idc_version}')
 
