@@ -84,7 +84,7 @@ def validate_redactions(args):
     for instance in instances:
         if instance['sop_instance_uid'] not in dones:
             validate_redaction(dicomweb_session, instance['study_instance_uid'], instance['series_instance_uid'], instance['sop_instance_uid'])
-            successlogger.info(instance['sop_instance_uid'])
+            # successlogger.info(instance['sop_instance_uid'])
 
     return
 
@@ -94,7 +94,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', default=settings.CURRENT_VERSION, help='Current version')
     args = parser.parse_args()
-    breakpoint() # This script has not been tested in an event in which data needed to be removed from current store.
     validate_redactions(args)
 
     sys.exit(open(f'{errlogger.handlers[0].baseFilename}').read() != "")

@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Delete redacted blobs from both dev (idc-dev-etl) and public bucket
+# Delete redacted blobs from bo
 import argparse
 from utilities.logging_config import successlogger, progresslogger, errlogger
 

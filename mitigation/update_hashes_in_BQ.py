@@ -26,33 +26,37 @@ import datetime
 from mitigation_utilities import get_version_range
 
 
-# Generate a table of the hashes that changed due to deleting instances
+# Generate a table of the hashes that changed due to deleting instances. We do not include instance hashes because those do not change.
+# Thus we include data down to the series level, and thus there is one row per instance per version
+# If all instances in a series, were redacted, the series' hashes = ('','',''). For study and higher level, if the hash of
+# all children from a single source (tcia or idc) is '', then the hash of the parent for that source is ''.
+#
 def gen_hash_table(args):
     client = bigquery.Client() 
     query = f"""
     WITH redacted AS (
-      SELECT DISTINCT uuid as i_uuid, `hash` instance_hash
+      SELECT DISTINCT uuid AS i_uuid, `hash` instance_hash
       FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.instance` i
       WHERE redacted=TRUE and mitigation = '{args.mitigation_id}'
     )
     SELECT DISTINCT
         v.version,
-        if(c.hashes.all_hash='','', c.collection_id) AS collection_id,
+        c.collection_id AS collection_id,
         c.hashes.all_hash AS collection_hash,
-        c.rev_idc_version as c_rev_idc_version,
-        c.final_idc_version as c_final_idc_version,
-        if(p.hashes.all_hash='','', p.submitter_case_id) AS submitter_case_id,
+        c.rev_idc_version AS c_rev_idc_version,
+        c.final_idc_version AS c_final_idc_version,
+        p.submitter_case_id AS submitter_case_id,
         p.hashes.all_hash AS patient_hash,
-        p.rev_idc_version as p_rev_idc_version,
-        p.final_idc_version as p_final_idc_version,
-         if(st.hashes.all_hash='','', st.study_instance_uid) AS study_instance_uid,
+        p.rev_idc_version AS p_rev_idc_version,
+        p.final_idc_version AS p_final_idc_version,
+        st.study_instance_uid AS study_instance_uid,
         st.hashes.all_hash AS study_hash,
-        st.rev_idc_version as st_rev_idc_version,
-        st.final_idc_version as st_final_idc_version,
-        if(se.hashes.all_hash='','', se.series_instance_uid) AS series_instance_uid,
+        st.rev_idc_version AS st_rev_idc_version,
+        st.final_idc_version AS st_final_idc_version,
+        se.series_instance_uid AS series_instance_uid,
         se.hashes.all_hash AS series_hash,
-        se.rev_idc_version as se_rev_idc_version,
-        se.final_idc_version as se_final_idc_version,
+        se.rev_idc_version AS se_rev_idc_version,
+        se.final_idc_version AS se_final_idc_version,
     FROM `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version` v
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.version_collection` vc ON v.version = vc.version
      JOIN `{settings.DEV_PROJECT}.{settings.BQ_DEV_INT_DATASET}.collection` c ON vc.collection_uuid = c.uuid
@@ -88,9 +92,12 @@ def update_hashes(args, table_ids):
         query = f"""
 UPDATE `{args.trg_project}.{args.trg_dataset}.{table}` t
 SET series_hash = hashes.series_hash 
-FROM `{settings.DEV_MITIGATION_PROJECT}.m{settings.MITIGATION_VERSION}.redactionshashes` hashes
-WHERE hashes.version = {version}
-AND t.SeriesInstanceUID = hashes.series_instance_uid
+FROM (
+    SELECT DISTINCT series_instance_uid, series_hash
+    FROM `{settings.DEV_MITIGATION_PROJECT}.m{settings.MITIGATION_VERSION}.redactionshashes` redactionhashes
+    WHERE redactionhashes.version = {version}
+) as hashes
+WHERE t.SeriesInstanceUID = hashes.series_instance_uid
 """
         result = client.query(query, job_config=job_config)
         while result.state != 'DONE':
@@ -104,9 +111,12 @@ AND t.SeriesInstanceUID = hashes.series_instance_uid
         query = f"""
 UPDATE `{args.trg_project}.{args.trg_dataset}.{table}` t
 SET study_hash = hashes.study_hash 
-FROM `{settings.DEV_MITIGATION_PROJECT}.m{settings.MITIGATION_VERSION}.redactionshashes` hashes
-WHERE hashes.version = {version}
-AND t.StudyInstanceUID = hashes.study_instance_uid
+FROM (
+    SELECT DISTINCT study_instance_uid, study_hash
+    FROM `{settings.DEV_MITIGATION_PROJECT}.m{settings.MITIGATION_VERSION}.redactionshashes` redactionhashes
+    WHERE redactionhashes.version = {version}
+) as hashes
+WHERE t.StudyInstanceUID = hashes.study_instance_uid
 """
         result = client.query(query, job_config=job_config)
         while result.state != 'DONE':
@@ -120,10 +130,14 @@ AND t.StudyInstanceUID = hashes.study_instance_uid
         query = f"""
 UPDATE `{args.trg_project}.{args.trg_dataset}.{table}` t
 SET patient_hash = hashes.patient_hash 
-FROM `{settings.DEV_MITIGATION_PROJECT}.m{settings.MITIGATION_VERSION}.redactionshashes` hashes
-WHERE hashes.version = {version}
-AND t.{'submitter_case_id' if table=='auxiliary_metadata' else 'PatientID'} = hashes.submitter_case_id
+FROM (
+    SELECT DISTINCT submitter_case_id, patient_hash
+    FROM `{settings.DEV_MITIGATION_PROJECT}.m{settings.MITIGATION_VERSION}.redactionshashes` redactionhashes
+    WHERE redactionhashes.version = {version}
+) as hashes
+WHERE t.{'submitter_case_id' if table=='auxiliary_metadata' else 'PatientID'} = hashes.submitter_case_id
 """
+
         result = client.query(query, job_config=job_config)
         while result.state != 'DONE':
             result = client.get_job(result.job_id)
@@ -136,9 +150,12 @@ AND t.{'submitter_case_id' if table=='auxiliary_metadata' else 'PatientID'} = ha
         query = f"""
 UPDATE `{args.trg_project}.{args.trg_dataset}.{table}` t
 SET collection_hash = hashes.collection_hash 
-FROM `{settings.DEV_MITIGATION_PROJECT}.m{settings.MITIGATION_VERSION}.redactionshashes` hashes
-WHERE hashes.version = {version}
-AND t.{args.collection_id} = hashes.collection_id
+FROM (
+    SELECT DISTINCT collection_id, collection_hash
+    FROM `{settings.DEV_MITIGATION_PROJECT}.m{settings.MITIGATION_VERSION}.redactionshashes` redactionhashes
+    WHERE redactionhashes.version = {version}
+) as hashes
+WHERE t.{args.collection_id} = hashes.collection_id
 """
         result = client.query(query, job_config=job_config)
         while result.state != 'DONE':

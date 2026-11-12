@@ -62,134 +62,188 @@ WHERE redacted = 't' AND mitigation = '{mitigation_id}'
 """
     result = sess.execute(query).all()
     progresslogger.info(f'Found {len(result)} redacted instances for mitigation {mitigation_id} and version {idc_version}')
-    breakpoint()
 
     return
 
 
-def deprecate_series(sess, idc_version, mitigation_id, parent, child, parent_alias, child_alias,
+# def deprecate_series(sess, idc_version, mitigation_id, parent, child, parent_alias, child_alias,
+#                     parent_id, child_id):
+#     # Now mark each series object as redacted if all its children are redacted
+#     query = f"""
+# UPDATE {parent} AS {parent_alias}
+# SET
+#     redacted = redactions.redacted,
+#     hashes = redactions.hs,
+#     mitigation = '{mitigation_id}'
+# FROM (
+#     -- For each parent in the mitigation metadata table,
+#     -- determine whether all its children have been redacted
+#     -- and its hash
+#     SELECT
+#         {parent_alias}_{child_alias}.{parent}_uuid parent_id,
+#         -- If all children are redacted, then the parent is redacted
+#         bool_and({child_alias}.redacted) as redacted,
+#         if(bool_and({child_alias}.redacted),
+#         -- If all children are redacted, then the parent is redacted and its hashes are all null
+#         -- then
+#             CAST(ROW(
+#                 '',
+#                 '',
+#                 '') AS hashes),
+#         -- else
+#             -- Otherwise we separately aggregate the 'tcia', 'idc' and 'all' hash of each child. If a child is redacted,
+#             -- its hashes are aggregated as NULLs
+#             if(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hash) ,'') IS NULL,
+#             -- then
+#                 CAST(ROW(
+#                     '',
+#                     '',
+#                     '') AS hashes),
+#             -- else
+#                 if({child_alias}.source='tcia',
+#                 -- then
+#                      CAST(ROW(
+#                         encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hash) ,'')), 'base64'), 'hex'),
+#                         '',
+#                         encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hash) ,'')), 'base64'), 'hex')
+#                         ) AS hashes),
+#                 -- else
+#                     CAST(ROW(
+#                         '',
+#                         encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hash) ,'')), 'base64'), 'hex'),
+#                         encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hash) ,'')), 'base64'), 'hex')
+#                         ) AS hashes)
+#                 )
+#             )
+#         ) hs
+#     FROM {parent}_{child} {parent_alias}_{child_alias}
+#     JOIN {child} {child_alias}
+#     ON {parent_alias}_{child_alias}.{child}_uuid = {child_alias}.uuid
+#     JOIN (
+#         SELECT DISTINCT {parent_alias}_uuid
+#         FROM {mitigation_id}
+#         WHERE {child_alias}_final_idc_version <= {idc_version}
+#         OR ({child_alias}_rev_idc_version <= {idc_version}
+#         AND ({idc_version} <= {child_alias}_final_idc_version OR {child_alias}_final_idc_version = 0 ))
+#         ) m
+#     ON {parent_alias}_{child_alias}.{parent}_uuid = m.{parent_alias}_uuid
+#     GROUP BY parent_id, {child_alias}.source
+#     ) redactions
+# -- Given the table of instance level redactions, set the redaction state of the parent that are in this {idc_version}
+# WHERE {parent_alias}.uuid=redactions.parent_id
+# """
+#     try:
+#         result = sess.execute(query)
+#     except Exception as exc:
+#         breakpoint()
+#
+#     # Validate redacted series
+#     query = f"""
+# SELECT DISTINCT *
+# FROM series
+# WHERE redacted = 't' AND mitigation = '{mitigation_id}'
+# """
+#     result = sess.execute(query).all()
+#     progresslogger.info(
+#         f'Found {len(result)} redacted series for mitigation {mitigation_id} and version {idc_version}')
+#
+#     return
+#
+#
+# def deprecate_level(sess, idc_version, mitigation_id, parent, child, parent_alias, child_alias,
+#                     parent_id, child_id):
+#     # Now mark each parent object as redacted if all its children are redacted
+#
+#     breakpoint() # Needs work. Seems to set the mitigation element to mitigation_id even when the object is not redacted
+#
+#     mitigation_assignment = "" if parent == "version" else f"mitigation = '{mitigation_id}',"
+#     query = f"""
+# UPDATE {parent} AS {parent_alias}
+# SET
+#     -- We do not expect to redact an entire version
+#     {"redacted = redactions.redacted," if parent != 'version' else ''}
+#     {mitigation_assignment}
+#     hashes = redactions.hs
+# FROM (
+#     -- For each parent in the mitigation metadata table,
+#     -- determine whether all its children have been redacted
+#     -- and its hash
+#     SELECT
+#         {parent_alias}_{child_alias}.{parent}{'_uuid' if parent != 'version' else ''} parent_id,
+#         bool_and({child_alias}.redacted) as redacted,
+#         if(bool_and({child_alias}.redacted),
+#             -- If all children are redacted, then the parent is redacted and its hashes are all null
+#             CAST(ROW(
+#                 '',
+#                 '',
+#                 '') AS hashes),
+#             -- Otherwise we separately aggregate the 'tcia', 'idc' and 'all' hash of each child. If a child is redacted,
+#             -- its hashes are aggregated as NULLs
+#             CAST(ROW(
+#                 IF(STRING_AGG(({child_alias}).hashes.tcia, '')='', '',
+#                     IF(STRING_AGG(({child_alias}).hashes.tcia, '') IS NULL, '',
+#                         encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,({child_alias}).hashes.tcia) ,'' ORDER BY ({child_alias}).hashes.tcia)), 'base64'), 'hex'))),
+#                 IF(STRING_AGG(({child_alias}).hashes.idc, '')='', '',
+#                     IF(STRING_AGG(({child_alias}).hashes.idc, '') IS NULL, '',
+#                        encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,({child_alias}).hashes.idc) ,'' ORDER BY ({child_alias}).hashes.idc)), 'base64'), 'hex'))),
+#                 if(STRING_AGG(({child_alias}).hashes.all_sources, '')='', '',
+#                     if(STRING_AGG(({child_alias}).hashes.all_sources, '') IS NULL, '',
+#                        encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,({child_alias}).hashes.all_sources) ,'' ORDER BY ({child_alias}).hashes.all_sources)), 'base64'), 'hex')))
+#                 ) AS hashes)
+#         ) hs
+#     FROM {parent}_{child} {parent_alias}_{child_alias}
+#     JOIN {child} {child_alias}
+#     ON {parent_alias}_{child_alias}.{child}_uuid = {child_alias}.uuid
+#     JOIN (
+#         SELECT DISTINCT {parent_alias}_uuid
+#         FROM {mitigation_id}
+#         WHERE {child_alias}_final_idc_version <= {idc_version}
+#         OR ({child_alias}_rev_idc_version <= {idc_version}
+#         AND ({idc_version} <= {child_alias}_final_idc_version OR {child_alias}_final_idc_version = 0 ))
+#         ) m
+#     ON {parent_alias}_{child_alias}.{parent}{'_uuid' if parent != 'version' else ''} = m.{parent_alias}_uuid
+#     GROUP BY parent_id
+#     ) redactions
+# -- Given the table of instance level redactions, set the redaction state of the parent that are in this {idc_version}
+# WHERE {parent_alias}.{'uuid' if parent != 'version' else 'version'}=redactions.parent_id
+# """
+#     try:
+#         result = sess.execute(query)
+#     except Exception as exc:
+#         breakpoint()
+#
+#     # Validate redacted object
+#     if parent != "version":
+#         query = f"""
+#     SELECT DISTINCT *
+#     FROM {parent}
+#     WHERE redacted = 't' AND mitigation = '{mitigation_id}'
+#     """
+#         result = sess.execute(query).all()
+#         progresslogger.info(
+#             f'Found {len(result)} redacted {parent} for mitigation {mitigation_id} and version {idc_version}')
+#
+#     return
+
+
+def deprecate_level(sess, idc_version, mitigation_id, parent, child, parent_alias, child_alias,
                     parent_id, child_id):
-    # Now mark each series object as redacted if all its children are redacted
+    # Now mark each parent object as redacted if all its children are redacted
+
+    mitigation_assignment = "" if parent == "version" else f"mitigation = '{mitigation_id}',"
     query = f"""
 UPDATE {parent} AS {parent_alias}
 SET
-    redacted = redactions.redacted,
-    hashes = redactions.hs,
+    -- We do not expect to redact an entire version
+    redacted = True,
     mitigation = '{mitigation_id}'
 FROM (
     -- For each parent in the mitigation metadata table,
     -- determine whether all its children have been redacted
     -- and its hash
     SELECT
-        {parent_alias}_{child_alias}.{parent}_uuid parent_id,
-        -- If all children are redacted, then the parent is redacted
-        bool_and({child_alias}.redacted) as redacted,
-        if(bool_and({child_alias}.redacted),
-        -- If all children are redacted, then the parent is redacted and its hashes are all null
-        -- then
-            CAST(ROW(
-                '', 
-                '', 
-                '') AS hashes),
-        -- else
-            -- Otherwise we separately aggregate the 'tcia', 'idc' and 'all' hash of each child. If a child is redacted,
-            -- its hashes are aggregated as NULLs 
-            if(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hash) ,'') IS NULL,
-            -- then
-                CAST(ROW(
-                    '', 
-                    '', 
-                    '') AS hashes),
-            -- else
-                if({child_alias}.source='tcia',
-                -- then
-                     CAST(ROW(
-                        encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hash) ,'')), 'base64'), 'hex'),
-                        '',
-                        encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hash) ,'')), 'base64'), 'hex') 
-                        ) AS hashes),
-                -- else 
-                    CAST(ROW(
-                        '',
-                        encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hash) ,'')), 'base64'), 'hex'),
-                        encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,{child_alias}.hash) ,'')), 'base64'), 'hex')
-                        ) AS hashes)
-                )
-            )
-        ) hs
-    FROM {parent}_{child} {parent_alias}_{child_alias}
-    JOIN {child} {child_alias}
-    ON {parent_alias}_{child_alias}.{child}_uuid = {child_alias}.uuid
-    JOIN ( 
-        SELECT DISTINCT {parent_alias}_uuid
-        FROM {mitigation_id}
-        WHERE {child_alias}_final_idc_version <= {idc_version}  
-        OR ({child_alias}_rev_idc_version <= {idc_version}  
-        AND ({idc_version} <= {child_alias}_final_idc_version OR {child_alias}_final_idc_version = 0 ))
-        ) m
-    ON {parent_alias}_{child_alias}.{parent}_uuid = m.{parent_alias}_uuid
-    GROUP BY parent_id, {child_alias}.source
-    ) redactions
--- Given the table of instance level redactions, set the redaction state of the parent that are in this {idc_version}
-WHERE {parent_alias}.uuid=redactions.parent_id 
-"""
-    try:
-        result = sess.execute(query)
-    except Exception as exc:
-        breakpoint()
-
-    # Validate redacted series
-    query = f"""
-SELECT DISTINCT * 
-FROM series
-WHERE redacted = 't' AND mitigation = '{mitigation_id}'
-"""
-    result = sess.execute(query).all()
-    progresslogger.info(
-        f'Found {len(result)} redacted series for mitigation {mitigation_id} and version {idc_version}')
-    breakpoint()
-
-    return
-
-
-def deprecate_level(sess, idc_version, mitigation_id, parent, child, parent_alias, child_alias,
-                    parent_id, child_id):
-    # Now mark each parent object as redacted if all its children are redacted
-    mitigation_assignment = "" if parent == "version" else f"mitigation = '{mitigation_id}',"
-    query = f"""
-UPDATE {parent} AS {parent_alias}
-SET
-    -- We do not expect to redact an entire version
-    {"redacted = redactions.redacted," if parent != 'version' else ''}
-    {mitigation_assignment}
-    hashes = redactions.hs
-FROM (
-    -- For each parent in the mitigation metadata table,
-    -- determine whether all its children have been redacted
-    -- and its hash
-    SELECT
         {parent_alias}_{child_alias}.{parent}{'_uuid' if parent != 'version' else ''} parent_id,
-        bool_and({child_alias}.redacted) as redacted,
-        if(bool_and({child_alias}.redacted),
-            -- If all children are redacted, then the parent is redacted and its hashes are all null
-            CAST(ROW(
-                '', 
-                '', 
-                '') AS hashes),
-            -- Otherwise we separately aggregate the 'tcia', 'idc' and 'all' hash of each child. If a child is redacted,
-            -- its hashes are aggregated as NULLs 
-            CAST(ROW( 
-                IF(STRING_AGG(({child_alias}).hashes.tcia, '')='', '', 
-                    IF(STRING_AGG(({child_alias}).hashes.tcia, '') IS NULL, '', 
-                        encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,({child_alias}).hashes.tcia) ,'' ORDER BY ({child_alias}).hashes.tcia)), 'base64'), 'hex'))),
-                IF(STRING_AGG(({child_alias}).hashes.idc, '')='', '', 
-                    IF(STRING_AGG(({child_alias}).hashes.idc, '') IS NULL, '', 
-                       encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,({child_alias}).hashes.idc) ,'' ORDER BY ({child_alias}).hashes.idc)), 'base64'), 'hex'))),
-                if(STRING_AGG(({child_alias}).hashes.all_sources, '')='', '', 
-                    if(STRING_AGG(({child_alias}).hashes.all_sources, '') IS NULL, '', 
-                       encode(decode(MD5(STRING_AGG(if({child_alias}.redacted,NULL,({child_alias}).hashes.all_sources) ,'' ORDER BY ({child_alias}).hashes.all_sources)), 'base64'), 'hex')))
-                ) AS hashes)
-        ) hs
+        bool_and({child_alias}.redacted) as redacted
     FROM {parent}_{child} {parent_alias}_{child_alias}
     JOIN {child} {child_alias}
     ON {parent_alias}_{child_alias}.{child}_uuid = {child_alias}.uuid
@@ -204,7 +258,7 @@ FROM (
     GROUP BY parent_id
     ) redactions
 -- Given the table of instance level redactions, set the redaction state of the parent that are in this {idc_version}
-WHERE {parent_alias}.{'uuid' if parent != 'version' else 'version'}=redactions.parent_id 
+WHERE {parent_alias}.{'uuid' if parent != 'version' else 'version'}=redactions.parent_id AND redactions.redacted
 """
     try:
         result = sess.execute(query)
@@ -221,7 +275,6 @@ WHERE {parent_alias}.{'uuid' if parent != 'version' else 'version'}=redactions.p
         result = sess.execute(query).all()
         progresslogger.info(
             f'Found {len(result)} redacted {parent} for mitigation {mitigation_id} and version {idc_version}')
-        breakpoint()
 
     return
 
@@ -238,9 +291,10 @@ if __name__ == "__main__":
 
         idc_version = args.version
         progresslogger.info(f'Revising version {idc_version}')
+        breakpoint() # Uncomment the following line
         # deprecate_instance(sess, idc_version, mitigation_id=args.mitigation_id)
-        # progresslogger.info(f'\nRevised instance')
-        deprecate_series(sess, idc_version, mitigation_id=args.mitigation_id, parent="series", child="instance",
+        progresslogger.info(f'\nRevised instance')
+        deprecate_level(sess, idc_version, mitigation_id=args.mitigation_id, parent="series", child="instance",
                         parent_alias="se", child_alias="i", \
                         parent_id="series_instance_uid", child_id="sop_instance_uid")
         progresslogger.info(f'\nRevised series')
@@ -256,10 +310,10 @@ if __name__ == "__main__":
                         parent_alias="c", child_alias="p", \
                         parent_id="collection_id", child_id="submitter_case_id")
         progresslogger.info(f'\nRevised collection')
-        deprecate_level(sess, idc_version, mitigation_id=args.mitigation_id,  parent="version", child="collection", \
-                        parent_alias="v", child_alias="c", \
-                        parent_id="version", child_id="collection_id")
-        progresslogger.info(f'\nRevised collection')
+        # deprecate_level(sess, idc_version, mitigation_id=args.mitigation_id,  parent="version", child="collection", \
+        #                 parent_alias="v", child_alias="c", \
+        #                 parent_id="version", child_id="collection_id")
+        # progresslogger.info(f'\nRevised version hashes')
 
         sess.commit()
 

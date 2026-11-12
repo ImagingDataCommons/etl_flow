@@ -14,8 +14,8 @@
 # limitations under the License.
 #
 
-# This script deletes redacted instances from per-instance BQ tables such as dicom_all
-# in both dev and pub projects
+# This script copies BQ table that have been revised, as part of the mitigation,
+# from idc-pdp-staging to nci-idc-bigquery-data
 import settings
 import argparse
 import json
